@@ -111,6 +111,7 @@ const App = () => (
                     <Route path="/ecg-booking" element={<ProtectedRoute><ECGBookingScreen /></ProtectedRoute>} />
                     <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
                     <Route path="/consultation-booking" element={<ProtectedRoute><ConsultationBookingScreen /></ProtectedRoute>} />
+                    <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
                     <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                     <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                     

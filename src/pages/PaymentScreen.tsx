@@ -63,7 +63,7 @@ const PaymentScreen = () => {
     // payment provider (webhook / client verification).
     const paymentVerified = selectedPayment === 'cash';
 
-    navigate("/tracking", {
+    navigate("/order-success", {
       state: {
         ...paymentState,
         couponApplied,
