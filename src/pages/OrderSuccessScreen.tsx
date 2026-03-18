@@ -125,7 +125,7 @@ const OrderSuccessScreen = () => {
 
         const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
           body: {
-            cartItems: stateCartItems.map((item) => ({
+            cartItems: stateCartItems.map((item: any) => ({
               id: item.id,
               name: item.name,
               price: item.price,
