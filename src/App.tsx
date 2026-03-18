@@ -49,6 +49,7 @@ const ECGTestScreen = lazy(() => import("./pages/ECGTestScreen"));
 const ECGBookingScreen = lazy(() => import("./pages/ECGBookingScreen"));
 const ConsultationCallScreen = lazy(() => import("./pages/ConsultationCallScreen"));
 const ConsultationBookingScreen = lazy(() => import("./pages/ConsultationBookingScreen"));
+const OrderSuccessScreen = lazy(() => import("./pages/OrderSuccessScreen"));
 const TrackingScreen = lazy(() => import("./pages/TrackingScreen"));
 const FamilyMembersScreen = lazy(() => import("./pages/FamilyMembersScreen"));
 const NotFound = lazy(() => import("./pages/NotFound"));
