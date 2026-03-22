@@ -39,6 +39,8 @@ const ProfileScreen = () => {
   const { theme, toggleTheme } = useTheme();
   const { membershipType, isActive } = useSubscription();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(user?.user_metadata?.avatar_url || null);
+  const [profileName, setProfileName] = useState<string | null>(null);
+  const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
   const [addressCount, setAddressCount] = useState(0);
 
@@ -46,14 +48,20 @@ const ProfileScreen = () => {
     const loadProfileData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        // Load avatar
+        // Load full profile from DB (name, avatar, phone/email)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("avatar_url")
+          .select("avatar_url, full_name, phone, email")
           .eq("id", session.user.id)
           .maybeSingle();
         if (profileData?.avatar_url) {
           setProfileImageUrl(profileData.avatar_url);
+        }
+        if (profileData?.full_name) {
+          setProfileName(profileData.full_name);
+        }
+        if (profileData?.phone || profileData?.email) {
+          setProfileContact(profileData.phone || profileData.email || null);
         }
 
         // Load address count directly from Supabase
