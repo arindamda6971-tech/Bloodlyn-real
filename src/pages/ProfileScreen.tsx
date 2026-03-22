@@ -85,8 +85,8 @@ const ProfileScreen = () => {
     }
   };
 
-  const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
-  const contactInfo = user?.phone || user?.email || "";
+  const displayName = profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+  const contactInfo = profileContact || user?.phone || user?.email || "";
 
   return (
     <MobileLayout>

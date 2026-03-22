@@ -394,7 +394,7 @@ const OrderSuccessScreen = () => {
             onClick={() => navigate("/bookings")}
           >
             <Package className="w-5 h-5" />
-            View My Bookings
+            View My Orders
           </Button>
         </motion.div>
       </div>
