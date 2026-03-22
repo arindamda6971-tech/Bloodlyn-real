@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
   Clock,
@@ -10,8 +10,12 @@ import {
   TestTube,
   ChevronRight,
   Package,
+  Search,
+  X,
+  Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,11 +36,21 @@ type Order = {
   lab_name: string | null;
 };
 
+const STATUS_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "in_progress", label: "Collected" },
+  { key: "completed", label: "Report Ready" },
+  { key: "cancelled", label: "Cancelled" },
+] as const;
+
 const BookingsScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string>("all");
 
   useRealtimeOrders();
 
@@ -59,6 +73,30 @@ const BookingsScreen = () => {
       setLoading(false);
     }
   };
+
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+
+    if (activeFilter !== "all") {
+      if (activeFilter === "confirmed") {
+        result = result.filter((o) => o.status === "confirmed" || o.status === "pending");
+      } else {
+        result = result.filter((o) => o.status === activeFilter);
+      }
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(
+        (o) =>
+          o.test_name?.toLowerCase().includes(q) ||
+          o.order_number?.toLowerCase().includes(q) ||
+          o.lab_name?.toLowerCase().includes(q)
+      );
+    }
+
+    return result;
+  }, [orders, activeFilter, searchQuery]);
 
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
@@ -93,7 +131,6 @@ const BookingsScreen = () => {
 
   const handleOrderClick = (order: Order) => {
     if (order.status === "completed") {
-      // Navigate to reports for completed orders
       navigate("/reports");
     } else {
       navigate(`/tracking/${order.id}`);
@@ -110,7 +147,9 @@ const BookingsScreen = () => {
         key={order.id}
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
+        exit={{ opacity: 0, y: -8 }}
+        transition={{ delay: index * 0.04 }}
+        layout
         className="soft-card cursor-pointer active:scale-[0.98] transition-transform"
         onClick={() => handleOrderClick(order)}
       >
@@ -167,6 +206,43 @@ const BookingsScreen = () => {
       <ScreenHeader title="My Orders" showBack={false} />
 
       <div className="px-4 pb-6">
+        {/* Search Bar */}
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by test, order #, or lab..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9 h-10 rounded-xl bg-muted/50 border-none text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+
+        {/* Status Filter Chips */}
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                activeFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Orders List */}
         <div className="mt-4 space-y-3">
           {loading ? (
             <div className="space-y-3">
@@ -183,8 +259,22 @@ const BookingsScreen = () => {
                 </div>
               ))}
             </div>
+          ) : filteredOrders.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              {filteredOrders.map((order, idx) => renderOrderCard(order, idx))}
+            </AnimatePresence>
           ) : orders.length > 0 ? (
-            orders.map((order, idx) => renderOrderCard(order, idx))
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+            >
+              <Filter className="w-10 h-10 text-muted-foreground mb-3" />
+              <h3 className="font-semibold text-foreground mb-1">No matching orders</h3>
+              <p className="text-sm text-muted-foreground max-w-[250px]">
+                Try a different search term or filter.
+              </p>
+            </motion.div>
           ) : (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
