@@ -3,11 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
-  Circle,
   Clock,
-  TestTube,
   Truck,
-  FlaskConical,
   FileText,
   Home,
   Phone,
@@ -44,11 +41,10 @@ interface PhlebotomistInfo {
 }
 
 const workflowSteps = [
-  { key: "confirmed", label: "Order Confirmed", icon: CheckCircle, description: "Your order has been confirmed" },
-  { key: "assigned", label: "Phlebotomist Assigned", icon: Truck, description: "A phlebotomist has been assigned" },
-  { key: "in_progress", label: "Sample Collected", icon: TestTube, description: "Your sample has been collected" },
-  { key: "lab_processing", label: "Sent to Lab", icon: FlaskConical, description: "Sample is being processed at the lab" },
-  { key: "completed", label: "Report Arrived", icon: FileText, description: "Your report is ready to view" },
+  { key: "confirmed", label: "Booking Confirmed" },
+  { key: "assigned", label: "Phlebotomist Assigned" },
+  { key: "in_progress", label: "Sample Collected" },
+  { key: "completed", label: "Report Arrived" },
 ];
 
 function getCompletedIndex(status: string | null): number {
@@ -61,9 +57,8 @@ function getCompletedIndex(status: string | null): number {
     case "in_progress":
       return 2;
     case "lab_processing":
-      return 3;
     case "completed":
-      return 4;
+      return 3;
     default:
       return -1;
   }
@@ -178,7 +173,7 @@ const TrackingScreen = () => {
               </p>
             </div>
             <Badge className={isCancelled ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}>
-              {isCancelled ? "Cancelled" : workflowSteps[Math.min(completedIndex, 4)]?.label || "Processing"}
+              {isCancelled ? "Cancelled" : workflowSteps[Math.min(completedIndex, 3)]?.label || "Processing"}
             </Badge>
           </div>
 
@@ -248,7 +243,7 @@ const TrackingScreen = () => {
           transition={{ delay: 0.15 }}
           className="soft-card mt-4"
         >
-          <h3 className="font-semibold text-foreground mb-5">Order Progress</h3>
+          <h3 className="font-bold text-lg text-foreground mb-6">Tracking Status</h3>
 
           {isCancelled ? (
             <div className="flex flex-col items-center py-6 text-center">
@@ -258,81 +253,57 @@ const TrackingScreen = () => {
               <p className="font-medium text-destructive">This order was cancelled</p>
             </div>
           ) : (
-            <div className="relative">
+            <div className="relative pl-1">
               {workflowSteps.map((step, index) => {
                 const isCompleted = index <= completedIndex;
-                const isCurrent = index === completedIndex;
-                const StepIcon = step.icon;
+                const isLast = index === workflowSteps.length - 1;
 
                 return (
-                  <div key={step.key} className="flex gap-4 relative">
-                    {/* Vertical connector line */}
-                    <div className="flex flex-col items-center">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.2 + index * 0.1, type: "spring", stiffness: 200 }}
-                        className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors duration-500 ${
-                          isCompleted
-                            ? "bg-success text-white shadow-md"
-                            : "bg-muted text-muted-foreground"
-                        } ${isCurrent ? "ring-4 ring-success/20" : ""}`}
-                      >
-                        {isCompleted ? (
-                          <CheckCircle className="w-5 h-5" />
-                        ) : (
-                          <Circle className="w-5 h-5" />
-                        )}
+                  <div key={step.key} className="flex items-start gap-4 relative">
+                    {/* Vertical line */}
+                    {!isLast && (
+                      <div
+                        className={`absolute left-[18px] top-10 w-0.5 h-[calc(100%-10px)] ${
+                          index < completedIndex ? "bg-success" : "bg-muted-foreground/20"
+                        }`}
+                      />
+                    )}
 
-                        {/* Pulse on current step */}
-                        {isCurrent && (
-                          <motion.div
-                            className="absolute inset-0 rounded-full bg-success/30"
-                            animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                          />
-                        )}
-                      </motion.div>
-
-                      {/* Connector line */}
-                      {index < workflowSteps.length - 1 && (
-                        <motion.div
-                          initial={{ scaleY: 0 }}
-                          animate={{ scaleY: 1 }}
-                          transition={{ delay: 0.3 + index * 0.1 }}
-                          className={`w-0.5 h-12 origin-top ${
-                            index < completedIndex ? "bg-success" : "bg-muted"
-                          }`}
-                        />
-                      )}
-                    </div>
-
-                    {/* Step content */}
+                    {/* Circle */}
                     <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.25 + index * 0.1 }}
-                      className={`flex-1 pb-6 ${index === workflowSteps.length - 1 ? "pb-0" : ""}`}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.15 + index * 0.1, type: "spring", stiffness: 200 }}
+                      className={`relative z-10 w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                        isCompleted
+                          ? "bg-success text-white"
+                          : "bg-muted-foreground/30"
+                      }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <p className={`font-semibold text-sm ${
-                          isCompleted ? "text-foreground" : "text-muted-foreground"
-                        }`}>
-                          {step.label}
-                        </p>
-                        {isCurrent && (
-                          <Badge variant="soft" className="text-[10px] py-0 px-2 bg-success/10 text-success">
-                            Current
-                          </Badge>
-                        )}
-                      </div>
-                      <p className={`text-xs mt-0.5 ${
-                        isCompleted ? "text-muted-foreground" : "text-muted-foreground/60"
-                      }`}>
-                        {step.description}
-                      </p>
+                      {isCompleted && <CheckCircle className="w-5 h-5" />}
+                    </motion.div>
 
-                      {/* View Report button for completed */}
+                    {/* Label + timestamp */}
+                    <motion.div
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.2 + index * 0.1 }}
+                      className={`flex-1 ${isLast ? "pb-0" : "pb-8"}`}
+                    >
+                      <p className={`font-bold text-base ${
+                        isCompleted ? "text-foreground" : "text-muted-foreground"
+                      }`}>
+                        {step.label}
+                      </p>
+                      {isCompleted && (
+                        <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {order.created_at
+                            ? format(new Date(order.created_at), "hh:mm a")
+                            : "—"}
+                        </p>
+                      )}
+
                       {step.key === "completed" && isCompleted && (
                         <Button
                           variant="soft"
