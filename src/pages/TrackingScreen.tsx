@@ -173,7 +173,7 @@ const TrackingScreen = () => {
               </p>
             </div>
             <Badge className={isCancelled ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}>
-              {isCancelled ? "Cancelled" : workflowSteps[Math.min(completedIndex, 4)]?.label || "Processing"}
+              {isCancelled ? "Cancelled" : workflowSteps[Math.min(completedIndex, 3)]?.label || "Processing"}
             </Badge>
           </div>
 
