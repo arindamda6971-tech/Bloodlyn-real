@@ -60,9 +60,8 @@ function getCompletedIndex(status: string | null): number {
     case "in_progress":
       return 2;
     case "lab_processing":
-      return 3;
     case "completed":
-      return 4;
+      return 3;
     default:
       return -1;
   }
