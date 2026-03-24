@@ -51,12 +51,20 @@ function getCompletedIndex(status: string | null): number {
   switch (status) {
     case "pending":
     case "confirmed":
+    case "accepted":
       return 0;
     case "assigned":
+    case "out_for_collection":
       return 1;
     case "in_progress":
+    case "sample_collected":
+    case "collection_complete":
+    case "sample_received":
+    case "processing":
       return 2;
     case "lab_processing":
+    case "report_ready":
+    case "report_delivered":
     case "completed":
       return 3;
     default:
