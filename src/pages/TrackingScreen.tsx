@@ -44,11 +44,10 @@ interface PhlebotomistInfo {
 }
 
 const workflowSteps = [
-  { key: "confirmed", label: "Order Confirmed", icon: CheckCircle, description: "Your order has been confirmed" },
-  { key: "assigned", label: "Phlebotomist Assigned", icon: Truck, description: "A phlebotomist has been assigned" },
-  { key: "in_progress", label: "Sample Collected", icon: TestTube, description: "Your sample has been collected" },
-  { key: "lab_processing", label: "Sent to Lab", icon: FlaskConical, description: "Sample is being processed at the lab" },
-  { key: "completed", label: "Report Arrived", icon: FileText, description: "Your report is ready to view" },
+  { key: "confirmed", label: "Booking Confirmed" },
+  { key: "assigned", label: "Phlebotomist Assigned" },
+  { key: "in_progress", label: "Sample Collected" },
+  { key: "completed", label: "Report Arrived" },
 ];
 
 function getCompletedIndex(status: string | null): number {
