@@ -3,11 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
-  Circle,
   Clock,
-  TestTube,
   Truck,
-  FlaskConical,
   FileText,
   Home,
   Phone,
