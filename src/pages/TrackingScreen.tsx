@@ -10,6 +10,8 @@ import {
   Phone,
   MessageCircle,
   Navigation,
+  Download,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ interface OrderData {
   test_name: string | null;
   lab_name: string | null;
   payment_status: string | null;
+  report_url: string | null;
 }
 
 interface PhlebotomistInfo {
@@ -83,10 +86,21 @@ const TrackingScreen = () => {
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
-  // Update order status in real-time
+  // Update order status in real-time and re-fetch for report_url
   useEffect(() => {
     if (latestStatus && order) {
       setOrder((prev) => (prev ? { ...prev, status: latestStatus } : prev));
+      // Re-fetch order to get report_url when status changes to report_ready/completed
+      if (["report_ready", "report_delivered", "completed"].includes(latestStatus) && paramOrderId) {
+        supabase
+          .from("orders")
+          .select("*")
+          .eq("id", paramOrderId)
+          .single()
+          .then(({ data }) => {
+            if (data) setOrder(data as OrderData);
+          });
+      }
     }
   }, [latestStatus]);
 
@@ -312,7 +326,39 @@ const TrackingScreen = () => {
                         </p>
                       )}
 
-                      {step.key === "completed" && isCompleted && (
+                      {step.key === "completed" && isCompleted && order.report_url && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="soft"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(order.report_url!, "_blank");
+                            }}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View Report
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = order.report_url!;
+                              link.download = `report-${order.order_number || order.id.slice(0, 8)}.pdf`;
+                              link.target = "_blank";
+                              link.click();
+                            }}
+                          >
+                            <Download className="w-3.5 h-3.5 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      )}
+                      {step.key === "completed" && isCompleted && !order.report_url && (
                         <Button
                           variant="soft"
                           size="sm"
@@ -323,7 +369,7 @@ const TrackingScreen = () => {
                           }}
                         >
                           <FileText className="w-3.5 h-3.5 mr-1" />
-                          View Report
+                          View Reports
                         </Button>
                       )}
                     </motion.div>

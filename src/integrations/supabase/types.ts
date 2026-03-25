@@ -313,6 +313,7 @@ export type Database = {
           payment_method: string | null
           payment_status: string | null
           phlebotomist_id: string | null
+          report_url: string | null
           scheduled_date: string | null
           scheduled_time_slot: string | null
           special_instructions: string | null
@@ -336,6 +337,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           phlebotomist_id?: string | null
+          report_url?: string | null
           scheduled_date?: string | null
           scheduled_time_slot?: string | null
           special_instructions?: string | null
@@ -359,6 +361,7 @@ export type Database = {
           payment_method?: string | null
           payment_status?: string | null
           phlebotomist_id?: string | null
+          report_url?: string | null
           scheduled_date?: string | null
           scheduled_time_slot?: string | null
           special_instructions?: string | null
