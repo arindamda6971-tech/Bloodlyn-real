@@ -315,7 +315,39 @@ const TrackingScreen = () => {
                         </p>
                       )}
 
-                      {step.key === "completed" && isCompleted && (
+                      {step.key === "completed" && isCompleted && order.report_url && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            variant="soft"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(order.report_url!, "_blank");
+                            }}
+                          >
+                            <Eye className="w-3.5 h-3.5 mr-1" />
+                            View Report
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = order.report_url!;
+                              link.download = `report-${order.order_number || order.id.slice(0, 8)}.pdf`;
+                              link.target = "_blank";
+                              link.click();
+                            }}
+                          >
+                            <Download className="w-3.5 h-3.5 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      )}
+                      {step.key === "completed" && isCompleted && !order.report_url && (
                         <Button
                           variant="soft"
                           size="sm"
@@ -326,7 +358,7 @@ const TrackingScreen = () => {
                           }}
                         >
                           <FileText className="w-3.5 h-3.5 mr-1" />
-                          View Report
+                          View Reports
                         </Button>
                       )}
                     </motion.div>
