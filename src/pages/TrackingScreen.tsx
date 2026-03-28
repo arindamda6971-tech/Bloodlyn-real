@@ -219,8 +219,8 @@ const TrackingScreen = () => {
           </div>
         </motion.div>
 
-        {/* Phlebotomist card */}
-        {phlebotomist && (
+        {/* Collection Partner card */}
+        {collectionPartner && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -229,28 +229,13 @@ const TrackingScreen = () => {
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
-                {phlebotomist.photo_url ? (
-                  <img src={phlebotomist.photo_url} alt={phlebotomist.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-primary/20 flex items-center justify-center">
-                    <Navigation className="w-5 h-5 text-primary" />
-                  </div>
-                )}
+                <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-primary" />
+                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Phlebotomist</p>
-                <p className="font-semibold text-foreground">{phlebotomist.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {phlebotomist.experience_years ? `${phlebotomist.experience_years}+ yrs exp` : "Experienced"} • ⭐ {phlebotomist.rating || "5.0"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="soft" size="icon" className="h-9 w-9 rounded-xl">
-                  <Phone className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
+                <p className="text-xs text-muted-foreground">Collection Partner</p>
+                <p className="font-semibold text-foreground">{collectionPartner.name}</p>
               </div>
             </div>
           </motion.div>
