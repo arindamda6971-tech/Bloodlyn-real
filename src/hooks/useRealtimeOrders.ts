@@ -55,10 +55,14 @@ export const useRealtimeOrders = (orderId?: string) => {
 
           // Show toast for status changes
           if (oldData.status !== newData.status && newData.status) {
-            const statusMessages: Record<OrderStatus, string> = {
+            const statusMessages: Record<string, string> = {
               pending: "Your order is pending confirmation",
               confirmed: "Your order has been confirmed! 🎉",
+              accepted: "Your order has been accepted! 🎉",
+              processing: "Collection partner has been assigned",
               in_progress: "Sample collection is in progress",
+              sample_collected: "Sample has been collected! 🧪",
+              report_ready: "Your report is ready! 📋",
               completed: "Your order has been completed! ✅",
               cancelled: "Your order has been cancelled",
             };
