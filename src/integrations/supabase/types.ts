@@ -305,6 +305,7 @@ export type Database = {
           address_id: string | null
           coupon_code: string | null
           created_at: string
+          delivery_partner_name: string | null
           discount: number | null
           family_member_id: string | null
           id: string
@@ -329,6 +330,7 @@ export type Database = {
           address_id?: string | null
           coupon_code?: string | null
           created_at?: string
+          delivery_partner_name?: string | null
           discount?: number | null
           family_member_id?: string | null
           id?: string
@@ -353,6 +355,7 @@ export type Database = {
           address_id?: string | null
           coupon_code?: string | null
           created_at?: string
+          delivery_partner_name?: string | null
           discount?: number | null
           family_member_id?: string | null
           id?: string

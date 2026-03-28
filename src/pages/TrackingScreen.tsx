@@ -54,14 +54,14 @@ function getCompletedIndex(status: string | null): number {
     case "confirmed":
     case "accepted":
       return 0;
+    case "processing":
     case "assigned":
     case "out_for_collection":
       return 1;
-    case "in_progress":
     case "sample_collected":
+    case "in_progress":
     case "collection_complete":
     case "sample_received":
-    case "processing":
       return 2;
     case "lab_processing":
     case "report_ready":
