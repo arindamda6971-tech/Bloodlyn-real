@@ -129,14 +129,9 @@ const TrackingScreen = () => {
 
         setOrder(data as OrderData);
 
-        // Fetch phlebotomist if assigned
-        if (data.phlebotomist_id) {
-          const { data: phlebo } = await supabase
-            .from("phlebotomists_public")
-            .select("name, photo_url, rating, experience_years")
-            .eq("id", data.phlebotomist_id)
-            .single();
-          if (phlebo?.name) setPhlebotomist(phlebo as PhlebotomistInfo);
+        // Set collection partner if available
+        if ((data as any).delivery_partner_name) {
+          setCollectionPartner({ name: (data as any).delivery_partner_name });
         }
       } catch {
         setError("Failed to fetch order");
