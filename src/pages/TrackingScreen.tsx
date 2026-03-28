@@ -37,11 +37,8 @@ interface OrderData {
   delivery_partner_name: string | null;
 }
 
-interface PhlebotomistInfo {
+interface CollectionPartnerInfo {
   name: string;
-  photo_url: string | null;
-  rating: number | null;
-  experience_years: number | null;
 }
 
 const workflowSteps = [
