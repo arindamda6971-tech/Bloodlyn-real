@@ -78,7 +78,7 @@ const TrackingScreen = () => {
   const { orderId: paramOrderId } = useParams();
   const { supabaseUserId } = useAuth();
   const [order, setOrder] = useState<OrderData | null>(null);
-  const [phlebotomist, setPhlebotomist] = useState<PhlebotomistInfo | null>(null);
+  const [collectionPartner, setCollectionPartner] = useState<CollectionPartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
