@@ -43,7 +43,7 @@ interface CollectionPartnerInfo {
 
 const workflowSteps = [
   { key: "confirmed", label: "Booking Confirmed" },
-  { key: "assigned", label: "Phlebotomist Assigned" },
+  { key: "assigned", label: "Collection Partner Assigned" },
   { key: "in_progress", label: "Sample Collected" },
   { key: "completed", label: "Report Arrived" },
 ];
