@@ -4,11 +4,8 @@ import { motion } from "framer-motion";
 import {
   CheckCircle,
   Clock,
-  Truck,
   FileText,
   Home,
-  Phone,
-  MessageCircle,
   Navigation,
   Download,
   Eye,
