@@ -69,7 +69,7 @@ export const useRealtimeOrders = (orderId?: string) => {
 
             const message = statusMessages[newData.status];
             if (message) {
-              if (newData.status === "completed") {
+              if (newData.status === "completed" || newData.status === "report_ready") {
                 toast.success(message);
               } else if (newData.status === "cancelled") {
                 toast.error(message);
