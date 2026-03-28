@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-type OrderStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
+type OrderStatus = "pending" | "confirmed" | "accepted" | "processing" | "in_progress" | "sample_collected" | "report_ready" | "completed" | "cancelled";
 
 interface OrderUpdate {
   id: string;
