@@ -34,6 +34,7 @@ interface OrderData {
   lab_name: string | null;
   payment_status: string | null;
   report_url: string | null;
+  delivery_partner_name: string | null;
 }
 
 interface PhlebotomistInfo {
