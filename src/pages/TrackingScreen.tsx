@@ -84,19 +84,24 @@ const TrackingScreen = () => {
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
-  // Update order status in real-time and re-fetch for report_url
+  // Update order status in real-time and re-fetch for report_url / delivery_partner_name
   useEffect(() => {
     if (latestStatus && order) {
       setOrder((prev) => (prev ? { ...prev, status: latestStatus } : prev));
-      // Re-fetch order to get report_url when status changes to report_ready/completed
-      if (["report_ready", "report_delivered", "completed"].includes(latestStatus) && paramOrderId) {
+      // Re-fetch order when status changes to get latest data
+      if (paramOrderId) {
         supabase
           .from("orders")
           .select("*")
           .eq("id", paramOrderId)
           .single()
           .then(({ data }) => {
-            if (data) setOrder(data as OrderData);
+            if (data) {
+              setOrder(data as OrderData);
+              if ((data as any).delivery_partner_name) {
+                setCollectionPartner({ name: (data as any).delivery_partner_name });
+              }
+            }
           });
       }
     }
