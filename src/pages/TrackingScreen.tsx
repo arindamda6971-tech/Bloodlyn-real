@@ -4,11 +4,8 @@ import { motion } from "framer-motion";
 import {
   CheckCircle,
   Clock,
-  Truck,
   FileText,
   Home,
-  Phone,
-  MessageCircle,
   Navigation,
   Download,
   Eye,
@@ -34,18 +31,16 @@ interface OrderData {
   lab_name: string | null;
   payment_status: string | null;
   report_url: string | null;
+  delivery_partner_name: string | null;
 }
 
-interface PhlebotomistInfo {
+interface CollectionPartnerInfo {
   name: string;
-  photo_url: string | null;
-  rating: number | null;
-  experience_years: number | null;
 }
 
 const workflowSteps = [
   { key: "confirmed", label: "Booking Confirmed" },
-  { key: "assigned", label: "Phlebotomist Assigned" },
+  { key: "assigned", label: "Collection Partner Assigned" },
   { key: "in_progress", label: "Sample Collected" },
   { key: "completed", label: "Report Arrived" },
 ];
@@ -56,14 +51,14 @@ function getCompletedIndex(status: string | null): number {
     case "confirmed":
     case "accepted":
       return 0;
+    case "processing":
     case "assigned":
     case "out_for_collection":
       return 1;
-    case "in_progress":
     case "sample_collected":
+    case "in_progress":
     case "collection_complete":
     case "sample_received":
-    case "processing":
       return 2;
     case "lab_processing":
     case "report_ready":
@@ -80,25 +75,30 @@ const TrackingScreen = () => {
   const { orderId: paramOrderId } = useParams();
   const { supabaseUserId } = useAuth();
   const [order, setOrder] = useState<OrderData | null>(null);
-  const [phlebotomist, setPhlebotomist] = useState<PhlebotomistInfo | null>(null);
+  const [collectionPartner, setCollectionPartner] = useState<CollectionPartnerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
-  // Update order status in real-time and re-fetch for report_url
+  // Update order status in real-time and re-fetch for report_url / delivery_partner_name
   useEffect(() => {
     if (latestStatus && order) {
       setOrder((prev) => (prev ? { ...prev, status: latestStatus } : prev));
-      // Re-fetch order to get report_url when status changes to report_ready/completed
-      if (["report_ready", "report_delivered", "completed"].includes(latestStatus) && paramOrderId) {
+      // Re-fetch order when status changes to get latest data
+      if (paramOrderId) {
         supabase
           .from("orders")
           .select("*")
           .eq("id", paramOrderId)
           .single()
           .then(({ data }) => {
-            if (data) setOrder(data as OrderData);
+            if (data) {
+              setOrder(data as OrderData);
+              if ((data as any).delivery_partner_name) {
+                setCollectionPartner({ name: (data as any).delivery_partner_name });
+              }
+            }
           });
       }
     }
@@ -126,14 +126,9 @@ const TrackingScreen = () => {
 
         setOrder(data as OrderData);
 
-        // Fetch phlebotomist if assigned
-        if (data.phlebotomist_id) {
-          const { data: phlebo } = await supabase
-            .from("phlebotomists_public")
-            .select("name, photo_url, rating, experience_years")
-            .eq("id", data.phlebotomist_id)
-            .single();
-          if (phlebo?.name) setPhlebotomist(phlebo as PhlebotomistInfo);
+        // Set collection partner if available
+        if ((data as any).delivery_partner_name) {
+          setCollectionPartner({ name: (data as any).delivery_partner_name });
         }
       } catch {
         setError("Failed to fetch order");
@@ -221,8 +216,8 @@ const TrackingScreen = () => {
           </div>
         </motion.div>
 
-        {/* Phlebotomist card */}
-        {phlebotomist && (
+        {/* Collection Partner card */}
+        {collectionPartner && (
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -231,28 +226,13 @@ const TrackingScreen = () => {
           >
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden shrink-0">
-                {phlebotomist.photo_url ? (
-                  <img src={phlebotomist.photo_url} alt={phlebotomist.name} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-primary/20 flex items-center justify-center">
-                    <Navigation className="w-5 h-5 text-primary" />
-                  </div>
-                )}
+                <div className="w-full h-full bg-primary/20 flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-primary" />
+                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">Phlebotomist</p>
-                <p className="font-semibold text-foreground">{phlebotomist.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {phlebotomist.experience_years ? `${phlebotomist.experience_years}+ yrs exp` : "Experienced"} • ⭐ {phlebotomist.rating || "5.0"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="soft" size="icon" className="h-9 w-9 rounded-xl">
-                  <Phone className="w-4 h-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-9 w-9 rounded-xl">
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
+                <p className="text-xs text-muted-foreground">Collection Partner</p>
+                <p className="font-semibold text-foreground">{collectionPartner.name}</p>
               </div>
             </div>
           </motion.div>
