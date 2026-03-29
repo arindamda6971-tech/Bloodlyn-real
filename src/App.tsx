@@ -23,6 +23,7 @@ const LocationCheckScreen = lazy(() => import("./pages/LocationCheckScreen"));
 const InstallScreen = lazy(() => import("./pages/InstallScreen"));
 const HomeScreen = lazy(() => import("./pages/HomeScreen"));
 const CategoriesScreen = lazy(() => import("./pages/CategoriesScreen"));
+const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
 const TestDetailScreen = lazy(() => import("./pages/TestDetailScreen"));
 const TestSelectionScreen = lazy(() => import("./pages/TestSelectionScreen"));
 const CartScreen = lazy(() => import("./pages/CartScreen"));
@@ -82,6 +83,7 @@ const App = () => (
                     {/* Protected Routes */}
                     <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
                     <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
+                    <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
                     <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
                     <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
                     <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
