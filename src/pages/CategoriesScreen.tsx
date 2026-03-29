@@ -117,19 +117,7 @@ const CategoriesScreen = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.05 }}
-                onClick={() => navigate("/test/select", {
-                  state: {
-                    test: {
-                      id: `category-${index}`,
-                      name: category.name,
-                      price: 499 + (index * 100),
-                      original_price: 999 + (index * 100),
-                      discount_percent: 40,
-                      report_time_hours: 24,
-                      sample_type: "Blood",
-                    },
-                  },
-                })}
+                onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
                 className="category-card"
               >
                 <div className={`w-12 h-12 rounded-2xl ${category.color} flex items-center justify-center mb-3`}>
