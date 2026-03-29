@@ -83,6 +83,7 @@ const App = () => (
                     {/* Protected Routes */}
                     <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
                     <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
+                    <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
                     <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
                     <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
                     <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
