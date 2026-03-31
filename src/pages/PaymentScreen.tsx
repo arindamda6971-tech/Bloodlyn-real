@@ -1,17 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, CreditCard, Wallet, Smartphone } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import BookingStepper from "@/components/BookingStepper";
 import { useCart } from "@/contexts/CartContext";
-
-const paymentMethods = [
-  { id: "cash", icon: Wallet, name: "Cash on Delivery", subtitle: "Pay when sample is collected" },
-];
 
 interface PaymentState {
   cartItems: Array<{
@@ -21,193 +18,192 @@ interface PaymentState {
     quantity: number;
     familyMemberId?: string;
     packageId?: string;
+    labId?: string;
+    labName?: string;
+    vendorId?: string;
+    category?: string;
   }>;
-  addressId: string | null;
-  scheduledDate: string | null;
-  scheduledTimeSlot: string | null;
+  addressId?: string | null;
+  scheduledDate?: string | null;
+  scheduledTimeSlot?: string | null;
   subtotal: number;
-  // optional patient info forwarded from cart
+  selectedLabName?: string;
+  selectedLabId?: string;
   patientName?: string;
   patientAge?: number | string | null;
   patientGender?: string | null;
   patientPhone?: string | null;
+  contactPhone?: string | null;
 }
 
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subtotal } = useCart();
-  const [couponCode, setCouponCode] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("cash");
-  const [couponApplied, setCouponApplied] = useState(false);
-
+  const { subtotal: cartSubtotal } = useCart();
   const paymentState = location.state as PaymentState | undefined;
-  const stateSubtotal = paymentState?.subtotal || subtotal;
 
-
-
+  const stateSubtotal = paymentState?.subtotal || cartSubtotal;
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [appointmentOpen, setAppointmentOpen] = useState(true);
+  const [orderOpen, setOrderOpen] = useState(true);
 
   const discount = couponApplied ? 100 : 0;
   const total = stateSubtotal - discount;
 
   const applyCoupon = () => {
-    if (couponCode.toUpperCase() === "HEALTH100") {
-      setCouponApplied(true);
-    }
+    if (couponCode.toUpperCase() === "HEALTH100") setCouponApplied(true);
+  };
+
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "Today";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", weekday: "short" });
+    } catch { return dateStr; }
   };
 
   const handlePayment = () => {
-    // NOTE: real payment gateway integration is required for non-cash methods.
-    // We only mark `paymentVerified` for cash-on-delivery here. Non-cash
-    // flows must set `paymentVerified: true` after confirmation by the
-    // payment provider (webhook / client verification).
-    const paymentVerified = selectedPayment === 'cash';
-
+    const paymentVerified = true; // cash on delivery
     navigate("/order-success", {
       state: {
         ...paymentState,
         couponApplied,
         discount,
         total,
-        selectedPayment,
+        selectedPayment: "cash",
         paymentVerified,
-      }
+      },
     });
   };
 
   return (
     <MobileLayout>
-      <ScreenHeader title="Payment" />
+      <ScreenHeader title="Check Out" />
+      <BookingStepper currentStep={3} />
 
       <div className="px-4 pb-32">
-        {/* Coupon section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="soft-card mt-4"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Tag className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Apply Coupon</h3>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Enter coupon code"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              className="flex-1 bg-muted border-0 rounded-xl"
-            />
-            <Button
-              variant="soft"
-              onClick={applyCoupon}
-              disabled={couponApplied}
-            >
-              {couponApplied ? "Applied" : "Apply"}
-            </Button>
-          </div>
-          {couponApplied && (
-            <Badge variant="softSuccess" className="mt-2">
-              Coupon HEALTH100 applied - ₹100 off
-            </Badge>
+        {/* Appointment Details */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 mb-4">
+          <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
+            <h3 className="text-base font-bold text-foreground">Appointment Details</h3>
+            {appointmentOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          </button>
+          {appointmentOpen && (
+            <div className="mt-3 space-y-2.5">
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <MapPin className="w-4 h-4 text-primary" />
+                <span>{paymentState?.selectedLabName || "Home Collection"}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-foreground">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <span>{formatDate(paymentState?.scheduledDate)}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-primary" />
+                  <span>{paymentState?.scheduledTimeSlot || "Any time"}</span>
+                </div>
+              </div>
+            </div>
           )}
         </motion.div>
 
+        {/* Order Details */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-4 mb-4">
+          <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
+            <h3 className="text-base font-bold text-foreground">Order Details</h3>
+            {orderOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          </button>
+          {orderOpen && (
+            <div className="mt-3">
+              {/* Patient */}
+              {paymentState?.patientName && (
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/50">
+                  <User className="w-4 h-4 text-primary" />
+                  <span className="font-medium text-foreground text-sm">{paymentState.patientName}</span>
+                </div>
+              )}
+              {/* Items */}
+              <div className="space-y-2">
+                {(paymentState?.cartItems || []).map((item) => (
+                  <div key={item.id} className="flex justify-between items-center text-sm">
+                    <span className="text-foreground flex-1 truncate pr-4">{item.name}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-foreground font-semibold">₹ {item.price * item.quantity}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </motion.div>
 
-
-        {/* Payment methods */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6"
-        >
-          <h3 className="font-semibold text-foreground mb-3">Payment Method</h3>
-          <div className="space-y-2">
-            {paymentMethods.map((method) => (
-              <button
-                key={method.id}
-                onClick={() => setSelectedPayment(method.id)}
-                className={`w-full soft-card flex items-center gap-4 transition-all ${
-                  selectedPayment === method.id
-                    ? "ring-2 ring-primary"
-                    : ""
-                }`}
-              >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <method.icon className="w-5 h-5 text-primary" />
+        {/* Offers & Benefits */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-4">
+          <h3 className="text-base font-bold text-foreground mb-3">Offers & Benefits</h3>
+          <div className="bg-card rounded-2xl border border-border p-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Tag className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Apply Coupon Code"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="flex-1 bg-muted border-0 rounded-lg h-9 text-sm"
+                    disabled={couponApplied}
+                  />
+                  <Button variant="soft" size="sm" onClick={applyCoupon} disabled={couponApplied} className="h-9">
+                    {couponApplied ? "Applied" : "Apply"}
+                  </Button>
                 </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-foreground text-sm">{method.name}</p>
-                  <p className="text-xs text-muted-foreground">{method.subtitle}</p>
-                </div>
-                <div className={`w-5 h-5 rounded-full border-2 ${
-                  selectedPayment === method.id
-                    ? "border-primary bg-primary"
-                    : "border-muted-foreground"
-                } flex items-center justify-center`}>
-                  {selectedPayment === method.id && (
-                    <div className="w-2 h-2 rounded-full bg-primary-foreground" />
-                  )}
-                </div>
-              </button>
-            ))}
+              </div>
+            </div>
+            {couponApplied && (
+              <Badge variant="softSuccess" className="mt-2 ml-11">
+                HEALTH100 applied — ₹100 off
+              </Badge>
+            )}
           </div>
         </motion.div>
 
-        {/* Online payments notice */}
-        <div className="mt-3 px-3 py-2 rounded-md bg-muted border border-border text-xs text-muted-foreground">
-          Online payment options (UPI, Cards, Wallets) coming soon.
-        </div>
-
-        {/* Price breakdown */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="soft-card mt-6"
-        >
-          <h3 className="font-semibold text-foreground mb-3">Price Details</h3>
-          <div className="space-y-2">
+        {/* Bill Summary */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border p-4">
+          <h3 className="text-base font-bold text-foreground mb-3">Bill Summary</h3>
+          <div className="space-y-2.5">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span className="text-foreground">₹{stateSubtotal}</span>
+              <span className="text-muted-foreground">MRP Total</span>
+              <span className="text-foreground">₹ {stateSubtotal}.0/-</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success">FREE</span>
+              <span className="text-success font-medium">FREE</span>
             </div>
             {couponApplied && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Coupon Discount</span>
-                <span className="text-success">-₹{discount}</span>
+                <span className="text-success font-medium">- ₹ {discount}.0/-</span>
               </div>
             )}
-            <div className="h-px bg-border my-3" />
+            <div className="h-px bg-border my-2" />
             <div className="flex justify-between">
-              <span className="font-semibold text-foreground">Total</span>
-              <span className="font-bold text-lg text-foreground">₹{total}</span>
+              <span className="font-bold text-foreground">Payable Amount</span>
+              <span className="font-bold text-lg text-foreground">₹ {total}.0/-</span>
             </div>
           </div>
-          <Badge variant="softSuccess" className="mt-3">
-            No hidden charges
-          </Badge>
         </motion.div>
       </div>
 
-      {/* Bottom CTA */}
+      {/* Pay Button */}
       <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        className="fixed bottom-24 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom"
+        initial={{ y: 100 }} animate={{ y: 0 }}
+        className="fixed bottom-24 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom z-40"
       >
-        <Button
-          variant="hero"
-          className="w-full"
-          size="lg"
-          onClick={handlePayment}
-        >
-          Pay Now • ₹{total}
+        <Button variant="hero" className="w-full" size="lg" onClick={handlePayment}>
+          Pay ₹ {total}/-
         </Button>
       </motion.div>
     </MobileLayout>
