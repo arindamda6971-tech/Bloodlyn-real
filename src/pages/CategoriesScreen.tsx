@@ -84,21 +84,20 @@ const CategoriesScreen = () => {
     <MobileLayout>
       <ScreenHeader title="Test Categories" showBack={false} />
 
-      {/* AI Banner */}
+      {/* Search Box */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-4 mt-4 p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-success/10 border border-primary/20"
+        className="mx-4 mt-4"
       >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-success flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary-foreground" />
-          </div>
-          <div className="flex-1">
-            <p className="font-semibold text-foreground text-sm">Not sure what to test?</p>
-            <p className="text-xs text-muted-foreground">Let AI recommend tests for you</p>
-          </div>
-          <Badge variant="ai">AI</Badge>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search tests, packages..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-muted border-0 rounded-xl h-11"
+          />
         </div>
       </motion.div>
 
