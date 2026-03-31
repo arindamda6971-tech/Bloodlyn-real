@@ -120,12 +120,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       // Insert new items if any
       if (cartItems.length > 0) {
+        const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
         const cartItemsToInsert = cartItems.map((item) => ({
           user_id: userId,
-          test_id: item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") ? null : item.id,
+          test_id: item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || !isUuid(item.id) ? null : item.id,
           test_name: item.name,
           price: item.price,
-          lab_id: item.labId || null,
+          lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
           lab_name: item.labName || null,
           quantity: item.quantity,
           family_member_id: item.familyMemberId || null,
