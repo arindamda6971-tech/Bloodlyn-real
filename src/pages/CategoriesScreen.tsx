@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import { Badge } from "@/components/ui/badge";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
 
 const iconMap: Record<string, any> = {
   blood: Droplets,
