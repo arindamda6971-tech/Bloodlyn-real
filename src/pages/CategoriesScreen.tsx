@@ -64,21 +64,28 @@ const CategoriesScreen = () => {
   const { data: bridgeData, isLoading } = useBridgeTests();
   const [searchQuery, setSearchQuery] = useState("");
   const categories = useMemo(() => {
+    let cats;
     if (bridgeData?.categories?.length) {
       const testsByCategory: Record<string, number> = {};
       bridgeData.tests?.forEach((t) => {
         testsByCategory[t.category] = (testsByCategory[t.category] || 0) + 1;
       });
-      return bridgeData.categories.map((cat) => ({
+      cats = bridgeData.categories.map((cat) => ({
         icon: iconMap[cat.slug] || Stethoscope,
         name: cat.name,
         tests: testsByCategory[cat.slug] || 0,
         color: colorMap[cat.slug] || "bg-primary/10 text-primary",
         slug: cat.slug,
       }));
+    } else {
+      cats = fallbackCategories;
     }
-    return fallbackCategories;
-  }, [bridgeData]);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      cats = cats.filter((c) => c.name.toLowerCase().includes(q));
+    }
+    return cats;
+  }, [bridgeData, searchQuery]);
 
   return (
     <MobileLayout>
