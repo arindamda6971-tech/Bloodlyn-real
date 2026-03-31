@@ -11,7 +11,7 @@ import {
   Baby,
   Brain,
   Bone,
-  Sparkles,
+  Search,
   Loader2,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
