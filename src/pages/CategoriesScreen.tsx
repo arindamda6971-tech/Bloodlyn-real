@@ -62,7 +62,7 @@ const fallbackCategories = [
 const CategoriesScreen = () => {
   const navigate = useNavigate();
   const { data: bridgeData, isLoading } = useBridgeTests();
-
+  const [searchQuery, setSearchQuery] = useState("");
   const categories = useMemo(() => {
     if (bridgeData?.categories?.length) {
       const testsByCategory: Record<string, number> = {};
