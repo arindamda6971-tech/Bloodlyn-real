@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash2, ShoppingCart, Upload, FileImage, X, Check, Building2, UserPlus, Plus } from "lucide-react";
+import { Trash2, ShoppingCart, Upload, FileImage, X, Check, Building2, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
+import { supabase } from "@/integrations/supabase/client";
+
+interface SavedAddress {
+  id: string;
+  address_line1: string;
+  address_line2: string | null;
+  city: string;
+  state: string;
+  pincode: string;
+  type: string | null;
+  is_default: boolean | null;
+}
 
 const CartScreen = () => {
   const navigate = useNavigate();
@@ -38,6 +50,11 @@ const CartScreen = () => {
   const [patientPhone, setPatientPhone] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
+  // Address
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [addressLoading, setAddressLoading] = useState(true);
+
   const isPatientInfoValid =
     patientName.trim().length > 0 &&
     /^\d{1,3}$/.test(patientAge) &&
@@ -45,7 +62,8 @@ const CartScreen = () => {
     Number(patientAge) <= 120 &&
     patientGender.trim().length > 0 &&
     /^\d{10}$/.test(patientPhone) &&
-    /^\d{10}$/.test(contactPhone);
+    /^\d{10}$/.test(contactPhone) &&
+    selectedAddressId !== null;
 
   // Prescription upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +84,29 @@ const CartScreen = () => {
     }
   }, [selectedMemberId, familyMembers]);
 
+  // Fetch saved addresses
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!supabaseUserId) { setAddressLoading(false); return; }
+      try {
+        const { data, error } = await supabase
+          .from("addresses")
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .eq("user_id", supabaseUserId)
+          .order("is_default", { ascending: false });
+        if (!error && data) {
+          setSavedAddresses(data);
+          const defaultAddr = data.find((a) => a.is_default);
+          if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+          else if (data.length > 0) setSelectedAddressId(data[0].id);
+        }
+      } catch (err) {
+        console.error("Error fetching addresses:", err);
+      } finally { setAddressLoading(false); }
+    };
+    fetchAddresses();
+  }, [supabaseUserId]);
+
   const handlePrescriptionSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -85,7 +126,6 @@ const CartScreen = () => {
     if (!prescriptionFile || !supabaseUserId) { toast.error("Please select a prescription image"); return; }
     setUploadingPrescription(true);
     try {
-      const { supabase } = await import("@/integrations/supabase/client");
       const fileExt = prescriptionFile.name.split('.').pop();
       const fileName = `${supabaseUserId}/${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage.from('prescriptions').upload(fileName, prescriptionFile);
@@ -101,12 +141,19 @@ const CartScreen = () => {
   const handleRemovePrescription = async () => {
     if (prescriptionUrl && supabaseUserId) {
       try {
-        const { supabase } = await import("@/integrations/supabase/client");
         await supabase.storage.from('prescriptions').remove([prescriptionUrl]);
       } catch (error) { console.error("Error removing prescription:", error); }
     }
     setPrescriptionFile(null); setPrescriptionPreview(null); setPrescriptionUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const formatAddress = (addr: SavedAddress) => {
+    const parts = [addr.address_line1];
+    if (addr.address_line2) parts.push(addr.address_line2);
+    if (addr.city) parts.push(addr.city);
+    if (addr.pincode) parts.push(addr.pincode);
+    return parts.join(", ");
   };
 
   if (isLoading) {
@@ -143,15 +190,15 @@ const CartScreen = () => {
     );
   }
 
+  // Determine if the cart has a pre-selected lab (from vendor profile booking)
+  const hasVendorLab = items.some((item) => item.labId && item.labName);
+
   return (
     <MobileLayout>
       <ScreenHeader title="Cart" />
-
-      {/* Stepper */}
       <BookingStepper currentStep={1} />
 
       <div className="px-4 pb-44">
-        {/* Cart item count */}
         <h2 className="text-lg font-bold text-foreground mb-3">
           {items.length} Cart {items.length === 1 ? "Item" : "Items"}
         </h2>
@@ -168,7 +215,6 @@ const CartScreen = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  {/* Lab name */}
                   {currentLabName && (
                     <div className="flex items-center gap-1.5 mb-2">
                       <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center">
@@ -191,7 +237,6 @@ const CartScreen = () => {
           ))}
         </motion.div>
 
-        {/* Add more tests */}
         <button
           onClick={() => navigate("/categories")}
           className="w-full mt-3 py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary text-sm font-medium flex items-center justify-center gap-1.5 hover:border-primary/50 transition-colors"
@@ -267,7 +312,7 @@ const CartScreen = () => {
 
           {!isPatientInfoValid && (patientName || patientAge || patientPhone || contactPhone) && (
             <div className="mt-3 text-xs text-destructive">
-              Please provide a valid full name, age (1–120), gender, 10-digit patient phone, and contact phone.
+              Please fill all fields: name, age, gender, phones, and select an address.
             </div>
           )}
         </motion.div>
@@ -321,6 +366,64 @@ const CartScreen = () => {
             </div>
           )}
         </motion.div>
+
+        {/* Collection Address */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Collection Address *</h3>
+            </div>
+            <button onClick={() => navigate("/saved-addresses")} className="text-xs font-medium text-primary flex items-center gap-0.5">
+              Manage <ChevronRight className="w-3 h-3" />
+            </button>
+          </div>
+
+          {addressLoading ? (
+            <div className="space-y-2">
+              <Skeleton className="h-16 w-full rounded-xl" />
+            </div>
+          ) : savedAddresses.length === 0 ? (
+            <button
+              onClick={() => navigate("/saved-addresses")}
+              className="w-full bg-card rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors p-4"
+            >
+              <div className="flex flex-col items-center py-2">
+                <MapPin className="w-8 h-8 text-primary mb-2" />
+                <p className="text-sm font-medium text-foreground">Add Collection Address</p>
+                <p className="text-xs text-muted-foreground mt-1">Tap to add your address</p>
+              </div>
+            </button>
+          ) : (
+            <div className="space-y-2">
+              {savedAddresses.map((addr) => (
+                <button
+                  key={addr.id}
+                  onClick={() => setSelectedAddressId(addr.id)}
+                  className={`w-full text-left bg-card rounded-xl border p-3 transition-all ${
+                    selectedAddressId === addr.id
+                      ? "ring-2 ring-primary border-primary"
+                      : "border-border hover:border-primary/40"
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-foreground">{addr.type || "Home"}</span>
+                        {addr.is_default && <Badge variant="soft" className="text-[10px] px-1.5 py-0">Default</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
+                    </div>
+                    {selectedAddressId === addr.id && (
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
 
       {/* Bottom CTA */}
@@ -347,6 +450,8 @@ const CartScreen = () => {
                   patientGender,
                   patientPhone: patientPhone.trim(),
                   contactPhone: contactPhone.trim(),
+                  addressId: selectedAddressId,
+                  hasVendorLab,
                 },
               });
             }}

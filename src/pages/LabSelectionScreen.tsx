@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, Star, Clock, Shield, AlertCircle, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { Building2, Star, Clock, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BookingStepper from "@/components/BookingStepper";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PatientState {
   patientName?: string;
@@ -16,15 +16,20 @@ interface PatientState {
   patientGender?: string;
   patientPhone?: string;
   contactPhone?: string;
+  addressId?: string | null;
+  hasVendorLab?: boolean;
 }
 
-const labs = [
-  { id: "lal-pathlabs", name: "Dr. Lal PathLabs", rating: 4.8, reviews: 2500, priceMultiplier: 1, accredited: true, homeCollection: true, reportTime: "Same day" },
-  { id: "metropolis", name: "Metropolis Healthcare", rating: 4.7, reviews: 1800, priceMultiplier: 1.05, accredited: true, homeCollection: true, reportTime: "Next day" },
-  { id: "srl", name: "SRL Diagnostics", rating: 4.6, reviews: 1500, priceMultiplier: 0.95, accredited: true, homeCollection: true, reportTime: "Same day" },
-  { id: "thyrocare", name: "Thyrocare", rating: 4.5, reviews: 3200, priceMultiplier: 0.85, accredited: true, homeCollection: true, reportTime: "Next day" },
-  { id: "apollo", name: "Apollo Diagnostics", rating: 4.7, reviews: 2100, priceMultiplier: 1.1, accredited: true, homeCollection: true, reportTime: "Same day" },
-];
+interface DiagnosticCenter {
+  id: string;
+  name: string;
+  rating: number | null;
+  reviews_count: number | null;
+  home_collection_available: boolean | null;
+  vendor_id: string | null;
+  opening_time: string | null;
+  closing_time: string | null;
+}
 
 const timeSlots = [
   { id: 1, time: "6:00 AM - 8:00 AM", label: "Morning", available: true },
@@ -39,12 +44,20 @@ const LabSelectionScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const patientState = (location.state as PatientState) || {};
-  const { items, updateLabForItems, subtotal } = useCart();
-  const [selectedLabId, setSelectedLabId] = useState<string | null>(null);
-  const [selectedLabName, setSelectedLabName] = useState<string | null>(null);
+  const { items, updateLabForItems, subtotal, currentLabId, currentLabName } = useCart();
+
+  // If user booked from a vendor profile, lab is already chosen
+  const hasVendorLab = patientState.hasVendorLab || !!(currentLabId && currentLabName);
+
+  const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
+  const [selectedLabName, setSelectedLabName] = useState<string | null>(hasVendorLab ? currentLabName : null);
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
+
+  // Real diagnostic centers from Supabase
+  const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
+  const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
   const dates = Array.from({ length: 14 }, (_, i) => {
     const date = new Date();
@@ -54,12 +67,36 @@ const LabSelectionScreen = () => {
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
       fullDate: date.toISOString().split("T")[0],
-      available: i !== 2, // example: day 3 booking closed
+      available: i !== 2,
     };
   });
 
+  // Fetch diagnostic centers from Supabase (only when lab selection is needed)
   useEffect(() => {
-    if (items.length === 0) { navigate("/cart"); }
+    if (hasVendorLab) return;
+
+    const fetchLabs = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("diagnostic_centers")
+          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time")
+          .eq("is_active", true)
+          .order("rating", { ascending: false });
+
+        if (!error && data) {
+          setLabs(data);
+        }
+      } catch (err) {
+        console.error("Error fetching labs:", err);
+      } finally {
+        setLabsLoading(false);
+      }
+    };
+    fetchLabs();
+  }, [hasVendorLab]);
+
+  useEffect(() => {
+    if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
   if (items.length === 0) {
@@ -78,23 +115,36 @@ const LabSelectionScreen = () => {
   const visibleDates = dates.slice(dateScrollStart, dateScrollStart + 4);
 
   const handleConfirm = () => {
-    if (!selectedLabId || !selectedLabName) { toast.error("Please select a lab"); return; }
+    if (!hasVendorLab && (!selectedLabId || !selectedLabName)) {
+      toast.error("Please select a lab"); return;
+    }
     if (selectedTime === null) { toast.error("Please select a time slot"); return; }
 
-    updateLabForItems(selectedLabId, selectedLabName);
+    const labId = selectedLabId || currentLabId || "";
+    const labName = selectedLabName || currentLabName || "";
+
+    if (!hasVendorLab) {
+      updateLabForItems(labId, labName);
+    }
+
     const selectedSlot = timeSlots.find(s => s.id === selectedTime);
 
     navigate("/payment", {
       state: {
-        cartItems: items.map(item => ({ ...item, labId: selectedLabId, labName: selectedLabName })),
+        cartItems: items.map(item => ({ ...item, labId, labName })),
         scheduledDate: dates[selectedDate].fullDate,
         scheduledTimeSlot: selectedSlot?.time || "",
         subtotal,
-        selectedLabName,
-        selectedLabId,
+        selectedLabName: labName,
+        selectedLabId: labId,
+        addressId: patientState.addressId,
         ...patientState,
       },
     });
+  };
+
+  const getReportTime = (lab: DiagnosticCenter) => {
+    return lab.opening_time ? `${lab.opening_time} - ${lab.closing_time || "9 PM"}` : "Same day";
   };
 
   return (
@@ -103,44 +153,63 @@ const LabSelectionScreen = () => {
       <BookingStepper currentStep={2} />
 
       <div className="px-4 pb-32">
-        {/* Lab Selection */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
-          <h2 className="text-base font-bold text-foreground mb-3">Choose Your Lab</h2>
-          <div className="space-y-2">
-            {labs.map((lab) => {
-              const labPrice = Math.round(subtotal * lab.priceMultiplier);
-              return (
-                <button
-                  key={lab.id}
-                  onClick={() => { setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
-                  className={`w-full bg-card rounded-xl border p-3 flex items-center gap-3 transition-all text-left ${
-                    selectedLabId === lab.id ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
-                  }`}
-                >
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Building2 className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground text-sm truncate">{lab.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      <Star className="w-3 h-3 text-warning fill-warning" />
-                      <span>{lab.rating}</span>
-                      <span>•</span>
-                      <Clock className="w-3 h-3" />
-                      <span>{lab.reportTime}</span>
+        {/* Lab Selection - only show when user hasn't booked from a vendor profile */}
+        {!hasVendorLab && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+            <h2 className="text-base font-bold text-foreground mb-3">Choose Your Lab</h2>
+            {labsLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              </div>
+            ) : labs.length === 0 ? (
+              <div className="text-center py-8">
+                <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No labs available in your area</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {labs.map((lab) => (
+                  <button
+                    key={lab.id}
+                    onClick={() => { setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
+                    className={`w-full bg-card rounded-xl border p-3 flex items-center gap-3 transition-all text-left ${
+                      selectedLabId === lab.id ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Building2 className="w-5 h-5 text-primary" />
                     </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-foreground">₹{labPrice}</p>
-                    {lab.priceMultiplier < 1 && (
-                      <p className="text-[10px] text-success">Save ₹{subtotal - labPrice}</p>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground text-sm truncate">{lab.name}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        <Star className="w-3 h-3 text-warning fill-warning" />
+                        <span>{lab.rating || 4.5}</span>
+                        <span>•</span>
+                        <Clock className="w-3 h-3" />
+                        <span>{getReportTime(lab)}</span>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Show selected lab info when vendor lab is pre-selected */}
+        {hasVendorLab && currentLabName && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+            <div className="bg-card rounded-xl border border-primary/30 p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">Selected Lab</p>
+                <p className="font-semibold text-foreground text-sm truncate">{currentLabName}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Date Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -193,8 +262,6 @@ const LabSelectionScreen = () => {
         {/* Time Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
           <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
-
-          {/* Morning Slots */}
           <div className="mb-4">
             <p className="text-xs text-muted-foreground mb-2 font-medium">☀️ Morning Slots (AM)</p>
             <div className="grid grid-cols-2 gap-2">
@@ -216,8 +283,6 @@ const LabSelectionScreen = () => {
               ))}
             </div>
           </div>
-
-          {/* Afternoon / Evening */}
           <div>
             <p className="text-xs text-muted-foreground mb-2 font-medium">🌤️ Afternoon & Evening</p>
             <div className="grid grid-cols-2 gap-2">
@@ -251,7 +316,7 @@ const LabSelectionScreen = () => {
           variant="hero"
           className="w-full"
           size="lg"
-          disabled={!selectedLabId || selectedTime === null}
+          disabled={(!hasVendorLab && !selectedLabId) || selectedTime === null}
           onClick={handleConfirm}
         >
           Confirm
