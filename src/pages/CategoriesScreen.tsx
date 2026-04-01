@@ -24,7 +24,7 @@ import {
   TestTubes,
   Scan,
   HeartPulse,
-  Lungs,
+  Wind,
   type LucideIcon,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
