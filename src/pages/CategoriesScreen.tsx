@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 const iconPool: LucideIcon[] = [
   Droplets, Activity, Pill, Sun, Heart, UserCheck, Stethoscope, Baby,
   Brain, Bone, Microscope, Dna, ShieldCheck, Thermometer, Eye, Ear,
-  Syringe, Beaker, TestTubes, Scan, HeartPulse, Lungs,
+  Syringe, Beaker, TestTubes, Scan, HeartPulse, Wind,
 ];
 
 const colorPool: string[] = [
