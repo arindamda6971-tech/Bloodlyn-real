@@ -123,7 +123,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
         const cartItemsToInsert = cartItems.map((item) => ({
           user_id: userId,
-          test_id: item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || !isUuid(item.id) ? null : item.id,
+          // Always null test_id to avoid FK constraint issues with bridge/external test IDs
+          test_id: null,
           test_name: item.name,
           price: item.price,
           lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
