@@ -1,9 +1,8 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, FlaskConical, IndianRupee, Clock, FileText, ShoppingCart, Plus } from "lucide-react";
+import { Loader2, FlaskConical, ShoppingCart, Plus } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
@@ -74,7 +73,6 @@ const CategoryTestsScreen = () => {
         ) : (
           <div className="space-y-3">
             {tests.map((test, index) => {
-              const price = test.price > 0 ? test.price : test.collection_fee || 0;
               const alreadyInCart = isInCart(test.id);
 
               return (
@@ -85,32 +83,12 @@ const CategoryTestsScreen = () => {
                   transition={{ delay: index * 0.05 }}
                   className="soft-card"
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <FlaskConical className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-foreground text-sm">{test.test_name}</h3>
-                      <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                        {price > 0 && (
-                          <span className="flex items-center gap-0.5 font-semibold text-foreground">
-                            <IndianRupee className="w-3 h-3" />
-                            {price}
-                          </span>
-                        )}
-                        {test.report_delivery_time && (
-                          <span className="flex items-center gap-0.5">
-                            <Clock className="w-3 h-3" />
-                            {test.report_delivery_time}h
-                          </span>
-                        )}
-                      </div>
-                      {test.prerequisites && (
-                        <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                          <FileText className="w-3 h-3" />
-                          {test.prerequisites}
-                        </p>
-                      )}
                     </div>
                     <div className="flex-shrink-0">
                       {alreadyInCart ? (
