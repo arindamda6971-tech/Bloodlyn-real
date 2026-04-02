@@ -21,7 +21,7 @@ import LoginScreen from "./pages/LoginScreen";
 // All other screens — lazily loaded to reduce initial bundle
 const LocationCheckScreen = lazy(() => import("./pages/LocationCheckScreen").catch(() => { window.location.reload(); return import("./pages/LocationCheckScreen"); }));
 const InstallScreen = lazy(() => import("./pages/InstallScreen"));
-const HomeScreen = lazy(() => import("./pages/HomeScreen"));
+const HomeScreen = lazy(() => import("./pages/HomeScreen").catch(() => { window.location.reload(); return import("./pages/HomeScreen"); }));
 const CategoriesScreen = lazy(() => import("./pages/CategoriesScreen"));
 const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
 const TestDetailScreen = lazy(() => import("./pages/TestDetailScreen"));
