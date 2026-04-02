@@ -145,6 +145,7 @@ const UploadPrescriptionScreen = () => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Image = reader.result as string;
+        setImageBase64Cache(base64Image);
         setUploadedImage(base64Image);
         setAnalysisComplete(false);
         setMatchedTests([]);
