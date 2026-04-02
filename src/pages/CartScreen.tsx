@@ -35,24 +35,50 @@ interface SavedAddress {
   is_default: boolean | null;
 }
 
+// Session storage keys for persisting patient details
+const PATIENT_STORAGE_KEY = "bloodlyn-patient-details";
+
+const loadPatientDetails = () => {
+  try {
+    const saved = sessionStorage.getItem(PATIENT_STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return null;
+};
+
+const savePatientDetails = (details: any) => {
+  try {
+    sessionStorage.setItem(PATIENT_STORAGE_KEY, JSON.stringify(details));
+  } catch {}
+};
+
+const clearPatientDetails = () => {
+  try {
+    sessionStorage.removeItem(PATIENT_STORAGE_KEY);
+  } catch {}
+};
+
 const CartScreen = () => {
   const navigate = useNavigate();
   const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
-  const [selectedMemberId, setSelectedMemberId] = useState<string | "self">("self");
 
-  // Patient details
-  const [patientName, setPatientName] = useState("");
-  const [patientAge, setPatientAge] = useState("");
-  const [patientGender, setPatientGender] = useState("");
-  const [patientPhone, setPatientPhone] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
+  // Load persisted patient details
+  const saved = loadPatientDetails();
+  const [selectedMemberId, setSelectedMemberId] = useState<string | "self">(saved?.selectedMemberId || "self");
+  const [patientName, setPatientName] = useState(saved?.patientName || "");
+  const [patientAge, setPatientAge] = useState(saved?.patientAge || "");
+  const [patientGender, setPatientGender] = useState(saved?.patientGender || "");
+  const [patientPhone, setPatientPhone] = useState(saved?.patientPhone || "");
+
+  // Validation highlight
+  const [showValidation, setShowValidation] = useState(false);
 
   // Address
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(saved?.selectedAddressId || null);
   const [addressLoading, setAddressLoading] = useState(true);
 
   const isPatientInfoValid =
@@ -62,8 +88,26 @@ const CartScreen = () => {
     Number(patientAge) <= 120 &&
     patientGender.trim().length > 0 &&
     /^\d{10}$/.test(patientPhone) &&
-    /^\d{10}$/.test(contactPhone) &&
     selectedAddressId !== null;
+
+  // Persist patient details on change
+  useEffect(() => {
+    savePatientDetails({
+      selectedMemberId,
+      patientName,
+      patientAge,
+      patientGender,
+      patientPhone,
+      selectedAddressId,
+    });
+  }, [selectedMemberId, patientName, patientAge, patientGender, patientPhone, selectedAddressId]);
+
+  // Clear patient details when cart becomes empty
+  useEffect(() => {
+    if (!isLoading && items.length === 0) {
+      clearPatientDetails();
+    }
+  }, [items.length, isLoading]);
 
   // Prescription upload
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,7 +118,10 @@ const CartScreen = () => {
 
   useEffect(() => {
     if (selectedMemberId === "self") {
-      setPatientName(""); setPatientAge(""); setPatientGender(""); setPatientPhone("");
+      // Only reset if not loading from saved
+      if (!saved?.patientName) {
+        setPatientName(""); setPatientAge(""); setPatientGender(""); setPatientPhone("");
+      }
     } else {
       const member = familyMembers.find((m) => m.id === selectedMemberId);
       if (member) {
@@ -82,6 +129,7 @@ const CartScreen = () => {
         setPatientGender(member.gender); setPatientPhone(member.phone);
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMemberId, familyMembers]);
 
   // Fetch saved addresses
@@ -96,9 +144,11 @@ const CartScreen = () => {
           .order("is_default", { ascending: false });
         if (!error && data) {
           setSavedAddresses(data);
-          const defaultAddr = data.find((a) => a.is_default);
-          if (defaultAddr) setSelectedAddressId(defaultAddr.id);
-          else if (data.length > 0) setSelectedAddressId(data[0].id);
+          if (!selectedAddressId) {
+            const defaultAddr = data.find((a) => a.is_default);
+            if (defaultAddr) setSelectedAddressId(defaultAddr.id);
+            else if (data.length > 0) setSelectedAddressId(data[0].id);
+          }
         }
       } catch (err) {
         console.error("Error fetching addresses:", err);
@@ -156,6 +206,28 @@ const CartScreen = () => {
     return parts.join(", ");
   };
 
+  const handleCheckout = () => {
+    if (!isPatientInfoValid) {
+      setShowValidation(true);
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    // Determine if the cart has a pre-selected lab (from vendor profile booking)
+    const hasVendorLab = items.some((item) => item.labId && item.labName);
+
+    navigate("/lab-selection", {
+      state: {
+        patientName: patientName.trim(),
+        patientAge: patientAge ? Number(patientAge) : null,
+        patientGender,
+        patientPhone: patientPhone.trim(),
+        addressId: selectedAddressId,
+        hasVendorLab,
+      },
+    });
+  };
+
   if (isLoading) {
     return (
       <MobileLayout>
@@ -190,8 +262,8 @@ const CartScreen = () => {
     );
   }
 
-  // Determine if the cart has a pre-selected lab (from vendor profile booking)
-  const hasVendorLab = items.some((item) => item.labId && item.labName);
+  const validationBorder = (isValid: boolean) =>
+    showValidation && !isValid ? "ring-2 ring-destructive border-destructive" : "";
 
   return (
     <MobileLayout>
@@ -200,7 +272,7 @@ const CartScreen = () => {
 
       <div className="px-4 pb-44">
         <h2 className="text-lg font-bold text-foreground mb-3">
-          {items.length} Cart {items.length === 1 ? "Item" : "Items"}
+          {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? "Test" : "Tests"} Added
         </h2>
 
         {/* Cart items */}
@@ -215,16 +287,7 @@ const CartScreen = () => {
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
-                  {currentLabName && (
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center">
-                        <Building2 className="w-3 h-3 text-primary" />
-                      </div>
-                      <span className="text-xs text-muted-foreground truncate">{currentLabName}</span>
-                    </div>
-                  )}
                   <h3 className="font-semibold text-foreground text-sm">{item.name}</h3>
-                  <p className="text-primary font-bold mt-1">₹{item.price}</p>
                 </div>
                 <button
                   onClick={() => removeFromCart(item.id)}
@@ -275,17 +338,17 @@ const CartScreen = () => {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <Label htmlFor="patient_name">Full Name *</Label>
-              <Input id="patient_name" placeholder="Enter full name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className="bg-muted border-0 rounded-xl" />
+              <Input id="patient_name" placeholder="Enter full name" value={patientName} onChange={(e) => setPatientName(e.target.value)} className={`bg-muted border-0 rounded-xl ${validationBorder(patientName.trim().length > 0)}`} />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="patient_age">Age *</Label>
-                <Input id="patient_age" placeholder="Age" value={patientAge} onChange={(e) => setPatientAge(e.target.value.replace(/[^0-9]/g, ""))} className="bg-muted border-0 rounded-xl" maxLength={3} />
+                <Input id="patient_age" placeholder="Age" value={patientAge} onChange={(e) => setPatientAge(e.target.value.replace(/[^0-9]/g, ""))} className={`bg-muted border-0 rounded-xl ${validationBorder(/^\d{1,3}$/.test(patientAge) && Number(patientAge) > 0 && Number(patientAge) <= 120)}`} maxLength={3} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="patient_gender">Gender *</Label>
                 <Select value={patientGender} onValueChange={setPatientGender}>
-                  <SelectTrigger className="bg-muted border-0 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className={`bg-muted border-0 rounded-xl ${validationBorder(patientGender.trim().length > 0)}`}><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Male">Male</SelectItem>
                     <SelectItem value="Female">Female</SelectItem>
@@ -298,23 +361,10 @@ const CartScreen = () => {
               <Label htmlFor="patient_phone">Patient Phone *</Label>
               <div className="flex items-center gap-2">
                 <span className="flex h-10 items-center rounded-xl bg-muted px-3 text-sm font-medium text-muted-foreground select-none">+91</span>
-                <Input id="patient_phone" placeholder="10-digit number" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value.replace(/[^0-9]/g, ""))} className="bg-muted border-0 rounded-xl flex-1" maxLength={10} />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="valid_phone">Contact Phone Number *</Label>
-              <div className="flex items-center gap-2">
-                <span className="flex h-10 items-center rounded-xl bg-muted px-3 text-sm font-medium text-muted-foreground select-none">+91</span>
-                <Input id="valid_phone" placeholder="10-digit number" value={contactPhone} onChange={(e) => setContactPhone(e.target.value.replace(/[^0-9]/g, ""))} className="bg-muted border-0 rounded-xl flex-1" maxLength={10} />
+                <Input id="patient_phone" placeholder="10-digit number" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value.replace(/[^0-9]/g, ""))} className={`bg-muted border-0 rounded-xl flex-1 ${validationBorder(/^\d{10}$/.test(patientPhone))}`} maxLength={10} />
               </div>
             </div>
           </div>
-
-          {!isPatientInfoValid && (patientName || patientAge || patientPhone || contactPhone) && (
-            <div className="mt-3 text-xs text-destructive">
-              Please fill all fields: name, age, gender, phones, and select an address.
-            </div>
-          )}
         </motion.div>
 
         <AddFamilyMemberDialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog} onAdd={addMember} />
@@ -386,7 +436,7 @@ const CartScreen = () => {
           ) : savedAddresses.length === 0 ? (
             <button
               onClick={() => navigate("/saved-addresses")}
-              className="w-full bg-card rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors p-4"
+              className={`w-full bg-card rounded-2xl border-2 border-dashed transition-colors p-4 ${showValidation && !selectedAddressId ? "border-destructive" : "border-primary/30 hover:border-primary/50"}`}
             >
               <div className="flex flex-col items-center py-2">
                 <MapPin className="w-8 h-8 text-primary mb-2" />
@@ -403,6 +453,8 @@ const CartScreen = () => {
                   className={`w-full text-left bg-card rounded-xl border p-3 transition-all ${
                     selectedAddressId === addr.id
                       ? "ring-2 ring-primary border-primary"
+                      : showValidation && !selectedAddressId
+                      ? "border-destructive"
                       : "border-border hover:border-primary/40"
                   }`}
                 >
@@ -426,39 +478,20 @@ const CartScreen = () => {
         </motion.div>
       </div>
 
-      {/* Bottom CTA */}
+      {/* Bottom CTA — full width checkout */}
       <motion.div
         initial={{ y: 100 }} animate={{ y: 0 }}
         className="fixed left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40"
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
       >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Total Price</span>
-            <span className="text-lg font-bold text-foreground">₹{subtotal}/-</span>
-          </div>
-          <Button
-            variant="hero"
-            className="flex-1 max-w-[200px]"
-            size="lg"
-            disabled={!isPatientInfoValid}
-            onClick={() => {
-              navigate("/lab-selection", {
-                state: {
-                  patientName: patientName.trim(),
-                  patientAge: patientAge ? Number(patientAge) : null,
-                  patientGender,
-                  patientPhone: patientPhone.trim(),
-                  contactPhone: contactPhone.trim(),
-                  addressId: selectedAddressId,
-                  hasVendorLab,
-                },
-              });
-            }}
-          >
-            Checkout
-          </Button>
-        </div>
+        <Button
+          variant="hero"
+          className="w-full"
+          size="lg"
+          onClick={handleCheckout}
+        >
+          Checkout
+        </Button>
       </motion.div>
     </MobileLayout>
   );

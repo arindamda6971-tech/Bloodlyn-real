@@ -29,6 +29,7 @@ interface DiagnosticCenter {
   vendor_id: string | null;
   opening_time: string | null;
   closing_time: string | null;
+  available_tests: any;
 }
 
 const timeSlots = [
@@ -71,7 +72,7 @@ const LabSelectionScreen = () => {
     };
   });
 
-  // Fetch diagnostic centers from Supabase (only when lab selection is needed)
+  // Fetch diagnostic centers from Supabase, filter by cart test names
   useEffect(() => {
     if (hasVendorLab) return;
 
@@ -79,12 +80,33 @@ const LabSelectionScreen = () => {
       try {
         const { data, error } = await supabase
           .from("diagnostic_centers")
-          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time")
+          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time, available_tests")
           .eq("is_active", true)
           .order("rating", { ascending: false });
 
         if (!error && data) {
-          setLabs(data);
+          // Filter labs: only show labs whose available_tests contain ALL cart items
+          const cartTestNames = items.map(item => item.name.toLowerCase());
+          
+          const filteredLabs = data.filter((lab) => {
+            if (!lab.available_tests || !Array.isArray(lab.available_tests) || lab.available_tests.length === 0) {
+              return false; // No tests listed = don't show
+            }
+            // Build a set of test names from the lab
+            const labTestNames = new Set<string>();
+            lab.available_tests.forEach((t: any) => {
+              const name = (t.test_name || t.name || t.product_name || "").toLowerCase();
+              if (name) labTestNames.add(name);
+            });
+            // Check if ALL cart tests are offered by this lab
+            return cartTestNames.every(cartName => {
+              return Array.from(labTestNames).some(labName => 
+                labName.includes(cartName) || cartName.includes(labName)
+              );
+            });
+          });
+
+          setLabs(filteredLabs);
         }
       } catch (err) {
         console.error("Error fetching labs:", err);
@@ -93,7 +115,7 @@ const LabSelectionScreen = () => {
       }
     };
     fetchLabs();
-  }, [hasVendorLab]);
+  }, [hasVendorLab, items]);
 
   useEffect(() => {
     if (items.length === 0) navigate("/cart");
@@ -111,6 +133,23 @@ const LabSelectionScreen = () => {
       </MobileLayout>
     );
   }
+
+  // Get the price for the selected lab
+  const getLabPrice = (lab: DiagnosticCenter): number => {
+    if (!lab.available_tests || !Array.isArray(lab.available_tests)) return 0;
+    let total = 0;
+    const cartTestNames = items.map(item => item.name.toLowerCase());
+    cartTestNames.forEach(cartName => {
+      const found = lab.available_tests.find((t: any) => {
+        const name = (t.test_name || t.name || t.product_name || "").toLowerCase();
+        return name.includes(cartName) || cartName.includes(name);
+      });
+      if (found) {
+        total += Number(found.price) || 0;
+      }
+    });
+    return total;
+  };
 
   const visibleDates = dates.slice(dateScrollStart, dateScrollStart + 4);
 
@@ -143,10 +182,6 @@ const LabSelectionScreen = () => {
     });
   };
 
-  const getReportTime = (lab: DiagnosticCenter) => {
-    return lab.opening_time ? `${lab.opening_time} - ${lab.closing_time || "9 PM"}` : "Same day";
-  };
-
   return (
     <MobileLayout>
       <ScreenHeader title="Select Lab & Slot" />
@@ -164,33 +199,38 @@ const LabSelectionScreen = () => {
             ) : labs.length === 0 ? (
               <div className="text-center py-8">
                 <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No labs available in your area</p>
+                <p className="text-sm text-muted-foreground">No labs available for your selected tests</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {labs.map((lab) => (
-                  <button
-                    key={lab.id}
-                    onClick={() => { setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
-                    className={`w-full bg-card rounded-xl border p-3 flex items-center gap-3 transition-all text-left ${
-                      selectedLabId === lab.id ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Building2 className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground text-sm truncate">{lab.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                        <Star className="w-3 h-3 text-warning fill-warning" />
-                        <span>{lab.rating || 4.5}</span>
-                        <span>•</span>
-                        <Clock className="w-3 h-3" />
-                        <span>{getReportTime(lab)}</span>
+                {labs.map((lab) => {
+                  const labPrice = getLabPrice(lab);
+                  return (
+                    <button
+                      key={lab.id}
+                      onClick={() => { setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
+                      className={`w-full bg-card rounded-xl border p-3 flex items-center gap-3 transition-all text-left ${
+                        selectedLabId === lab.id ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-5 h-5 text-primary" />
                       </div>
-                    </div>
-                  </button>
-                ))}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate">{lab.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                          <Star className="w-3 h-3 text-warning fill-warning" />
+                          <span>{lab.rating || 4.5}</span>
+                        </div>
+                      </div>
+                      {labPrice > 0 && (
+                        <div className="text-right flex-shrink-0">
+                          <p className="font-bold text-primary text-sm">₹{labPrice}</p>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </motion.div>

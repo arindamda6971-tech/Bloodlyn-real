@@ -121,7 +121,7 @@ const CategoryTestsScreen = () => {
         )}
       </div>
 
-      {/* Cart Footer */}
+      {/* Cart Footer — show item count only, no price */}
       {items.length > 0 && (
         <motion.div
           initial={{ y: 100 }}
@@ -131,10 +131,7 @@ const CategoryTestsScreen = () => {
         >
           <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-              <p className="text-lg font-bold text-foreground">
-                ₹{items.reduce((sum, i) => sum + i.price * i.quantity, 0)}
-              </p>
+              <span className="text-sm font-semibold text-foreground">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
             </div>
             <Button variant="hero" size="lg" onClick={() => navigate("/cart")}>
               View Cart

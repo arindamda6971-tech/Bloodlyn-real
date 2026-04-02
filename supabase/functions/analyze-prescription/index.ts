@@ -1,18 +1,15 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// List of allowed origins for CORS
 const ALLOWED_ORIGINS = [
   'https://bloodlyn.app',
   'https://www.bloodlyn.app',
 ];
 
-// Check if origin matches Lovable preview pattern
 const isLovablePreview = (origin: string): boolean => {
   return /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin) ||
          /^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(origin);
 };
 
-// Check if origin is localhost for development
 const isLocalhost = (origin: string): boolean => {
   return /^https?:\/\/localhost(:\d+)?$/.test(origin) ||
          /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
@@ -20,14 +17,8 @@ const isLocalhost = (origin: string): boolean => {
 
 const getCorsHeaders = (request: Request): Record<string, string> => {
   const origin = request.headers.get('origin') || '';
-  
-  const isAllowed = 
-    ALLOWED_ORIGINS.includes(origin) ||
-    isLovablePreview(origin) ||
-    isLocalhost(origin);
-  
+  const isAllowed = ALLOWED_ORIGINS.includes(origin) || isLovablePreview(origin) || isLocalhost(origin);
   const allowedOrigin = isAllowed ? origin : ALLOWED_ORIGINS[0] || 'https://bloodlyn.app';
-  
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -36,8 +27,6 @@ const getCorsHeaders = (request: Request): Record<string, string> => {
   };
 };
 
-// Simple runtime authentication: require Authorization header and validate the token
-// against Supabase Auth to prevent anonymous access to the prescription analyzer.
 const ensureAuthenticated = async (request: Request, corsHeaders: Record<string, string>) => {
   const authHeader = request.headers.get('authorization') || '';
   if (!authHeader.startsWith('Bearer ')) {
@@ -49,21 +38,16 @@ const ensureAuthenticated = async (request: Request, corsHeaders: Record<string,
 
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
   if (!SUPABASE_URL) {
-    console.error('SUPABASE_URL is not configured');
     return new Response(
       JSON.stringify({ error: 'Server misconfiguration' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
-  // Validate token using Supabase Auth's /user endpoint
   try {
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        Authorization: authHeader,
-        apikey: SUPABASE_ANON_KEY,
-      },
+      headers: { Authorization: authHeader, apikey: SUPABASE_ANON_KEY },
     });
     if (!res.ok) {
       return new Response(
@@ -71,8 +55,6 @@ const ensureAuthenticated = async (request: Request, corsHeaders: Record<string,
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // token valid — return null to indicate OK
     return null;
   } catch (err) {
     console.error('Error validating auth token', err);
@@ -90,7 +72,6 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Enforce authentication at runtime (extra safety even if verify_jwt is enabled)
   const authCheck = await ensureAuthenticated(req, corsHeaders);
   if (authCheck) return authCheck;
 
@@ -104,8 +85,7 @@ serve(async (req) => {
       );
     }
 
-    // Validate payload size and format
-    const MAX_B64_BYTES = 7_000_000; // ~5 MB image in base64
+    const MAX_B64_BYTES = 7_000_000;
     if (typeof imageBase64 !== 'string' || imageBase64.length > MAX_B64_BYTES) {
       return new Response(
         JSON.stringify({ error: "Image too large. Maximum size is 5 MB." }),
@@ -129,39 +109,73 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are a medical prescription analyzer. Analyze the prescription image and extract the names of medical tests that are recommended or prescribed.
+    const systemPrompt = `You are an expert medical prescription and lab test order analyzer with extensive knowledge of diagnostic tests across India.
 
-IMPORTANT: Only extract actual medical/diagnostic test names. Do not include medications, dosages, or general instructions.
+Your task: Carefully read the prescription/lab order image and extract EVERY medical or diagnostic test mentioned.
 
-Common medical tests include:
-- Blood tests: CBC, Hemoglobin, Blood Sugar, HbA1c, Lipid Profile, etc.
-- Thyroid tests: T3, T4, TSH, Thyroid Profile
-- Liver tests: LFT, SGOT, SGPT, Bilirubin
-- Kidney tests: KFT, Creatinine, BUN, Uric Acid
-- Diabetes tests: Fasting Blood Sugar, Post Prandial Blood Sugar, HbA1c
-- Heart tests: ECG, Troponin, BNP
-- Vitamin tests: Vitamin D, Vitamin B12, Iron, Ferritin
-- Urine tests: Urine Routine, Urine Culture
-- Other: X-Ray, Ultrasound, CT Scan, MRI, etc.
+CRITICAL INSTRUCTIONS:
+1. Read the ENTIRE prescription carefully - do not miss any test names
+2. Look for handwritten AND printed text
+3. Recognize common abbreviations and full forms
+4. If handwriting is unclear, make your best interpretation and note it
+5. Include ALL tests even if partially legible
+6. Do NOT include medications, dosages, or instructions - ONLY diagnostic tests
 
-Respond with a JSON object in this exact format:
+COMMON TEST NAME MAPPINGS (use full names when possible):
+- CBC / CBP → Complete Blood Count
+- FBS / FBG → Fasting Blood Sugar
+- PPBS / PPBG → Post Prandial Blood Sugar
+- RBS → Random Blood Sugar
+- HbA1c / A1C → Glycated Hemoglobin (HbA1c)
+- TFT / Thyroid → Thyroid Function Test / Thyroid Profile
+- TSH → Thyroid Stimulating Hormone
+- T3, T4 → Triiodothyronine, Thyroxine
+- LFT → Liver Function Test
+- KFT / RFT → Kidney Function Test / Renal Function Test
+- Lipid Profile → Lipid Profile
+- TC / TG / HDL / LDL → Total Cholesterol, Triglycerides, HDL, LDL
+- ESR → Erythrocyte Sedimentation Rate
+- CRP → C-Reactive Protein
+- Urine R/M / Urine RE → Urine Routine & Microscopy
+- Vit D / 25 OH → Vitamin D (25-Hydroxy)
+- Vit B12 → Vitamin B12
+- Iron / Ferritin / TIBC → Iron Studies
+- PT / INR → Prothrombin Time
+- SGOT / AST → Aspartate Aminotransferase
+- SGPT / ALT → Alanine Aminotransferase
+- S. Creatinine → Serum Creatinine
+- BUN → Blood Urea Nitrogen
+- Uric Acid → Serum Uric Acid
+- S. Calcium → Serum Calcium
+- Electrolytes → Serum Electrolytes (Na+, K+, Cl-)
+- PSA → Prostate Specific Antigen
+- RA Factor / RF → Rheumatoid Factor
+- ANA → Antinuclear Antibody
+- Widal → Widal Test
+- HBsAg → Hepatitis B Surface Antigen
+- HIV → HIV 1 & 2 Antibody
+- Dengue NS1 → Dengue NS1 Antigen
+- MP → Malaria Parasite
+- Blood Group → Blood Grouping & Rh Typing
+
+Respond with a JSON object:
 {
   "tests": [
     {
-      "name": "Full test name",
-      "shortName": "Abbreviation if any",
-      "category": "Blood/Thyroid/Liver/Kidney/Diabetes/Heart/Vitamin/Urine/Imaging/Other"
+      "name": "Full standard test name",
+      "shortName": "Common abbreviation",
+      "category": "Blood/Thyroid/Liver/Kidney/Diabetes/Heart/Vitamin/Urine/Imaging/Infection/Hormone/Other"
     }
   ],
   "confidence": "high/medium/low",
-  "notes": "Any relevant observations about the prescription"
+  "notes": "Brief observations about prescription quality, doctor details if visible, any unclear text"
 }
 
-If you cannot identify any tests or the image is not a valid prescription, respond with:
+If no tests found:
 {
   "tests": [],
   "confidence": "low",
-  "notes": "Explanation of why no tests were found"
+  "notes": "Reason why no tests were identified"
 }`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -179,13 +193,11 @@ If you cannot identify any tests or the image is not a valid prescription, respo
             content: [
               {
                 type: "text",
-                text: "Please analyze this prescription image and extract all medical test names that are prescribed or recommended."
+                text: "Carefully analyze this medical prescription image. Extract every diagnostic/lab test name mentioned. Read handwritten text carefully. Use standard test names."
               },
               {
                 type: "image_url",
-                image_url: {
-                  url: imageBase64
-                }
+                image_url: { url: imageBase64 }
               }
             ]
           }
@@ -195,7 +207,6 @@ If you cannot identify any tests or the image is not a valid prescription, respo
 
     if (!response.ok) {
       console.error("AI gateway error:", response.status);
-      
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
@@ -208,7 +219,6 @@ If you cannot identify any tests or the image is not a valid prescription, respo
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      
       return new Response(
         JSON.stringify({ error: "Failed to analyze prescription" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -225,10 +235,8 @@ If you cannot identify any tests or the image is not a valid prescription, respo
       );
     }
 
-    // Parse the AI response - try to extract JSON
     let parsedResult;
     try {
-      // Try to find JSON in the response
       const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         parsedResult = JSON.parse(jsonMatch[0]);
@@ -236,8 +244,7 @@ If you cannot identify any tests or the image is not a valid prescription, respo
         parsedResult = JSON.parse(aiResponse);
       }
     } catch (parseError) {
-      console.error("Failed to parse AI response");
-      // Return a structured error with generic message
+      console.error("Failed to parse AI response:", aiResponse);
       parsedResult = {
         tests: [],
         confidence: "low",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Edit2, Trash2, Loader, Star } from "lucide-react";
+import { MapPin, Edit2, Trash2, Loader, Star, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -190,7 +190,6 @@ const SavedAddressesScreen = () => {
 
     try {
       if (editing) {
-        // Update existing address
         const { error } = await supabase
           .from("addresses")
           .update({
@@ -209,7 +208,6 @@ const SavedAddressesScreen = () => {
         if (error) throw error;
         toast.success("Address updated");
       } else {
-        // Add new address
         const { error } = await supabase
           .from("addresses")
           .insert({
@@ -264,13 +262,11 @@ const SavedAddressesScreen = () => {
     if (!supabaseUserId) return;
 
     try {
-      // First, remove default from all addresses
       await supabase
         .from("addresses")
         .update({ is_default: false })
         .eq("user_id", supabaseUserId);
 
-      // Then set the selected address as default
       const { error } = await supabase
         .from("addresses")
         .update({ is_default: true })
@@ -284,63 +280,6 @@ const SavedAddressesScreen = () => {
       console.error("Set default error:", err);
       toast.error("Failed to set default address");
     }
-  };
-
-  const handleAutoAddAddress = async () => {
-    if (!supabaseUserId) {
-      toast.error("Please log in to save addresses");
-      return;
-    }
-
-    if (!navigator?.geolocation) {
-      toast.error("Geolocation is not supported by your browser");
-      return;
-    }
-
-    setSaving(true);
-
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-
-      const geoData = await reverseGeocode(lat, lon);
-      if (geoData && geoData.address) {
-        const addressData = {
-          user_id: supabaseUserId,
-          type: "Home",
-          address_line1: geoData.address.road || geoData.address.suburb || geoData.address.residential || "Current Location",
-          address_line2: geoData.address.neighbourhood || null,
-          city: geoData.address.city || geoData.address.town || geoData.address.village || "",
-          state: geoData.address.state || "",
-          pincode: geoData.address.postcode || "",
-          latitude: lat,
-          longitude: lon,
-          is_default: addresses.length === 0,
-        };
-
-        try {
-          const { error } = await supabase
-            .from("addresses")
-            .insert(addressData);
-
-          if (error) throw error;
-          toast.success("Address added automatically");
-          await fetchAddresses();
-        } catch (err: any) {
-          console.error("Auto save error:", err);
-          toast.error(err?.message || "Failed to save address");
-        }
-      } else {
-        toast.error("Could not determine address from location");
-      }
-
-      setSaving(false);
-    }, (err) => {
-      console.error("Geolocation error", err);
-      if (err.code === 1) toast.error("Location permission denied");
-      else toast.error("Failed to get location");
-      setSaving(false);
-    }, { enableHighAccuracy: true, timeout: 15000 });
   };
 
   return (
@@ -429,7 +368,7 @@ const SavedAddressesScreen = () => {
 
             <div className="mt-2">
               <Button variant="outline" className="w-full mb-2" onClick={handleUseCurrentLocation} disabled={locLoading}>
-                {locLoading ? "Locating..." : "Use my current location"}
+                {locLoading ? "Locating..." : "Or use my current location"}
               </Button>
               {formData.latitude && formData.longitude && (
                 <p className="text-xs text-muted-foreground text-center">
@@ -532,14 +471,15 @@ const SavedAddressesScreen = () => {
         )}
       </div>
 
-      {/* Bottom buttons */}
+      {/* Bottom buttons — always show "Add Address Manually" */}
       {!isAdding && !editing && (
         <motion.div
           initial={{ y: 100 }}
           animate={{ y: 0 }}
           className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom"
         >
-          <Button variant="hero" className="w-full" onClick={handleAutoAddAddress}>
+          <Button variant="hero" className="w-full" onClick={startAdd}>
+            <Plus className="w-4 h-4 mr-2" />
             Add Address
           </Button>
         </motion.div>
