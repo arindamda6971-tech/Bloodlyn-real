@@ -58,6 +58,7 @@ const UploadPrescriptionScreen = () => {
   const [analysisNotes, setAnalysisNotes] = useState<string>("");
   const [confidence, setConfidence] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+  const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
   // Load available tests from Supabase + bridge
