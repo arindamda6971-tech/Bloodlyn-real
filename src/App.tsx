@@ -18,42 +18,46 @@ import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
 
-// All other screens — lazily loaded to reduce initial bundle
-const LocationCheckScreen = lazy(() => import("./pages/LocationCheckScreen").catch(() => { window.location.reload(); return import("./pages/LocationCheckScreen"); }));
-const InstallScreen = lazy(() => import("./pages/InstallScreen"));
-const HomeScreen = lazy(() => import("./pages/HomeScreen").catch(() => { window.location.reload(); return import("./pages/HomeScreen"); }));
-const CategoriesScreen = lazy(() => import("./pages/CategoriesScreen"));
-const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
-const TestDetailScreen = lazy(() => import("./pages/TestDetailScreen"));
-const TestSelectionScreen = lazy(() => import("./pages/TestSelectionScreen"));
-const CartScreen = lazy(() => import("./pages/CartScreen"));
-const LabSelectionScreen = lazy(() => import("./pages/LabSelectionScreen"));
-const PaymentScreen = lazy(() => import("./pages/PaymentScreen"));
-const BookingsScreen = lazy(() => import("./pages/BookingsScreen"));
-const ReportsScreen = lazy(() => import("./pages/ReportsScreen"));
-const ReportDetailScreen = lazy(() => import("./pages/ReportDetailScreen"));
-const ProfileScreen = lazy(() => import("./pages/ProfileScreen"));
-const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
-const NotificationsScreen = lazy(() => import("./pages/NotificationsScreen"));
-const SubscriptionScreen = lazy(() => import("./pages/SubscriptionScreen"));
-const SavedAddressesScreen = lazy(() => import("./pages/SavedAddressesScreen"));
-const DoctorConsultScreen = lazy(() => import("./pages/DoctorConsultScreen"));
-const PartnerLabsScreen = lazy(() => import("./pages/PartnerLabsScreen"));
-const LabDetailScreen = lazy(() => import("./pages/LabDetailScreen"));
-const PackagesScreen = lazy(() => import("./pages/PackagesScreen"));
-const PackageDetailScreen = lazy(() => import("./pages/PackageDetailScreen"));
-const UploadPrescriptionScreen = lazy(() => import("./pages/UploadPrescriptionScreen"));
-const SupportScreen = lazy(() => import("./pages/SupportScreen"));
-const PhysioConsultScreen = lazy(() => import("./pages/PhysioConsultScreen"));
-const PhysioBookingScreen = lazy(() => import("./pages/PhysioBookingScreen"));
-const ECGTestScreen = lazy(() => import("./pages/ECGTestScreen"));
-const ECGBookingScreen = lazy(() => import("./pages/ECGBookingScreen"));
-const ConsultationCallScreen = lazy(() => import("./pages/ConsultationCallScreen"));
-const ConsultationBookingScreen = lazy(() => import("./pages/ConsultationBookingScreen"));
-const OrderSuccessScreen = lazy(() => import("./pages/OrderSuccessScreen"));
-const TrackingScreen = lazy(() => import("./pages/TrackingScreen"));
-const FamilyMembersScreen = lazy(() => import("./pages/FamilyMembersScreen"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+// Stale-chunk recovery helper
+const safeImport = <T,>(factory: () => Promise<T>): Promise<T> =>
+  factory().catch(() => { window.location.reload(); return factory(); });
+
+// All other screens — lazily loaded with auto-reload fallback
+const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
+const InstallScreen = lazy(() => safeImport(() => import("./pages/InstallScreen")));
+const HomeScreen = lazy(() => safeImport(() => import("./pages/HomeScreen")));
+const CategoriesScreen = lazy(() => safeImport(() => import("./pages/CategoriesScreen")));
+const CategoryTestsScreen = lazy(() => safeImport(() => import("./pages/CategoryTestsScreen")));
+const TestDetailScreen = lazy(() => safeImport(() => import("./pages/TestDetailScreen")));
+const TestSelectionScreen = lazy(() => safeImport(() => import("./pages/TestSelectionScreen")));
+const CartScreen = lazy(() => safeImport(() => import("./pages/CartScreen")));
+const LabSelectionScreen = lazy(() => safeImport(() => import("./pages/LabSelectionScreen")));
+const PaymentScreen = lazy(() => safeImport(() => import("./pages/PaymentScreen")));
+const BookingsScreen = lazy(() => safeImport(() => import("./pages/BookingsScreen")));
+const ReportsScreen = lazy(() => safeImport(() => import("./pages/ReportsScreen")));
+const ReportDetailScreen = lazy(() => safeImport(() => import("./pages/ReportDetailScreen")));
+const ProfileScreen = lazy(() => safeImport(() => import("./pages/ProfileScreen")));
+const EditProfileScreen = lazy(() => safeImport(() => import("./pages/EditProfileScreen")));
+const NotificationsScreen = lazy(() => safeImport(() => import("./pages/NotificationsScreen")));
+const SubscriptionScreen = lazy(() => safeImport(() => import("./pages/SubscriptionScreen")));
+const SavedAddressesScreen = lazy(() => safeImport(() => import("./pages/SavedAddressesScreen")));
+const DoctorConsultScreen = lazy(() => safeImport(() => import("./pages/DoctorConsultScreen")));
+const PartnerLabsScreen = lazy(() => safeImport(() => import("./pages/PartnerLabsScreen")));
+const LabDetailScreen = lazy(() => safeImport(() => import("./pages/LabDetailScreen")));
+const PackagesScreen = lazy(() => safeImport(() => import("./pages/PackagesScreen")));
+const PackageDetailScreen = lazy(() => safeImport(() => import("./pages/PackageDetailScreen")));
+const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
+const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen")));
+const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
+const PhysioBookingScreen = lazy(() => safeImport(() => import("./pages/PhysioBookingScreen")));
+const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
+const ECGBookingScreen = lazy(() => safeImport(() => import("./pages/ECGBookingScreen")));
+const ConsultationCallScreen = lazy(() => safeImport(() => import("./pages/ConsultationCallScreen")));
+const ConsultationBookingScreen = lazy(() => safeImport(() => import("./pages/ConsultationBookingScreen")));
+const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
+const TrackingScreen = lazy(() => safeImport(() => import("./pages/TrackingScreen")));
+const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMembersScreen")));
+const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 
 const queryClient = new QueryClient();
 

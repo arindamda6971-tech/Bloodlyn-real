@@ -13,6 +13,8 @@ import {
   RefreshCw,
   FileUp,
   Stethoscope,
+  Plus,
+  Phone,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -20,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
+import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 
@@ -31,8 +34,6 @@ const getGreeting = () => {
   if (hour >= 17 && hour < 21) return "Good evening";
   return "Good night";
 };
-
-// Removed hardcoded diagnosticCenters - now fetched from database
 
 const quickActions = [
   { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-primary/10 text-primary" },
@@ -48,15 +49,15 @@ const fallbackTrendingTests = [
   { name: "Liver Function Test", price: 449, originalPrice: 799, discount: "44%", time: "12 hours" },
 ];
 
-// Health packages will be fetched from database
-
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const { addToCart, items } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [showCallSheet, setShowCallSheet] = useState(false);
   const [diagnosticCenters, setDiagnosticCenters] = useState<{id: string; name: string; rating: number; tests: number; logo?: string}[]>([]);
   const [healthPackages, setHealthPackages] = useState<{id: string; name: string; tests_count: number; price: number; original_price?: number; discount_percent?: number; icon?: string; color?: string; lab_name?: string; lab_logo?: string}[]>([]);
 
@@ -168,7 +169,6 @@ const HomeScreen = () => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return [];
 
-    // Build a searchable pool from multiple sources
     const pool: any[] = [];
 
     // Add supabase tests
@@ -178,7 +178,7 @@ const HomeScreen = () => {
       }));
     }
 
-    // Add bridge tests
+    // Add bridge tests — individual tests, not just categories
     if (bridgeData?.tests?.length) {
       bridgeData.tests.forEach((t) => pool.push({
         id: t.id, name: t.test_name, price: t.price, original_price: Math.round(t.price * 1.4), discount_percent: 29, category: t.category,
@@ -203,8 +203,7 @@ const HomeScreen = () => {
 
     return deduped.filter((item: any) => {
       const name = (item.name || "").toLowerCase();
-      const category = (item.category || "").toLowerCase();
-      return name.includes(q) || category.includes(q);
+      return name.includes(q);
     }).slice(0, 7);
   }, [searchQuery, allTests, bridgeData]);
 
@@ -220,6 +219,23 @@ const HomeScreen = () => {
           navigate(`/test/select/${test.id}`);
         }
       }
+    }
+  };
+
+  const isInCart = (testId: string) => items.some((item) => item.id === testId);
+
+  const handleAddFromSearch = (test: any) => {
+    if (isInCart(test.id)) {
+      navigate("/cart");
+      return;
+    }
+    const success = addToCart({
+      id: test.id,
+      name: test.name,
+      price: test.price,
+    });
+    if (success) {
+      toast.success(`${test.name} added to cart`);
     }
   };
 
@@ -281,6 +297,12 @@ const HomeScreen = () => {
           <div className="flex items-center gap-2">
             <button 
               className="icon-btn relative"
+              onClick={() => setShowCallSheet(true)}
+            >
+              <Phone className="w-5 h-5 text-foreground" />
+            </button>
+            <button 
+              className="icon-btn relative"
               onClick={() => navigate("/notifications")}
             >
               <Bell className="w-5 h-5 text-foreground" />
@@ -330,27 +352,43 @@ const HomeScreen = () => {
                 className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden"
               >
                 {searchResults.map((test) => (
-                  <button
+                  <div
                     key={test.id}
-                    onClick={() => {
-                      setShowSearchResults(false);
-                      setSearchQuery("");
-                      if (String(test.id).startsWith("trending-")) {
-                        navigate("/test/select", { state: { test } });
-                      } else {
-                        navigate(`/test/select/${test.id}`);
-                      }
-                    }}
                     className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors text-left border-b border-border last:border-0"
                   >
-                    <div>
+                    <button
+                      className="flex-1 min-w-0 text-left"
+                      onClick={() => {
+                        setShowSearchResults(false);
+                        setSearchQuery("");
+                        if (String(test.id).startsWith("trending-")) {
+                          navigate("/test/select", { state: { test } });
+                        } else {
+                          navigate(`/test/select/${test.id}`);
+                        }
+                      }}
+                    >
                       <p className="font-medium text-foreground text-sm">{test.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {test.discount_percent > 0 && `${test.discount_percent}% off`}
-                      </p>
-                    </div>
-                    <span className="font-semibold text-primary">₹{test.price}</span>
-                  </button>
+                      {test.discount_percent > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {test.discount_percent}% off
+                        </p>
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddFromSearch(test);
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ml-2 ${
+                        isInCart(test.id) 
+                          ? "bg-success/10 text-success" 
+                          : "bg-primary/10 text-primary"
+                      }`}
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
                 ))}
               </motion.div>
             )}
@@ -441,7 +479,7 @@ const HomeScreen = () => {
         </div>
       </motion.section>
 
-      {/* Health Packages Section - Modern Design */}
+      {/* Health Packages Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -460,143 +498,107 @@ const HomeScreen = () => {
             View all <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-        <div className="space-y-3">
-          {healthPackages.length > 0 ? (
-            // show only top 3 packages on the home screen
-            healthPackages.slice(0, 3).map((pkg, index) => {
-              const gradientColors = [
-                "from-primary/20 to-primary/10",
-                "from-success/20 to-success/10", 
-                "from-secondary/20 to-secondary/10",
-              ];
-              const borderColors = [
-                "border-primary/30",
-                "border-success/30", 
-                "border-secondary/30",
-              ];
-              const badgeColors = [
-                "bg-primary/15 text-primary",
-                "bg-success/15 text-success", 
-                "bg-secondary/15 text-secondary",
-              ];
-              const IconComponent = pkg.icon === "HeartPulse" ? HeartPulse : 
-                                   pkg.icon === "Activity" ? Activity : 
-                                   pkg.icon === "Shield" ? Shield : HeartPulse;
-              return (
-                <motion.button
-                  key={pkg.id}
-                  type="button"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  onClick={() => navigate(`/package/${pkg.id}`)}
-                  className="w-full text-left group"
-                  data-testid={`health-package-${pkg.id}`}
-                >
-                  <div className={`bg-gradient-to-br ${gradientColors[index % gradientColors.length]} border ${borderColors[index % borderColors.length]} rounded-xl p-4 hover:shadow-md hover:border-opacity-60 transition-all duration-200 overflow-hidden relative`}>
-                    {/* Background accent */}
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/20 to-transparent rounded-full -mr-8 -mt-8" />
 
-                    <div className="relative z-10 flex items-center gap-3">
-                      {/* Icon Badge */}
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradientColors[index % gradientColors.length]} backdrop-blur-md flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-200`}>
-                        <IconComponent className="w-7 h-7 text-primary" />
-                      </div>
-
-                      {/* Package Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors truncate">
-                            {pkg.name}
-                          </h3>
-                          {pkg.discount_percent && pkg.discount_percent > 0 && (
-                            <span className="inline-flex items-center px-2 py-0.5 bg-destructive/15 text-destructive rounded-full text-[10px] font-bold flex-shrink-0">
-                              {pkg.discount_percent}%
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{pkg.tests_count} tests • Comprehensive</p>
-                        {pkg.lab_name && (
-                          <p className="text-[10px] text-primary font-semibold mt-1">by {pkg.lab_name}</p>
-                        )}
-                      </div>
-
-                      {/* Price */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-foreground">₹{pkg.price}</p>
-                        {pkg.original_price && (
-                          <p className="text-[9px] text-muted-foreground line-through">₹{pkg.original_price}</p>
-                        )}
-                      </div>
-                    </div>
+        {healthPackages.length > 0 ? (
+          <div className="space-y-3">
+            {healthPackages.map((pkg, index) => (
+              <motion.div
+                key={pkg.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + index * 0.08 }}
+                onClick={() => navigate(`/package/${pkg.id}`)}
+                className="soft-card p-4 cursor-pointer hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-12 h-12 rounded-2xl ${pkg.color || 'bg-primary/10'} flex items-center justify-center flex-shrink-0`}>
+                    <Shield className="w-6 h-6 text-primary" />
                   </div>
-                </motion.button>
-              );
-            })
-          ) : (
-            // Fallback if no packages loaded
-            [
-              { name: "Full Body Checkup", tests: 70, price: 1499, icon: "HeartPulse" },
-              { name: "Comprehensive Health Package", tests: 85, price: 2499, icon: "Activity" },
-              { name: "Wellness Package", tests: 45, price: 999, icon: "Shield" },
-            ].map((plan, index) => {
-              const gradientColors = [
-                "from-primary/20 to-primary/10",
-                "from-success/20 to-success/10", 
-                "from-secondary/20 to-secondary/10",
-              ];
-              const borderColors = [
-                "border-primary/30",
-                "border-success/30", 
-                "border-secondary/30",
-              ];
-              const IconComponent = plan.icon === "Activity" ? Activity : 
-                                   plan.icon === "Shield" ? Shield : HeartPulse;
-              return (
-                <motion.button
-                  key={plan.name}
-                  type="button"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + index * 0.1 }}
-                  onClick={() => navigate("/packages")}
-                  className="w-full text-left group"
-                >
-                  <div className={`bg-gradient-to-br ${gradientColors[index % gradientColors.length]} border ${borderColors[index % borderColors.length]} rounded-xl p-4 hover:shadow-md transition-all duration-200`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${gradientColors[index % gradientColors.length]} flex items-center justify-center flex-shrink-0`}>
-                        <IconComponent className="w-7 h-7 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground text-sm truncate">{plan.name}</h3>
-                        <p className="text-xs text-muted-foreground mt-0.5">{plan.tests} tests included</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-foreground">₹{plan.price}</p>
-                        <p className="text-[10px] text-muted-foreground">onwards</p>
-                      </div>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-foreground text-sm">{pkg.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{pkg.tests_count} tests included</p>
+                    {pkg.lab_name && (
+                      <p className="text-xs text-primary font-medium mt-1">by {pkg.lab_name}</p>
+                    )}
                   </div>
-                </motion.button>
-              );
-            })
-          )}
-        </div>
-
-        {/* View All CTA */}
-        <motion.button
-          type="button"
-          onClick={() => navigate('/packages')}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="w-full mt-4 py-3 px-4 rounded-xl border-2 border-primary/40 text-primary font-semibold hover:border-primary/70 hover:bg-primary/5 transition-all duration-200"
-        >
-          Browse All Packages →
-        </motion.button>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-foreground">₹{pkg.price}</p>
+                    {pkg.original_price && (
+                      <p className="text-xs text-muted-foreground line-through">₹{pkg.original_price}</p>
+                    )}
+                    {pkg.discount_percent && pkg.discount_percent > 0 && (
+                      <Badge variant="softSuccess" className="text-[10px] mt-1">{pkg.discount_percent}% off</Badge>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="soft-card p-6 text-center">
+            <p className="text-muted-foreground text-sm">No packages available</p>
+          </div>
+        )}
       </motion.section>
 
-    </MobileLayout>
+      {/* Contact Bottom Sheet */}
+      <AnimatePresence>
+        {showCallSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/40 z-50"
+              onClick={() => setShowCallSheet(false)}
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card rounded-t-3xl z-50 safe-area-bottom"
+            >
+              <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-4" />
+              <div className="px-6 pb-8">
+                <h3 className="text-lg font-bold text-foreground mb-4">Contact Us</h3>
+                <div className="space-y-3">
+                  <a
+                    href="tel:+919883143033"
+                    className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl hover:bg-primary/10 transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Phone className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Direct Call</p>
+                      <p className="text-sm text-muted-foreground">+91 9883143033</p>
+                    </div>
+                  </a>
+                  <a
+                    href="https://wa.me/919883143033"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 p-4 bg-success/5 rounded-2xl hover:bg-success/10 transition-colors"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                      <svg className="w-5 h-5 text-success" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-foreground">Chat on WhatsApp</p>
+                      <p className="text-sm text-muted-foreground">+91 9883143033</p>
+                    </div>
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      </MobileLayout>
     </div>
   );
 };

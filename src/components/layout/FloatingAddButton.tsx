@@ -9,10 +9,10 @@ const FloatingCartButton = () => {
   const { itemCount } = useCart();
   
   // Hide on certain pages where it's not needed
-  const hiddenPaths = ["/login", "/onboarding", "/splash", "/cart", "/tracking"];
+  const hiddenPaths = ["/login", "/onboarding", "/splash", "/cart", "/tracking", "/lab-selection", "/payment"];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
   
-  if (shouldHide) return null;
+  if (shouldHide || itemCount === 0) return null;
 
   return (
     <motion.button
@@ -22,8 +22,9 @@ const FloatingCartButton = () => {
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={() => navigate("/cart")}
-      className="fixed bottom-24 right-4 w-12 h-12 bg-primary rounded-full shadow-lg flex items-center justify-center z-50"
+      className="fixed right-4 w-12 h-12 bg-primary rounded-full shadow-lg flex items-center justify-center z-30"
       style={{
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)',
         boxShadow: "0 4px 20px hsl(var(--primary) / 0.4)",
       }}
       aria-label="View cart"
