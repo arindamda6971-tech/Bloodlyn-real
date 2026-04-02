@@ -164,24 +164,11 @@ const UploadPrescriptionScreen = () => {
   };
 
   const handleAnalyzePrescription = async () => {
-    if (!uploadedImage) return;
+    if (!uploadedImage && !imageBase64Cache) return;
     setIsAnalyzing(true);
 
     try {
-      let imageBase64 = uploadedImage;
-      if (uploadedImage.startsWith("http")) {
-        try {
-          const response = await fetch(uploadedImage);
-          const blob = await response.blob();
-          imageBase64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-        } catch (fetchErr) {
-          console.error("Error fetching image:", fetchErr);
-        }
-      }
+      const imageBase64 = imageBase64Cache || uploadedImage;
 
       const { data, error } = await supabase.functions.invoke('analyze-prescription', {
         body: { imageBase64 }
