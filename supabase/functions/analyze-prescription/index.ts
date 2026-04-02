@@ -58,8 +58,12 @@ const ensureAuthenticated = async (request: Request, corsHeaders: Record<string,
 
   // Validate token using Supabase Auth's /user endpoint
   try {
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || '';
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: authHeader },
+      headers: {
+        Authorization: authHeader,
+        apikey: SUPABASE_ANON_KEY,
+      },
     });
     if (!res.ok) {
       return new Response(
