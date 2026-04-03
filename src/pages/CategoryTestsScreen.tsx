@@ -133,7 +133,7 @@ const CategoryTestsScreen = () => {
             <div>
               <span className="text-sm font-semibold text-foreground">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
             </div>
-            <Button variant="hero" size="lg" onClick={() => navigate("/cart")}>
+            <Button variant="hero" size="lg" className="py-[12px]" onClick={() => navigate("/cart")}>
               View Cart
             </Button>
           </div>
