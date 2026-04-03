@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trash2, ShoppingCart, Upload, FileImage, X, Check, Building2, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface SavedAddress {
@@ -60,10 +60,20 @@ const clearPatientDetails = () => {
 
 const CartScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
-  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+
+  // Handle returning from AddFamilyMemberScreen
+  const locationState = (location as any).state;
+  useEffect(() => {
+    if (locationState?.newMember && !locationState?.editMemberId) {
+      addMember(locationState.newMember);
+      // Clear the state to prevent re-adding
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState]);
 
   // Load persisted patient details
   const saved = loadPatientDetails();
@@ -312,7 +322,7 @@ const CartScreen = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6 bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-foreground">Patient Details</h3>
-            <button onClick={() => setShowAddMemberDialog(true)} className="flex items-center gap-1 text-xs font-medium text-primary">
+            <button onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })} className="flex items-center gap-1 text-xs font-medium text-primary">
               <UserPlus className="w-4 h-4" /> Add Member
             </button>
           </div>
@@ -367,7 +377,7 @@ const CartScreen = () => {
           </div>
         </motion.div>
 
-        <AddFamilyMemberDialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog} onAdd={addMember} />
+        
 
         {/* Upload Prescription */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-6">

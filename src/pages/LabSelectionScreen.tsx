@@ -33,12 +33,12 @@ interface DiagnosticCenter {
 }
 
 const timeSlots = [
-  { id: 1, time: "6:00 AM - 8:00 AM", label: "Morning", available: true },
-  { id: 2, time: "8:00 AM - 10:00 AM", label: "Morning", available: true },
-  { id: 3, time: "10:00 AM - 12:00 PM", label: "Morning", available: true },
-  { id: 4, time: "12:00 PM - 2:00 PM", label: "Afternoon", available: false },
-  { id: 5, time: "2:00 PM - 4:00 PM", label: "Afternoon", available: true },
-  { id: 6, time: "4:00 PM - 6:00 PM", label: "Evening", available: true },
+  { id: 1, time: "6:00 AM - 8:00 AM", label: "Morning", startHour: 6, available: true },
+  { id: 2, time: "8:00 AM - 10:00 AM", label: "Morning", startHour: 8, available: true },
+  { id: 3, time: "10:00 AM - 12:00 PM", label: "Morning", startHour: 10, available: true },
+  { id: 4, time: "12:00 PM - 2:00 PM", label: "Afternoon", startHour: 12, available: true },
+  { id: 5, time: "2:00 PM - 4:00 PM", label: "Afternoon", startHour: 14, available: true },
+  { id: 6, time: "4:00 PM - 6:00 PM", label: "Evening", startHour: 16, available: true },
 ];
 
 const LabSelectionScreen = () => {
@@ -47,7 +47,6 @@ const LabSelectionScreen = () => {
   const patientState = (location.state as PatientState) || {};
   const { items, updateLabForItems, subtotal, currentLabId, currentLabName } = useCart();
 
-  // If user booked from a vendor profile, lab is already chosen
   const hasVendorLab = patientState.hasVendorLab || !!(currentLabId && currentLabName);
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
@@ -56,7 +55,6 @@ const LabSelectionScreen = () => {
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
 
-  // Real diagnostic centers from Supabase
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
@@ -68,11 +66,21 @@ const LabSelectionScreen = () => {
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
       fullDate: date.toISOString().split("T")[0],
-      available: i !== 2,
+      available: true,
     };
   });
 
-  // Fetch diagnostic centers from Supabase, filter by cart test names
+  // Determine which time slots are selectable based on selected date
+  const getSlotAvailability = (slot: typeof timeSlots[0]) => {
+    if (selectedDate !== 0) return slot.available; // Not today, all available
+    // Today: disable slots whose end time has passed or is current
+    const now = new Date();
+    const currentHour = now.getHours();
+    // The slot covers startHour to startHour+2. If current hour >= startHour+2, it's past.
+    // If current hour >= startHour, the slot is "current" — also disable.
+    return slot.startHour > currentHour;
+  };
+
   useEffect(() => {
     if (hasVendorLab) return;
 
@@ -85,20 +93,17 @@ const LabSelectionScreen = () => {
           .order("rating", { ascending: false });
 
         if (!error && data) {
-          // Filter labs: only show labs whose available_tests contain ALL cart items
           const cartTestNames = items.map(item => item.name.toLowerCase());
           
           const filteredLabs = data.filter((lab) => {
             if (!lab.available_tests || !Array.isArray(lab.available_tests) || lab.available_tests.length === 0) {
-              return false; // No tests listed = don't show
+              return false;
             }
-            // Build a set of test names from the lab
             const labTestNames = new Set<string>();
             lab.available_tests.forEach((t: any) => {
               const name = (t.test_name || t.name || t.product_name || "").toLowerCase();
               if (name) labTestNames.add(name);
             });
-            // Check if ALL cart tests are offered by this lab
             return cartTestNames.every(cartName => {
               return Array.from(labTestNames).some(labName => 
                 labName.includes(cartName) || cartName.includes(labName)
@@ -121,6 +126,16 @@ const LabSelectionScreen = () => {
     if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
+  // Reset time selection when date changes (to prevent selecting a greyed-out slot)
+  useEffect(() => {
+    if (selectedTime !== null) {
+      const slot = timeSlots.find(s => s.id === selectedTime);
+      if (slot && !getSlotAvailability(slot)) {
+        setSelectedTime(null);
+      }
+    }
+  }, [selectedDate]);
+
   if (items.length === 0) {
     return (
       <MobileLayout>
@@ -134,7 +149,6 @@ const LabSelectionScreen = () => {
     );
   }
 
-  // Get the price for the selected lab
   const getLabPrice = (lab: DiagnosticCenter): number => {
     if (!lab.available_tests || !Array.isArray(lab.available_tests)) return 0;
     let total = 0;
@@ -149,6 +163,19 @@ const LabSelectionScreen = () => {
       }
     });
     return total;
+  };
+
+  // Get price for the currently selected lab (for vendor lab too)
+  const getSelectedLabPrice = (): number | null => {
+    if (hasVendorLab) {
+      // For vendor labs, use the cart subtotal
+      return subtotal;
+    }
+    if (selectedLabId) {
+      const lab = labs.find(l => l.id === selectedLabId);
+      if (lab) return getLabPrice(lab);
+    }
+    return null;
   };
 
   const visibleDates = dates.slice(dateScrollStart, dateScrollStart + 4);
@@ -182,13 +209,15 @@ const LabSelectionScreen = () => {
     });
   };
 
+  const selectedLabPrice = getSelectedLabPrice();
+
   return (
     <MobileLayout>
       <ScreenHeader title="Select Lab & Slot" />
       <BookingStepper currentStep={2} />
 
       <div className="px-4 pb-32">
-        {/* Lab Selection - only show when user hasn't booked from a vendor profile */}
+        {/* Lab Selection */}
         {!hasVendorLab && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h2 className="text-base font-bold text-foreground mb-3">Choose Your Lab</h2>
@@ -236,7 +265,7 @@ const LabSelectionScreen = () => {
           </motion.div>
         )}
 
-        {/* Show selected lab info when vendor lab is pre-selected */}
+        {/* Selected lab info for vendor lab */}
         {hasVendorLab && currentLabName && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <div className="bg-card rounded-xl border border-primary/30 p-3 flex items-center gap-3">
@@ -247,6 +276,11 @@ const LabSelectionScreen = () => {
                 <p className="text-xs text-muted-foreground">Selected Lab</p>
                 <p className="font-semibold text-foreground text-sm truncate">{currentLabName}</p>
               </div>
+              {selectedLabPrice !== null && selectedLabPrice > 0 && (
+                <div className="text-right flex-shrink-0">
+                  <p className="font-bold text-primary text-sm">₹{selectedLabPrice}</p>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -305,52 +339,58 @@ const LabSelectionScreen = () => {
           <div className="mb-4">
             <p className="text-xs text-muted-foreground mb-2 font-medium">☀️ Morning Slots (AM)</p>
             <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label === "Morning").map((slot) => (
-                <button
-                  key={slot.id}
-                  onClick={() => slot.available && setSelectedTime(slot.id)}
-                  disabled={!slot.available}
-                  className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                    !slot.available
-                      ? "bg-muted/50 text-muted-foreground opacity-50"
-                      : selectedTime === slot.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-foreground"
-                  }`}
-                >
-                  {slot.time}
-                </button>
-              ))}
+              {timeSlots.filter(s => s.label === "Morning").map((slot) => {
+                const isAvailable = getSlotAvailability(slot);
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => isAvailable && setSelectedTime(slot.id)}
+                    disabled={!isAvailable}
+                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
+                      !isAvailable
+                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
+                        : selectedTime === slot.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border text-foreground"
+                    }`}
+                  >
+                    {slot.time}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-2 font-medium">🌤️ Afternoon & Evening</p>
             <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label !== "Morning").map((slot) => (
-                <button
-                  key={slot.id}
-                  onClick={() => slot.available && setSelectedTime(slot.id)}
-                  disabled={!slot.available}
-                  className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                    !slot.available
-                      ? "bg-muted/50 text-muted-foreground opacity-50"
-                      : selectedTime === slot.id
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card border border-border text-foreground"
-                  }`}
-                >
-                  {slot.time}
-                </button>
-              ))}
+              {timeSlots.filter(s => s.label !== "Morning").map((slot) => {
+                const isAvailable = getSlotAvailability(slot);
+                return (
+                  <button
+                    key={slot.id}
+                    onClick={() => isAvailable && setSelectedTime(slot.id)}
+                    disabled={!isAvailable}
+                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
+                      !isAvailable
+                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
+                        : selectedTime === slot.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border text-foreground"
+                    }`}
+                  >
+                    {slot.time}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </motion.div>
       </div>
 
       {/* Confirm Button */}
-      <motion.div
-        initial={{ y: 100 }} animate={{ y: 0 }}
-        className="fixed bottom-24 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom z-40"
+      <div
+        className="fixed left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
       >
         <Button
           variant="hero"
@@ -361,7 +401,7 @@ const LabSelectionScreen = () => {
         >
           Confirm
         </Button>
-      </motion.div>
+      </div>
     </MobileLayout>
   );
 };

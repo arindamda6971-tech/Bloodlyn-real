@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,31 @@ const PaymentScreen = () => {
   const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+
+  // Listen for payment method selection from PaymentMethodsScreen
+  useEffect(() => {
+    const checkMethod = () => {
+      const stored = sessionStorage.getItem("bloodlyn-selected-payment");
+      if (stored) {
+        setSelectedPaymentMethod(JSON.parse(stored));
+        sessionStorage.removeItem("bloodlyn-selected-payment");
+      }
+    };
+    checkMethod();
+    // Also check on focus (when navigating back)
+    window.addEventListener("focus", checkMethod);
+    return () => window.removeEventListener("focus", checkMethod);
+  }, []);
+
+  // Also check when location changes (navigating back from payment methods)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("bloodlyn-selected-payment");
+    if (stored) {
+      setSelectedPaymentMethod(JSON.parse(stored));
+      sessionStorage.removeItem("bloodlyn-selected-payment");
+    }
+  }, [location]);
 
   const discount = couponApplied ? 100 : 0;
   const total = stateSubtotal - discount;
@@ -64,14 +89,14 @@ const PaymentScreen = () => {
   };
 
   const handlePayment = () => {
-    const paymentVerified = true; // cash on delivery
+    const paymentVerified = true;
     navigate("/order-success", {
       state: {
         ...paymentState,
         couponApplied,
         discount,
         total,
-        selectedPayment: "cash",
+        selectedPayment: selectedPaymentMethod.id,
         paymentVerified,
       },
     });
@@ -117,14 +142,12 @@ const PaymentScreen = () => {
           </button>
           {orderOpen && (
             <div className="mt-3">
-              {/* Patient */}
               {paymentState?.patientName && (
                 <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/50">
                   <User className="w-4 h-4 text-primary" />
                   <span className="font-medium text-foreground text-sm">{paymentState.patientName}</span>
                 </div>
               )}
-              {/* Items */}
               <div className="space-y-2">
                 {(paymentState?.cartItems || []).map((item) => (
                   <div key={item.id} className="flex justify-between items-center text-sm">
@@ -197,15 +220,40 @@ const PaymentScreen = () => {
         </motion.div>
       </div>
 
-      {/* Pay Button */}
-      <motion.div
-        initial={{ y: 100 }} animate={{ y: 0 }}
-        className="fixed bottom-24 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom z-40"
+      {/* Split Pay Button - Select Mode + Pay Now */}
+      <div
+        className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
       >
-        <Button variant="hero" className="w-full" size="lg" onClick={handlePayment}>
-          Pay ₹ {total}/-
-        </Button>
-      </motion.div>
+        <div className="flex items-center gap-0">
+          {/* Left: Select Payment Mode */}
+          <button
+            onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total } })}
+            className="flex items-center gap-2 py-3 pr-4 flex-shrink-0"
+          >
+            <Wallet className="w-5 h-5 text-muted-foreground" />
+            <div className="text-left">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                PAY USING <ChevronUp className="w-3 h-3" />
+              </p>
+              <p className="text-sm font-bold text-foreground leading-tight">{selectedPaymentMethod.name}</p>
+            </div>
+          </button>
+
+          {/* Right: Pay Now Button */}
+          <Button
+            variant="destructive"
+            className="flex-1 h-14 rounded-xl text-base font-bold gap-2"
+            onClick={handlePayment}
+          >
+            <span className="flex flex-col items-center leading-tight">
+              <span className="text-xs font-semibold opacity-90">₹{total}</span>
+              <span className="text-xs opacity-70">TOTAL</span>
+            </span>
+            <span className="text-base font-bold">Place Order ›</span>
+          </Button>
+        </div>
+      </div>
     </MobileLayout>
   );
 };

@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Pencil, Trash2, Phone, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
 import {
@@ -20,10 +20,25 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const FamilyMembersScreen = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { members, addMember, removeMember, updateMember } = useFamilyMembers();
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingMember, setEditingMember] = useState<FamilyMember | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // Handle returning from AddFamilyMemberScreen
+  const locationState = (location as any).state;
+  useEffect(() => {
+    if (locationState?.newMember) {
+      if (locationState.editMemberId) {
+        updateMember(locationState.editMemberId, locationState.newMember);
+        toast.success("Family member updated");
+      } else {
+        addMember(locationState.newMember);
+        toast.success("Family member added");
+      }
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState]);
 
   const handleDelete = async () => {
     if (deleteId) {
@@ -33,12 +48,21 @@ const FamilyMembersScreen = () => {
     }
   };
 
+  const goToAdd = (editMember?: FamilyMember) => {
+    navigate("/add-family-member", {
+      state: {
+        editMember: editMember || null,
+        returnTo: "/family-members",
+      },
+    });
+  };
+
   return (
     <MobileLayout>
       <ScreenHeader
         title="Family Members"
         rightAction={
-          <Button variant="ghost" size="icon" onClick={() => { setEditingMember(null); setShowAddDialog(true); }}>
+          <Button variant="ghost" size="icon" onClick={() => goToAdd()}>
             <UserPlus className="w-5 h-5" />
           </Button>
         }
@@ -58,7 +82,7 @@ const FamilyMembersScreen = () => {
             <p className="text-sm text-muted-foreground mb-6 max-w-[260px]">
               Add family members to quickly book tests for them.
             </p>
-            <Button variant="hero" onClick={() => { setEditingMember(null); setShowAddDialog(true); }}>
+            <Button variant="hero" onClick={() => goToAdd()}>
               <UserPlus className="w-4 h-4" />
               Add Member
             </Button>
@@ -104,7 +128,7 @@ const FamilyMembersScreen = () => {
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9"
-                        onClick={() => { setEditingMember(member); setShowAddDialog(true); }}
+                        onClick={() => goToAdd(member)}
                       >
                         <Pencil className="w-4 h-4 text-muted-foreground" />
                       </Button>
@@ -130,7 +154,7 @@ const FamilyMembersScreen = () => {
               <Button
                 variant="outline"
                 className="w-full mt-2"
-                onClick={() => { setEditingMember(null); setShowAddDialog(true); }}
+                onClick={() => goToAdd()}
               >
                 <UserPlus className="w-4 h-4" />
                 Add Another Member
@@ -139,14 +163,6 @@ const FamilyMembersScreen = () => {
           </div>
         )}
       </div>
-
-      <AddFamilyMemberDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onAdd={addMember}
-        editMember={editingMember}
-        onEdit={updateMember}
-      />
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent className="max-w-[90vw] rounded-2xl">
