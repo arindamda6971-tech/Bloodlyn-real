@@ -63,7 +63,16 @@ const CartScreen = () => {
   const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
-  const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+
+  // Handle returning from AddFamilyMemberScreen
+  const locationState = location.state as any;
+  useEffect(() => {
+    if (locationState?.newMember && !locationState?.editMemberId) {
+      addMember(locationState.newMember);
+      // Clear the state to prevent re-adding
+      window.history.replaceState({}, document.title);
+    }
+  }, [locationState]);
 
   // Load persisted patient details
   const saved = loadPatientDetails();
