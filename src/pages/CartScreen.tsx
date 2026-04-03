@@ -21,7 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
+
 import { supabase } from "@/integrations/supabase/client";
 
 interface SavedAddress {
