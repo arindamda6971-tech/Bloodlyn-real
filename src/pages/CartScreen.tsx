@@ -322,7 +322,7 @@ const CartScreen = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6 bg-card rounded-2xl border border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-foreground">Patient Details</h3>
-            <button onClick={() => setShowAddMemberDialog(true)} className="flex items-center gap-1 text-xs font-medium text-primary">
+            <button onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })} className="flex items-center gap-1 text-xs font-medium text-primary">
               <UserPlus className="w-4 h-4" /> Add Member
             </button>
           </div>
