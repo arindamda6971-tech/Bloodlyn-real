@@ -557,7 +557,7 @@ const HomeScreen = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card rounded-t-3xl z-50 safe-area-bottom py-[36px] my-[31px]"
+              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card rounded-t-3xl z-50 safe-area-bottom my-[31px] py-[35px]"
             >
               <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-4 py-0" />
               <div className="px-6 pb-8">
@@ -565,7 +565,7 @@ const HomeScreen = () => {
                 <div className="space-y-3">
                   <a
                     href="tel:+919883143033"
-                    className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl hover:bg-primary/10 transition-colors py-[16px]"
+                    className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl hover:bg-primary/10 transition-colors py-[17px]"
                   >
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <Phone className="w-5 h-5 text-primary" />
