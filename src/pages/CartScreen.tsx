@@ -60,12 +60,13 @@ const clearPatientDetails = () => {
 
 const CartScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
 
   // Handle returning from AddFamilyMemberScreen
-  const locationState = location.state as any;
+  const locationState = (location as any).state;
   useEffect(() => {
     if (locationState?.newMember && !locationState?.editMemberId) {
       addMember(locationState.newMember);
