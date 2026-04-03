@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Trash2, ShoppingCart, Upload, FileImage, X, Check, Building2, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
