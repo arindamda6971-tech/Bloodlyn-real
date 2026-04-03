@@ -557,9 +557,9 @@ const HomeScreen = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card rounded-t-3xl z-50 safe-area-bottom my-[31px] py-[35px]"
+              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card rounded-t-3xl z-50 safe-area-bottom my-[31px] py-[35px] rounded-none"
             >
-              <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-4 py-0" />
+              <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mt-3 mb-4 py-0 my-[4px]" />
               <div className="px-6 pb-8">
                 <h3 className="text-lg font-bold text-foreground mb-4 py-0">Contact Us</h3>
                 <div className="space-y-3">
