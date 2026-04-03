@@ -57,6 +57,8 @@ const ConsultationBookingScreen = lazy(() => safeImport(() => import("./pages/Co
 const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
 const TrackingScreen = lazy(() => safeImport(() => import("./pages/TrackingScreen")));
 const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMembersScreen")));
+const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFamilyMemberScreen")));
+const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 
 const queryClient = new QueryClient();
