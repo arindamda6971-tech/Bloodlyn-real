@@ -280,7 +280,7 @@ const LocationCheckScreen = () => {
             placeholder="Enter 6-digit PIN code"
             value={pincode}
             onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="text-center text-lg tracking-widest mb-4"
+            className="text-center tracking-widest mb-4 text-sm"
           />
           <Button
             variant="hero"
