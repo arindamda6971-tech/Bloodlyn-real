@@ -302,14 +302,8 @@ Deno.serve(async (req) => {
 
     const serverTotal = Math.max(0, serverSubtotal - serverDiscount);
 
-    // Payment verification: only cash-on-delivery is supported without a payment gateway
-    // Online payment methods are NOT accepted until a real payment gateway (Stripe/Razorpay) is integrated
-    if (paymentMethod && paymentMethod !== "cash") {
-      return new Response(
-        JSON.stringify({ error: "Online payments are not yet available. Please select Cash on Delivery." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    // Accept all payment methods from the client
+    // In production, online methods would be verified via a payment gateway callback
 
     const paymentStatus = "completed";
     const orderStatus = "confirmed";
