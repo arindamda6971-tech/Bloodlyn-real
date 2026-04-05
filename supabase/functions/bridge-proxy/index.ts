@@ -31,6 +31,12 @@ Deno.serve(async (req) => {
       });
     }
 
+    const userSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
     const token = authHeader.replace("Bearer ", "");
     const tokenParts = token.split(".");
     if (tokenParts.length !== 3) {
@@ -42,22 +48,20 @@ Deno.serve(async (req) => {
 
     const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
     const userId = payload?.sub as string | undefined;
-    const exp = payload?.exp as number | undefined;
-
-    if (!userId || !exp || exp * 1000 <= Date.now()) {
+    if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const adminSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const { data: profile, error: profileError } = await userSupabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
 
-    const { data: adminUserData, error: adminUserError } = await adminSupabase.auth.admin.getUserById(userId);
-    if (adminUserError || !adminUserData?.user) {
+    if (profileError || !profile?.id) {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
