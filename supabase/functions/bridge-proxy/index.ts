@@ -31,22 +31,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const tokenParts = token.split(".");
+    if (tokenParts.length !== 3) {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const userId = payload?.sub as string | undefined;
+    const exp = payload?.exp as number | undefined;
+
+    if (!userId || !exp || exp * 1000 <= Date.now()) {
+      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const adminSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: adminUserData, error: adminUserError } = await adminSupabase.auth.admin.getUserById(userId);
+    if (adminUserError || !adminUserData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
 
     // Parse the request body to get the proxy instructions
