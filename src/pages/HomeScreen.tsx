@@ -424,59 +424,64 @@ const HomeScreen = () => {
         </div>
       </motion.section>
 
-      {/* Trending Tests */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="mt-8"
-      >
-        <div className="flex items-center justify-between px-4 mb-4">
-          <h2 className="text-lg font-bold text-foreground">Trending Tests</h2>
-          <button 
-            onClick={() => navigate('/packages')}
-            className="flex items-center gap-1 text-primary text-sm font-medium"
-          >
-            View all <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex gap-3 overflow-x-auto px-4 hide-scrollbar">
-          {trendingTests.map((test, index) => (
-            <motion.div
-              key={test.name}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 + index * 0.1 }}
-              onClick={() => navigate("/test/select", { 
-                state: { 
-                  test: { 
-                    id: `trending-${index}`,
-                    name: test.name, 
-                    price: test.price, 
-                    original_price: test.originalPrice,
-                    discount_percent: parseInt(test.discount),
-                    report_time_hours: parseInt(test.time),
-                    sample_type: "Blood"
-                  } 
-                } 
-              })}
-              className="test-card min-w-[180px] flex-shrink-0 cursor-pointer"
+      {/* Previous Orders */}
+      {previousOrders.length > 0 && (
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8"
+        >
+          <div className="flex items-center justify-between px-4 mb-4">
+            <h2 className="text-lg font-bold text-foreground">Previous Orders 📦</h2>
+            <button 
+              onClick={() => navigate('/bookings')}
+              className="flex items-center gap-1 text-primary text-sm font-medium"
             >
-              <div className="p-4">
-                <Badge variant="softSuccess" className="mb-3 text-xs">
-                  {test.discount} OFF
-                </Badge>
-                <h3 className="font-semibold text-foreground text-sm mb-1">{test.name}</h3>
-                <p className="text-xs text-muted-foreground mb-3">Reports in {test.time}</p>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">₹{test.price}</span>
-                  <span className="text-xs text-muted-foreground line-through">₹{test.originalPrice}</span>
+              View all <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-4 hide-scrollbar">
+            {previousOrders.map((order, index) => (
+              <motion.div
+                key={order.id}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + index * 0.08 }}
+                className="soft-card min-w-[200px] flex-shrink-0 p-4"
+              >
+                <h3 className="font-semibold text-foreground text-sm mb-1 line-clamp-2">
+                  {order.test_name || "Lab Test"}
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  {order.order_number || `#${order.id.slice(0, 8)}`}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-foreground">₹{order.total}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const testName = order.test_name || "Lab Test";
+                      const success = addToCart({
+                        id: `reorder-${order.id}`,
+                        name: testName,
+                        price: order.total,
+                      });
+                      if (success) {
+                        toast.success(`${testName} added to cart`);
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    Reorder
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.section>
+              </motion.div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Health Packages Section */}
       <motion.section
