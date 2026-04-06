@@ -16,6 +16,8 @@ import {
   Stethoscope,
   Plus,
   Phone,
+  RotateCw,
+  Package,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
