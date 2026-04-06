@@ -45,12 +45,14 @@ const quickActions = [
   { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-destructive/10 text-destructive" },
 ];
 
-const fallbackTrendingTests = [
-  { name: "Complete Blood Count", price: 299, originalPrice: 499, discount: "40%", time: "6 hours" },
-  { name: "Thyroid Profile", price: 399, originalPrice: 699, discount: "43%", time: "24 hours" },
-  { name: "Vitamin D & B12", price: 799, originalPrice: 1299, discount: "38%", time: "24 hours" },
-  { name: "Liver Function Test", price: 449, originalPrice: 799, discount: "44%", time: "12 hours" },
-];
+type PreviousOrder = {
+  id: string;
+  order_number: string | null;
+  test_name: string | null;
+  total: number;
+  status: string | null;
+  created_at: string;
+};
 
 const HomeScreen = () => {
   const navigate = useNavigate();
