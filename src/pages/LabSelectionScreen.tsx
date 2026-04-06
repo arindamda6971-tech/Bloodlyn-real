@@ -58,7 +58,7 @@ const LabSelectionScreen = () => {
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
-  const dates = Array.from({ length: 14 }, (_, i) => {
+  const dates = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
     return {
