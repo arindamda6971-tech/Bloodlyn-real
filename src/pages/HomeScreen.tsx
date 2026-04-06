@@ -73,19 +73,16 @@ const HomeScreen = () => {
 
   // Fetch bridge tests catalog
   const { data: bridgeData } = useBridgeTests();
-  const trendingTests = useMemo(() => {
-    if (bridgeData?.tests?.length) {
-      return bridgeData.tests.slice(0, 6).map((t) => ({
-        id: t.id,
-        name: t.test_name,
-        price: t.price,
-        originalPrice: Math.round(t.price * 1.4),
-        discount: `${Math.round(((t.price * 1.4 - t.price) / (t.price * 1.4)) * 100)}%`,
-        time: t.report_delivery_time || "24 hours",
-      }));
-    }
-    return fallbackTrendingTests;
-  }, [bridgeData]);
+  // Fetch previous orders
+  const fetchPreviousOrders = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("orders")
+      .select("id, order_number, test_name, total, status, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6);
+    if (data) setPreviousOrders(data);
+  }, [user]);
 
   // Fetch all tests for search
   const fetchTests = useCallback(async () => {
