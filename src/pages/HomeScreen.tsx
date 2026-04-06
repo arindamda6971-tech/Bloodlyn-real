@@ -141,9 +141,9 @@ const HomeScreen = () => {
 
   // Refresh handler for pull-to-refresh
   const handleRefresh = useCallback(async () => {
-    await Promise.all([fetchTests(), fetchDiagnosticCenters(), fetchHealthPackages()]);
+    await Promise.all([fetchTests(), fetchDiagnosticCenters(), fetchHealthPackages(), fetchPreviousOrders()]);
     toast.success("Data refreshed!");
-  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages]);
+  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages, fetchPreviousOrders]);
 
   const {
     isRefreshing,
