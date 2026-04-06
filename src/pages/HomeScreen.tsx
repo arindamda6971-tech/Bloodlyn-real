@@ -190,13 +190,7 @@ const HomeScreen = () => {
       }));
     }
 
-    // Fallback to trending
-    if (pool.length === 0) {
-      fallbackTrendingTests.forEach((t, i) => pool.push({
-        id: `trending-${i}`, name: t.name, price: t.price, original_price: t.originalPrice, discount_percent: parseInt(t.discount),
-      }));
-    }
-
+    // No fallback needed for search — just skip if no results
     // Deduplicate by name
     const seen = new Set<string>();
     const deduped = pool.filter((item) => {
