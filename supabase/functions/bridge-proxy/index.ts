@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const payload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const userId = payload?.sub as string | undefined;
+    const jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const userId = jwtPayload?.sub as string | undefined;
     if (!userId) {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
