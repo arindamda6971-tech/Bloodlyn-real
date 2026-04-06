@@ -57,12 +57,14 @@ type PreviousOrder = {
 const HomeScreen = () => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
+  const { user } = useAuth();
   const { addToCart, items } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
+  const [previousOrders, setPreviousOrders] = useState<PreviousOrder[]>([]);
   const [diagnosticCenters, setDiagnosticCenters] = useState<{id: string; name: string; rating: number; tests: number; logo?: string}[]>([]);
   const [healthPackages, setHealthPackages] = useState<{id: string; name: string; tests_count: number; price: number; original_price?: number; discount_percent?: number; icon?: string; color?: string; lab_name?: string; lab_logo?: string}[]>([]);
 
