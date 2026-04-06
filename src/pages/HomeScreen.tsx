@@ -166,7 +166,8 @@ const HomeScreen = () => {
     fetchTests();
     fetchDiagnosticCenters();
     fetchHealthPackages();
-  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages]);
+    fetchPreviousOrders();
+  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages, fetchPreviousOrders]);
 
   // Filter tests based on search query — merges Supabase tests + bridge tests
   const searchResults = useMemo(() => {
