@@ -308,10 +308,30 @@ Deno.serve(async (req) => {
     const paymentStatus = "completed";
     const orderStatus = "confirmed";
 
+    // Fetch latest prescription URL for this user (if any)
+    let prescriptionUrl: string | null = null;
+    const { data: prescriptionData } = await adminClient
+      .from("user_prescriptions")
+      .select("image_url")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (prescriptionData?.image_url) {
+      prescriptionUrl = prescriptionData.image_url;
+    }
+
     // Build special instructions
     let specialInstructions: string | null = null;
+    const parts: string[] = [];
     if (patientName) {
-      specialInstructions = `Patient: ${patientName} (Age: ${patientAge ?? "N/A"}${patientGender ? `, Gender: ${patientGender}` : ""}${patientPhone ? `, Phone: ${patientPhone}` : ""})`;
+      parts.push(`Patient: ${patientName} (Age: ${patientAge ?? "N/A"}${patientGender ? `, Gender: ${patientGender}` : ""}${patientPhone ? `, Phone: ${patientPhone}` : ""})`);
+    }
+    if (prescriptionUrl) {
+      parts.push(`Prescription: ${prescriptionUrl}`);
+    }
+    if (parts.length > 0) {
+      specialInstructions = parts.join(" | ");
     }
 
     // Extract vendor_id from cart items or request body
