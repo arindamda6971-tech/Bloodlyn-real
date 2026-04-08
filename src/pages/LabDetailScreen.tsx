@@ -614,6 +614,19 @@ const LabDetailScreen = () => {
           </motion.div>
         </div>
 
+        {/* CLOSED Banner */}
+        {isClosed && (
+          <div className="mx-4 mt-3 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="font-bold text-destructive text-sm">CLOSED</p>
+              <p className="text-xs text-muted-foreground">This diagnostic center is currently not accepting bookings.</p>
+            </div>
+          </div>
+        )}
+
         <div className="px-4 py-4 space-y-4">
           {/* Search */}
           <motion.div 
