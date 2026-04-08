@@ -416,6 +416,7 @@ const LabDetailScreen = () => {
   };
 
   const lab = getLabData();
+  const isClosed = lab && 'isActive' in lab && !(lab as any).isActive;
 
   if (isLoading) {
     return (
