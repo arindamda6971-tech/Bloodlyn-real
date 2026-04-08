@@ -406,6 +406,7 @@ const LabDetailScreen = () => {
         phone: labFromDb.phone,
         logoUrl: labFromDb.logo_url,
         vendorId: labFromDb.vendor_id,
+        isActive: labFromDb.is_active !== false,
       };
     }
     
