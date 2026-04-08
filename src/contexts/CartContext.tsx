@@ -50,11 +50,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Load cart from Supabase
   const loadCartFromSupabase = useCallback(async () => {
     if (!user) {
-      // Load from sessionStorage for non-logged-in users
-      const saved = sessionStorage.getItem("bloodlyn-cart");
-      if (saved) {
-        setItems(JSON.parse(saved));
-      }
+      // For non-logged-in users, start with empty cart (no sessionStorage restore)
+      setItems([]);
       setIsLoading(false);
       isInitialized.current = true;
       return;
@@ -68,11 +65,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error loading cart:", error);
-        // Fallback to sessionStorage
-        const saved = sessionStorage.getItem("bloodlyn-cart");
-        if (saved) {
-          setItems(JSON.parse(saved));
-        }
+        // On error, start empty — don't restore stale sessionStorage
+        setItems([]);
       } else if (data && data.length > 0) {
         const cartItems: CartItem[] = data.map((item) => ({
           id: item.test_id || item.package_id || item.id,
@@ -85,24 +79,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           familyMemberId: item.family_member_id || undefined,
         }));
         setItems(cartItems);
-        // Also save to sessionStorage as backup
-        sessionStorage.setItem("bloodlyn-cart", JSON.stringify(cartItems));
       } else {
-        // Check sessionStorage for any items added before login
-        const saved = sessionStorage.getItem("bloodlyn-cart");
-        if (saved) {
-          const localItems = JSON.parse(saved);
-          if (localItems.length > 0) {
-            setItems(localItems);
-            // Sync these to Supabase
-            isSyncing.current = true;
-            await syncItemsToSupabase(localItems, user.id);
-            isSyncing.current = false;
-          }
-        }
+        // No items in DB — start with empty cart
+        setItems([]);
       }
     } catch (err) {
       console.error("Error loading cart:", err);
+      setItems([]);
     } finally {
       setIsLoading(false);
       isInitialized.current = true;
@@ -148,9 +131,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Sync cart to Supabase when items change
   const syncCartToSupabase = useCallback(async (newItems: CartItem[]) => {
-    // Always save to sessionStorage
-    sessionStorage.setItem("bloodlyn-cart", JSON.stringify(newItems));
-
     if (!user || !isInitialized.current || isSyncing.current) return;
 
     isSyncing.current = true;

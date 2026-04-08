@@ -20,6 +20,7 @@ import {
   Award,
   Heart,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -279,6 +280,7 @@ interface DiagnosticCenter {
   vendor_id: string | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
+  is_active: boolean | null;
 }
 
 interface DynamicTest {
@@ -309,9 +311,9 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('*')
+          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active')
           .eq('id', labId)
-          .single();
+          .maybeSingle();
         
         if (!error && data) {
           setLabFromDb(data as DiagnosticCenter);
@@ -405,6 +407,7 @@ const LabDetailScreen = () => {
         phone: labFromDb.phone,
         logoUrl: labFromDb.logo_url,
         vendorId: labFromDb.vendor_id,
+        isActive: labFromDb.is_active !== false,
       };
     }
     
@@ -414,6 +417,7 @@ const LabDetailScreen = () => {
   };
 
   const lab = getLabData();
+  const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
 
   if (isLoading) {
     return (
@@ -611,6 +615,19 @@ const LabDetailScreen = () => {
           </motion.div>
         </div>
 
+        {/* CLOSED Banner */}
+        {isClosed && (
+          <div className="mx-4 mt-3 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+            </div>
+            <div>
+              <p className="font-bold text-destructive text-sm">CLOSED</p>
+              <p className="text-xs text-muted-foreground">This diagnostic center is currently not accepting bookings.</p>
+            </div>
+          </div>
+        )}
+
         <div className="px-4 py-4 space-y-4">
           {/* Search */}
           <motion.div 
@@ -710,6 +727,7 @@ const LabDetailScreen = () => {
                     variant={addedTests.has(test.id) ? "default" : "outline"}
                     className="flex-shrink-0 gap-1 h-8"
                     onClick={() => handleAddTest(test.id, test.name)}
+                    disabled={isClosed}
                   >
                     {addedTests.has(test.id) ? (
                       <>
