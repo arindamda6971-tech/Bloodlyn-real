@@ -20,6 +20,7 @@ import {
   Award,
   Heart,
   TrendingUp,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
