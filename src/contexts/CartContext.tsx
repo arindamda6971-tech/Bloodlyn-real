@@ -131,9 +131,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Sync cart to Supabase when items change
   const syncCartToSupabase = useCallback(async (newItems: CartItem[]) => {
-    // Always save to sessionStorage
-    sessionStorage.setItem("bloodlyn-cart", JSON.stringify(newItems));
-
     if (!user || !isInitialized.current || isSyncing.current) return;
 
     isSyncing.current = true;
