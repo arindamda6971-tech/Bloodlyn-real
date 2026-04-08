@@ -727,6 +727,7 @@ const LabDetailScreen = () => {
                     variant={addedTests.has(test.id) ? "default" : "outline"}
                     className="flex-shrink-0 gap-1 h-8"
                     onClick={() => handleAddTest(test.id, test.name)}
+                    disabled={isClosed}
                   >
                     {addedTests.has(test.id) ? (
                       <>
