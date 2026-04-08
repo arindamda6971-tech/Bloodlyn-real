@@ -279,6 +279,7 @@ interface DiagnosticCenter {
   vendor_id: string | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
+  is_active: boolean | null;
 }
 
 interface DynamicTest {
@@ -309,9 +310,9 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('*')
+          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active')
           .eq('id', labId)
-          .single();
+          .maybeSingle();
         
         if (!error && data) {
           setLabFromDb(data as DiagnosticCenter);
