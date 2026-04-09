@@ -502,7 +502,7 @@ const LabDetailScreen = () => {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative bg-gradient-to-br ${bannerGradient} overflow-hidden rounded-3xl shadow-2xl`}
+            className={`relative bg-gradient-to-br ${bannerGradient} overflow-hidden rounded-3xl shadow-2xl ${isClosed ? 'grayscale' : ''}`}
             style={{ minHeight: '200px' }}
           >
             {/* Decorative Blobs */}
