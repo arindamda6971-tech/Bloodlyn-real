@@ -349,6 +349,16 @@ const DiagnosticCentersCarousel = ({
                     />
                   )}
                   
+                  {/* Closed Overlay Banner */}
+                  {isClosed && (
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
+                      <div className="bg-destructive px-4 py-1.5 rounded-lg shadow-lg">
+                        <p className="text-[10px] text-white font-medium">Currently</p>
+                        <p className="text-sm font-extrabold text-white -mt-0.5">CLOSED</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Content */}
                   <div className="relative p-5 flex flex-col h-full min-h-[200px]">
                     {/* Main Content Row */}
