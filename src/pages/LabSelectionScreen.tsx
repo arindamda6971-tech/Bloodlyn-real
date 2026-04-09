@@ -88,8 +88,7 @@ const LabSelectionScreen = () => {
       try {
         const { data, error } = await supabase
           .from("diagnostic_centers")
-          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time, available_tests")
-          .eq("is_active", true)
+          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time, available_tests, is_active")
           .order("rating", { ascending: false });
 
         if (!error && data) {
