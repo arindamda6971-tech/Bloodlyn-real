@@ -35,6 +35,7 @@ interface DiagnosticCenter {
   vendor_id: string | null;
   services: any;
   available_tests: any;
+  is_active: boolean | null;
 }
 
 const PartnerLabsScreen = () => {
@@ -53,7 +54,6 @@ const PartnerLabsScreen = () => {
         const { data, error } = await supabase
           .from("diagnostic_centers")
           .select("*")
-          .eq("is_active", true)
           .order("rating", { ascending: false });
 
         if (error) {

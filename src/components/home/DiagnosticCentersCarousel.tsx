@@ -10,6 +10,7 @@ interface DiagnosticCenter {
   rating: number;
   tests: number;
   logo?: string;
+  isActive?: boolean;
 }
 
 interface DiagnosticCentersCarouselProps {
