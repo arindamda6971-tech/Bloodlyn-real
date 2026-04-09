@@ -248,6 +248,7 @@ const DiagnosticCentersCarousel = ({
         <div className="flex">
           {centers.map((center, index) => {
             const isActive = index === selectedIndex;
+            const isClosed = center.isActive === false;
             
             // Get lab-specific data or use fallback
             const knownLabData = labBrandData[center.name];
@@ -275,7 +276,7 @@ const DiagnosticCentersCarousel = ({
                   onClick={() => navigate(`/lab/${center.id}`)}
                   className={`relative rounded-3xl cursor-pointer overflow-hidden ${
                     isActive ? 'shadow-2xl' : 'shadow-xl'
-                  }`}
+                  } ${isClosed ? 'grayscale' : ''}`}
                   style={{
                     minHeight: '200px',
                   }}
