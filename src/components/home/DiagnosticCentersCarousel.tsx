@@ -393,7 +393,7 @@ const DiagnosticCentersCarousel = ({
                         
                         {/* Tagline - Emotional Appeal */}
                         <p className="text-white/80 text-xs font-medium mt-0.5 italic">
-                          "{labData.tagline}"
+                          {isClosed ? "Currently not accepting orders" : `"${labData.tagline}"`}
                         </p>
                         
                         {/* Stats Row */}
