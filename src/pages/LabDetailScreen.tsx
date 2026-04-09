@@ -318,6 +318,8 @@ const LabDetailScreen = () => {
         if (!error && data) {
           setLabFromDb(data as DiagnosticCenter);
           
+          let allDynamicTests: DynamicTest[] = [];
+          
           // If vendor has products in products table, fetch them
           if (data.vendor_id) {
             const { data: products } = await supabase
@@ -327,32 +329,53 @@ const LabDetailScreen = () => {
               .eq('availability', true);
             
             if (products && products.length > 0) {
-              const tests: DynamicTest[] = products.map((p) => ({
+              allDynamicTests = products.map((p) => ({
                 id: p.id,
                 name: p.name || p.product_name,
                 price: Number(p.price),
                 category: p.category || 'Blood Tests',
                 popular: false,
               }));
-              setDynamicTests(tests);
             }
           }
           
-          // If no vendor products, use available_tests + pricing from diagnostic_centers
-          if (!data.vendor_id || dynamicTests.length === 0) {
+          // Fetch health packages linked to this diagnostic center
+          const { data: packages } = await supabase
+            .from('test_packages')
+            .select('id, name, price, original_price, discount_percent, tests_count, is_popular')
+            .eq('diagnostic_center_id', data.id)
+            .eq('is_active', true);
+          
+          if (packages && packages.length > 0) {
+            const packageTests: DynamicTest[] = packages.map((pkg) => ({
+              id: pkg.id,
+              name: pkg.name,
+              price: Number(pkg.price),
+              originalPrice: pkg.original_price ? Number(pkg.original_price) : undefined,
+              category: 'Health Packages',
+              popular: pkg.is_popular || false,
+            }));
+            allDynamicTests = [...allDynamicTests, ...packageTests];
+          }
+          
+          // If no vendor products or packages, use available_tests + pricing from diagnostic_centers
+          if (allDynamicTests.length === 0) {
             const availableTests = data.available_tests as string[] | null;
             const pricing = data.pricing as Record<string, number> | null;
             
             if (availableTests && availableTests.length > 0 && pricing) {
-              const tests: DynamicTest[] = availableTests.map((testName, idx) => ({
+              allDynamicTests = availableTests.map((testName, idx) => ({
                 id: `dc-${data.id}-${idx}`,
                 name: testName,
                 price: pricing[testName] || 299,
                 category: categorizeTest(testName),
                 popular: idx < 3,
               }));
-              setDynamicTests(tests);
             }
+          }
+          
+          if (allDynamicTests.length > 0) {
+            setDynamicTests(allDynamicTests);
           }
         }
       } catch (err) {
