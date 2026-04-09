@@ -10,6 +10,7 @@ interface DiagnosticCenter {
   rating: number;
   tests: number;
   logo?: string;
+  isActive?: boolean;
 }
 
 interface DiagnosticCentersCarouselProps {
@@ -247,6 +248,7 @@ const DiagnosticCentersCarousel = ({
         <div className="flex">
           {centers.map((center, index) => {
             const isActive = index === selectedIndex;
+            const isClosed = center.isActive === false;
             
             // Get lab-specific data or use fallback
             const knownLabData = labBrandData[center.name];
@@ -274,7 +276,7 @@ const DiagnosticCentersCarousel = ({
                   onClick={() => navigate(`/lab/${center.id}`)}
                   className={`relative rounded-3xl cursor-pointer overflow-hidden ${
                     isActive ? 'shadow-2xl' : 'shadow-xl'
-                  }`}
+                  } ${isClosed ? 'grayscale' : ''}`}
                   style={{
                     minHeight: '200px',
                   }}
@@ -347,6 +349,16 @@ const DiagnosticCentersCarousel = ({
                     />
                   )}
                   
+                  {/* Closed Overlay Banner */}
+                  {isClosed && (
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
+                      <div className="bg-destructive px-4 py-1.5 rounded-lg shadow-lg">
+                        <p className="text-[10px] text-white font-medium">Currently</p>
+                        <p className="text-sm font-extrabold text-white -mt-0.5">CLOSED</p>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Content */}
                   <div className="relative p-5 flex flex-col h-full min-h-[200px]">
                     {/* Main Content Row */}
@@ -381,7 +393,7 @@ const DiagnosticCentersCarousel = ({
                         
                         {/* Tagline - Emotional Appeal */}
                         <p className="text-white/80 text-xs font-medium mt-0.5 italic">
-                          "{labData.tagline}"
+                          {isClosed ? "Currently not accepting orders" : `"${labData.tagline}"`}
                         </p>
                         
                         {/* Stats Row */}

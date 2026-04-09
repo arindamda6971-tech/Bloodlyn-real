@@ -35,6 +35,7 @@ interface DiagnosticCenter {
   vendor_id: string | null;
   services: any;
   available_tests: any;
+  is_active: boolean | null;
 }
 
 const PartnerLabsScreen = () => {
@@ -53,7 +54,6 @@ const PartnerLabsScreen = () => {
         const { data, error } = await supabase
           .from("diagnostic_centers")
           .select("*")
-          .eq("is_active", true)
           .order("rating", { ascending: false });
 
         if (error) {
@@ -138,9 +138,15 @@ const PartnerLabsScreen = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="soft-card p-4 cursor-pointer"
+                className={`soft-card p-4 cursor-pointer relative overflow-hidden ${center.is_active === false ? 'grayscale opacity-75' : ''}`}
                 onClick={() => navigate(`/lab/${center.id}`)}
               >
+                {/* Closed Banner */}
+                {center.is_active === false && (
+                  <div className="absolute top-2 right-2 z-10 bg-destructive px-2.5 py-1 rounded-md shadow-md">
+                    <p className="text-[10px] font-bold text-white">CLOSED</p>
+                  </div>
+                )}
                 <div className="flex gap-3">
                   {/* Lab Icon */}
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">

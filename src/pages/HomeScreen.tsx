@@ -97,8 +97,7 @@ const HomeScreen = () => {
   const fetchDiagnosticCenters = useCallback(async () => {
     const { data } = await supabase
       .from("diagnostic_centers")
-      .select("id, name, rating, reviews_count, logo_url")
-      .eq("is_active", true)
+      .select("id, name, rating, reviews_count, logo_url, is_active")
       .order("rating", { ascending: false })
       .limit(10);
     if (data) {
@@ -107,7 +106,8 @@ const HomeScreen = () => {
         name: center.name,
         rating: center.rating || 4.5,
         tests: center.reviews_count || 100,
-        logo: center.logo_url || undefined
+        logo: center.logo_url || undefined,
+        isActive: center.is_active !== false,
       })));
     }
   }, []);
