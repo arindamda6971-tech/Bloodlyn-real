@@ -24,6 +24,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Set up auth listener BEFORE checking session
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        // Refresh token failed — clear stale session silently
+        console.warn("Token refresh failed, clearing session");
+        setUser(null);
+        setSupabaseUserId(null);
+        setLoading(false);
+        return;
+      }
       if (session?.user) {
         setUser(session.user);
         setSupabaseUserId(session.user.id);
@@ -35,7 +43,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn("Session retrieval error:", error.message);
+        // Clear stale tokens on refresh_token_not_found
+        supabase.auth.signOut().catch(() => {});
+      }
       if (session?.user) {
         setUser(session.user);
         setSupabaseUserId(session.user.id);

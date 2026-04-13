@@ -164,11 +164,15 @@ const UploadPrescriptionScreen = () => {
   };
 
   const handleAnalyzePrescription = async () => {
-    if (!uploadedImage && !imageBase64Cache) return;
+    // Must have a base64 image for analysis — URLs won't work with the AI
+    if (!imageBase64Cache) {
+      toast.error("Please re-upload the prescription image to analyze it.");
+      return;
+    }
     setIsAnalyzing(true);
 
     try {
-      const imageBase64 = imageBase64Cache || uploadedImage;
+      const imageBase64 = imageBase64Cache;
 
       const { data, error } = await supabase.functions.invoke('analyze-prescription', {
         body: { imageBase64 }
