@@ -112,38 +112,13 @@ const HomeScreen = () => {
     }
   }, []);
 
-  // Fetch health packages from test_packages table with diagnostic center info
-  const fetchHealthPackages = useCallback(async () => {
-    const { data } = await supabase
-      .from("test_packages")
-      .select(`
-        id, name, tests_count, price, original_price, discount_percent, icon, color,
-        diagnostic_centers!diagnostic_center_id (id, name, logo_url)
-      `)
-      .eq("is_active", true)
-      .order("is_popular", { ascending: false })
-      .limit(5);
-    if (data) {
-      setHealthPackages(data.map((pkg: any) => ({
-        id: pkg.id,
-        name: pkg.name,
-        tests_count: pkg.tests_count || 0,
-        price: pkg.price,
-        original_price: pkg.original_price || undefined,
-        discount_percent: pkg.discount_percent || undefined,
-        icon: pkg.icon || undefined,
-        color: pkg.color || undefined,
-        lab_name: pkg.diagnostic_centers?.name || undefined,
-        lab_logo: pkg.diagnostic_centers?.logo_url || undefined
-      })));
-    }
-  }, []);
+  // Health packages fetch removed — replaced with ad banner
 
   // Refresh handler for pull-to-refresh
   const handleRefresh = useCallback(async () => {
-    await Promise.all([fetchTests(), fetchDiagnosticCenters(), fetchHealthPackages(), fetchPreviousOrders()]);
+    await Promise.all([fetchTests(), fetchDiagnosticCenters(), fetchPreviousOrders()]);
     toast.success("Data refreshed!");
-  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages, fetchPreviousOrders]);
+  }, [fetchTests, fetchDiagnosticCenters, fetchPreviousOrders]);
 
   const {
     isRefreshing,
@@ -165,9 +140,8 @@ const HomeScreen = () => {
   useEffect(() => {
     fetchTests();
     fetchDiagnosticCenters();
-    fetchHealthPackages();
     fetchPreviousOrders();
-  }, [fetchTests, fetchDiagnosticCenters, fetchHealthPackages, fetchPreviousOrders]);
+  }, [fetchTests, fetchDiagnosticCenters, fetchPreviousOrders]);
 
   // Filter tests based on search query — merges Supabase tests + bridge tests
   const searchResults = useMemo(() => {
