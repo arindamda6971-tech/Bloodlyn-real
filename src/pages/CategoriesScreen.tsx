@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
