@@ -18,7 +18,6 @@ import {
   Plus,
   Phone,
   RotateCw,
-  Package,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -67,7 +66,7 @@ const HomeScreen = () => {
   const [showCallSheet, setShowCallSheet] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<PreviousOrder[]>([]);
   const [diagnosticCenters, setDiagnosticCenters] = useState<{id: string; name: string; rating: number; tests: number; logo?: string}[]>([]);
-  const [healthPackages, setHealthPackages] = useState<{id: string; name: string; tests_count: number; price: number; original_price?: number; discount_percent?: number; icon?: string; color?: string; lab_name?: string; lab_logo?: string}[]>([]);
+  const [healthPackages, setHealthPackages] = useState<any[]>([]);
 
   // Subscribe to real-time product updates
   useRealtimeProducts();
