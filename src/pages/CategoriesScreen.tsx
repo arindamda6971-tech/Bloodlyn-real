@@ -194,9 +194,16 @@ const CategoriesScreen = () => {
         </div>
       )}
 
+      {/* Doctor Ad Banners */}
+      {!searchQuery.trim() && (
+        <div className="px-4 mt-4">
+          <DoctorAdCarousel categories={categories.map(c => ({ name: c.name, slug: c.slug, tests: c.tests }))} />
+        </div>
+      )}
+
       {/* Categories Grid */}
       {!searchQuery.trim() && (
-        <div className="px-4 mt-6 pb-6">
+        <div className="px-4 mt-4 pb-6">
           <h2 className="text-lg font-bold text-foreground mb-4">Browse by Category</h2>
           {isLoading ? (
             <div className="flex justify-center py-12">
