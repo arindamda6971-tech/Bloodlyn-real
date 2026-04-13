@@ -483,66 +483,37 @@ const HomeScreen = () => {
         </motion.section>
       )}
 
-      {/* Health Packages Section */}
+      {/* Doctor Advertisement Banner */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
         className="px-4 mt-8 mb-6"
       >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Health Packages</h2>
-            <p className="text-xs text-muted-foreground mt-1">Comprehensive health checkups from trusted labs</p>
+        <button
+          onClick={() => navigate('/categories')}
+          className="w-full relative overflow-hidden rounded-2xl group"
+        >
+          <img
+            src={doctorAdBanner}
+            alt="Book health tests"
+            className="w-full h-44 object-cover brightness-[0.55] group-hover:brightness-[0.45] transition-all duration-300"
+            loading="lazy"
+            width={1024}
+            height={512}
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-center px-5">
+            <p className="text-white/80 text-xs font-medium mb-1 text-left">Doctor Recommended</p>
+            <h3 className="text-white text-lg font-bold leading-tight text-left">Get Your Health<br/>Tests Done Today</h3>
+            <p className="text-white/70 text-xs mt-1.5 text-left">Browse 100+ tests across all categories</p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="bg-white text-primary text-xs font-bold px-4 py-1.5 rounded-full">
+                Browse Tests →
+              </span>
+            </div>
           </div>
-          <button 
-            onClick={() => navigate('/packages')}
-            className="flex items-center gap-1 text-primary text-sm font-semibold hover:text-primary/80 transition-colors"
-          >
-            View all <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-
-        {healthPackages.length > 0 ? (
-          <div className="space-y-3">
-            {healthPackages.map((pkg, index) => (
-              <motion.div
-                key={pkg.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 + index * 0.08 }}
-                onClick={() => navigate(`/package/${pkg.id}`)}
-                className="soft-card p-4 cursor-pointer hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`w-12 h-12 rounded-2xl ${pkg.color || 'bg-primary/10'} flex items-center justify-center flex-shrink-0`}>
-                    <Shield className="w-6 h-6 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm">{pkg.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{pkg.tests_count} tests included</p>
-                    {pkg.lab_name && (
-                      <p className="text-xs text-primary font-medium mt-1">by {pkg.lab_name}</p>
-                    )}
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-foreground">₹{pkg.price}</p>
-                    {pkg.original_price && (
-                      <p className="text-xs text-muted-foreground line-through">₹{pkg.original_price}</p>
-                    )}
-                    {pkg.discount_percent && pkg.discount_percent > 0 && (
-                      <Badge variant="softSuccess" className="text-[10px] mt-1">{pkg.discount_percent}% off</Badge>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <div className="soft-card p-6 text-center">
-            <p className="text-muted-foreground text-sm">No packages available</p>
-          </div>
-        )}
+        </button>
       </motion.section>
 
       {/* Contact Bottom Sheet */}
