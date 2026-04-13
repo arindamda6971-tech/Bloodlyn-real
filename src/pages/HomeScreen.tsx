@@ -10,7 +10,6 @@ import {
   ChevronRight,
   HeartPulse,
   Activity,
-  Shield,
   X,
   RefreshCw,
   FileUp,
