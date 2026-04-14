@@ -79,7 +79,7 @@ const HomeScreen = () => {
       .from("orders")
       .select("id, order_number, test_name, total, status, created_at")
       .order("created_at", { ascending: false })
-      .limit(6);
+      .limit(4);
     if (data) setPreviousOrders(data);
   }, [user]);
 
