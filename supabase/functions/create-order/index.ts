@@ -389,9 +389,10 @@ Deno.serve(async (req) => {
       const mappedProductTestId = productTestIdMap[item.id];
 
       // Only set test_id if the ID actually exists in the tests table
+      // mappedProductTestId comes from products.test_id but may reference a non-existent test
       const resolvedTestId = isSpecialItem
         ? null
-        : mappedProductTestId !== undefined
+        : (mappedProductTestId && knownTestIds.has(mappedProductTestId))
           ? mappedProductTestId
           : isPackageItem
             ? null
