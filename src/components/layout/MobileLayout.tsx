@@ -1,5 +1,4 @@
 import { ReactNode, useCallback } from "react";
-import { motion } from "framer-motion";
 import BottomNavigation from "./BottomNavigation";
 import FloatingAddButton from "./FloatingAddButton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
@@ -22,7 +21,6 @@ const MobileLayout = ({
   enablePullToRefresh = true,
 }: MobileLayoutProps) => {
   const defaultRefresh = useCallback(async () => {
-    // Default refresh - simulate a refresh delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     window.location.reload();
   }, []);
@@ -30,18 +28,13 @@ const MobileLayout = ({
   const handleRefresh = onRefresh || defaultRefresh;
 
   const content = (
-    <motion.main
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-       className={`${showNav ? "pb-24" : ""} ${className}`}
-    >
+    <main className={`${showNav ? "pb-24" : ""} ${className}`}>
       {children}
-    </motion.main>
+    </main>
   );
 
   return (
-    <div className="min-h-screen h-screen bg-background max-w-[430px] mx-auto relative overflow-hidden">
+    <div className="min-h-screen h-screen bg-background max-w-[430px] mx-auto relative overflow-hidden contain-layout">
       {enablePullToRefresh ? (
         <PullToRefresh onRefresh={handleRefresh}>
           {content}

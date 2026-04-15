@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import doctorAdBanner from "@/assets/doctor-ad-banner.jpg";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
   Bell,
@@ -372,39 +372,26 @@ const HomeScreen = () => {
       <DiagnosticCentersCarousel centers={diagnosticCenters} />
 
       {/* Quick Actions */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="px-4 mt-6"
-      >
+      <section className="px-4 mt-6">
         <div className="grid grid-cols-2 gap-4">
-          {quickActions.map((action, index) => (
-            <motion.button
+          {quickActions.map((action) => (
+            <button
               key={action.label}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + index * 0.1 }}
               onClick={() => navigate(action.path)}
-              className="soft-card flex items-center gap-3 p-4"
+              className="soft-card flex items-center gap-3 p-4 active:scale-[0.97] transition-transform"
             >
-              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center transition-transform active:scale-95`}>
+              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center`}>
                 <action.icon className="w-6 h-6" />
               </div>
               <span className="text-sm font-semibold text-foreground">{action.label}</span>
-            </motion.button>
+            </button>
           ))}
         </div>
-      </motion.section>
+      </section>
 
       {/* Previous Orders */}
       {previousOrders.length > 0 && (
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8"
-        >
+        <section className="mt-8">
           <div className="flex items-center justify-between px-4 mb-4">
             <h2 className="text-lg font-bold text-foreground">Previous Orders 📦</h2>
             <button 
@@ -416,12 +403,9 @@ const HomeScreen = () => {
           </div>
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
-              {previousOrders.map((order, index) => (
-                <motion.div
+              {previousOrders.map((order) => (
+                <div
                   key={order.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + index * 0.06 }}
                   className="soft-card p-4 flex flex-col justify-between"
                   style={{ width: '200px', minHeight: '140px' }}
                 >
@@ -463,20 +447,15 @@ const HomeScreen = () => {
                       Reorder
                     </button>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
           </div>
-        </motion.section>
+        </section>
       )}
 
       {/* Doctor Advertisement Banner */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="px-4 mt-8 mb-6"
-      >
+      <section className="px-4 mt-8 mb-6">
         <button
           onClick={() => navigate('/categories')}
           className="w-full relative overflow-hidden rounded-2xl group"
@@ -501,7 +480,7 @@ const HomeScreen = () => {
             </div>
           </div>
         </button>
-      </motion.section>
+      </section>
 
       {/* Contact Bottom Sheet */}
       <AnimatePresence>

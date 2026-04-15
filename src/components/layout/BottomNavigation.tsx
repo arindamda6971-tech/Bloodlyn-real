@@ -1,6 +1,5 @@
 import { Home, Grid3X3, ShoppingBag, FileText, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
@@ -27,33 +26,32 @@ const BottomNavigation = () => {
           const Icon = item.icon;
           
           return (
-            <motion.button
+            <button
               key={item.path}
               onClick={() => navigate(item.path)}
-              whileTap={{ scale: 0.92 }}
-               className="relative flex flex-col items-center gap-1 py-1.5 px-4 min-w-[64px]"
+               className="relative flex flex-col items-center gap-1 py-1.5 px-4 min-w-[64px] active:scale-[0.92] transition-transform duration-150"
             >
               <div
-                 className={`p-2 rounded-2xl transition-all duration-300 ${
+                 className={`p-2 rounded-2xl transition-colors duration-200 ${
                   isActive 
                      ? "bg-primary/10" 
                     : "hover:bg-muted/50"
                 }`}
               >
                 <Icon
-                   className={`w-5 h-5 transition-colors duration-300 ${
+                   className={`w-5 h-5 transition-colors duration-200 ${
                      isActive ? "text-primary" : "text-muted-foreground/70"
                   }`}
                 />
               </div>
               <span
-                 className={`text-[10px] font-semibold transition-colors duration-300 ${
+                 className={`text-[10px] font-semibold transition-colors duration-200 ${
                    isActive ? "text-primary" : "text-muted-foreground/70"
                 }`}
               >
                 {item.label}
               </span>
-            </motion.button>
+            </button>
           );
         })}
       </div>
