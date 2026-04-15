@@ -414,48 +414,58 @@ const HomeScreen = () => {
               View all <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          <div className="px-4 space-y-3">
-            {previousOrders.map((order, index) => (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 + index * 0.06 }}
-                className="soft-card p-4 flex items-center gap-4"
-              >
-                {/* Order icon */}
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Activity className="w-6 h-6 text-primary" />
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm line-clamp-1">
-                    {order.test_name || "Lab Test"}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {order.order_number || `#${order.id.slice(0, 8)}`}
-                  </p>
-                  <p className="text-base font-bold text-foreground mt-1">₹{order.total}</p>
-                </div>
-                {/* Reorder button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const testName = order.test_name || "Lab Test";
-                    const success = addToCart({
-                      id: `reorder-${order.id}`,
-                      name: testName,
-                      price: order.total,
-                    });
-                    if (success) toast.success(`${testName} added to cart`);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold flex-shrink-0 active:scale-95 transition-transform"
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
+              {previousOrders.map((order, index) => (
+                <motion.div
+                  key={order.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + index * 0.06 }}
+                  className="soft-card p-4 flex flex-col justify-between"
+                  style={{ width: '200px', minHeight: '140px' }}
                 >
-                  <RotateCw className="w-4 h-4" />
-                  Reorder
-                </button>
-              </motion.div>
-            ))}
+                  {/* Order icon + status */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Activity className="w-5 h-5 text-primary" />
+                    </div>
+                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full capitalize">
+                      {order.status || "pending"}
+                    </span>
+                  </div>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0 mb-2">
+                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-tight">
+                      {order.test_name || "Lab Test"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {order.order_number || `#${order.id.slice(0, 8)}`}
+                    </p>
+                  </div>
+                  {/* Price + Reorder */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-base font-bold text-foreground">₹{order.total}</p>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const testName = order.test_name || "Lab Test";
+                        const success = addToCart({
+                          id: `reorder-${order.id}`,
+                          name: testName,
+                          price: order.total,
+                        });
+                        if (success) toast.success(`${testName} added to cart`);
+                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold active:scale-95 transition-transform"
+                    >
+                      <RotateCw className="w-3 h-3" />
+                      Reorder
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </motion.section>
       )}

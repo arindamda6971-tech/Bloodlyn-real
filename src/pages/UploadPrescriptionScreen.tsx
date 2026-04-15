@@ -297,7 +297,24 @@ const UploadPrescriptionScreen = () => {
             </div>
           ) : (
             <div className="relative">
-              <img src={uploadedImage} alt="Uploaded prescription" className="w-full rounded-2xl object-cover max-h-64" />
+              <div className="w-full rounded-2xl overflow-hidden border border-border bg-muted/20">
+                <img 
+                  src={uploadedImage} 
+                  alt="Uploaded prescription" 
+                  className="w-full rounded-2xl object-contain max-h-80"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const fallback = target.nextElementSibling as HTMLElement;
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
+                />
+                <div className="hidden items-center justify-center h-48 text-muted-foreground flex-col gap-2">
+                  <FileText className="w-12 h-12" />
+                  <p className="text-sm font-medium">Prescription uploaded</p>
+                  <p className="text-xs">Image preview unavailable</p>
+                </div>
+              </div>
               {isUploading && (
                 <div className="absolute inset-0 bg-background/80 rounded-2xl flex items-center justify-center">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
@@ -306,7 +323,7 @@ const UploadPrescriptionScreen = () => {
                   <span className="ml-2 text-sm text-muted-foreground">Uploading...</span>
                 </div>
               )}
-              <button onClick={handleRemoveImage} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center" disabled={isUploading}>
+              <button onClick={handleRemoveImage} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-destructive shadow-lg flex items-center justify-center" disabled={isUploading}>
                 <X className="w-4 h-4 text-destructive-foreground" />
               </button>
               {!analysisComplete && !isUploading && (
