@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import labBannerLal from "@/assets/lab-banner-lal.jpg";
+import labBannerThyrocare from "@/assets/lab-banner-thyrocare.jpg";
+import labBannerMetropolis from "@/assets/lab-banner-metropolis.jpg";
+import labBannerSrl from "@/assets/lab-banner-srl.jpg";
+import labBannerApollo from "@/assets/lab-banner-apollo.jpg";
+import labBannerDefault from "@/assets/lab-banner-default.jpg";
 import {
   Building2,
   Star,
@@ -520,40 +526,34 @@ const LabDetailScreen = () => {
 
       <div className="pb-24">
         {/* Hero Banner */}
-        {/* Polished Banner Card - Same style as Home Carousel */}
+        {/* Polished Banner Card with AI-generated DNA banner images */}
         <div className="px-4 pt-4">
+          {(() => {
+            const labBannerMap: Record<string, string> = {
+              "Dr. Lal PathLabs": labBannerLal,
+              "Thyrocare": labBannerThyrocare,
+              "Metropolis Healthcare": labBannerMetropolis,
+              "SRL Diagnostics": labBannerSrl,
+              "Apollo Diagnostics": labBannerApollo,
+            };
+            const bannerImg = labBannerMap[lab.name] || labBannerDefault;
+            return (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`relative bg-gradient-to-br ${bannerGradient} overflow-hidden rounded-3xl shadow-2xl ${isClosed ? 'grayscale' : ''}`}
+            className={`relative overflow-hidden rounded-3xl shadow-2xl ${isClosed ? 'grayscale' : ''}`}
             style={{ minHeight: '200px' }}
           >
-            {/* Decorative Blobs */}
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-xl" />
-            <div className="absolute -bottom-8 -left-8 w-28 h-28 bg-white/10 rounded-full blur-xl" />
-            
-            {/* Shimmer Effect */}
-            <div className="absolute inset-0 overflow-hidden rounded-3xl">
-              <div 
-                className="absolute inset-0 -translate-x-full animate-[shimmer_3s_infinite]"
-                style={{
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                }}
-              />
-            </div>
-            
-            {/* Glowing Pulse Effect */}
-            <motion.div 
-              className="absolute inset-0 rounded-3xl pointer-events-none"
-              animate={{ 
-                boxShadow: [
-                  '0 0 20px rgba(255,255,255,0.1)',
-                  '0 0 40px rgba(255,255,255,0.2)',
-                  '0 0 20px rgba(255,255,255,0.1)'
-                ]
-              }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            {/* Banner Image Background */}
+            <img
+              src={bannerImg}
+              alt={lab.name}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="eager"
             />
+            {/* Dark Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+            
             
             {/* Content */}
             <div className="relative p-5 flex flex-col h-full min-h-[200px]">
@@ -636,6 +636,8 @@ const LabDetailScreen = () => {
               </div>
             </div>
           </motion.div>
+            );
+          })()}
         </div>
 
         {/* CLOSED Banner */}

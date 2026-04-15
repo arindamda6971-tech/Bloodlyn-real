@@ -1,10 +1,22 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, Shield, Brain, ChevronRight, Activity, Stethoscope } from "lucide-react";
+import { Clock, Shield, ChevronRight, Activity, Stethoscope, IndianRupee, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const slides = [
+  {
+    icon: IndianRupee,
+    title: "Most Affordable Home Blood Collection Platform",
+    description: "Get lab-quality blood tests at unbeatable prices — collected safely from your doorstep by certified phlebotomists.",
+    color: "from-emerald-500 to-emerald-500/60",
+  },
+  {
+    icon: Users,
+    title: "1,000,000+ Happy Patients",
+    description: "Trusted by over a million patients across India for accurate, reliable, and hassle-free diagnostic services.",
+    color: "from-rose-500 to-rose-500/60",
+  },
   {
     icon: Clock,
     title: "Book any test in 60 minutes",
