@@ -61,7 +61,16 @@ const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFam
 const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 min — avoid redundant refetches
+      gcTime: 10 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -75,7 +84,7 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
-                <Suspense fallback={null}>
+                <Suspense fallback={<div className="min-h-screen bg-background" />}>
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<SplashScreen />} />
