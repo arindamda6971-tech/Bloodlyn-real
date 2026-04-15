@@ -388,6 +388,7 @@ Deno.serve(async (req) => {
       const isPackageItem = knownPackageIds.has(item.id);
       const mappedProductTestId = productTestIdMap[item.id];
 
+      // Only set test_id if the ID actually exists in the tests table
       const resolvedTestId = isSpecialItem
         ? null
         : mappedProductTestId !== undefined
@@ -397,6 +398,9 @@ Deno.serve(async (req) => {
             : knownTestIds.has(item.id)
               ? item.id
               : null;
+
+      // Also only set package_id if it exists in known packages
+      const isKnownPackage = knownPackageIds.has(item.packageId || "") || knownPackageIds.has(item.id);
 
       const resolvedPackageId = isPackageItem
         ? (item.packageId || item.id)
