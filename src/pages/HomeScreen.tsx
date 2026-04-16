@@ -369,7 +369,17 @@ const HomeScreen = () => {
       </header>
 
       {/* Diagnostic Centers Carousel */}
-      <DiagnosticCentersCarousel centers={diagnosticCenters} />
+      {diagnosticCenters.length === 0 ? (
+        <section className="px-4 mt-4">
+          <div className="flex gap-3 overflow-hidden">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex-shrink-0 w-40 h-24 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        </section>
+      ) : (
+        <DiagnosticCentersCarousel centers={diagnosticCenters} />
+      )}
 
       {/* Quick Actions */}
       <section className="px-4 mt-6">
@@ -390,17 +400,38 @@ const HomeScreen = () => {
       </section>
 
       {/* Previous Orders */}
-      {previousOrders.length > 0 && (
-        <section className="mt-8">
-          <div className="flex items-center justify-between px-4 mb-4">
-            <h2 className="text-lg font-bold text-foreground">Previous Orders 📦</h2>
+      <section className="mt-8">
+        <div className="flex items-center justify-between px-4 mb-4">
+          <h2 className="text-lg font-bold text-foreground">Previous Orders 📦</h2>
+          {previousOrders.length > 0 && (
             <button 
               onClick={() => navigate('/bookings')}
               className="flex items-center gap-1 text-primary text-sm font-medium"
             >
               View all <ChevronRight className="w-4 h-4" />
             </button>
+          )}
+        </div>
+        {previousOrders.length === 0 ? (
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="soft-card p-4" style={{ width: '200px', minHeight: '140px' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
+                    <div className="w-16 h-5 rounded-full bg-muted animate-pulse" />
+                  </div>
+                  <div className="w-3/4 h-4 rounded bg-muted animate-pulse mb-2" />
+                  <div className="w-1/2 h-3 rounded bg-muted animate-pulse mb-3" />
+                  <div className="flex justify-between">
+                    <div className="w-12 h-5 rounded bg-muted animate-pulse" />
+                    <div className="w-16 h-7 rounded-lg bg-muted animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        ) : (
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
               {previousOrders.map((order) => (
@@ -409,7 +440,6 @@ const HomeScreen = () => {
                   className="soft-card p-4 flex flex-col justify-between"
                   style={{ width: '200px', minHeight: '140px' }}
                 >
-                  {/* Order icon + status */}
                   <div className="flex items-center justify-between mb-2">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                       <Activity className="w-5 h-5 text-primary" />
@@ -418,7 +448,6 @@ const HomeScreen = () => {
                       {order.status || "pending"}
                     </span>
                   </div>
-                  {/* Info */}
                   <div className="flex-1 min-w-0 mb-2">
                     <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-tight">
                       {order.test_name || "Lab Test"}
@@ -427,7 +456,6 @@ const HomeScreen = () => {
                       {order.order_number || `#${order.id.slice(0, 8)}`}
                     </p>
                   </div>
-                  {/* Price + Reorder */}
                   <div className="flex items-center justify-between">
                     <p className="text-base font-bold text-foreground">₹{order.total}</p>
                     <button
@@ -451,8 +479,8 @@ const HomeScreen = () => {
               ))}
             </div>
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Doctor Advertisement Banner */}
       <section className="px-4 mt-8 mb-6">
