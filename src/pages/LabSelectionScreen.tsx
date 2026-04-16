@@ -86,32 +86,58 @@ const LabSelectionScreen = () => {
 
     const fetchLabs = async () => {
       try {
+        // Fetch diagnostic centers
         const { data, error } = await supabase
           .from("diagnostic_centers")
           .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time, available_tests, is_active")
           .order("rating", { ascending: false });
 
-        if (!error && data) {
-          const cartTestNames = items.map(item => item.name.toLowerCase());
-          
-          const filteredLabs = data.filter((lab) => {
-            if (!lab.available_tests || !Array.isArray(lab.available_tests) || lab.available_tests.length === 0) {
-              return false;
-            }
-            const labTestNames = new Set<string>();
+        if (error || !data) { setLabsLoading(false); return; }
+
+        const cartTestNames = items.map(item => item.name.trim().toLowerCase());
+
+        // Also fetch products for all vendor_ids to cross-match
+        const vendorIds = data.filter(d => d.vendor_id).map(d => d.vendor_id!);
+        let vendorProducts: Record<string, string[]> = {};
+        if (vendorIds.length > 0) {
+          const { data: products } = await supabase
+            .from("products")
+            .select("vendor_id, product_name")
+            .in("vendor_id", vendorIds)
+            .eq("availability", true);
+          if (products) {
+            products.forEach((p) => {
+              if (!vendorProducts[p.vendor_id]) vendorProducts[p.vendor_id] = [];
+              vendorProducts[p.vendor_id].push(p.product_name.trim().toLowerCase());
+            });
+          }
+        }
+
+        const filteredLabs = data.filter((lab) => {
+          // Collect all test names from available_tests JSONB
+          const labTestNames = new Set<string>();
+          if (Array.isArray(lab.available_tests)) {
             lab.available_tests.forEach((t: any) => {
-              const name = (t.test_name || t.name || t.product_name || "").toLowerCase();
+              const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
               if (name) labTestNames.add(name);
             });
-            return cartTestNames.every(cartName => {
-              return Array.from(labTestNames).some(labName => 
-                labName.includes(cartName) || cartName.includes(labName)
-              );
-            });
-          });
+          }
+          // Also add from products table
+          if (lab.vendor_id && vendorProducts[lab.vendor_id]) {
+            vendorProducts[lab.vendor_id].forEach(n => labTestNames.add(n));
+          }
 
-          setLabs(filteredLabs);
-        }
+          if (labTestNames.size === 0) return false;
+
+          // Check that ALL cart items match at least one lab test
+          return cartTestNames.every(cartName =>
+            Array.from(labTestNames).some(labName =>
+              labName.includes(cartName) || cartName.includes(labName)
+            )
+          );
+        });
+
+        setLabs(filteredLabs);
       } catch (err) {
         console.error("Error fetching labs:", err);
       } finally {
