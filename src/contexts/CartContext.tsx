@@ -65,22 +65,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error loading cart:", error);
-        // On error, start empty — don't restore stale sessionStorage
         setItems([]);
       } else if (data && data.length > 0) {
-        const cartItems: CartItem[] = data.map((item) => ({
-          id: item.test_id || item.package_id || item.id,
-          name: item.test_name || "Unknown Test",
-          price: Number(item.price) || 0,
-          labId: item.lab_id || undefined,
-          labName: item.lab_name || undefined,
-          vendorId: (item as any).vendor_id || undefined,
-          quantity: item.quantity || 1,
-          familyMemberId: item.family_member_id || undefined,
-        }));
+        const cartItems: CartItem[] = data
+          .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
+          .map((item) => ({
+            id: item.test_id || item.package_id || item.id,
+            name: item.test_name!,
+            price: Number(item.price) || 0,
+            labId: item.lab_id || undefined,
+            labName: item.lab_name || undefined,
+            vendorId: (item as any).vendor_id || undefined,
+            quantity: item.quantity || 1,
+            familyMemberId: item.family_member_id || undefined,
+          }));
         setItems(cartItems);
       } else {
-        // No items in DB — start with empty cart
         setItems([]);
       }
     } catch (err) {
