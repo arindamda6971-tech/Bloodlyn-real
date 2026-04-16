@@ -11,6 +11,7 @@ import {
   Moon,
   Bell,
   Users,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ const menuItems: { icon: any; label: string; path: string; badge?: string | null
   { icon: Users, label: "Family Members", path: "/family-members", badge: null },
   { icon: Crown, label: "Subscription Plans", path: "/subscription", badge: null },
   { icon: HelpCircle, label: "Help & Support", path: "/support", badge: null },
+  { icon: FileText, label: "Terms & Conditions", path: "/terms", badge: null },
 ];
 
 const ProfileScreen = () => {
