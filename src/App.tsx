@@ -134,7 +134,7 @@ const App = () => (
                     <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
                     <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                     <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-                    
+                    <Route path="/terms" element={<ProtectedRoute><TermsScreen /></ProtectedRoute>} />
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
