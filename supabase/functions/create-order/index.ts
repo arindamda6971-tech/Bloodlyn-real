@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
 
     const regularItemIds = cartItems
-      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-"))
+      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-"))
       .map((i) => i.id);
 
     let priceMap: Record<string, number> = {};
@@ -384,7 +384,7 @@ Deno.serve(async (req) => {
 
     // Create order items with server-validated prices
     const orderItems = cartItems.map((item) => {
-      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-");
+      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-");
       const isPackageItem = knownPackageIds.has(item.id);
       const mappedProductTestId = productTestIdMap[item.id];
 
