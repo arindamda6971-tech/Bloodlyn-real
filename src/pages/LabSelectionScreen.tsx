@@ -9,6 +9,7 @@ import BookingStepper from "@/components/BookingStepper";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 
 interface PatientState {
   patientName?: string;

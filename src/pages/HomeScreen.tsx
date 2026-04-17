@@ -27,6 +27,7 @@ import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 
 // Get greeting based on current time
 const getGreeting = () => {
@@ -92,15 +93,17 @@ const HomeScreen = () => {
     if (data) setAllTests(data);
   }, []);
 
-  // Fetch diagnostic centers
+  const { pincode: userPincode } = useUserPincode();
+
+  // Fetch diagnostic centers (filtered by user's serviceable pincode — Zomato-style)
   const fetchDiagnosticCenters = useCallback(async () => {
     const { data } = await supabase
       .from("diagnostic_centers")
-      .select("id, name, rating, reviews_count, logo_url, is_active")
-      .order("rating", { ascending: false })
-      .limit(10);
+      .select("*")
+      .order("rating", { ascending: false });
     if (data) {
-      setDiagnosticCenters(data.map(center => ({
+      const serviceable = data.filter((c) => labServesPincode(c as any, userPincode));
+      setDiagnosticCenters(serviceable.slice(0, 10).map(center => ({
         id: center.id,
         name: center.name,
         rating: center.rating || 4.5,
@@ -109,7 +112,7 @@ const HomeScreen = () => {
         isActive: center.is_active !== false,
       })));
     }
-  }, []);
+  }, [userPincode]);
 
   // Health packages fetch removed — replaced with ad banner
 

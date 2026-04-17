@@ -16,6 +16,10 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeDiagnosticCenters } from "@/hooks/useRealtimeDiagnosticCenters";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import { Bell, MapPinOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface DiagnosticCenter {
   id: string;
@@ -46,6 +50,7 @@ const PartnerLabsScreen = () => {
 
   // Subscribe to real-time updates
   useRealtimeDiagnosticCenters();
+  const { pincode: userPincode } = useUserPincode();
 
   useEffect(() => {
     const fetchDiagnosticCenters = async () => {
@@ -59,7 +64,9 @@ const PartnerLabsScreen = () => {
         if (error) {
           console.error("Error fetching diagnostic centers:", error);
         } else {
-          setDiagnosticCenters(data || []);
+          // Filter to only labs serving the user's pincode (Zomato-style)
+          const serviceable = (data || []).filter((c) => labServesPincode(c as any, userPincode));
+          setDiagnosticCenters(serviceable);
         }
       } finally {
         setLoading(false);
@@ -67,7 +74,7 @@ const PartnerLabsScreen = () => {
     };
 
     fetchDiagnosticCenters();
-  }, []);
+  }, [userPincode]);
 
   const filteredCenters = diagnosticCenters.filter((center) => {
     const matchesSearch =
