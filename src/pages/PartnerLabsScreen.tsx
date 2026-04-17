@@ -234,9 +234,29 @@ const PartnerLabsScreen = () => {
             ))}
 
             {filteredCenters.length === 0 && !loading && (
-              <div className="text-center py-12">
-                <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No labs found matching your search</p>
+              <div className="text-center py-12 px-4">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <MapPinOff className="w-10 h-10 text-primary" />
+                </div>
+                <h3 className="text-base font-bold text-foreground mb-1">
+                  {searchQuery ? "No labs match your search" : userPincode ? "No labs in your area yet" : "No labs available"}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-5 max-w-[280px] mx-auto">
+                  {searchQuery
+                    ? "Try a different lab name or city."
+                    : userPincode
+                      ? `We're not live at PIN ${userPincode} yet. Be the first to know when a partner lab joins your area.`
+                      : "Set your delivery pincode to see labs that serve you."}
+                </p>
+                {!searchQuery && userPincode && (
+                  <Button
+                    variant="hero"
+                    onClick={() => toast.success("We'll notify you!", { description: `You'll be the first to know when a lab launches at PIN ${userPincode}.` })}
+                  >
+                    <Bell className="w-4 h-4 mr-2" />
+                    Notify Me When Available
+                  </Button>
+                )}
               </div>
             )}
           </div>
