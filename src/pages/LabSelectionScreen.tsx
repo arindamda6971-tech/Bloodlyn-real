@@ -9,6 +9,7 @@ import BookingStepper from "@/components/BookingStepper";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 
 interface PatientState {
   patientName?: string;
@@ -81,23 +82,28 @@ const LabSelectionScreen = () => {
     return slot.startHour > currentHour;
   };
 
+  const { pincode: userPincode } = useUserPincode();
+
   useEffect(() => {
     if (hasVendorLab) return;
 
     const fetchLabs = async () => {
       try {
-        // Fetch diagnostic centers
+        // Fetch diagnostic centers (request * so service_pincodes column flows through if Partner exposed it)
         const { data, error } = await supabase
           .from("diagnostic_centers")
-          .select("id, name, rating, reviews_count, home_collection_available, vendor_id, opening_time, closing_time, available_tests, is_active")
+          .select("*")
           .order("rating", { ascending: false });
 
         if (error || !data) { setLabsLoading(false); return; }
 
+        // Restrict to labs that serve the user's pincode (Zomato-style)
+        const pincodeFiltered = data.filter((d) => labServesPincode(d as any, userPincode));
+
         const cartTestNames = items.map(item => item.name.trim().toLowerCase());
 
         // Also fetch products for all vendor_ids to cross-match
-        const vendorIds = data.filter(d => d.vendor_id).map(d => d.vendor_id!);
+        const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
         let vendorProducts: Record<string, string[]> = {};
         if (vendorIds.length > 0) {
           const { data: products } = await supabase
@@ -113,7 +119,7 @@ const LabSelectionScreen = () => {
           }
         }
 
-        const filteredLabs = data.filter((lab) => {
+        const filteredLabs = pincodeFiltered.filter((lab) => {
           // Collect all test names from available_tests JSONB
           const labTestNames = new Set<string>();
           if (Array.isArray(lab.available_tests)) {
@@ -145,7 +151,7 @@ const LabSelectionScreen = () => {
       }
     };
     fetchLabs();
-  }, [hasVendorLab, items]);
+  }, [hasVendorLab, items, userPincode]);
 
   useEffect(() => {
     if (items.length === 0) navigate("/cart");
