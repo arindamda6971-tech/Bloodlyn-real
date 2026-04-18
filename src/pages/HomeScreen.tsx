@@ -28,6 +28,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import LocationChip from "@/components/home/LocationChip";
 
 // Get greeting based on current time
 const getGreeting = () => {
@@ -370,6 +371,9 @@ const HomeScreen = () => {
           </AnimatePresence>
         </div>
       </header>
+
+      {/* Delivery location chip */}
+      <LocationChip />
 
       {/* Diagnostic Centers Carousel */}
       {diagnosticCenters.length === 0 ? (
