@@ -371,8 +371,11 @@ const CartScreen = () => {
               <Label htmlFor="patient_phone">Patient Phone *</Label>
               <div className="flex items-center gap-2">
                 <span className="flex h-10 items-center rounded-xl bg-muted px-3 text-sm font-medium text-muted-foreground select-none">+91</span>
-                <Input id="patient_phone" placeholder="10-digit number" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value.replace(/[^0-9]/g, ""))} className={`bg-muted border-0 rounded-xl flex-1 ${validationBorder(/^\d{10}$/.test(patientPhone))}`} maxLength={10} />
+                <Input id="patient_phone" placeholder="10-digit number" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value.replace(/[^0-9]/g, ""))} className={`bg-muted border-0 rounded-xl flex-1 ${validationBorder(/^\d{10}$/.test(patientPhone))}`} maxLength={10} inputMode="numeric" aria-invalid={patientPhone.length > 0 && !/^\d{10}$/.test(patientPhone)} aria-describedby="patient_phone_err" />
               </div>
+              {patientPhone.length > 0 && !/^\d{10}$/.test(patientPhone) && (
+                <p id="patient_phone_err" className="text-xs text-destructive mt-1">Phone must be exactly 10 digits</p>
+              )}
             </div>
           </div>
         </motion.div>
