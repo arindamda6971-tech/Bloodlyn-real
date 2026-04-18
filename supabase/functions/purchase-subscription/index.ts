@@ -195,7 +195,17 @@ Deno.serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ success: true, subscription: newSub }), {
+    const successPayload = { success: true, subscription: newSub };
+
+    // Persist idempotency record (best-effort; don't fail the request if it errors)
+    if (validIdempotencyKey) {
+      await adminClient
+        .from("subscription_purchase_attempts")
+        .insert({ idempotency_key: validIdempotencyKey, user_id: userId, response: successPayload })
+        .then(({ error }) => { if (error) console.error("idempotency record error:", error); });
+    }
+
+    return new Response(JSON.stringify(successPayload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
