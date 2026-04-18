@@ -151,6 +151,13 @@ const LocationCheckScreen = () => {
     setLoading(false);
   };
 
+  // Auto-request GPS on mount — Zomato-style flow.
+  // If geolocation is unavailable or denied, falls back to manual entry.
+  useEffect(() => {
+    handleAllowLocation();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 max-w-[430px] mx-auto relative overflow-hidden">
       {/* Background decoration */}
