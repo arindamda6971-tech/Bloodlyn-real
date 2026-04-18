@@ -698,6 +698,30 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_purchase_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          idempotency_key: string
+          response: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          response?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          response?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           amount_paid: number
@@ -979,6 +1003,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_orphan_cart_items: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

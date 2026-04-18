@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.23.8";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -73,16 +74,59 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub as string;
 
-    // Parse request body
-    const body: CreateOrderRequest = await req.json();
-    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId } = body;
+    // ---------------- Zod validation ----------------
+    // Items use one of: a UUID id (real test/package/product), OR a synthetic
+    // prefixed id (ecg-, ai-, dc-, reorder-) for special flows.
+    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder)-/;
+    const UUID = z.string().uuid();
+    const ItemIdSchema = z.string().min(1).max(120).refine(
+      (v) => SYNTHETIC_PREFIX.test(v) || UUID.safeParse(v).success,
+      { message: "Item id must be a UUID or a recognized synthetic id" },
+    );
 
-    if (!cartItems || cartItems.length === 0) {
+    const CartItemSchema = z.object({
+      id: ItemIdSchema,
+      name: z.string().trim().min(1).max(200),
+      price: z.number().min(0).max(100_000),
+      quantity: z.number().int().min(1).max(10),
+      familyMemberId: z.string().uuid().nullable().optional(),
+      packageId: z.string().uuid().nullable().optional(),
+      category: z.string().max(50).optional(),
+      labId: z.string().uuid().nullable().optional(),
+      labName: z.string().max(200).nullable().optional(),
+      vendorId: z.string().uuid().nullable().optional(),
+    });
+
+    const RequestSchema = z.object({
+      cartItems: z.array(CartItemSchema).min(1).max(50),
+      addressId: z.string().uuid().nullable().optional(),
+      scheduledDate: z.string().max(40).nullable().optional(),
+      scheduledTimeSlot: z.string().max(80).nullable().optional(),
+      subtotal: z.number().min(0).max(1_000_000).optional(),
+      discount: z.number().min(0).max(1_000_000).optional(),
+      total: z.number().min(0).max(1_000_000).optional(),
+      paymentMethod: z.enum(["cod", "upi", "card", "netbanking", "wallet", "online"]).nullable().optional(),
+      couponCode: z.string().trim().max(30).nullable().optional(),
+      patientName: z.string().trim().max(120).optional(),
+      patientAge: z.union([z.number().int().min(0).max(120), z.string().max(4)]).nullable().optional(),
+      patientGender: z.string().max(20).nullable().optional(),
+      patientPhone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits").nullable().optional(),
+      labId: z.string().uuid().nullable().optional(),
+      labName: z.string().max(200).nullable().optional(),
+      vendorId: z.string().uuid().nullable().optional(),
+    });
+
+    const rawBody = await req.json();
+    const parsed = RequestSchema.safeParse(rawBody);
+    if (!parsed.success) {
       return new Response(
-        JSON.stringify({ error: "No items in order" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Invalid request", fields: parsed.error.flatten().fieldErrors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
+    const body = parsed.data as CreateOrderRequest;
+    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId } = body;
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
