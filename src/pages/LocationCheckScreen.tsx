@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Navigation, Loader2, AlertCircle, Bell, List } from "lucide-react";
@@ -17,7 +17,7 @@ interface ServiceableArea {
 const LocationCheckScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState<"ask" | "detecting" | "manual" | "serviceable" | "not-serviceable">("ask");
+  const [step, setStep] = useState<"ask" | "detecting" | "manual" | "serviceable" | "not-serviceable">("detecting");
   const [pincode, setPincode] = useState("");
   const [detectedPincode, setDetectedPincode] = useState("");
   const [locationName, setLocationName] = useState("");
