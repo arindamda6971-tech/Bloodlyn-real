@@ -32,6 +32,11 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const bridgeApiKey = Deno.env.get("BRIDGE_API_KEY");
 
+    // Idempotency: clients may send the same key on retries.
+    const idempotencyKey = req.headers.get("idempotency-key") || req.headers.get("Idempotency-Key");
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validIdempotencyKey = idempotencyKey && UUID_RE.test(idempotencyKey) ? idempotencyKey : null;
+
     const body = await req.json();
     const { plan, action, subscriber_type, subscriber_name, vendor_id } = body;
 

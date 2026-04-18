@@ -76,8 +76,76 @@ serve(async (req) => {
   if (authCheck) return authCheck;
 
   try {
-    const { imageBase64 } = await req.json();
-    
+    const { imageBase64, imageUrl } = await req.json();
+
+    // -------- Validate provided image --------
+    // We accept EITHER imageBase64 (legacy in-flight image) OR imageUrl pointing
+    // to the user's own folder in the prescriptions bucket.
+    if (imageUrl && typeof imageUrl === 'string') {
+      // Re-derive userId from the JWT we just validated above.
+      let userId: string | null = null;
+      try {
+        const authHeader = req.headers.get('authorization') || '';
+        const token = authHeader.replace(/^Bearer\s+/i, '');
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+          userId = payload?.sub ?? null;
+        }
+      } catch { /* ignore — we'll reject below */ }
+
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // The URL must reference the prescriptions bucket and the user's own folder.
+      // Accept either signed/public URLs or storage paths.
+      const okBucket = /\/storage\/v1\/object\/(public|sign)\/prescriptions\//.test(imageUrl)
+        || imageUrl.startsWith('prescriptions/');
+      const okFolder = imageUrl.includes(`/prescriptions/${userId}/`)
+        || imageUrl.startsWith(`prescriptions/${userId}/`);
+
+      if (!okBucket || !okFolder) {
+        return new Response(
+          JSON.stringify({ error: 'Image must be in your own folder of the prescriptions bucket' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // HEAD request to verify size + content-type.
+      try {
+        const head = await fetch(imageUrl, { method: 'HEAD' });
+        if (!head.ok) {
+          return new Response(
+            JSON.stringify({ error: 'Could not access image' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        const ct = head.headers.get('content-type') || '';
+        const cl = parseInt(head.headers.get('content-length') || '0', 10);
+        if (!/^image\/(jpeg|png)$/i.test(ct)) {
+          return new Response(
+            JSON.stringify({ error: 'Only JPEG or PNG images are accepted' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        if (cl > 5 * 1024 * 1024) {
+          return new Response(
+            JSON.stringify({ error: 'Image too large. Maximum size is 5 MB.' }),
+            { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      } catch {
+        return new Response(
+          JSON.stringify({ error: 'Image validation failed' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     if (!imageBase64) {
       return new Response(
         JSON.stringify({ error: "No image provided" }),
@@ -93,9 +161,9 @@ serve(async (req) => {
       );
     }
 
-    if (!imageBase64.startsWith('data:image/')) {
+    if (!/^data:image\/(jpeg|png);/i.test(imageBase64)) {
       return new Response(
-        JSON.stringify({ error: "Invalid image format" }),
+        JSON.stringify({ error: "Only JPEG or PNG images are accepted" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
