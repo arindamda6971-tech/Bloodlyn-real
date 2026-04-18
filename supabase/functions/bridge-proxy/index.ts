@@ -8,6 +8,34 @@ const corsHeaders = {
 
 const BRIDGE_BASE_URL = "https://uivexkxdhcubjcdxmjuu.supabase.co/functions/v1";
 
+// ----------------------------------------------------------------------------
+// In-memory token-bucket rate limiter: 30 requests / 60 seconds per user_id.
+// Note: per edge-function instance — multiple instances => limit is per-instance.
+// ----------------------------------------------------------------------------
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const buckets = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimitCheck(userId: string): { ok: boolean; retryAfter: number } {
+  const now = Date.now();
+  const bucket = buckets.get(userId);
+  if (!bucket || bucket.resetAt < now) {
+    buckets.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { ok: true, retryAfter: 0 };
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return { ok: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) };
+  }
+  bucket.count += 1;
+  return { ok: true, retryAfter: 0 };
+}
+
+// Periodic cleanup to avoid unbounded growth
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of buckets) if (v.resetAt < now) buckets.delete(k);
+}, RATE_LIMIT_WINDOW_MS);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -68,7 +96,21 @@ Deno.serve(async (req) => {
       });
     }
 
-
+    // Per-user rate limit (after auth so anon traffic can't exhaust the table)
+    const rl = rateLimitCheck(userId);
+    if (!rl.ok) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Try again shortly.", retryAfter: rl.retryAfter }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rl.retryAfter),
+          },
+        },
+      );
+    }
 
     // Parse the request body to get the proxy instructions
     const body = await req.json();

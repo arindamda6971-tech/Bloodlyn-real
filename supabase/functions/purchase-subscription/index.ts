@@ -32,6 +32,11 @@ Deno.serve(async (req) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const bridgeApiKey = Deno.env.get("BRIDGE_API_KEY");
 
+    // Idempotency: clients may send the same key on retries.
+    const idempotencyKey = req.headers.get("idempotency-key") || req.headers.get("Idempotency-Key");
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validIdempotencyKey = idempotencyKey && UUID_RE.test(idempotencyKey) ? idempotencyKey : null;
+
     const body = await req.json();
     const { plan, action, subscriber_type, subscriber_name, vendor_id } = body;
 
@@ -82,6 +87,22 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const subType = isBridgeCall ? "vendor" : (subscriber_type || "user");
+
+    // ---------------- Idempotency replay ----------------
+    if (validIdempotencyKey) {
+      const { data: prior } = await adminClient
+        .from("subscription_purchase_attempts")
+        .select("response, user_id")
+        .eq("idempotency_key", validIdempotencyKey)
+        .maybeSingle();
+
+      if (prior && prior.user_id === userId && prior.response) {
+        return new Response(JSON.stringify(prior.response), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Idempotent-Replay": "true" },
+        });
+      }
+    }
 
     if (action === "cancel") {
       const { data: activeSub } = await adminClient
@@ -174,7 +195,17 @@ Deno.serve(async (req) => {
 
     if (insertError) throw insertError;
 
-    return new Response(JSON.stringify({ success: true, subscription: newSub }), {
+    const successPayload = { success: true, subscription: newSub };
+
+    // Persist idempotency record (best-effort; don't fail the request if it errors)
+    if (validIdempotencyKey) {
+      await adminClient
+        .from("subscription_purchase_attempts")
+        .insert({ idempotency_key: validIdempotencyKey, user_id: userId, response: successPayload })
+        .then(({ error }) => { if (error) console.error("idempotency record error:", error); });
+    }
+
+    return new Response(JSON.stringify(successPayload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
