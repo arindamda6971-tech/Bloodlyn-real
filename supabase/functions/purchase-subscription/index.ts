@@ -88,6 +88,22 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const subType = isBridgeCall ? "vendor" : (subscriber_type || "user");
 
+    // ---------------- Idempotency replay ----------------
+    if (validIdempotencyKey) {
+      const { data: prior } = await adminClient
+        .from("subscription_purchase_attempts")
+        .select("response, user_id")
+        .eq("idempotency_key", validIdempotencyKey)
+        .maybeSingle();
+
+      if (prior && prior.user_id === userId && prior.response) {
+        return new Response(JSON.stringify(prior.response), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json", "Idempotent-Replay": "true" },
+        });
+      }
+    }
+
     if (action === "cancel") {
       const { data: activeSub } = await adminClient
         .from("subscriptions")
