@@ -86,12 +86,15 @@ Deno.serve(async (req) => {
 
     const CartItemSchema = z.object({
       id: ItemIdSchema,
-      name: z.string().trim().min(1).max(200),
+      name: z.preprocess(
+        (v) => (v == null || v === "" ? "Test" : v),
+        z.string().trim().min(1).max(200),
+      ),
       price: z.number().min(0).max(100_000),
       quantity: z.number().int().min(1).max(10),
       familyMemberId: z.string().uuid().nullable().optional(),
       packageId: z.string().uuid().nullable().optional(),
-      category: z.string().max(50).optional(),
+      category: z.string().max(50).nullable().optional(),
       labId: z.string().uuid().nullable().optional(),
       labName: z.string().max(200).nullable().optional(),
       vendorId: z.string().uuid().nullable().optional(),

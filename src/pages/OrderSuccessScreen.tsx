@@ -123,20 +123,27 @@ const OrderSuccessScreen = () => {
           return;
         }
 
+        const idempotencyKey = (crypto as any)?.randomUUID
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
         const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
+          headers: { "Idempotency-Key": idempotencyKey },
           body: {
-            cartItems: stateCartItems.map((item: any) => ({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              quantity: item.quantity,
-              familyMemberId: item.familyMemberId || null,
-              packageId: item.packageId || null,
-              category: item.category || null,
-              labId: item.labId || null,
-              labName: item.labName || null,
-              vendorId: item.vendorId || null,
-            })),
+            cartItems: stateCartItems
+              .filter((item: any) => item && item.id)
+              .map((item: any) => ({
+                id: String(item.id),
+                name: (item.name && String(item.name).trim()) || "Test",
+                price: Number(item.price) || 0,
+                quantity: Number(item.quantity) || 1,
+                familyMemberId: item.familyMemberId || null,
+                packageId: item.packageId || null,
+                category: item.category || undefined,
+                labId: item.labId || null,
+                labName: item.labName || null,
+                vendorId: item.vendorId || null,
+              })),
             addressId: bookingState?.addressId || null,
             scheduledDate: bookingState?.scheduledDate || null,
             scheduledTimeSlot: bookingState?.scheduledTimeSlot || null,
