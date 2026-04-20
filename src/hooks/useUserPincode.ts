@@ -65,6 +65,10 @@ export const labServesPincode = (
     ? ((lab as any).service_pincodes as unknown[]).map((p) => String(p).trim())
     : [];
   if (list.length > 0) return list.includes(userPincode);
-  // Fallback: lab's own pincode
-  return (lab.pincode || "").trim() === userPincode;
+  // Fallback: lab's own pincode field. Supports comma/space/semicolon-separated
+  // values (some vendors store multiple pincodes in a single text column).
+  const raw = (lab.pincode || "").trim();
+  if (!raw) return false;
+  const pins = raw.split(/[,;\s]+/).map((p) => p.trim()).filter(Boolean);
+  return pins.includes(userPincode);
 };
