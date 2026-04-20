@@ -18,9 +18,40 @@ import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
 
-// Stale-chunk recovery helper
+// Stale-chunk recovery helper — when a hashed chunk 404s after a redeploy,
+// clear caches/SW once and hard-reload so the new index.html (with fresh hashes) loads.
+const RELOAD_KEY = "__chunk_reload_at";
 const safeImport = <T,>(factory: () => Promise<T>): Promise<T> =>
-  factory().catch(() => { window.location.reload(); return factory(); });
+  factory().catch(async (err) => {
+    const msg = String(err?.message || err);
+    const isChunkError =
+      msg.includes("Failed to fetch dynamically imported module") ||
+      msg.includes("Importing a module script failed") ||
+      msg.includes("error loading dynamically imported module");
+    if (!isChunkError) throw err;
+
+    // Prevent infinite reload loops — only reload once per minute
+    const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+    if (Date.now() - last < 60_000) throw err;
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch {
+      /* ignore */
+    }
+    // Hard reload bypassing cache
+    window.location.replace(window.location.pathname + window.location.search);
+    // Return a never-resolving promise so React's Suspense doesn't try to render
+    return new Promise<T>(() => {});
+  });
 
 // All other screens — lazily loaded with auto-reload fallback
 const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
