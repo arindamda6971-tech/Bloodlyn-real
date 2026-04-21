@@ -143,6 +143,7 @@ export type Database = {
           pricing: Json | null
           rating: number | null
           reviews_count: number | null
+          service_pincodes: string[]
           services: Json | null
           state: string
           updated_at: string
@@ -171,6 +172,7 @@ export type Database = {
           pricing?: Json | null
           rating?: number | null
           reviews_count?: number | null
+          service_pincodes?: string[]
           services?: Json | null
           state: string
           updated_at?: string
@@ -199,6 +201,7 @@ export type Database = {
           pricing?: Json | null
           rating?: number | null
           reviews_count?: number | null
+          service_pincodes?: string[]
           services?: Json | null
           state?: string
           updated_at?: string
