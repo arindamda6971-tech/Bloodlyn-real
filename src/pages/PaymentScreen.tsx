@@ -285,12 +285,15 @@ const PaymentScreen = () => {
             variant="destructive"
             className="flex-1 h-14 rounded-xl text-base font-bold gap-2"
             onClick={handlePayment}
+            disabled={verifyingServiceability}
           >
             <span className="flex flex-col items-center leading-tight">
               <span className="text-xs font-semibold opacity-90">₹{total}</span>
               <span className="text-xs opacity-70">TOTAL</span>
             </span>
-            <span className="text-base font-bold">Place Order ›</span>
+            <span className="text-base font-bold">
+              {verifyingServiceability ? "Verifying…" : "Place Order ›"}
+            </span>
           </Button>
         </div>
       </div>
