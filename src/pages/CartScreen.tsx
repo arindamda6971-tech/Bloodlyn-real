@@ -61,7 +61,7 @@ const clearPatientDetails = () => {
 const CartScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
+  const { items, removeFromCart, subtotal, currentLabName, isLoading, updateFamilyMember } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
 
