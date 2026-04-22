@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,9 @@ const UploadPrescriptionScreen = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  // Confirmation step: user must explicitly confirm which detected tests to add
+  const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set());
+  const [confirmed, setConfirmed] = useState(false);
 
   // Load available tests from Supabase + bridge
   useEffect(() => {
@@ -133,6 +137,9 @@ const UploadPrescriptionScreen = () => {
     });
 
     setMatchedTests(matched);
+    // Pre-select all available tests so user can review then confirm
+    setSelectedTestIds(new Set(matched.filter((t) => t.matched).map((t) => t.id)));
+    setConfirmed(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -223,19 +230,37 @@ const UploadPrescriptionScreen = () => {
     setUploadedImage(null);
     setAnalysisComplete(false);
     setMatchedTests([]);
+    setSelectedTestIds(new Set());
+    setConfirmed(false);
   };
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
-  const handleAddToCart = (test: MatchedTest) => {
-    if (!test.matched) return;
-    const success = addToCart({
-      id: test.id,
-      name: test.name,
-      price: test.price,
+  const toggleTestSelection = (testId: string) => {
+    setSelectedTestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(testId)) next.delete(testId);
+      else next.add(testId);
+      return next;
     });
-    if (success) {
-      toast.success(`${test.name} added to cart`);
+  };
+
+  const handleConfirmAddToCart = () => {
+    const toAdd = matchedTests.filter(
+      (t) => t.matched && selectedTestIds.has(t.id) && !isInCart(t.id)
+    );
+    if (toAdd.length === 0) {
+      toast.error("Select at least one available test to add.");
+      return;
+    }
+    let added = 0;
+    for (const test of toAdd) {
+      const success = addToCart({ id: test.id, name: test.name, price: test.price });
+      if (success) added++;
+    }
+    if (added > 0) {
+      toast.success(`${added} ${added === 1 ? "test" : "tests"} added to cart`);
+      setConfirmed(true);
     }
   };
 
@@ -392,54 +417,84 @@ const UploadPrescriptionScreen = () => {
           )}
         </AnimatePresence>
 
-        {/* Available Tests */}
+        {/* Available Tests — Confirmation step */}
         <AnimatePresence>
           {availableTests.length > 0 && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold text-foreground">Available Tests</h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-base font-bold text-foreground">Review Detected Tests</h2>
                 <Badge variant="ai" className="text-xs">AI Detected</Badge>
               </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Tick the tests you want and tap <span className="font-semibold text-foreground">Confirm</span> to add them to your cart.
+              </p>
               <div className="space-y-2">
                 {availableTests.map((test, index) => {
                   const alreadyInCart = isInCart(test.id);
+                  const isSelected = selectedTestIds.has(test.id);
                   return (
-                    <motion.div
+                    <motion.label
                       key={test.id}
+                      htmlFor={`presc-test-${test.id}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.3 + index * 0.08 }}
-                      className="soft-card p-3"
+                      className={`soft-card p-3 flex items-center gap-3 cursor-pointer ${
+                        alreadyInCart ? "opacity-70" : ""
+                      } ${isSelected && !alreadyInCart ? "ring-2 ring-primary/40" : ""}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <FlaskConical className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm">{test.name}</h3>
-                          {test.price > 0 && (
-                            <p className="text-xs text-primary font-bold mt-0.5">₹{test.price}</p>
-                          )}
-                        </div>
-                        <div className="flex-shrink-0">
-                          {alreadyInCart ? (
-                            <Button variant="softSuccess" size="sm" className="h-8 px-3 text-xs" onClick={() => navigate("/cart")}>
-                              <ShoppingCart className="w-3 h-3 mr-1" /> Added
-                            </Button>
-                          ) : (
-                            <Button variant="outline" size="sm" className="h-8 px-3 text-xs" onClick={() => handleAddToCart(test)}>
-                              <Plus className="w-3 h-3 mr-1" /> Add
-                            </Button>
-                          )}
-                        </div>
+                      <Checkbox
+                        id={`presc-test-${test.id}`}
+                        checked={alreadyInCart || isSelected}
+                        disabled={alreadyInCart}
+                        onCheckedChange={() => toggleTestSelection(test.id)}
+                      />
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FlaskConical className="w-4 h-4 text-primary" />
                       </div>
-                    </motion.div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground text-sm">{test.name}</h3>
+                        {test.price > 0 && (
+                          <p className="text-xs text-primary font-bold mt-0.5">₹{test.price}</p>
+                        )}
+                      </div>
+                      {alreadyInCart && (
+                        <Badge variant="softSuccess" className="text-[10px] flex-shrink-0">
+                          <ShoppingCart className="w-3 h-3 mr-1" /> In cart
+                        </Badge>
+                      )}
+                    </motion.label>
                   );
                 })}
               </div>
+
+              {/* Confirm CTA */}
+              {(() => {
+                const selectableCount = availableTests.filter(
+                  (t) => selectedTestIds.has(t.id) && !isInCart(t.id)
+                ).length;
+                return (
+                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                    <Button
+                      className="flex-1 gap-2"
+                      onClick={handleConfirmAddToCart}
+                      disabled={selectableCount === 0}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Confirm & Add {selectableCount > 0 ? `${selectableCount} ` : ""}to Cart
+                    </Button>
+                    {confirmed && (
+                      <Button variant="outline" className="gap-2" onClick={() => navigate("/cart")}>
+                        <ShoppingCart className="w-4 h-4" /> Go to Cart
+                      </Button>
+                    )}
+                  </div>
+                );
+              })()}
             </motion.div>
           )}
         </AnimatePresence>
+
 
         {/* Unavailable Tests */}
         <AnimatePresence>

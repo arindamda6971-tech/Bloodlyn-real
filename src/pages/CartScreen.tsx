@@ -61,7 +61,7 @@ const clearPatientDetails = () => {
 const CartScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, removeFromCart, subtotal, currentLabName, isLoading } = useCart();
+  const { items, removeFromCart, subtotal, currentLabName, isLoading, updateFamilyMember } = useCart();
   const { supabaseUserId } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
 
@@ -223,6 +223,14 @@ const CartScreen = () => {
       return;
     }
 
+    // Strictly persist the patient → test mapping on every cart item before checkout
+    const assignedMemberId = selectedMemberId === "self" ? undefined : selectedMemberId;
+    items.forEach((item) => {
+      if (item.familyMemberId !== assignedMemberId) {
+        updateFamilyMember(item.id, assignedMemberId);
+      }
+    });
+
     // Determine if the cart has a pre-selected lab (from vendor profile booking)
     const hasVendorLab = items.some((item) => item.labId && item.labName);
 
@@ -233,6 +241,7 @@ const CartScreen = () => {
         patientGender,
         patientPhone: patientPhone.trim(),
         addressId: selectedAddressId,
+        familyMemberId: assignedMemberId || null,
         hasVendorLab,
       },
     });
