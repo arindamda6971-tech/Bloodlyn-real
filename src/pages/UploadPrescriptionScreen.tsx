@@ -230,19 +230,37 @@ const UploadPrescriptionScreen = () => {
     setUploadedImage(null);
     setAnalysisComplete(false);
     setMatchedTests([]);
+    setSelectedTestIds(new Set());
+    setConfirmed(false);
   };
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
-  const handleAddToCart = (test: MatchedTest) => {
-    if (!test.matched) return;
-    const success = addToCart({
-      id: test.id,
-      name: test.name,
-      price: test.price,
+  const toggleTestSelection = (testId: string) => {
+    setSelectedTestIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(testId)) next.delete(testId);
+      else next.add(testId);
+      return next;
     });
-    if (success) {
-      toast.success(`${test.name} added to cart`);
+  };
+
+  const handleConfirmAddToCart = () => {
+    const toAdd = matchedTests.filter(
+      (t) => t.matched && selectedTestIds.has(t.id) && !isInCart(t.id)
+    );
+    if (toAdd.length === 0) {
+      toast.error("Select at least one available test to add.");
+      return;
+    }
+    let added = 0;
+    for (const test of toAdd) {
+      const success = addToCart({ id: test.id, name: test.name, price: test.price });
+      if (success) added++;
+    }
+    if (added > 0) {
+      toast.success(`${added} ${added === 1 ? "test" : "tests"} added to cart`);
+      setConfirmed(true);
     }
   };
 
