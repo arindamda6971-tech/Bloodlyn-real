@@ -137,6 +137,9 @@ const UploadPrescriptionScreen = () => {
     });
 
     setMatchedTests(matched);
+    // Pre-select all available tests so user can review then confirm
+    setSelectedTestIds(new Set(matched.filter((t) => t.matched).map((t) => t.id)));
+    setConfirmed(false);
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
