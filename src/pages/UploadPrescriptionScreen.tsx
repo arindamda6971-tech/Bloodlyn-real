@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
