@@ -93,7 +93,42 @@ const PaymentScreen = () => {
     } catch { return dateStr; }
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    // Secondary serviceability gate: re-verify the selected lab serves the user's pincode
+    const labId = paymentState?.selectedLabId || paymentState?.cartItems?.[0]?.labId;
+    if (labId && userPincode) {
+      try {
+        setVerifyingServiceability(true);
+        const { data: lab, error } = await supabase
+          .from("diagnostic_centers")
+          .select("pincode, service_pincodes, is_active")
+          .eq("id", labId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!lab) {
+          toast.error("Selected lab is no longer available. Please pick another lab.");
+          setVerifyingServiceability(false);
+          return;
+        }
+        if (lab.is_active === false) {
+          toast.error("Selected lab is currently closed. Please choose another lab.");
+          setVerifyingServiceability(false);
+          return;
+        }
+        if (!labServesPincode(lab as any, userPincode)) {
+          toast.error(`This lab does not service your pincode (${userPincode}). Please choose another lab.`);
+          setVerifyingServiceability(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Serviceability check failed:", err);
+        toast.error("Could not verify lab serviceability. Please try again.");
+        setVerifyingServiceability(false);
+        return;
+      }
+      setVerifyingServiceability(false);
+    }
+
     const paymentVerified = true;
     navigate("/order-success", {
       state: {
