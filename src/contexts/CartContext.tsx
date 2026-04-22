@@ -151,28 +151,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (item: Omit<CartItem, "quantity">): boolean => {
     if (import.meta.env.DEV) console.log("CartContext.addToCart called with:", item);
-    
+
+    // Prevent duplicate adds — same test cannot be added twice
+    if (items.some((i) => i.id === item.id)) {
+      toast.error("This test is already in your cart.");
+      return false;
+    }
+
     // If there are items in cart and the existing cart is tied to a specific lab,
     // prevent adding an item from a different lab (or an item without labId)
     if (items.length > 0 && currentLabId && item.labId !== currentLabId) {
       setPendingItem({ item, existingLabName: currentLabName || "another lab" });
       return false;
     }
-    
+
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
-      let updated: CartItem[];
-      if (existing) {
-        updated = prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        );
-      } else {
-        updated = [...prev, { ...item, quantity: 1 }];
-      }
-      
-      // Sync to Supabase
+      // Defensive guard inside setter as well (handles race conditions)
+      if (prev.some((i) => i.id === item.id)) return prev;
+      const updated = [...prev, { ...item, quantity: 1 }];
       syncCartToSupabase(updated);
-      
       return updated;
     });
     return true;
