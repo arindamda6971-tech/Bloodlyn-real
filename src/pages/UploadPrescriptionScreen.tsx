@@ -61,6 +61,9 @@ const UploadPrescriptionScreen = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
+  // Confirmation step: user must explicitly confirm which detected tests to add
+  const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set());
+  const [confirmed, setConfirmed] = useState(false);
 
   // Load available tests from Supabase + bridge
   useEffect(() => {
