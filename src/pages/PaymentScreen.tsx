@@ -44,6 +44,7 @@ const PaymentScreen = () => {
   const location = useLocation();
   const { subtotal: cartSubtotal } = useCart();
   const paymentState = location.state as PaymentState | undefined;
+  const { pincode: userPincode } = useUserPincode();
 
   const stateSubtotal = paymentState?.subtotal || cartSubtotal;
   const [couponCode, setCouponCode] = useState("");
@@ -51,6 +52,7 @@ const PaymentScreen = () => {
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+  const [verifyingServiceability, setVerifyingServiceability] = useState(false);
 
   // Listen for payment method selection from PaymentMethodsScreen
   useEffect(() => {
