@@ -61,17 +61,17 @@ export const evaluateLabServiceability = (
   address: AddressLike | null | undefined,
   radiusKm = DEFAULT_LAB_SERVICE_RADIUS_KM
 ) => {
-  if (!lab) return { serviceable: false, reason: "missing-lab" as const };
-  if (lab.is_active === false) return { serviceable: false, reason: "inactive" as const };
+  if (!lab) return { serviceable: false, reason: "missing-lab" };
+  if (lab.is_active === false) return { serviceable: false, reason: "inactive" };
 
   const addressPincode = address?.pincode?.trim() || null;
   if (addressPincode && !labServesPincode(lab, addressPincode)) {
-    return { serviceable: false, reason: "pincode" as const };
+    return { serviceable: false, reason: "pincode" };
   }
 
   if (!isWithinServiceRadius(lab, address, radiusKm)) {
-    return { serviceable: false, reason: "distance" as const };
+    return { serviceable: false, reason: "distance" };
   }
 
-  return { serviceable: true, reason: null as const };
+  return { serviceable: true, reason: null };
 };
