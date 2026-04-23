@@ -90,6 +90,7 @@ const OrderSuccessScreen = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const hasAttemptedRef = useRef(false);
 
   const bookingState = location.state as BookingState | undefined;
 
