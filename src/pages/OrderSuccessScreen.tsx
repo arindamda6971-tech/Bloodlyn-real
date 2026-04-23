@@ -172,13 +172,15 @@ const OrderSuccessScreen = () => {
       } catch (error) {
         if (import.meta.env.DEV) console.error("Error creating order:", error);
         setOrderError("Failed to create order. Please try again.");
+        // Allow retry on transient failure
+        hasAttemptedRef.current = false;
       } finally {
         setIsCreatingOrder(false);
       }
     };
 
     createOrder();
-  }, [supabaseUserId, location.state, isCreatingOrder, orderId, cartItems, clearCart]);
+  }, [supabaseUserId, bookingState, cartItems, clearCart]);
 
   // Loading state
   if (isCreatingOrder) {
