@@ -1,19 +1,39 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Clock,
   Calendar,
   Navigation,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import { evaluateLabServiceability } from "@/lib/labServiceability";
+import { toast } from "sonner";
 
 interface LocationState {
   selectedAddressId?: string;
+}
+
+interface AddressRecord {
+  id: string;
+  pincode: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+interface LabRecord {
+  id: string;
+  pincode: string;
+  service_pincodes: string[] | null;
+  latitude: number | null;
+  longitude: number | null;
+  is_active: boolean | null;
 }
 
 const timeSlots = [
@@ -34,6 +54,9 @@ const BookingScreen = () => {
   const { items: cartItems, subtotal } = useCart();
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState(2);
+  const [selectedAddress, setSelectedAddress] = useState<AddressRecord | null>(null);
+  const [selectedLab, setSelectedLab] = useState<LabRecord | null>(null);
+  const [isValidatingDistance, setIsValidatingDistance] = useState(true);
 
   // Get addressId from cart navigation
   const selectedAddressId = locationState?.selectedAddressId || null;
@@ -48,6 +71,52 @@ const BookingScreen = () => {
       fullDate: date.toISOString().split("T")[0], // YYYY-MM-DD format for DB
     };
   });
+
+  const labId = useMemo(() => cartItems[0]?.labId || null, [cartItems]);
+
+  useEffect(() => {
+    const validateDistance = async () => {
+      if (!selectedAddressId || !labId) {
+        setSelectedAddress(null);
+        setSelectedLab(null);
+        setIsValidatingDistance(false);
+        return;
+      }
+
+      setIsValidatingDistance(true);
+      try {
+        const [{ data: address }, { data: lab }] = await Promise.all([
+          supabase
+            .from("addresses")
+            .select("id, pincode, latitude, longitude")
+            .eq("id", selectedAddressId)
+            .maybeSingle(),
+          supabase
+            .from("diagnostic_centers")
+            .select("id, pincode, service_pincodes, latitude, longitude, is_active")
+            .eq("id", labId)
+            .maybeSingle(),
+        ]);
+
+        setSelectedAddress((address as AddressRecord | null) ?? null);
+        setSelectedLab((lab as LabRecord | null) ?? null);
+      } catch (error) {
+        console.error("Distance validation failed:", error);
+        toast.error("Could not validate this lab for your address.");
+      } finally {
+        setIsValidatingDistance(false);
+      }
+    };
+
+    validateDistance();
+  }, [selectedAddressId, labId]);
+
+  const serviceability = useMemo(
+    () => evaluateLabServiceability(selectedLab, selectedAddress),
+    [selectedLab, selectedAddress]
+  );
+
+  const outOfRange = !isValidatingDistance && labId && !serviceability.serviceable;
 
   return (
     <MobileLayout>
@@ -147,11 +216,17 @@ const BookingScreen = () => {
         animate={{ y: 0 }}
         className="fixed bottom-24 left-0 right-0 max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border px-4 py-4 safe-area-bottom"
       >
+        {outOfRange && (
+          <div className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>This lab does not service your selected area.</span>
+          </div>
+        )}
         <Button
           variant="hero"
           className="w-full"
           size="lg"
-          disabled={!selectedAddressId || cartItems.length === 0}
+          disabled={!selectedAddressId || cartItems.length === 0 || isValidatingDistance || !!outOfRange}
           onClick={() => navigate("/payment", {
             state: { 
               cartItems: cartItems,

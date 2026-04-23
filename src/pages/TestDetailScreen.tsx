@@ -374,10 +374,9 @@ const TestDetailScreen = () => {
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
         <AlertDialogContent className="max-w-[90%] rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Different Lab Selected</AlertDialogTitle>
+            <AlertDialogTitle>Change Lab?</AlertDialogTitle>
             <AlertDialogDescription>
-              You have added some tests from <span className="font-semibold text-foreground">{pendingItem?.existingLabName}</span>.
-              You can't add tests from another lab at the same time.
+              Changing labs will clear your current cart. Proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-2">

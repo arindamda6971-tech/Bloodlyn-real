@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight } from "lucide-react";
@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import { evaluateLabServiceability } from "@/lib/labServiceability";
 
 interface PaymentState {
   cartItems: Array<{
@@ -42,7 +43,7 @@ interface PaymentState {
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subtotal: cartSubtotal } = useCart();
+  const { subtotal: cartSubtotal, clearCart } = useCart();
   const paymentState = location.state as PaymentState | undefined;
   const { pincode: userPincode } = useUserPincode();
 
@@ -53,6 +54,8 @@ const PaymentScreen = () => {
   const [orderOpen, setOrderOpen] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
   const [verifyingServiceability, setVerifyingServiceability] = useState(false);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   // Listen for payment method selection from PaymentMethodsScreen
   useEffect(() => {
@@ -93,53 +96,157 @@ const PaymentScreen = () => {
     } catch { return dateStr; }
   };
 
-  const handlePayment = async () => {
-    // Secondary serviceability gate: re-verify the selected lab serves the user's pincode
-    const labId = paymentState?.selectedLabId || paymentState?.cartItems?.[0]?.labId;
-    if (labId && userPincode) {
-      try {
-        setVerifyingServiceability(true);
-        const { data: lab, error } = await supabase
-          .from("diagnostic_centers")
-          .select("pincode, service_pincodes, is_active")
-          .eq("id", labId)
-          .maybeSingle();
-        if (error) throw error;
-        if (!lab) {
-          toast.error("Selected lab is no longer available. Please pick another lab.");
-          setVerifyingServiceability(false);
-          return;
-        }
-        if (lab.is_active === false) {
-          toast.error("Selected lab is currently closed. Please choose another lab.");
-          setVerifyingServiceability(false);
-          return;
-        }
-        if (!labServesPincode(lab as any, userPincode)) {
-          toast.error(`This lab does not service your pincode (${userPincode}). Please choose another lab.`);
-          setVerifyingServiceability(false);
-          return;
-        }
-      } catch (err) {
-        console.error("Serviceability check failed:", err);
-        toast.error("Could not verify lab serviceability. Please try again.");
-        setVerifyingServiceability(false);
-        return;
-      }
-      setVerifyingServiceability(false);
+  const mapOrderError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error ?? "");
+    const lower = message.toLowerCase();
+
+    if (lower.includes("invalid vendor")) return "Selected lab is unavailable. Please choose another lab.";
+    if (lower.includes("out of range") || lower.includes("selected area") || lower.includes("does not service")) {
+      return "This lab does not service your selected area.";
+    }
+    if (lower.includes("unauthorized") || lower.includes("401") || lower.includes("session")) {
+      return "Your session expired. Please log in again.";
+    }
+    if (lower.includes("failed to fetch") || lower.includes("network")) {
+      return "Network issue while placing your order. Please try again.";
     }
 
-    const paymentVerified = true;
-    navigate("/order-success", {
-      state: {
-        ...paymentState,
-        couponApplied,
-        discount,
-        total,
-        selectedPayment: selectedPaymentMethod.id,
-        paymentVerified,
-      },
-    });
+    return "Unable to place your order. Please try again.";
+  };
+
+  const handlePayment = async () => {
+    if (isSubmittingOrder) return;
+
+    const cartItems = paymentState?.cartItems || [];
+    const labId = paymentState?.selectedLabId || cartItems[0]?.labId;
+    const labName = paymentState?.selectedLabName || cartItems[0]?.labName || null;
+
+    try {
+      setIsSubmittingOrder(true);
+      setVerifyingServiceability(true);
+
+      let resolvedVendorId = paymentState?.cartItems?.[0]?.vendorId || null;
+      if (labId) {
+        const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
+          supabase
+            .from("diagnostic_centers")
+            .select("pincode, service_pincodes, is_active, latitude, longitude, vendor_id")
+            .eq("id", labId)
+            .maybeSingle(),
+          paymentState?.addressId
+            ? supabase
+                .from("addresses")
+                .select("pincode, latitude, longitude")
+                .eq("id", paymentState.addressId)
+                .maybeSingle()
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        if (labError) throw labError;
+        if (addressError) throw addressError;
+        if (!lab) {
+          toast.error("Selected lab is no longer available. Please pick another lab.");
+          return;
+        }
+
+        if (lab.is_active === false) {
+          toast.error("Selected lab is currently closed. Please choose another lab.");
+          return;
+        }
+
+        const targetPincode = address?.pincode?.trim() || userPincode;
+        if (targetPincode && !labServesPincode(lab as any, targetPincode)) {
+          toast.error(`This lab does not service your pincode (${targetPincode}). Please choose another lab.`);
+          return;
+        }
+
+        const serviceability = evaluateLabServiceability(
+          lab as any,
+          address ? { pincode: address.pincode, latitude: address.latitude, longitude: address.longitude } : { pincode: targetPincode },
+        );
+
+        if (!serviceability.serviceable) {
+          toast.error(
+            serviceability.reason === "distance"
+              ? "This lab does not service your selected area."
+              : "Selected lab is unavailable for this booking."
+          );
+          return;
+        }
+
+        resolvedVendorId = lab.vendor_id || resolvedVendorId;
+      }
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      const accessToken = refreshed?.session?.access_token || (await supabase.auth.getSession()).data.session?.access_token;
+
+      if (refreshError || !accessToken) {
+        toast.error("Your session expired. Please log in again.");
+        navigate("/login");
+        return;
+      }
+
+      const idempotencyKey = idempotencyKeyRef.current || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      idempotencyKeyRef.current = idempotencyKey;
+
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
+        headers: { "Idempotency-Key": idempotencyKey },
+        body: {
+          cartItems: cartItems.map((item) => ({
+            id: String(item.id),
+            name: item.name,
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1,
+            familyMemberId: item.familyMemberId || null,
+            packageId: item.packageId || null,
+            category: item.category || undefined,
+            labId: item.labId || labId || null,
+            labName: item.labName || labName,
+            vendorId: item.vendorId || resolvedVendorId,
+          })),
+          addressId: paymentState?.addressId || null,
+          scheduledDate: paymentState?.scheduledDate || null,
+          scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
+          subtotal: stateSubtotal,
+          discount,
+          total,
+          paymentMethod: selectedPaymentMethod.id,
+          couponCode: couponApplied ? "HEALTH100" : null,
+          patientName: paymentState?.patientName,
+          patientAge: paymentState?.patientAge,
+          patientGender: paymentState?.patientGender,
+          patientPhone: paymentState?.patientPhone,
+          labId: labId || null,
+          labName,
+          vendorId: resolvedVendorId,
+        },
+      });
+
+      if (fnError) throw fnError;
+      if (fnData?.error) throw new Error(fnData.error);
+
+      clearCart();
+
+      navigate("/order-success", {
+        state: {
+          ...paymentState,
+          couponApplied,
+          discount,
+          total,
+          selectedPayment: selectedPaymentMethod.id,
+          paymentVerified: true,
+          orderId: fnData?.orderId || null,
+          orderNumber: fnData?.orderNumber || null,
+          vendorId: resolvedVendorId,
+        },
+      });
+    } catch (error) {
+      console.error("Order placement failed:", error);
+      toast.error(mapOrderError(error));
+    } finally {
+      setVerifyingServiceability(false);
+      setIsSubmittingOrder(false);
+    }
   };
 
   return (
@@ -285,18 +392,28 @@ const PaymentScreen = () => {
             variant="destructive"
             className="flex-1 h-14 rounded-xl text-base font-bold gap-2"
             onClick={handlePayment}
-            disabled={verifyingServiceability}
+            disabled={verifyingServiceability || isSubmittingOrder}
           >
             <span className="flex flex-col items-center leading-tight">
               <span className="text-xs font-semibold opacity-90">₹{total}</span>
               <span className="text-xs opacity-70">TOTAL</span>
             </span>
             <span className="text-base font-bold">
-              {verifyingServiceability ? "Verifying…" : "Place Order ›"}
+              {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
             </span>
           </Button>
         </div>
       </div>
+
+      {isSubmittingOrder && (
+        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center px-6">
+          <div className="w-full max-w-xs rounded-2xl border border-border bg-card p-6 text-center shadow-lg">
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
+            <h3 className="text-base font-bold text-foreground">Placing your order…</h3>
+            <p className="mt-2 text-sm text-muted-foreground">Please wait while we confirm your booking.</p>
+          </div>
+        </div>
+      )}
     </MobileLayout>
   );
 };
