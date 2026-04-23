@@ -94,19 +94,19 @@ const OrderSuccessScreen = () => {
 
   const bookingState = location.state as BookingState | undefined;
 
-  // Create order on mount (same logic as old TrackingScreen)
+  // Create order on mount — guarded by ref so it only fires once
   useEffect(() => {
+    if (hasAttemptedRef.current) return;
+
+    const stateCartItems = bookingState?.cartItems || cartItems;
+
+    // Wait for auth + cart to be ready before attempting
+    if (!supabaseUserId) return;
+    if (!stateCartItems || stateCartItems.length === 0) return;
+
+    hasAttemptedRef.current = true;
+
     const createOrder = async () => {
-      if (isCreatingOrder || orderId) return;
-
-      const stateCartItems = bookingState?.cartItems || cartItems;
-
-      if (!stateCartItems || stateCartItems.length === 0 || !supabaseUserId) {
-        if (!supabaseUserId) setOrderError("Please log in to complete your booking");
-        else setOrderError("No items to book");
-        return;
-      }
-
       setIsCreatingOrder(true);
       setOrderError(null);
 
