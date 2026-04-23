@@ -157,6 +157,7 @@ Deno.serve(async (req) => {
         success: true,
         message: "Vendor notified of new order",
         notification: vendorNotification,
+        forward: forwardResult,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
