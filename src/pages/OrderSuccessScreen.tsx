@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, Home, Clock, Package, Sparkles, Calendar, User, Phone } from "lucide-react";
@@ -90,22 +90,23 @@ const OrderSuccessScreen = () => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const hasAttemptedRef = useRef(false);
 
   const bookingState = location.state as BookingState | undefined;
 
-  // Create order on mount (same logic as old TrackingScreen)
+  // Create order on mount — guarded by ref so it only fires once
   useEffect(() => {
+    if (hasAttemptedRef.current) return;
+
+    const stateCartItems = bookingState?.cartItems || cartItems;
+
+    // Wait for auth + cart to be ready before attempting
+    if (!supabaseUserId) return;
+    if (!stateCartItems || stateCartItems.length === 0) return;
+
+    hasAttemptedRef.current = true;
+
     const createOrder = async () => {
-      if (isCreatingOrder || orderId) return;
-
-      const stateCartItems = bookingState?.cartItems || cartItems;
-
-      if (!stateCartItems || stateCartItems.length === 0 || !supabaseUserId) {
-        if (!supabaseUserId) setOrderError("Please log in to complete your booking");
-        else setOrderError("No items to book");
-        return;
-      }
-
       setIsCreatingOrder(true);
       setOrderError(null);
 
@@ -171,13 +172,15 @@ const OrderSuccessScreen = () => {
       } catch (error) {
         if (import.meta.env.DEV) console.error("Error creating order:", error);
         setOrderError("Failed to create order. Please try again.");
+        // Allow retry on transient failure
+        hasAttemptedRef.current = false;
       } finally {
         setIsCreatingOrder(false);
       }
     };
 
     createOrder();
-  }, [supabaseUserId, location.state, isCreatingOrder, orderId, cartItems, clearCart]);
+  }, [supabaseUserId, bookingState, cartItems, clearCart]);
 
   // Loading state
   if (isCreatingOrder) {
