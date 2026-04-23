@@ -118,11 +118,39 @@ Deno.serve(async (req) => {
 
     console.log("Vendor notification prepared:", JSON.stringify(vendorNotification, null, 2));
 
-    // Here you would typically:
-    // 1. Send push notification to vendor app
-    // 2. Send email/SMS to vendor
-    // 3. Update a vendor_notifications table
-    // For now, we log the notification for future integration
+    // Forward to external partner-order-receiver (marketplace project)
+    const receiverUrl =
+      Deno.env.get("PARTNER_ORDER_RECEIVER_URL") ||
+      "https://titjcfklrmytppvsoavv.supabase.co/functions/v1/partner-order-receiver";
+    const webhookSecret = Deno.env.get("PARTNER_WEBHOOK_SECRET");
+
+    let forwardResult: { status: number; body: string } | { error: string } | null = null;
+    if (!webhookSecret) {
+      console.error("PARTNER_WEBHOOK_SECRET not configured — skipping external forward");
+      forwardResult = { error: "missing PARTNER_WEBHOOK_SECRET" };
+    } else {
+      try {
+        const forwardPayload = {
+          ...vendorNotification,
+          vendor_id: order.vendor_id,
+          record: order,
+        };
+        const resp = await fetch(receiverUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": webhookSecret,
+          },
+          body: JSON.stringify(forwardPayload),
+        });
+        const text = await resp.text();
+        forwardResult = { status: resp.status, body: text.slice(0, 500) };
+        console.log("Forwarded to partner-order-receiver:", resp.status, text.slice(0, 200));
+      } catch (e) {
+        console.error("Forward to partner-order-receiver failed:", e);
+        forwardResult = { error: String(e) };
+      }
+    }
 
     return new Response(
       JSON.stringify({
