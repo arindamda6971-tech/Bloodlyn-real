@@ -4,7 +4,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, idempotency-key, x-idempotency-key, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 interface OrderItemInput {
@@ -133,6 +133,26 @@ Deno.serve(async (req) => {
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+    const idempotencyKey = req.headers.get("Idempotency-Key") ?? req.headers.get("idempotency-key");
+
+    if (idempotencyKey) {
+      const { data: existingAttempt } = await adminClient
+        .from("subscription_purchase_attempts")
+        .select("response")
+        .eq("user_id", userId)
+        .eq("idempotency_key", idempotencyKey)
+        .not("response", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingAttempt?.response) {
+        return new Response(JSON.stringify(existingAttempt.response), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     const regularItemIds = cartItems
       .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-"))
@@ -508,16 +528,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        orderId: orderData.id,
-        orderNumber: orderData.order_number,
-        total: serverTotal,
-        paymentStatus,
-        status: orderStatus,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const responsePayload = {
+      orderId: orderData.id,
+      orderNumber: orderData.order_number,
+      total: serverTotal,
+      paymentStatus,
+      status: orderStatus,
+    };
+
+    if (idempotencyKey) {
+      await adminClient.from("subscription_purchase_attempts").insert({
+        user_id: userId,
+        idempotency_key: idempotencyKey,
+        response: responsePayload,
+      });
+    }
+
+    return new Response(JSON.stringify(responsePayload), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("Unexpected error:", err);
     return new Response(
