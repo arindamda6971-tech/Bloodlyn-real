@@ -177,7 +177,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const confirmReplace = () => {
     if (pendingItem) {
-      toast("Changing labs will clear your current cart. Proceed?");
       const newItems = [{ ...pendingItem.item, quantity: 1 }];
       setItems(newItems);
       syncCartToSupabase(newItems);
