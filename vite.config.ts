@@ -120,4 +120,49 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Keep chunks smaller to improve first-load and parallel caching.
+    chunkSizeWarningLimit: 350,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+
+          if (
+            id.includes("/react/") ||
+            id.includes("/react-dom/") ||
+            id.includes("/scheduler/")
+          ) {
+            return "vendor-react";
+          }
+
+          if (
+            id.includes("/react-router/") ||
+            id.includes("/react-router-dom/") ||
+            id.includes("/@tanstack/react-query/")
+          ) {
+            return "vendor-routing-query";
+          }
+
+          if (id.includes("/@radix-ui/")) {
+            return "vendor-radix";
+          }
+
+          if (id.includes("/framer-motion/")) {
+            return "vendor-motion";
+          }
+
+          if (id.includes("/recharts/") || id.includes("/d3-")) {
+            return "vendor-charts";
+          }
+
+          if (id.includes("/@supabase/")) {
+            return "vendor-supabase";
+          }
+
+          return;
+        },
+      },
+    },
+  },
 }));
