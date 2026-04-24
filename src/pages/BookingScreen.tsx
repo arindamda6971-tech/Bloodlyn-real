@@ -57,6 +57,7 @@ const BookingScreen = () => {
   const [selectedAddress, setSelectedAddress] = useState<AddressRecord | null>(null);
   const [selectedLab, setSelectedLab] = useState<LabRecord | null>(null);
   const [isValidatingDistance, setIsValidatingDistance] = useState(true);
+  const [isProceeding, setIsProceeding] = useState(false);
 
   // Get addressId from cart navigation
   const selectedAddressId = locationState?.selectedAddressId || null;
@@ -226,18 +227,22 @@ const BookingScreen = () => {
           variant="hero"
           className="w-full"
           size="lg"
-          disabled={!selectedAddressId || cartItems.length === 0 || isValidatingDistance || !!outOfRange}
-          onClick={() => navigate("/payment", {
-            state: { 
-              cartItems: cartItems,
-              addressId: selectedAddressId,
-              scheduledDate: dates[selectedDate].fullDate,
-              scheduledTimeSlot: timeSlots.find(s => s.id === selectedTime)?.time || "",
-              subtotal: subtotal,
-            } 
-          })}
+          disabled={!selectedAddressId || cartItems.length === 0 || isValidatingDistance || !!outOfRange || isProceeding}
+          onClick={() => {
+            if (isProceeding) return;
+            setIsProceeding(true);
+            navigate("/payment", {
+              state: {
+                cartItems: cartItems,
+                addressId: selectedAddressId,
+                scheduledDate: dates[selectedDate].fullDate,
+                scheduledTimeSlot: timeSlots.find(s => s.id === selectedTime)?.time || "",
+                subtotal: subtotal,
+              },
+            });
+          }}
         >
-          Confirm Booking • ₹{subtotal}
+          {isProceeding ? "Please wait…" : `Confirm Booking • ₹${subtotal}`}
         </Button>
       </motion.div>
     </MobileLayout>
