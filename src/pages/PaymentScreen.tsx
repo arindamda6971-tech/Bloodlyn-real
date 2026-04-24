@@ -118,6 +118,11 @@ const PaymentScreen = () => {
     if (isSubmittingOrder) return;
 
     const cartItems = paymentState?.cartItems || [];
+    if (cartItems.length === 0) {
+      toast.error("Your cart is empty. Please add tests before placing an order.");
+      navigate("/cart");
+      return;
+    }
     const labId = paymentState?.selectedLabId || cartItems[0]?.labId;
     const labName = paymentState?.selectedLabName || cartItems[0]?.labName || null;
 
