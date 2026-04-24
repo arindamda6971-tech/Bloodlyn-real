@@ -104,7 +104,7 @@ const LabSelectionScreen = () => {
 
         // Also fetch products for all vendor_ids to cross-match
         const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
-        let vendorProducts: Record<string, string[]> = {};
+        const vendorProducts: Record<string, string[]> = {};
         if (vendorIds.length > 0) {
           const { data: products } = await supabase
             .from("products")

@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-"))
       .map((i) => i.id);
 
-    let priceMap: Record<string, number> = {};
+    const priceMap: Record<string, number> = {};
     const knownTestIds = new Set<string>();
     const knownPackageIds = new Set<string>();
     const productTestIdMap: Record<string, string | null> = {};
