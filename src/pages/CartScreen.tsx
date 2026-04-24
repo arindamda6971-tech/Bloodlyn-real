@@ -85,6 +85,7 @@ const CartScreen = () => {
 
   // Validation highlight
   const [showValidation, setShowValidation] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   // Address
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -217,11 +218,14 @@ const CartScreen = () => {
   };
 
   const handleCheckout = () => {
+    if (isCheckingOut) return;
     if (!isPatientInfoValid) {
       setShowValidation(true);
       toast.error("Please fill all required fields");
       return;
     }
+
+    setIsCheckingOut(true);
 
     // Strictly persist the patient → test mapping on every cart item before checkout
     const assignedMemberId = selectedMemberId === "self" ? undefined : selectedMemberId;
@@ -511,8 +515,9 @@ const CartScreen = () => {
           className="w-full"
           size="lg"
           onClick={handleCheckout}
+          disabled={isCheckingOut}
         >
-          Checkout
+          {isCheckingOut ? "Please wait…" : "Checkout"}
         </Button>
       </motion.div>
     </MobileLayout>

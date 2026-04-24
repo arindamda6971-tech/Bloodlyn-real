@@ -139,10 +139,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     isSyncing.current = false;
   }, [user]);
 
-  // Load cart on mount when user changes
+  // Load cart on mount when user changes (guarded against unmount to prevent leaks/crashes)
   useEffect(() => {
+    let isMounted = true;
     isInitialized.current = false;
-    loadCartFromSupabase();
+
+    const run = async () => {
+      await loadCartFromSupabase();
+      if (!isMounted) {
+        // Component unmounted before load finished — skip state updates
+        isInitialized.current = false;
+      }
+    };
+    run();
+
+    return () => {
+      isMounted = false;
+      isSyncing.current = false;
+    };
   }, [user, loadCartFromSupabase]);
 
   // Get current lab from cart items
