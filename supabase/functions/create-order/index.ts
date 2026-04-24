@@ -420,6 +420,54 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ---------------- Server-side duplicate-order guard ----------------
+    // Even if the client retries (network glitch, double-click, StrictMode,
+    // a stray duplicate invocation), do not insert a second order row when
+    // an identical booking already exists within the last 60 seconds.
+    // This is independent of the idempotency key above and acts as a
+    // belt-and-braces safeguard against duplicates like the ones seen in prod.
+    try {
+      const since = new Date(Date.now() - 60_000).toISOString();
+      let dedupQuery = adminClient
+        .from("orders")
+        .select("id, order_number")
+        .eq("user_id", userId)
+        .eq("total", serverTotal)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (orderVendorId) dedupQuery = dedupQuery.eq("vendor_id", orderVendorId);
+      if (scheduledDate) dedupQuery = dedupQuery.eq("scheduled_date", scheduledDate);
+      if (scheduledTimeSlot) dedupQuery = dedupQuery.eq("scheduled_time_slot", scheduledTimeSlot);
+
+      const { data: existingOrder } = await dedupQuery.maybeSingle();
+      if (existingOrder?.id) {
+        const dedupResponse = {
+          orderId: existingOrder.id,
+          orderNumber: existingOrder.order_number,
+          total: serverTotal,
+          paymentStatus,
+          status: orderStatus,
+          deduplicated: true,
+        };
+        if (idempotencyKey) {
+          await adminClient.from("subscription_purchase_attempts").insert({
+            user_id: userId,
+            idempotency_key: idempotencyKey,
+            response: dedupResponse,
+          });
+        }
+        return new Response(JSON.stringify(dedupResponse), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } catch (dedupErr) {
+      // Never block a real order on the de-dup probe failing.
+      console.warn("Duplicate-order probe failed (non-fatal):", dedupErr);
+    }
+
     // Create order using service role (bypasses RLS for insert)
     const { data: orderData, error: orderError } = await adminClient
       .from("orders")
