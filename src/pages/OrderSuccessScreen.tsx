@@ -1,12 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Home, Clock, Package, Sparkles, Calendar, User, Phone } from "lucide-react";
+import { CheckCircle, Home, Package, Sparkles, Calendar, User, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/contexts/CartContext";
 
 interface BookingState {
   cartItems: Array<{
@@ -34,6 +31,8 @@ interface BookingState {
   patientAge?: number | string;
   patientGender?: string | null;
   patientPhone?: string | null;
+  orderId?: string | null;
+  orderNumber?: string | null;
 }
 
 const confettiColors = [
@@ -84,152 +83,26 @@ const ConfettiPiece = ({ index }: { index: number }) => {
 const OrderSuccessScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { supabaseUserId } = useAuth();
-  const { items: cartItems, clearCart } = useCart();
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
-  const [orderError, setOrderError] = useState<string | null>(null);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const hasAttemptedRef = useRef(false);
-
   const bookingState = location.state as BookingState | undefined;
 
-  // Create order on mount — guarded by ref so it only fires once
+  // The order is already created in PaymentScreen before navigating here.
+  // This screen is purely a confirmation view — we MUST NOT invoke create-order
+  // again or it produces duplicate rows in the orders table.
+  const orderId = bookingState?.orderId ?? null;
+  const [showConfetti, setShowConfetti] = useState(false);
+
   useEffect(() => {
-    if (hasAttemptedRef.current) return;
+    // Trigger confetti shortly after mount for the success celebration
+    const t = setTimeout(() => setShowConfetti(true), 150);
+    return () => clearTimeout(t);
+  }, []);
 
-    const stateCartItems = bookingState?.cartItems || cartItems;
-
-    // Wait for auth + cart to be ready before attempting
-    if (!supabaseUserId) return;
-    if (!stateCartItems || stateCartItems.length === 0) return;
-
-    hasAttemptedRef.current = true;
-
-    const createOrder = async () => {
-      setIsCreatingOrder(true);
-      setOrderError(null);
-
-      try {
-        const subtotal = bookingState?.subtotal || stateCartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-        const discount = bookingState?.discount || 0;
-        const total = bookingState?.total || subtotal;
-        const paymentMethod = bookingState?.selectedPayment || null;
-
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
-        if (!accessToken) {
-          setOrderError("Please log in to complete your booking");
-          setIsCreatingOrder(false);
-          return;
-        }
-
-        const idempotencyKey = (crypto as any)?.randomUUID
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-
-        const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
-          headers: { "Idempotency-Key": idempotencyKey },
-          body: {
-            cartItems: stateCartItems
-              .filter((item: any) => item && item.id)
-              .map((item: any) => ({
-                id: String(item.id),
-                name: (item.name && String(item.name).trim()) || "Test",
-                price: Number(item.price) || 0,
-                quantity: Number(item.quantity) || 1,
-                familyMemberId: item.familyMemberId || null,
-                packageId: item.packageId || null,
-                category: item.category || undefined,
-                labId: item.labId || null,
-                labName: item.labName || null,
-                vendorId: item.vendorId || null,
-              })),
-            addressId: bookingState?.addressId || null,
-            scheduledDate: bookingState?.scheduledDate || null,
-            scheduledTimeSlot: bookingState?.scheduledTimeSlot || null,
-            subtotal,
-            discount,
-            total,
-            paymentMethod,
-            couponCode: bookingState?.couponApplied ? "HEALTH100" : null,
-            patientName: bookingState?.patientName,
-            patientAge: bookingState?.patientAge,
-            patientGender: bookingState?.patientGender,
-            patientPhone: bookingState?.patientPhone,
-            labId: stateCartItems[0]?.labId || null,
-            labName: stateCartItems[0]?.labName || null,
-            vendorId: stateCartItems[0]?.vendorId || null,
-          },
-        });
-
-        if (fnError) throw fnError;
-        if (fnData?.error) throw new Error(fnData.error);
-
-        setOrderId(fnData.orderId);
-        clearCart();
-        setShowConfetti(true);
-      } catch (error) {
-        if (import.meta.env.DEV) console.error("Error creating order:", error);
-        setOrderError("Failed to create order. Please try again.");
-        // Allow retry on transient failure
-        hasAttemptedRef.current = false;
-      } finally {
-        setIsCreatingOrder(false);
-      }
-    };
-
-    createOrder();
-  }, [supabaseUserId, bookingState, cartItems, clearCart]);
-
-  // Loading state
-  if (isCreatingOrder) {
-    return (
-      <MobileLayout showNav={false}>
-        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
-          <motion.div
-            className="relative w-24 h-24 mb-8"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <div className="absolute inset-0 rounded-full border-4 border-muted" />
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-primary" />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h2 className="text-xl font-bold text-foreground mb-2">Placing your order...</h2>
-            <p className="text-sm text-muted-foreground">Hang tight, we're confirming your booking</p>
-          </motion.div>
-        </div>
-      </MobileLayout>
-    );
-  }
-
-  // Error state
-  if (orderError) {
-    return (
-      <MobileLayout showNav={false}>
-        <div className="flex flex-col items-center justify-center min-h-screen px-6 text-center">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            className="w-20 h-20 rounded-full bg-destructive/15 flex items-center justify-center mb-6"
-          >
-            <Clock className="w-10 h-10 text-destructive" />
-          </motion.div>
-          <h2 className="text-xl font-bold text-foreground mb-2">{orderError}</h2>
-          <p className="text-sm text-muted-foreground mb-8">Please go back and try again</p>
-          <Button variant="soft" onClick={() => navigate("/cart")} className="px-8">
-            Return to Cart
-          </Button>
-        </div>
-      </MobileLayout>
-    );
-  }
+  // If the user landed here without a confirmed order, send them back safely.
+  useEffect(() => {
+    if (!bookingState?.paymentVerified || !orderId) {
+      navigate("/bookings", { replace: true });
+    }
+  }, [bookingState?.paymentVerified, orderId, navigate]);
 
   // Success state
   return (
