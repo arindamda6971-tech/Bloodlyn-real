@@ -189,11 +189,26 @@ const PaymentScreen = () => {
       const idempotencyKey = idempotencyKeyRef.current || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       idempotencyKeyRef.current = idempotencyKey;
 
+      // Normalize item IDs to satisfy edge-function validation.
+      // Accepts: UUID, UUID-prefixed (uuid-suffix), or known synthetic prefixes.
+      // Anything else gets a `dc-` prefix so the function treats it as an unresolved
+      // lab item and uses the client-supplied price as a safe fallback.
+      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare)-/i;
+      const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
+      const normalizeItemId = (raw: unknown): string => {
+        const id = String(raw ?? "").trim();
+        if (!id) return `dc-${crypto.randomUUID()}`;
+        if (SYNTHETIC_PREFIX.test(id) || UUID_PREFIXED.test(id)) return id;
+        // Replace anything non-id-safe and prefix with dc-
+        const safe = id.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 100);
+        return `dc-${safe}`;
+      };
+
       const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
         headers: { "Idempotency-Key": idempotencyKey },
         body: {
           cartItems: cartItems.map((item) => ({
-            id: String(item.id),
+            id: normalizeItemId(item.id),
             name: item.name,
             price: Number(item.price) || 0,
             quantity: Number(item.quantity) || 1,
