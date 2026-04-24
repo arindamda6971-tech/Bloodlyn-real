@@ -77,10 +77,12 @@ Deno.serve(async (req) => {
     // ---------------- Zod validation ----------------
     // Items use one of: a UUID id (real test/package/product), OR a synthetic
     // prefixed id (ecg-, ai-, dc-, reorder-) for special flows.
-    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder)-/;
+    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare)-/i;
     const UUID = z.string().uuid();
+    // Composite IDs like `{uuid}-{labSlug}` (used by PackageDetailScreen) start with a UUID.
+    const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
     const ItemIdSchema = z.string().min(1).max(120).refine(
-      (v) => SYNTHETIC_PREFIX.test(v) || UUID.safeParse(v).success,
+      (v) => SYNTHETIC_PREFIX.test(v) || UUID.safeParse(v).success || UUID_PREFIXED.test(v),
       { message: "Item id must be a UUID or a recognized synthetic id" },
     );
 
