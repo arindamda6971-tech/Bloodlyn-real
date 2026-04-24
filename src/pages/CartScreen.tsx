@@ -42,20 +42,26 @@ const loadPatientDetails = () => {
   try {
     const saved = sessionStorage.getItem(PATIENT_STORAGE_KEY);
     if (saved) return JSON.parse(saved);
-  } catch {}
+  } catch {
+    // Ignore malformed session data and continue with defaults.
+  }
   return null;
 };
 
 const savePatientDetails = (details: any) => {
   try {
     sessionStorage.setItem(PATIENT_STORAGE_KEY, JSON.stringify(details));
-  } catch {}
+  } catch {
+    // Ignore sessionStorage write failures in restricted environments.
+  }
 };
 
 const clearPatientDetails = () => {
   try {
     sessionStorage.removeItem(PATIENT_STORAGE_KEY);
-  } catch {}
+  } catch {
+    // Ignore sessionStorage cleanup failures.
+  }
 };
 
 const CartScreen = () => {
