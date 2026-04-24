@@ -94,24 +94,35 @@ export const useCartSync = (
     }
   }, [user, items]);
 
-  // Load cart on mount when user is available
+  // Load cart on mount when user is available (cleanup prevents stale writes after unmount)
   useEffect(() => {
+    let isMounted = true;
     if (user && !isInitialized.current) {
-      loadCartFromSupabase();
+      loadCartFromSupabase().then(() => {
+        if (!isMounted) isInitialized.current = false;
+      });
     }
+    return () => {
+      isMounted = false;
+    };
   }, [user, loadCartFromSupabase]);
 
   // Sync cart whenever items change (after initialization)
   useEffect(() => {
-    if (isInitialized.current && user) {
+    let isMounted = true;
+    if (isInitialized.current && user && isMounted) {
       syncCartToSupabase();
     }
+    return () => {
+      isMounted = false;
+    };
   }, [items, syncCartToSupabase, user]);
 
   // Reset on user change
   useEffect(() => {
     if (!user) {
       isInitialized.current = false;
+      isSyncing.current = false;
     }
   }, [user]);
 
