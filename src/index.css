@@ -145,13 +145,47 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Manrope', system-ui, sans-serif;
+    font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     overflow-y: scroll;
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeSpeed;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
+    font-variant-ligatures: common-ligatures contextual;
+    font-optical-sizing: auto;
+    letter-spacing: -0.011em;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.022em;
+    font-feature-settings: "kern", "liga", "calt", "ss01";
+    text-wrap: balance;
+  }
+
+  p, li, span {
+    text-wrap: pretty;
+  }
+
+  /* Crisper input/button text */
+  input, textarea, select, button {
+    font-family: inherit;
+    font-feature-settings: "kern", "liga", "calt";
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Smoother numerals for prices, scores, timers */
+  .tabular-nums, time, [class*="price"], [class*="amount"], [class*="score"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Hardware-accelerated transitions across the app */
+  .soft-card, .test-card, .category-card, button, a {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 
   body::-webkit-scrollbar {
