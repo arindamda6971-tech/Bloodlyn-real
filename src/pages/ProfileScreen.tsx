@@ -47,15 +47,16 @@ const ProfileScreen = () => {
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
   const [addressCount, setAddressCount] = useState(0);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   useEffect(() => {
     const loadProfileData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        // Load full profile from DB (name, avatar, phone/email)
+        // Load full profile from DB (name, avatar, phone/email, wallet)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("avatar_url, full_name, phone, email")
+          .select("avatar_url, full_name, phone, email, wallet_balance")
           .eq("id", session.user.id)
           .maybeSingle();
         if (profileData?.avatar_url) {
@@ -67,6 +68,7 @@ const ProfileScreen = () => {
         if (profileData?.phone || profileData?.email) {
           setProfileContact(profileData.phone || profileData.email || null);
         }
+        setWalletBalance(Number((profileData as any)?.wallet_balance ?? 0));
 
         // Load address count directly from Supabase
         const { count } = await supabase
