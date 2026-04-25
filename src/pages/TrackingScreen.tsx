@@ -475,6 +475,16 @@ const TrackingScreen = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 space-y-3"
         >
+          {!isCancelled && completedIndex < 3 && (
+            <Button
+              variant="outline"
+              className="w-full h-12 rounded-2xl gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setCancelOpen(true)}
+            >
+              <XCircle className="w-5 h-5" />
+              Cancel or Reschedule Order
+            </Button>
+          )}
           <Button
             className="w-full h-12 rounded-2xl gap-2"
             onClick={() => navigate("/home")}
@@ -491,6 +501,26 @@ const TrackingScreen = () => {
           </Button>
         </motion.div>
       </div>
+
+      {order && supabaseUserId && (
+        <CancelOrderDialog
+          open={cancelOpen}
+          onOpenChange={setCancelOpen}
+          orderId={order.id}
+          orderTotal={order.total}
+          userId={supabaseUserId}
+          orderStatus={order.status}
+          onSuccess={(mode) => {
+            // refresh the order
+            supabase.from("orders").select("*").eq("id", order.id).single().then(({ data }) => {
+              if (data) setOrder(data as OrderData);
+            });
+            if (mode === "cancelled") {
+              setTimeout(() => navigate("/bookings"), 800);
+            }
+          }}
+        />
+      )}
     </MobileLayout>
   );
 };
