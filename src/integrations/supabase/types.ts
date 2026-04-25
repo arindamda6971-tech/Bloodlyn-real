@@ -306,6 +306,8 @@ export type Database = {
       orders: {
         Row: {
           address_id: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
           coupon_code: string | null
           created_at: string
           delivery_partner_name: string | null
@@ -332,6 +334,8 @@ export type Database = {
         }
         Insert: {
           address_id?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           coupon_code?: string | null
           created_at?: string
           delivery_partner_name?: string | null
@@ -358,6 +362,8 @@ export type Database = {
         }
         Update: {
           address_id?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
           coupon_code?: string | null
           created_at?: string
           delivery_partner_name?: string | null
@@ -521,6 +527,7 @@ export type Database = {
           id: string
           phone: string | null
           updated_at: string
+          wallet_balance: number
         }
         Insert: {
           avatar_url?: string | null
@@ -533,6 +540,7 @@ export type Database = {
           id: string
           phone?: string | null
           updated_at?: string
+          wallet_balance?: number
         }
         Update: {
           avatar_url?: string | null
@@ -545,6 +553,7 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+          wallet_balance?: number
         }
         Relationships: []
       }
@@ -968,6 +977,39 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: string
           user_id?: string
         }
         Relationships: []

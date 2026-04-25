@@ -15,6 +15,7 @@ import {
   IndianRupee,
   Calendar,
   User,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
+import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
 
 interface OrderData {
   id: string;
@@ -92,6 +94,7 @@ const TrackingScreen = () => {
   const [testNames, setTestNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 

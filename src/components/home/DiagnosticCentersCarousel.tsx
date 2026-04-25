@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import useEmblaCarousel from "embla-carousel-react";
 import { Building2, Star, ChevronRight, TestTubes, MapPin, Clock, BadgeCheck } from "lucide-react";
-
-// AI-generated lab banner images
-import labBannerLal from "@/assets/lab-banner-lal.jpg";
-import labBannerThyrocare from "@/assets/lab-banner-thyrocare.jpg";
-import labBannerMetropolis from "@/assets/lab-banner-metropolis.jpg";
-import labBannerSrl from "@/assets/lab-banner-srl.jpg";
-import labBannerApollo from "@/assets/lab-banner-apollo.jpg";
-import labBannerDefault from "@/assets/lab-banner-default.jpg";
+import LabBanner from "@/components/labs/LabBanner";
 
 interface DiagnosticCenter {
   id: string;
@@ -25,14 +18,6 @@ interface DiagnosticCentersCarouselProps {
   centers: DiagnosticCenter[];
   autoPlayInterval?: number;
 }
-
-const labBannerMap: Record<string, string> = {
-  "Dr. Lal PathLabs": labBannerLal,
-  "Thyrocare": labBannerThyrocare,
-  "Metropolis Healthcare": labBannerMetropolis,
-  "SRL Diagnostics": labBannerSrl,
-  "Apollo Diagnostics": labBannerApollo,
-};
 
 const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
   "Dr. Lal PathLabs": { distance: "1.2 km", tagline: "India's Most Trusted Lab", trustBadge: "NABL & CAP Certified" },
@@ -120,7 +105,6 @@ const DiagnosticCentersCarousel = ({ centers, autoPlayInterval = 4000 }: Diagnos
           {centers.map((center, index) => {
             const isActive = index === selectedIndex;
             const isClosed = center.isActive === false;
-            const bannerImg = labBannerMap[center.name] || labBannerDefault;
             const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
 
             return (
@@ -132,17 +116,10 @@ const DiagnosticCentersCarousel = ({ centers, autoPlayInterval = 4000 }: Diagnos
                   className={`relative rounded-3xl cursor-pointer overflow-hidden ${isActive ? 'shadow-2xl' : 'shadow-xl'} ${isClosed ? 'grayscale' : ''}`}
                   style={{ minHeight: '200px' }}
                 >
-                  {/* Banner Image Background */}
-                  <img
-                    src={bannerImg}
-                    alt={center.name}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    loading="lazy"
-                    width={800}
-                    height={512}
-                  />
+                  {/* SVG Banner — instant render, no image fetch */}
+                  <LabBanner labName={center.name} />
                   {/* Dark Overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
 
                   {/* Closed Overlay */}
                   {isClosed && (
