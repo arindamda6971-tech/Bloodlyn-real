@@ -94,6 +94,7 @@ const TrackingScreen = () => {
   const [testNames, setTestNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
