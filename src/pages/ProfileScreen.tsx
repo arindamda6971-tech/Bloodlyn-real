@@ -12,6 +12,8 @@ import {
   Bell,
   Users,
   FileText,
+  Wallet,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,15 +47,16 @@ const ProfileScreen = () => {
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
   const [addressCount, setAddressCount] = useState(0);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   useEffect(() => {
     const loadProfileData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        // Load full profile from DB (name, avatar, phone/email)
+        // Load full profile from DB (name, avatar, phone/email, wallet)
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("avatar_url, full_name, phone, email")
+          .select("avatar_url, full_name, phone, email, wallet_balance")
           .eq("id", session.user.id)
           .maybeSingle();
         if (profileData?.avatar_url) {
@@ -65,6 +68,7 @@ const ProfileScreen = () => {
         if (profileData?.phone || profileData?.email) {
           setProfileContact(profileData.phone || profileData.email || null);
         }
+        setWalletBalance(Number((profileData as any)?.wallet_balance ?? 0));
 
         // Load address count directly from Supabase
         const { count } = await supabase
@@ -130,6 +134,33 @@ const ProfileScreen = () => {
           <Button variant="outline" size="sm" onClick={() => navigate("/edit-profile")}>
             Edit
           </Button>
+        </motion.div>
+
+        {/* Wallet card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mt-4 relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-primary via-primary/90 to-success text-primary-foreground shadow-lg"
+        >
+          <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute -right-12 -bottom-10 w-40 h-40 rounded-full bg-white/5" />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-white/80 text-xs font-medium uppercase tracking-wider">
+                <Wallet className="w-4 h-4" />
+                BloodLyn Wallet
+              </div>
+              <p className="text-3xl font-extrabold mt-2 text-white drop-shadow-sm">₹{walletBalance.toFixed(0)}</p>
+              <p className="text-xs text-white/85 mt-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Use credits on your next order
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Wallet className="w-7 h-7 text-white" />
+            </div>
+          </div>
         </motion.div>
 
         {/* Quick settings */}
