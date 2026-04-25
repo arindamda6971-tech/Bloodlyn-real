@@ -3,14 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import useEmblaCarousel from "embla-carousel-react";
 import { Building2, Star, ChevronRight, TestTubes, MapPin, Clock, BadgeCheck } from "lucide-react";
-
-// AI-generated lab banner images
-import labBannerLal from "@/assets/lab-banner-lal.jpg";
-import labBannerThyrocare from "@/assets/lab-banner-thyrocare.jpg";
-import labBannerMetropolis from "@/assets/lab-banner-metropolis.jpg";
-import labBannerSrl from "@/assets/lab-banner-srl.jpg";
-import labBannerApollo from "@/assets/lab-banner-apollo.jpg";
-import labBannerDefault from "@/assets/lab-banner-default.jpg";
+import LabBanner from "@/components/labs/LabBanner";
 
 interface DiagnosticCenter {
   id: string;
