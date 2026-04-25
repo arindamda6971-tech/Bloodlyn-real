@@ -614,8 +614,6 @@ const LabDetailScreen = () => {
               </div>
             </div>
           </motion.div>
-            );
-          })()}
         </div>
 
         {/* CLOSED Banner */}
