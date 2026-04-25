@@ -19,13 +19,7 @@ interface DiagnosticCentersCarouselProps {
   autoPlayInterval?: number;
 }
 
-const labBannerMap: Record<string, string> = {
-  "Dr. Lal PathLabs": labBannerLal,
-  "Thyrocare": labBannerThyrocare,
-  "Metropolis Healthcare": labBannerMetropolis,
-  "SRL Diagnostics": labBannerSrl,
-  "Apollo Diagnostics": labBannerApollo,
-};
+const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
 
 const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
   "Dr. Lal PathLabs": { distance: "1.2 km", tagline: "India's Most Trusted Lab", trustBadge: "NABL & CAP Certified" },
