@@ -520,36 +520,19 @@ const LabDetailScreen = () => {
       <ScreenHeader title="" />
 
       <div className="pb-24">
-        {/* Hero Banner */}
-        {/* Polished Banner Card with AI-generated DNA banner images */}
+        {/* Hero Banner — SVG, instant render */}
         <div className="px-4 pt-4">
-          {(() => {
-            const labBannerMap: Record<string, string> = {
-              "Dr. Lal PathLabs": labBannerLal,
-              "Thyrocare": labBannerThyrocare,
-              "Metropolis Healthcare": labBannerMetropolis,
-              "SRL Diagnostics": labBannerSrl,
-              "Apollo Diagnostics": labBannerApollo,
-            };
-            const bannerImg = labBannerMap[lab.name] || labBannerDefault;
-            return (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className={`relative overflow-hidden rounded-3xl shadow-2xl ${isClosed ? 'grayscale' : ''}`}
             style={{ minHeight: '200px' }}
           >
-            {/* Banner Image Background */}
-            <img
-              src={bannerImg}
-              alt={lab.name}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="eager"
-            />
+            {/* SVG banner — no image fetch */}
+            <LabBanner labName={lab.name} />
             {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
-            
-            
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+
             {/* Content */}
             <div className="relative p-5 flex flex-col h-full min-h-[200px]">
               {/* Top Badges */}
