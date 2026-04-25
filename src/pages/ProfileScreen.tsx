@@ -136,6 +136,33 @@ const ProfileScreen = () => {
           </Button>
         </motion.div>
 
+        {/* Wallet card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mt-4 relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-primary via-primary/90 to-success text-primary-foreground shadow-lg"
+        >
+          <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-white/10" />
+          <div className="absolute -right-12 -bottom-10 w-40 h-40 rounded-full bg-white/5" />
+          <div className="relative flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2 text-white/80 text-xs font-medium uppercase tracking-wider">
+                <Wallet className="w-4 h-4" />
+                BloodLyn Wallet
+              </div>
+              <p className="text-3xl font-extrabold mt-2 text-white drop-shadow-sm">₹{walletBalance.toFixed(0)}</p>
+              <p className="text-xs text-white/85 mt-1 flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                Use credits on your next order
+              </p>
+            </div>
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Wallet className="w-7 h-7 text-white" />
+            </div>
+          </div>
+        </motion.div>
+
         {/* Quick settings */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
