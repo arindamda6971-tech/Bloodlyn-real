@@ -20,8 +20,6 @@ interface DiagnosticCentersCarouselProps {
 }
 
 const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
-
-const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
   "Dr. Lal PathLabs": { distance: "1.2 km", tagline: "India's Most Trusted Lab", trustBadge: "NABL & CAP Certified" },
   "Thyrocare": { distance: "2.5 km", tagline: "Quality at Affordable Prices", trustBadge: "ISO Certified" },
   "Metropolis Healthcare": { distance: "0.8 km", tagline: "Pathology Experts Since 1980", trustBadge: "NABL & CAP Accredited" },
