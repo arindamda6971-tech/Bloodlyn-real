@@ -108,7 +108,7 @@ const PhysioBookingScreen = () => {
       const d = new Date();
       d.setDate(d.getDate() + i);
       days.push({
-        iso: d.toISOString().split("T")[0],
+        iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
         weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
         day: d.getDate(),
         month: d.toLocaleDateString(undefined, { month: "short" }),
