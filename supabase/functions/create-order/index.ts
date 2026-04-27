@@ -468,7 +468,11 @@ Deno.serve(async (req) => {
       console.warn("Duplicate-order probe failed (non-fatal):", dedupErr);
     }
 
-    // Create order using service role (bypasses RLS for insert)
+    // Create order using service role (bypasses RLS for insert).
+    // The `client_idempotency_key` column has a partial UNIQUE index on
+    // (user_id, client_idempotency_key) — if the same checkout retries
+    // (double-tap, StrictMode, network retry), Postgres rejects the
+    // duplicate with code 23505 and we return the existing order.
     const { data: orderData, error: orderError } = await adminClient
       .from("orders")
       .insert({
@@ -487,11 +491,35 @@ Deno.serve(async (req) => {
         vendor_id: orderVendorId,
         lab_name: labName || cartItems[0]?.labName || null,
         test_name: cartItems.length === 1 ? cartItems[0].name : `${cartItems.length} tests`,
+        client_idempotency_key: idempotencyKey || null,
       })
       .select()
       .single();
 
     if (orderError) {
+      // Postgres unique-violation → another request with the same idempotency key
+      // already created the order. Return that existing order instead of erroring.
+      if ((orderError as { code?: string }).code === "23505" && idempotencyKey) {
+        const { data: existing } = await adminClient
+          .from("orders")
+          .select("id, order_number, total, payment_status, status")
+          .eq("user_id", userId)
+          .eq("client_idempotency_key", idempotencyKey)
+          .maybeSingle();
+        if (existing?.id) {
+          return new Response(
+            JSON.stringify({
+              orderId: existing.id,
+              orderNumber: existing.order_number,
+              total: Number(existing.total),
+              paymentStatus: existing.payment_status,
+              status: existing.status,
+              deduplicated: true,
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+      }
       console.error("Order creation error:", orderError);
       return new Response(
         JSON.stringify({ error: "Failed to create order" }),

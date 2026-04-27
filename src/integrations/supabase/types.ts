@@ -308,6 +308,7 @@ export type Database = {
           address_id: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
+          client_idempotency_key: string | null
           coupon_code: string | null
           created_at: string
           delivery_partner_name: string | null
@@ -336,6 +337,7 @@ export type Database = {
           address_id?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          client_idempotency_key?: string | null
           coupon_code?: string | null
           created_at?: string
           delivery_partner_name?: string | null
@@ -364,6 +366,7 @@ export type Database = {
           address_id?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          client_idempotency_key?: string | null
           coupon_code?: string | null
           created_at?: string
           delivery_partner_name?: string | null
