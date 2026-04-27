@@ -69,7 +69,7 @@ const BookingScreen = () => {
       day: date.toLocaleDateString("en-US", { weekday: "short" }),
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
-      fullDate: date.toISOString().split("T")[0], // YYYY-MM-DD format for DB
+      fullDate: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`, // YYYY-MM-DD local
     };
   });
 

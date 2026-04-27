@@ -91,7 +91,9 @@ const PaymentScreen = () => {
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "Today";
     try {
-      const d = new Date(dateStr);
+      // Parse YYYY-MM-DD as a LOCAL date (avoid UTC midnight shift)
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
+      const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
       return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", weekday: "short" });
     } catch { return dateStr; }
   };
