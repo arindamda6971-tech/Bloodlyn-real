@@ -191,7 +191,16 @@ const PaymentScreen = () => {
         return;
       }
 
-      const idempotencyKey = idempotencyKeyRef.current || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      // Stable idempotency key for THIS checkout session — generated once
+      // and reused on every retry (double-tap, network glitch, StrictMode
+      // double-invoke). The server enforces uniqueness via a partial UNIQUE
+      // index on orders(user_id, client_idempotency_key), so even a perfectly
+      // timed concurrent retry cannot produce two orders.
+      const idempotencyKey =
+        idempotencyKeyRef.current ||
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
       idempotencyKeyRef.current = idempotencyKey;
 
       // Normalize item IDs to satisfy edge-function validation.
