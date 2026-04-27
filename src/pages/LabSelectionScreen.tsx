@@ -62,11 +62,15 @@ const LabSelectionScreen = () => {
   const dates = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
+    // Build YYYY-MM-DD from LOCAL date parts to avoid UTC off-by-one
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
     return {
       day: date.toLocaleDateString("en-US", { weekday: "short" }),
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
-      fullDate: date.toISOString().split("T")[0],
+      fullDate: `${yyyy}-${mm}-${dd}`,
       available: true,
     };
   });
