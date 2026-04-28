@@ -14,7 +14,19 @@ import {
   FileText,
   Wallet,
   Sparkles,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -88,6 +100,35 @@ const ProfileScreen = () => {
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Failed to log out");
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Please sign in again to delete your account");
+        setIsDeleting(false);
+        return;
+      }
+      const { error } = await supabase.functions.invoke("delete-account", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) {
+        toast.error("Could not delete account. Please try again.");
+        setIsDeleting(false);
+        return;
+      }
+      await signOut().catch(() => {});
+      toast.success("Your account has been deleted");
+      navigate("/login", { replace: true });
+    } catch {
+      toast.error("Could not delete account. Please try again.");
+      setIsDeleting(false);
     }
   };
 
@@ -249,6 +290,39 @@ const ProfileScreen = () => {
             <LogOut className="w-5 h-5" />
             Log Out
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="mt-2 w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-5 h-5" />
+                Delete Account
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete your BloodLyn account?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes your profile, saved addresses, family members,
+                  cart, and prescription uploads. Past orders are retained for legal and
+                  audit purposes but will no longer be accessible from your account. This
+                  action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAccount}
+                  disabled={isDeleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? "Deleting…" : "Delete account"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </motion.div>
 
         {/* Version */}

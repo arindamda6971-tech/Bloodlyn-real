@@ -92,6 +92,7 @@ const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFam
 const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
+const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -166,6 +167,7 @@ const App = () => (
                     <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                     <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                     <Route path="/terms" element={<ProtectedRoute><TermsScreen /></ProtectedRoute>} />
+                    <Route path="/unauthorized" element={<UnauthorizedScreen />} />
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

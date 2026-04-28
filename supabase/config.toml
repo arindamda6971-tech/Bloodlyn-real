@@ -20,3 +20,8 @@ verify_jwt = false
 verify_jwt = false
 # JWT validation done in code via getClaims()
 
+[functions.delete-account]
+verify_jwt = false
+# JWT validated in code; uses service role key to delete auth user
+
+
