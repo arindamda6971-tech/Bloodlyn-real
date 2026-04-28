@@ -14,7 +14,19 @@ import {
   FileText,
   Wallet,
   Sparkles,
+  Trash2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -88,6 +100,35 @@ const ProfileScreen = () => {
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Failed to log out");
+    }
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteAccount = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Please sign in again to delete your account");
+        setIsDeleting(false);
+        return;
+      }
+      const { error } = await supabase.functions.invoke("delete-account", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (error) {
+        toast.error("Could not delete account. Please try again.");
+        setIsDeleting(false);
+        return;
+      }
+      await signOut().catch(() => {});
+      toast.success("Your account has been deleted");
+      navigate("/login", { replace: true });
+    } catch {
+      toast.error("Could not delete account. Please try again.");
+      setIsDeleting(false);
     }
   };
 
