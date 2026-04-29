@@ -37,6 +37,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
 
 // Large pool of icons so each category gets a unique one
 const iconPool: LucideIcon[] = [
@@ -68,6 +69,7 @@ const hashStr = (s: string) => {
 };
 
 const CategoriesScreen = () => {
+  useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
   const { data: bridgeData, isLoading } = useBridgeTests();
   const { addToCart, items } = useCart();

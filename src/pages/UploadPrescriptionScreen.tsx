@@ -327,7 +327,7 @@ const UploadPrescriptionScreen = () => {
                   src={uploadedImage} 
                   alt="Uploaded prescription" 
                   className="w-full rounded-2xl object-contain max-h-80"
-                  onError={(e) => {
+                  onError={(e) = loading="lazy" decoding="async" > {
                     const target = e.currentTarget;
                     target.style.display = 'none';
                     const fallback = target.nextElementSibling as HTMLElement;

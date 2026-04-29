@@ -164,7 +164,7 @@ const ConsultationBookingScreen = () => {
       <div className="px-4 pb-32">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
           <div className="soft-card flex items-center gap-4">
-            <img src={professional.image} alt={professional.name} className="w-16 h-16 rounded-2xl object-cover" />
+            <img src={professional.image} alt={professional.name} className="w-16 h-16 rounded-2xl object-cover"  loading="lazy" decoding="async" />
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">{professional.name}</h3>
               <p className="text-xs text-muted-foreground">{professional.specialty}</p>
@@ -260,7 +260,7 @@ const ConsultationBookingScreen = () => {
               </div>
             ) : (
               <div className="relative mt-2">
-                <img src={uploadedImage as string} alt="Prescription" className="w-full rounded-2xl object-cover max-h-56" />
+                <img src={uploadedImage as string} alt="Prescription" className="w-full rounded-2xl object-cover max-h-56"  loading="lazy" decoding="async" />
                 <button onClick={handleRemoveImage} className="absolute top-2 right-2 w-8 h-8 rounded-full bg-destructive flex items-center justify-center">
                   <X className="w-4 h-4 text-destructive-foreground" />
                 </button>

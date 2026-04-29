@@ -7,6 +7,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
 
 interface ReportOrder {
   id: string;
@@ -19,6 +20,7 @@ interface ReportOrder {
 }
 
 const ReportsScreen = () => {
+  useSEO({ title: "Health Reports | BloodLyn", description: "Access your lab reports with AI-powered insights, trend analysis and easy sharing." });
   const { user } = useAuth();
   const [orders, setOrders] = useState<ReportOrder[]>([]);
   const [loading, setLoading] = useState(true);

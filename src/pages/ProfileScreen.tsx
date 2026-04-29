@@ -37,6 +37,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
 // Address count fetched directly from Supabase in useEffect
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 
@@ -50,6 +51,7 @@ const menuItems: { icon: any; label: string; path: string; badge?: string | null
 ];
 
 const ProfileScreen = () => {
+  useSEO({ title: "My Profile | BloodLyn", description: "Manage your BloodLyn profile, addresses, family members and account settings." });
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -151,13 +153,13 @@ const ProfileScreen = () => {
               src={profileImageUrl} 
               alt={displayName}
               className="w-16 h-16 rounded-2xl object-cover"
-            />
+             loading="lazy" decoding="async" />
           ) : user?.user_metadata?.avatar_url ? (
             <img 
               src={user.user_metadata.avatar_url} 
               alt={displayName}
               className="w-16 h-16 rounded-2xl object-cover"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
               <User className="w-8 h-8 text-primary-foreground" />

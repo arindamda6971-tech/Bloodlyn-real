@@ -117,7 +117,7 @@ const EditProfileScreen = () => {
                 src={user.user_metadata.avatar_url} 
                 alt="Profile"
                 className="w-24 h-24 rounded-full object-cover"
-              />
+               loading="lazy" decoding="async" />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
                 <User className="w-12 h-12 text-primary-foreground" />
