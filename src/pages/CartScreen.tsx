@@ -425,7 +425,7 @@ const CartScreen = () => {
             <div className="bg-card rounded-2xl border border-border p-4">
               <div className="flex items-start gap-4">
                 <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-border">
-                  <img src={prescriptionPreview} alt="Prescription preview" className="w-full h-full object-cover" />
+                  <img src={prescriptionPreview} alt="Prescription preview" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
                   {prescriptionUrl && (
                     <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
                       <Check className="w-6 h-6 text-success" />

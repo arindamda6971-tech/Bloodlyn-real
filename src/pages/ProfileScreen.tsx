@@ -153,13 +153,13 @@ const ProfileScreen = () => {
               src={profileImageUrl} 
               alt={displayName}
               className="w-16 h-16 rounded-2xl object-cover"
-            />
+             loading="lazy" decoding="async" />
           ) : user?.user_metadata?.avatar_url ? (
             <img 
               src={user.user_metadata.avatar_url} 
               alt={displayName}
               className="w-16 h-16 rounded-2xl object-cover"
-            />
+             loading="lazy" decoding="async" />
           ) : (
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
               <User className="w-8 h-8 text-primary-foreground" />

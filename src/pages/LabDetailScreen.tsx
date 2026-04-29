@@ -561,7 +561,7 @@ const LabDetailScreen = () => {
                         src={logoUrl} 
                         alt={lab.name} 
                         className="w-16 h-16 object-contain p-1"
-                        onError={(e) => {
+                        onError={(e) = loading="lazy" decoding="async" > {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.nextElementSibling?.classList.remove('hidden');
                         }}
