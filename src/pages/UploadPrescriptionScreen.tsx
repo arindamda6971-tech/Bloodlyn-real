@@ -327,13 +327,16 @@ const UploadPrescriptionScreen = () => {
                   src={uploadedImage} 
                   alt="Uploaded prescription" 
                   className="w-full rounded-2xl object-contain max-h-80"
-                  onError={(e) = loading="lazy" decoding="async" > {
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
                     const target = e.currentTarget;
                     target.style.display = 'none';
                     const fallback = target.nextElementSibling as HTMLElement;
                     if (fallback) fallback.style.display = 'flex';
                   }}
                 />
+
                 <div className="hidden items-center justify-center h-48 text-muted-foreground flex-col gap-2">
                   <FileText className="w-12 h-12" />
                   <p className="text-sm font-medium">Prescription uploaded</p>

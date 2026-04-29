@@ -561,11 +561,14 @@ const LabDetailScreen = () => {
                         src={logoUrl} 
                         alt={lab.name} 
                         className="w-16 h-16 object-contain p-1"
-                        onError={(e) = loading="lazy" decoding="async" > {
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
                           e.currentTarget.style.display = 'none';
                           e.currentTarget.nextElementSibling?.classList.remove('hidden');
                         }}
                       />
+
                     ) : null}
                     <Building2 className={`w-10 h-10 text-gray-600 ${logoUrl ? 'hidden' : ''}`} />
                   </div>
