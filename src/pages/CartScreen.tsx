@@ -21,6 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { useSEO } from "@/hooks/useSEO";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -65,6 +66,7 @@ const clearPatientDetails = () => {
 };
 
 const CartScreen = () => {
+  useSEO({ title: "Your Cart | BloodLyn", description: "Review your selected diagnostic tests and proceed to lab selection and secure checkout." });
   const navigate = useNavigate();
   const location = useLocation();
   const { items, removeFromCart, subtotal, currentLabName, isLoading, updateFamilyMember } = useCart();

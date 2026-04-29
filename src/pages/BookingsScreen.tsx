@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
+import { useSEO } from "@/hooks/useSEO";
 
 type Order = {
   id: string;
@@ -45,6 +46,7 @@ const STATUS_FILTERS = [
 ] as const;
 
 const BookingsScreen = () => {
+  useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders, sample collection status and view past bookings." });
   const navigate = useNavigate();
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);

@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { supabase } from "@/integrations/supabase/client";
+import { useSEO } from "@/hooks/useSEO";
 
 const PackagesScreen = () => {
+  useSEO({ title: "Health Packages | BloodLyn", description: "Curated full-body health checkup packages at the best prices, delivered at home." });
   const navigate = useNavigate();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

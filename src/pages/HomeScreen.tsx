@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import LocationChip from "@/components/home/LocationChip";
+import { useSEO } from "@/hooks/useSEO";
 
 // Get greeting based on current time
 const getGreeting = () => {
@@ -56,6 +57,7 @@ type PreviousOrder = {
 };
 
 const HomeScreen = () => {
+  useSEO({ title: "BloodLyn — Book Health Tests at Home", description: "Book NABL-certified home health tests in 60 minutes with live tracking and AI-powered reports on BloodLyn." });
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
   const { user } = useAuth();

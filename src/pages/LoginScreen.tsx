@@ -10,12 +10,14 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getAuthErrorMessage, checkRateLimit, recordAuthAttempt, resetRateLimit } from "@/utils/errorMessages";
 import { supabase } from "@/integrations/supabase/client";
+import { useSEO } from "@/hooks/useSEO";
 
 const emailSchema = z.string().trim().email("Please enter a valid email");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 const phoneSchema = z.string().regex(/^\+?[1-9]\d{9,14}$/, "Please enter a valid phone number");
 
 const LoginScreen = () => {
+  useSEO({ title: "Sign in to BloodLyn", description: "Sign in to BloodLyn to book home diagnostic tests and access your health reports." });
   const navigate = useNavigate();
   const { user, signInWithEmail, signUpWithEmail, signInWithPhone, verifyOtp, signInWithGoogle } = useAuth();
   const { toast } = useToast();

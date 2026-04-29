@@ -37,6 +37,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
 // Address count fetched directly from Supabase in useEffect
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 
@@ -50,6 +51,7 @@ const menuItems: { icon: any; label: string; path: string; badge?: string | null
 ];
 
 const ProfileScreen = () => {
+  useSEO({ title: "My Profile | BloodLyn", description: "Manage your BloodLyn profile, addresses, family members and account settings." });
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();

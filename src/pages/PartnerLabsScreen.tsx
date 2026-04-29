@@ -20,6 +20,7 @@ import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { Bell, MapPinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useSEO } from "@/hooks/useSEO";
 
 interface DiagnosticCenter {
   id: string;
@@ -43,6 +44,7 @@ interface DiagnosticCenter {
 }
 
 const PartnerLabsScreen = () => {
+  useSEO({ title: "Partner Diagnostic Centers | BloodLyn", description: "Discover NABL-certified partner diagnostic centers near you with verified ratings and pricing." });
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [diagnosticCenters, setDiagnosticCenters] = useState<DiagnosticCenter[]>([]);
