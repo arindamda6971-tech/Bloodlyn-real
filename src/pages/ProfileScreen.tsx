@@ -218,7 +218,63 @@ const ProfileScreen = () => {
               <Wallet className="w-7 h-7 text-white" />
             </div>
           </div>
+          {/* History toggle */}
+          <button
+            onClick={() => setShowHistory((v) => !v)}
+            className="relative mt-4 w-full flex items-center justify-between bg-white/15 hover:bg-white/20 active:scale-[0.99] transition-all rounded-xl px-3 py-2 text-white"
+            aria-expanded={showHistory}
+          >
+            <span className="flex items-center gap-2 text-xs font-semibold">
+              <History className="w-4 h-4" />
+              {showHistory ? "Hide wallet history" : "View wallet history"}
+            </span>
+            <ChevronRight className={`w-4 h-4 transition-transform ${showHistory ? "rotate-90" : ""}`} />
+          </button>
         </motion.div>
+
+        {/* Wallet History */}
+        {showHistory && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="soft-card mt-3"
+          >
+            <h3 className="font-semibold text-foreground text-sm mb-3 flex items-center gap-2">
+              <History className="w-4 h-4 text-primary" />
+              Wallet History
+            </h3>
+            {walletTxns.length === 0 ? (
+              <div className="py-6 text-center">
+                <Wallet className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No wallet transactions yet</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Refunds and credits will appear here</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-border">
+                {walletTxns.map((t) => {
+                  const isCredit = t.type === "credit";
+                  return (
+                    <li key={t.id} className="flex items-center gap-3 py-2.5">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isCredit ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}>
+                        {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{t.description || (isCredit ? "Wallet credit" : "Wallet debit")}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {new Date(t.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+                          {" · "}Balance ₹{Number(t.balance_after).toFixed(0)}
+                        </p>
+                      </div>
+                      <p className={`text-sm font-bold ${isCredit ? "text-success" : "text-destructive"}`}>
+                        {isCredit ? "+" : "−"}₹{Number(t.amount).toFixed(0)}
+                      </p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </motion.div>
+        )}
 
         {/* Quick settings */}
         <motion.div
