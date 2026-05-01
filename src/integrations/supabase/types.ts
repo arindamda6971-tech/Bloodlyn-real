@@ -869,6 +869,13 @@ export type Database = {
             referencedRelation: "diagnostic_centers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "test_packages_diagnostic_center_id_fkey"
+            columns: ["diagnostic_center_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_centers_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       tests: {
@@ -1019,6 +1026,87 @@ export type Database = {
       }
     }
     Views: {
+      diagnostic_centers_public: {
+        Row: {
+          address: string | null
+          available_tests: Json | null
+          city: string | null
+          closing_time: string | null
+          created_at: string | null
+          ecg_available: boolean | null
+          ecg_price: number | null
+          home_collection_available: boolean | null
+          id: string | null
+          is_active: boolean | null
+          is_verified: boolean | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          name: string | null
+          opening_time: string | null
+          pincode: string | null
+          pricing: Json | null
+          rating: number | null
+          reviews_count: number | null
+          service_pincodes: string[] | null
+          services: Json | null
+          state: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          available_tests?: Json | null
+          city?: string | null
+          closing_time?: string | null
+          created_at?: string | null
+          ecg_available?: boolean | null
+          ecg_price?: number | null
+          home_collection_available?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name?: string | null
+          opening_time?: string | null
+          pincode?: string | null
+          pricing?: Json | null
+          rating?: number | null
+          reviews_count?: number | null
+          service_pincodes?: string[] | null
+          services?: Json | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          available_tests?: Json | null
+          city?: string | null
+          closing_time?: string | null
+          created_at?: string | null
+          ecg_available?: boolean | null
+          ecg_price?: number | null
+          home_collection_available?: boolean | null
+          id?: string | null
+          is_active?: boolean | null
+          is_verified?: boolean | null
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name?: string | null
+          opening_time?: string | null
+          pincode?: string | null
+          pricing?: Json | null
+          rating?: number | null
+          reviews_count?: number | null
+          service_pincodes?: string[] | null
+          services?: Json | null
+          state?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       phlebotomists_public: {
         Row: {
           experience_years: number | null
