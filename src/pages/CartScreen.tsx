@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash2, ShoppingCart, Upload, FileImage, X, Check, Building2, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -127,13 +127,6 @@ const CartScreen = () => {
       clearPatientDetails();
     }
   }, [items.length, isLoading]);
-
-  // Prescription upload
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
-  const [prescriptionPreview, setPrescriptionPreview] = useState<string | null>(null);
-  const [uploadingPrescription, setUploadingPrescription] = useState(false);
-  const [prescriptionUrl, setPrescriptionUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (selectedMemberId === "self") {
