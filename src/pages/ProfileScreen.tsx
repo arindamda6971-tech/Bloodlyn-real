@@ -15,6 +15,9 @@ import {
   Wallet,
   Sparkles,
   Trash2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  History,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -62,6 +65,8 @@ const ProfileScreen = () => {
   const { members: familyMembers } = useFamilyMembers();
   const [addressCount, setAddressCount] = useState(0);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletTxns, setWalletTxns] = useState<Array<{ id: string; amount: number; type: string; description: string | null; created_at: string; balance_after: number }>>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     const loadProfileData = async () => {
