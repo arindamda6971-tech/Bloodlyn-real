@@ -258,10 +258,18 @@ const CancelOrderDialog = ({
                   mode="single"
                   selected={date}
                   onSelect={setDate}
-                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  disabled={(d) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const max = addDays(today, 6); // today + next 6 days window
+                    return d < addDays(today, 1) || d > max;
+                  }}
                   className="pointer-events-auto"
                 />
               </div>
+              <p className="text-[11px] text-muted-foreground -mt-2 mb-3 text-center">
+                You can reschedule up to the next 6 days only.
+              </p>
 
               <div className="mb-4">
                 <p className="text-sm font-semibold text-foreground mb-2">Available time slots</p>
