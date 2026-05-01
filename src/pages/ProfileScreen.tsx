@@ -95,6 +95,15 @@ const ProfileScreen = () => {
           .select("id", { count: "exact", head: true })
           .eq("user_id", session.user.id);
         setAddressCount(count ?? 0);
+
+        // Load recent wallet transactions
+        const { data: txns } = await supabase
+          .from("wallet_transactions")
+          .select("id, amount, type, description, created_at, balance_after")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        setWalletTxns((txns as any[]) || []);
       }
     };
     loadProfileData();
