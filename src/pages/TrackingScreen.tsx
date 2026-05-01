@@ -475,7 +475,7 @@ const TrackingScreen = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 space-y-3"
         >
-          {!isCancelled && completedIndex < 3 && (
+          {!isCancelled && completedIndex < 1 && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -484,6 +484,11 @@ const TrackingScreen = () => {
               <XCircle className="w-5 h-5" />
               Cancel or Reschedule Order
             </Button>
+          )}
+          {!isCancelled && completedIndex >= 1 && completedIndex < 3 && (
+            <p className="text-xs text-muted-foreground text-center px-4">
+              Cancellation is unavailable — a collection partner has been assigned to your order.
+            </p>
           )}
           <Button
             className="w-full h-12 rounded-2xl gap-2"

@@ -21,13 +21,22 @@ const LocationChip = () => {
   const [saving, setSaving] = useState(false);
 
   const checkServiceable = async (pc: string) => {
+    const target = pc.trim();
     const { data } = await supabase
-      .from("serviceable_pincodes")
-      .select("pincode, city, state")
-      .eq("pincode", pc)
-      .eq("is_active", true)
-      .maybeSingle();
-    return data;
+      .from("diagnostic_centers")
+      .select("pincode, service_pincodes, city, state, is_active")
+      .eq("is_active", true);
+    if (!data) return null;
+    const match = (data as any[]).find((lab) => {
+      const list = Array.isArray(lab.service_pincodes)
+        ? lab.service_pincodes.map((p: any) => String(p).trim())
+        : [];
+      if (list.includes(target)) return true;
+      const raw = (lab.pincode || "").trim();
+      if (!raw) return false;
+      return raw.split(/[,;\s]+/).map((p: string) => p.trim()).includes(target);
+    });
+    return match ? { city: match.city, state: match.state } : null;
   };
 
   const handleSave = async () => {

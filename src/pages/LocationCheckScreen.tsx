@@ -45,23 +45,52 @@ const LocationCheckScreen = () => {
   };
 
   const checkServiceability = async (pc: string): Promise<boolean> => {
+    const target = pc.trim();
+    // A pincode is "serviceable" iff at least one ACTIVE diagnostic center
+    // either has that pincode as its own, or lists it inside service_pincodes.
     const { data, error } = await supabase
-      .from("serviceable_pincodes")
-      .select("pincode")
-      .eq("pincode", pc.trim())
-      .eq("is_active", true)
-      .maybeSingle();
-    return !error && !!data;
+      .from("diagnostic_centers")
+      .select("id, pincode, service_pincodes")
+      .eq("is_active", true);
+    if (error || !data) return false;
+    return data.some((lab: any) => {
+      const list = Array.isArray(lab.service_pincodes)
+        ? lab.service_pincodes.map((p: any) => String(p).trim())
+        : [];
+      if (list.includes(target)) return true;
+      const raw = (lab.pincode || "").trim();
+      if (!raw) return false;
+      const pins = raw.split(/[,;\s]+/).map((p: string) => p.trim()).filter(Boolean);
+      return pins.includes(target);
+    });
   };
 
   const fetchServiceableAreas = async () => {
     setAreasLoading(true);
     const { data } = await supabase
-      .from("serviceable_pincodes")
-      .select("pincode, city, state")
-      .eq("is_active", true)
-      .order("city");
-    setAreas((data as ServiceableArea[]) || []);
+      .from("diagnostic_centers")
+      .select("pincode, service_pincodes, city, state, is_active")
+      .eq("is_active", true);
+    const map = new Map<string, ServiceableArea>();
+    (data || []).forEach((lab: any) => {
+      const pins: string[] = [];
+      if (Array.isArray(lab.service_pincodes)) {
+        lab.service_pincodes.forEach((p: any) => {
+          const v = String(p).trim();
+          if (/^\d{6}$/.test(v)) pins.push(v);
+        });
+      }
+      const raw = (lab.pincode || "").trim();
+      if (raw) raw.split(/[,;\s]+/).forEach((p: string) => {
+        const v = p.trim();
+        if (/^\d{6}$/.test(v)) pins.push(v);
+      });
+      pins.forEach((pc) => {
+        if (!map.has(pc)) map.set(pc, { pincode: pc, city: lab.city || null, state: lab.state || null });
+      });
+    });
+    const areas = Array.from(map.values()).sort((a, b) => (a.city || "").localeCompare(b.city || ""));
+    setAreas(areas);
     setAreasLoading(false);
     setShowAreas(true);
   };
