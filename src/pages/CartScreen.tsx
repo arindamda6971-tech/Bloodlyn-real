@@ -169,47 +169,7 @@ const CartScreen = () => {
     fetchAddresses();
   }, [supabaseUserId]);
 
-  const handlePrescriptionSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.includes('jpeg') && !file.type.includes('jpg')) {
-      toast.error("Please upload a JPG/JPEG image only"); return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB"); return;
-    }
-    setPrescriptionFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPrescriptionPreview(reader.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleUploadPrescription = async () => {
-    if (!prescriptionFile || !supabaseUserId) { toast.error("Please select a prescription image"); return; }
-    setUploadingPrescription(true);
-    try {
-      const fileExt = prescriptionFile.name.split('.').pop();
-      const fileName = `${supabaseUserId}/${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage.from('prescriptions').upload(fileName, prescriptionFile);
-      if (uploadError) throw uploadError;
-      setPrescriptionUrl(fileName);
-      toast.success("Prescription uploaded successfully!");
-    } catch (error) {
-      console.error("Error uploading prescription:", error);
-      toast.error("Failed to upload prescription");
-    } finally { setUploadingPrescription(false); }
-  };
-
-  const handleRemovePrescription = async () => {
-    if (prescriptionUrl && supabaseUserId) {
-      try {
-        await supabase.storage.from('prescriptions').remove([prescriptionUrl]);
-      } catch (error) { console.error("Error removing prescription:", error); }
-    }
-    setPrescriptionFile(null); setPrescriptionPreview(null); setPrescriptionUrl(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
+  
   const formatAddress = (addr: SavedAddress) => {
     const parts = [addr.address_line1];
     if (addr.address_line2) parts.push(addr.address_line2);
@@ -394,55 +354,7 @@ const CartScreen = () => {
           </div>
         </motion.div>
 
-        
 
-        {/* Upload Prescription */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-6">
-          <div className="flex items-center gap-2 mb-3">
-            <FileImage className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Upload Prescription</h3>
-            <Badge variant="soft" className="text-xs">Optional</Badge>
-          </div>
-          <input ref={fileInputRef} type="file" accept=".jpg,.jpeg,image/jpeg" onChange={handlePrescriptionSelect} className="hidden" />
-          {!prescriptionPreview ? (
-            <button onClick={() => fileInputRef.current?.click()} className="w-full bg-card rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 transition-colors p-4">
-              <div className="flex flex-col items-center py-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-                  <Upload className="w-7 h-7 text-primary" />
-                </div>
-                <p className="text-sm font-medium text-foreground">Upload Prescription Image</p>
-                <p className="text-xs text-muted-foreground mt-1">JPG format only • Max 5MB</p>
-              </div>
-            </button>
-          ) : (
-            <div className="bg-card rounded-2xl border border-border p-4">
-              <div className="flex items-start gap-4">
-                <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border border-border">
-                  <img src={prescriptionPreview} alt="Prescription preview" className="w-full h-full object-cover"  loading="lazy" decoding="async" />
-                  {prescriptionUrl && (
-                    <div className="absolute inset-0 bg-success/20 flex items-center justify-center">
-                      <Check className="w-6 h-6 text-success" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">{prescriptionFile?.name || "Prescription"}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{prescriptionFile ? `${(prescriptionFile.size / 1024).toFixed(1)} KB` : ""}</p>
-                  {prescriptionUrl ? (
-                    <Badge variant="softSuccess" className="mt-2">Uploaded</Badge>
-                  ) : (
-                    <Button size="sm" variant="soft" className="mt-2 h-7 text-xs" onClick={handleUploadPrescription} disabled={uploadingPrescription}>
-                      {uploadingPrescription ? "Uploading..." : "Upload"}
-                    </Button>
-                  )}
-                </div>
-                <button onClick={handleRemovePrescription} className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center flex-shrink-0">
-                  <X className="w-4 h-4 text-destructive" />
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
 
         {/* Collection Address */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
