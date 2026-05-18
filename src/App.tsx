@@ -12,6 +12,8 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import InstallPrompt from "@/components/InstallPrompt";
 import ScrollToTop from "@/components/ScrollToTop";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import RouteFallback from "@/components/RouteFallback";
+import RoutePrefetcher from "@/components/RoutePrefetcher";
 import { Suspense, lazy } from "react";
 
 // Critical path — eagerly loaded (shown before auth)
@@ -119,7 +121,8 @@ const App = () => (
               <Sonner />
               <BrowserRouter>
                 <ScrollToTop />
-                <Suspense fallback={<div className="min-h-screen bg-background" />}>
+                <RoutePrefetcher />
+                <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<SplashScreen />} />
