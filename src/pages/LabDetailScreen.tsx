@@ -474,10 +474,13 @@ const LabDetailScreen = () => {
     );
   }
 
+  const packageCount = lab.tests.filter((t) => t.category === "Health Packages").length;
+  const allTestsCount = lab.tests.length - packageCount;
   const filteredTests = lab.tests.filter((test) => {
     const matchesSearch = test.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || test.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const isPackage = test.category === "Health Packages";
+    const matchesTab = activeTab === "packages" ? isPackage : !isPackage;
+    return matchesSearch && matchesTab;
   });
 
   const handleAddTest = (testId: string, testName: string) => {
