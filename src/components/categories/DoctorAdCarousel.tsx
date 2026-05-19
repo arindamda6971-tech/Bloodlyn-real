@@ -1,12 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import doctorBanner1 from "@/assets/doctor-banner-1.jpg";
-import doctorBanner2 from "@/assets/doctor-banner-2.jpg";
-import doctorBanner3 from "@/assets/doctor-banner-3.jpg";
-import doctorBanner4 from "@/assets/doctor-banner-4.jpg";
-
-const bannerImages = [doctorBanner1, doctorBanner2, doctorBanner3, doctorBanner4];
+import BannerGraphic from "@/components/BannerGraphic";
 
 const defaultTaglines = [
   "Get your health checked today!",
@@ -26,18 +21,18 @@ const DoctorAdCarousel = ({ categories }: Props) => {
   // Build slides dynamically from categories so new categories auto-appear
   const slides = categories.length > 0
     ? categories.slice(0, 8).map((cat, i) => ({
-        image: bannerImages[i % bannerImages.length],
+        variant: i,
         title: cat.name,
         subtitle: `${cat.tests} tests available`,
         slug: cat.slug,
         tagline: defaultTaglines[i % defaultTaglines.length],
       }))
-    : bannerImages.map((img, i) => ({
-        image: img,
+    : defaultTaglines.map((t, i) => ({
+        variant: i,
         title: "Health Tests",
         subtitle: "Browse all categories",
         slug: "",
-        tagline: defaultTaglines[i],
+        tagline: t,
       }));
 
   const total = slides.length;
@@ -72,13 +67,9 @@ const DoctorAdCarousel = ({ categories }: Props) => {
           transition={{ duration: 0.35, ease: "easeInOut" }}
           className="absolute inset-0"
         >
-          <img
-            src={slides[current].image}
-            alt={slides[current].title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            width={1024}
-            height={512}
+          <BannerGraphic
+            variant={slides[current].variant}
+            className="absolute inset-0 w-full h-full"
           />
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
