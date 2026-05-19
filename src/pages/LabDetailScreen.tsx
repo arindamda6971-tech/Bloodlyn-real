@@ -264,7 +264,11 @@ const dbIdToLocalId: Record<string, string> = {
   "apollo-diagnostics": "apollo",
 };
 
-const categories = ["All", "Blood Tests", "Health Packages", "Thyroid", "Diabetes", "Heart Health", "Vitamins", "Liver Health", "Kidney Health"];
+type TabKey = "all" | "packages";
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "all", label: "All Tests" },
+  { key: "packages", label: "Health Packages" },
+];
 
 interface DiagnosticCenter {
   id: string;
