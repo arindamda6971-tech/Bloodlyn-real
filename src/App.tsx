@@ -14,6 +14,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
+import PageTransition from "@/components/PageTransition";
 import { Suspense, lazy } from "react";
 
 // Critical path — eagerly loaded (shown before auth)
@@ -123,6 +124,7 @@ const App = () => (
                 <ScrollToTop />
                 <RoutePrefetcher />
                 <Suspense fallback={<RouteFallback />}>
+                  <PageTransition>
                   <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<SplashScreen />} />
