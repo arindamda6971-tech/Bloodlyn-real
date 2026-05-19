@@ -656,35 +656,53 @@ const LabDetailScreen = () => {
             />
           </motion.div>
 
-          {/* Category Filter */}
-          <motion.div 
+          {/* Segmented Tab Filter — All Tests / Health Packages */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"
+            className="relative grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/60 border border-border/50"
           >
-            {categories.map((cat) => (
-              <Button
-                key={cat}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                size="sm"
-                className="flex-shrink-0 text-xs"
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat}
-              </Button>
-            ))}
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.key;
+              const count = tab.key === "packages" ? packageCount : allTestsCount;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="lab-tab-pill"
+                      className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg shadow-primary/30"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className={`relative ${isActive ? "text-primary-foreground" : "text-foreground/70"}`}>
+                    {tab.label}
+                  </span>
+                  <span
+                    className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                      isActive ? "bg-white/25 text-primary-foreground" : "bg-background text-muted-foreground"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </motion.div>
 
           {/* Tests Count */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="flex items-center justify-between"
           >
             <p className="text-sm text-muted-foreground">
-              {filteredTests.length} tests available
+              {filteredTests.length} {activeTab === "packages" ? "packages" : "tests"} available
             </p>
             {addedTests.size > 0 && (
               <Button
