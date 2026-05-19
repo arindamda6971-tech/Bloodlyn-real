@@ -302,7 +302,7 @@ const LabDetailScreen = () => {
   const navigate = useNavigate();
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [addedTests, setAddedTests] = useState<Set<string>>(new Set());
   const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
