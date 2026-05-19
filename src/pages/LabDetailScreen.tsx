@@ -777,7 +777,11 @@ const LabDetailScreen = () => {
             {filteredTests.length === 0 && (
               <div className="text-center py-12">
                 <Beaker className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No tests found matching your search</p>
+                <p className="text-muted-foreground">
+                  {activeTab === "packages"
+                    ? "This lab hasn't published any health packages yet."
+                    : "No tests found matching your search"}
+                </p>
               </div>
             )}
           </div>
