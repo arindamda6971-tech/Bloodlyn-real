@@ -178,6 +178,7 @@ const App = () => (
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  </PageTransition>
                 </Suspense>
                 <InstallPrompt />
               </BrowserRouter>

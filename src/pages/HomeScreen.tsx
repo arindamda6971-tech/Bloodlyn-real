@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
-import doctorAdBanner from "@/assets/doctor-ad-banner.jpg";
+import BannerGraphic from "@/components/BannerGraphic";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
 import { AnimatePresence, motion } from "framer-motion";
@@ -497,13 +497,9 @@ const HomeScreen = () => {
           onClick={() => navigate('/categories')}
           className="w-full relative overflow-hidden rounded-2xl group"
         >
-          <img
-            src={doctorAdBanner}
-            alt="Book health tests"
-            className="w-full h-44 object-cover brightness-[0.55] group-hover:brightness-[0.45] transition-all duration-300"
-            loading="lazy"
-            width={1024}
-            height={512}
+          <BannerGraphic
+            variant={0}
+            className="w-full h-44 block"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/60 via-primary/30 to-transparent" />
           <div className="absolute inset-0 flex flex-col justify-center px-5">
