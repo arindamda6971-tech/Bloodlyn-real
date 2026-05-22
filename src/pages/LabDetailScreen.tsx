@@ -295,6 +295,9 @@ interface DynamicTest {
   originalPrice?: number;
   category: string;
   popular?: boolean;
+  description?: string;
+  testsCount?: number;
+  discountPercent?: number;
 }
 
 const LabDetailScreen = () => {
