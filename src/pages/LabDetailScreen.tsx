@@ -315,27 +315,26 @@ const LabDetailScreen = () => {
   useEffect(() => {
     const fetchLabFromDb = async () => {
       if (!labId) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
           .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active')
           .eq('id', labId)
           .maybeSingle();
-        
+
         if (!error && data) {
           setLabFromDb(data as DiagnosticCenter);
-          
+
           let allDynamicTests: DynamicTest[] = [];
-          
-          // If vendor has products in products table, fetch them
+
           if (data.vendor_id) {
             const { data: products } = await supabase
               .from('products')
               .select('*')
               .eq('vendor_id', data.vendor_id)
               .eq('availability', true);
-            
+
             if (products && products.length > 0) {
               allDynamicTests = products.map((p) => ({
                 id: p.id,
@@ -346,31 +345,11 @@ const LabDetailScreen = () => {
               }));
             }
           }
-          
-          // Fetch health packages linked to this diagnostic center
-          const { data: packages } = await supabase
-            .from('test_packages')
-            .select('id, name, price, original_price, discount_percent, tests_count, is_popular')
-            .eq('diagnostic_center_id', data.id)
-            .eq('is_active', true);
-          
-          if (packages && packages.length > 0) {
-            const packageTests: DynamicTest[] = packages.map((pkg) => ({
-              id: pkg.id,
-              name: pkg.name,
-              price: Number(pkg.price),
-              originalPrice: pkg.original_price ? Number(pkg.original_price) : undefined,
-              category: 'Health Packages',
-              popular: pkg.is_popular || false,
-            }));
-            allDynamicTests = [...allDynamicTests, ...packageTests];
-          }
-          
-          // If no vendor products or packages, use available_tests + pricing from diagnostic_centers
+
           if (allDynamicTests.length === 0) {
             const availableTests = data.available_tests as string[] | null;
             const pricing = data.pricing as Record<string, number> | null;
-            
+
             if (availableTests && availableTests.length > 0 && pricing) {
               allDynamicTests = availableTests.map((testName, idx) => ({
                 id: `dc-${data.id}-${idx}`,
@@ -381,7 +360,7 @@ const LabDetailScreen = () => {
               }));
             }
           }
-          
+
           if (allDynamicTests.length > 0) {
             setDynamicTests(allDynamicTests);
           }
@@ -395,6 +374,55 @@ const LabDetailScreen = () => {
 
     fetchLabFromDb();
   }, [labId]);
+
+  // Separate health-packages fetch + realtime subscription tied to the diagnostic center
+  const [packages, setPackages] = useState<DynamicTest[]>([]);
+  useEffect(() => {
+    const centerId = labFromDb?.id || labId;
+    if (!centerId) return;
+
+    const loadPackages = async () => {
+      const { data, error } = await supabase
+        .from('test_packages')
+        .select('id, name, description, price, original_price, discount_percent, tests_count, is_popular, is_active, diagnostic_center_id')
+        .eq('diagnostic_center_id', centerId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.warn('test_packages fetch error:', error.message);
+        return;
+      }
+      setPackages(
+        (data || []).map((pkg) => ({
+          id: pkg.id,
+          name: pkg.name,
+          price: Number(pkg.price),
+          originalPrice: pkg.original_price ? Number(pkg.original_price) : undefined,
+          category: 'Health Packages',
+          popular: pkg.is_popular || false,
+          description: pkg.description || undefined,
+          testsCount: pkg.tests_count || undefined,
+          discountPercent: pkg.discount_percent || undefined,
+        }))
+      );
+    };
+
+    loadPackages();
+
+    const channel = supabase
+      .channel(`test_packages-${centerId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'test_packages', filter: `diagnostic_center_id=eq.${centerId}` },
+        () => loadPackages()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [labFromDb?.id, labId]);
+
 
   // Categorize test based on name
   const categorizeTest = (testName: string): string => {
