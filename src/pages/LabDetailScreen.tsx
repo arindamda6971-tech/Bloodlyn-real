@@ -820,7 +820,8 @@ const LabDetailScreen = () => {
                   </Button>
                 </div>
               </motion.div>
-            ))}
+              );
+            })}
 
             {filteredTests.length === 0 && (
               <div className="text-center py-12">
