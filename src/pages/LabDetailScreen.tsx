@@ -770,17 +770,29 @@ const LabDetailScreen = () => {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">{test.category}</p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {test.category}
+                      {typeof test.testsCount === "number" && test.testsCount > 0 && (
+                        <span> · {test.testsCount} tests included</span>
+                      )}
+                    </p>
+                    {test.description && (
+                      <p className="text-xs text-muted-foreground/90 mt-1 line-clamp-2">
+                        {test.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="font-semibold text-foreground">₹{test.price}</span>
                       {test.originalPrice && (
                         <span className="text-xs text-muted-foreground line-through">
                           ₹{test.originalPrice}
                         </span>
                       )}
-                      {test.originalPrice && (
+                      {(test.discountPercent || test.originalPrice) && (
                         <Badge variant="secondary" className="text-[9px] bg-success/10 text-success">
-                          {Math.round(((test.originalPrice - test.price) / test.originalPrice) * 100)}% OFF
+                          {test.discountPercent
+                            ? `${test.discountPercent}% OFF`
+                            : `${Math.round(((test.originalPrice! - test.price) / test.originalPrice!) * 100)}% OFF`}
                         </Badge>
                       )}
                     </div>
