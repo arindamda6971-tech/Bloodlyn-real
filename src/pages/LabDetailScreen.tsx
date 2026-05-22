@@ -752,7 +752,9 @@ const LabDetailScreen = () => {
 
           {/* Tests List */}
           <div className="space-y-3 pb-8">
-            {filteredTests.map((test, index) => (
+            {filteredTests.map((rawTest, index) => {
+              const test = rawTest as DynamicTest;
+              return (
               <motion.div
                 key={test.id}
                 initial={{ opacity: 0, y: 20 }}
