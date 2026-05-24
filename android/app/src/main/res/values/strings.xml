@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BloodLyn</string>
+    <string name="title_activity_main">BloodLyn</string>
+    <string name="package_name">app.lovable.f2d1988f75ee4eff96a2c3ad823bf37d</string>
+    <string name="custom_url_scheme">app.lovable.f2d1988f75ee4eff96a2c3ad823bf37d</string>
+</resources>
