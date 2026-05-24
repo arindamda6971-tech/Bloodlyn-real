@@ -275,30 +275,35 @@ const HomeScreen = () => {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 12px) + 16px)" }}
       >
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">{greeting}</p>
-            <h1 className="text-xl font-bold text-foreground">Welcome back! 👋</h1>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/80 font-semibold">{greeting}</p>
+            <h1 className="text-[22px] font-extrabold text-foreground tracking-tight leading-tight">
+              Welcome back <span className="inline-block hover:rotate-12 transition-transform duration-300">👋</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              className="icon-btn relative"
+            <button
+              className="icon-btn icon-btn-glass relative"
               onClick={() => setShowCallSheet(true)}
+              aria-label="Contact support"
             >
               <Phone className="w-5 h-5 text-foreground" />
             </button>
-            <button 
-              className="icon-btn relative"
+            <button
+              className="icon-btn icon-btn-glass relative"
               onClick={() => navigate("/notifications")}
+              aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground ring-2 ring-background">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
           </div>
         </div>
+
 
         {/* Search bar */}
         <div className="relative">
