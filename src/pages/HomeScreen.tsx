@@ -406,21 +406,23 @@ const HomeScreen = () => {
 
       {/* Quick Actions */}
       <section className="px-4 mt-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {quickActions.map((action) => (
             <button
               key={action.label}
               onClick={() => navigate(action.path)}
-              className="soft-card flex items-center gap-3 p-4 active:scale-[0.97] transition-transform"
+              className="quick-action group relative overflow-hidden flex items-center gap-3 p-4 text-left"
             >
-              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center`}>
+              <span className="quick-action-sheen" aria-hidden />
+              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0 transition-transform duration-300 group-active:scale-90`}>
                 <action.icon className="w-6 h-6" />
               </div>
-              <span className="text-sm font-semibold text-foreground">{action.label}</span>
+              <span className="text-[13px] font-semibold text-foreground leading-tight">{action.label}</span>
             </button>
           ))}
         </div>
       </section>
+
 
       {/* Previous Orders */}
       <section className="mt-8">
