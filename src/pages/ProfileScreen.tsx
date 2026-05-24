@@ -119,34 +119,6 @@ const ProfileScreen = () => {
     }
   };
 
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDeleteAccount = async () => {
-    if (isDeleting) return;
-    setIsDeleting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        toast.error("Please sign in again to delete your account");
-        setIsDeleting(false);
-        return;
-      }
-      const { error } = await supabase.functions.invoke("delete-account", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (error) {
-        toast.error("Could not delete account. Please try again.");
-        setIsDeleting(false);
-        return;
-      }
-      await signOut().catch(() => {});
-      toast.success("Your account has been deleted");
-      navigate("/login", { replace: true });
-    } catch {
-      toast.error("Could not delete account. Please try again.");
-      setIsDeleting(false);
-    }
-  };
 
   const displayName = profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
   const contactInfo = profileContact || user?.phone || user?.email || "";
