@@ -306,8 +306,8 @@ const HomeScreen = () => {
 
 
         {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <div className="relative search-shell">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
           <input
             type="text"
             placeholder="Search tests, packages..."
@@ -318,7 +318,7 @@ const HomeScreen = () => {
             }}
             onFocus={() => setShowSearchResults(true)}
             onKeyDown={handleSearchKeyDown}
-            className="search-input"
+            className="search-input search-input-premium"
           />
           {searchQuery && (
             <button
@@ -326,11 +326,13 @@ const HomeScreen = () => {
                 setSearchQuery("");
                 setShowSearchResults(false);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
+              aria-label="Clear search"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
+
           
           {/* Search Results Dropdown */}
           <AnimatePresence>
