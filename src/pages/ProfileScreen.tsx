@@ -363,38 +363,6 @@ const ProfileScreen = () => {
             Log Out
           </Button>
 
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="ghost"
-                className="mt-2 w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-5 h-5" />
-                Delete Account
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete your BloodLyn account?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This permanently removes your profile, saved addresses, family members,
-                  cart, and prescription uploads. Past orders are retained for legal and
-                  audit purposes but will no longer be accessible from your account. This
-                  action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteAccount}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? "Deleting…" : "Delete account"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </motion.div>
 
         {/* Version */}
