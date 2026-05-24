@@ -14,7 +14,7 @@ import {
   FileText,
   Wallet,
   Sparkles,
-  Trash2,
+  
   ArrowDownLeft,
   ArrowUpRight,
   History,
