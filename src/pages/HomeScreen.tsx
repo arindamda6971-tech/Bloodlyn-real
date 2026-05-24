@@ -222,8 +222,15 @@ const HomeScreen = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative"
+      className="relative home-aurora"
     >
+      {/* Ambient aurora background — pure CSS, GPU-composited, no paint cost on scroll */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden -z-0">
+        <div className="aurora-blob aurora-blob-1" />
+        <div className="aurora-blob aurora-blob-2" />
+        <div className="aurora-grid" />
+      </div>
+
       {/* Pull to Refresh Indicator */}
       <AnimatePresence>
         {(pullDistance > 0 || isRefreshing) && (
@@ -268,24 +275,28 @@ const HomeScreen = () => {
         style={{ paddingTop: "calc(env(safe-area-inset-top, 12px) + 16px)" }}
       >
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <p className="text-sm text-muted-foreground">{greeting}</p>
-            <h1 className="text-xl font-bold text-foreground">Welcome back! 👋</h1>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/80 font-semibold">{greeting}</p>
+            <h1 className="text-[22px] font-extrabold text-foreground tracking-tight leading-tight">
+              Welcome back <span className="inline-block hover:rotate-12 transition-transform duration-300">👋</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <button 
-              className="icon-btn relative"
+            <button
+              className="icon-btn icon-btn-glass relative"
               onClick={() => setShowCallSheet(true)}
+              aria-label="Contact support"
             >
               <Phone className="w-5 h-5 text-foreground" />
             </button>
-            <button 
-              className="icon-btn relative"
+            <button
+              className="icon-btn icon-btn-glass relative"
               onClick={() => navigate("/notifications")}
+              aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground ring-2 ring-background">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
@@ -293,9 +304,10 @@ const HomeScreen = () => {
           </div>
         </div>
 
+
         {/* Search bar */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <div className="relative search-shell">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
           <input
             type="text"
             placeholder="Search tests, packages..."
@@ -306,7 +318,7 @@ const HomeScreen = () => {
             }}
             onFocus={() => setShowSearchResults(true)}
             onKeyDown={handleSearchKeyDown}
-            className="search-input"
+            className="search-input search-input-premium"
           />
           {searchQuery && (
             <button
@@ -314,11 +326,13 @@ const HomeScreen = () => {
                 setSearchQuery("");
                 setShowSearchResults(false);
               }}
-              className="absolute right-4 top-1/2 -translate-y-1/2"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
+              aria-label="Clear search"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
+
           
           {/* Search Results Dropdown */}
           <AnimatePresence>
@@ -392,21 +406,23 @@ const HomeScreen = () => {
 
       {/* Quick Actions */}
       <section className="px-4 mt-6">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {quickActions.map((action) => (
             <button
               key={action.label}
               onClick={() => navigate(action.path)}
-              className="soft-card flex items-center gap-3 p-4 active:scale-[0.97] transition-transform"
+              className="quick-action group relative overflow-hidden flex items-center gap-3 p-4 text-left"
             >
-              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center`}>
+              <span className="quick-action-sheen" aria-hidden />
+              <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0 transition-transform duration-300 group-active:scale-90`}>
                 <action.icon className="w-6 h-6" />
               </div>
-              <span className="text-sm font-semibold text-foreground">{action.label}</span>
+              <span className="text-[13px] font-semibold text-foreground leading-tight">{action.label}</span>
             </button>
           ))}
         </div>
       </section>
+
 
       {/* Previous Orders */}
       <section className="mt-8">
