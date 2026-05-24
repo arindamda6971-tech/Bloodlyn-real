@@ -222,8 +222,15 @@ const HomeScreen = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative"
+      className="relative home-aurora"
     >
+      {/* Ambient aurora background — pure CSS, GPU-composited, no paint cost on scroll */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[420px] overflow-hidden -z-0">
+        <div className="aurora-blob aurora-blob-1" />
+        <div className="aurora-blob aurora-blob-2" />
+        <div className="aurora-grid" />
+      </div>
+
       {/* Pull to Refresh Indicator */}
       <AnimatePresence>
         {(pullDistance > 0 || isRefreshing) && (
