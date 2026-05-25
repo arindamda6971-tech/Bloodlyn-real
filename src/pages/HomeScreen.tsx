@@ -96,7 +96,7 @@ const HomeScreen = () => {
     if (data) setAllTests(data);
   }, []);
 
-  const { pincode: userPincode } = useUserPincode();
+  const { pincode: userPincode, loading: pincodeLoading } = useUserPincode();
 
   // Fetch diagnostic centers (filtered by user's serviceable pincode — Zomato-style)
   const fetchDiagnosticCenters = useCallback(async () => {
