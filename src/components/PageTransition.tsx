@@ -30,18 +30,19 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
     <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
         transition={{
-          duration: 0.2,
-          ease: "linear"
+          type: "spring",
+          stiffness: 380,
+          damping: 30,
+          mass: 1,
         }}
         style={{
-          willChange: "opacity",
+          willChange: "opacity, transform",
           width: "100%",
-          position: "relative",
-          transform: "translate3d(0,0,0)"
+          position: "relative"
         }}
       >
         {children}
