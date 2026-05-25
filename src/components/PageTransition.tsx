@@ -27,14 +27,23 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
   }, [location.pathname, location.search, children]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-        style={{ willChange: "opacity, transform" }}
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -20 }}
+        transition={{
+          type: "spring",
+          stiffness: 380,
+          damping: 30,
+          mass: 1,
+        }}
+        style={{
+          willChange: "opacity, transform",
+          width: "100%",
+          position: "relative"
+        }}
       >
         {children}
       </motion.div>

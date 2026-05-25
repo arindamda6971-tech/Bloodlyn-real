@@ -11,6 +11,7 @@ import { AddressProvider } from "@/contexts/AddressContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import InstallPrompt from "@/components/InstallPrompt";
 import ScrollToTop from "@/components/ScrollToTop";
+import CapacitorBackButton from "@/components/CapacitorBackButton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
@@ -123,6 +124,7 @@ const App = () => (
               <Sonner />
               <OfflineBanner />
               <BrowserRouter>
+                <CapacitorBackButton />
                 <ScrollToTop />
                 <RoutePrefetcher />
                 <Suspense fallback={<RouteFallback />}>
