@@ -47,15 +47,21 @@ const OnboardingScreen = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
+  const markOnboarded = () => {
+    try { localStorage.setItem("bloodlyn-onboarded", "1"); } catch { /* ignore */ }
+  };
+
   const handleNext = () => {
     if (currentSlide < slides.length - 1) {
       setCurrentSlide(currentSlide + 1);
     } else {
+      markOnboarded();
       navigate("/login");
     }
   };
 
   const handleSkip = () => {
+    markOnboarded();
     navigate("/login");
   };
 
