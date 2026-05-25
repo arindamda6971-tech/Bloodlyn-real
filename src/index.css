@@ -151,16 +151,17 @@
     -ms-overflow-style: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    text-rendering: optimizeSpeed;
     font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
     font-variant-ligatures: common-ligatures contextual;
     font-optical-sizing: auto;
     letter-spacing: -0.011em;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /* 120Hz Optimisation */
-    transform: translateZ(0);
+    /* 120Hz Optimisation - Force GPU */
+    transform: translate3d(0,0,0);
     backface-visibility: hidden;
+    perspective: 1000;
   }
 
   h1, h2, h3, h4, h5, h6 {
