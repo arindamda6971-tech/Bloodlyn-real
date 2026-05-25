@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Navigation, Loader2, AlertCircle, Bell, List } from "lucide-react";
+import { MapPin, Navigation, Loader2, AlertCircle, Bell, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,20 +14,162 @@ interface ServiceableArea {
   state: string | null;
 }
 
+/**
+ * Curated landmark cities — shown as quick-pick tiles on the location screen.
+ * The pincode is a representative serviceable PIN for that city; tapping a
+ * tile auto-runs the same serviceability check + saves the address.
+ */
+const LANDMARK_CITIES: {
+  name: string;
+  state: string;
+  pincode: string;
+  landmark: string;
+  gradient: string;
+  Icon: (props: { className?: string }) => JSX.Element;
+}[] = [
+  {
+    name: "Delhi",
+    state: "Delhi",
+    pincode: "110001",
+    landmark: "India Gate",
+    gradient: "from-amber-500/30 to-rose-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 52V28a16 16 0 0132 0v24" />
+        <path d="M22 52V32M42 52V32M32 22v-6" />
+        <path d="M12 52h40" />
+        <circle cx="32" cy="14" r="2" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    name: "Kolkata",
+    state: "West Bengal",
+    pincode: "700001",
+    landmark: "Howrah Bridge",
+    gradient: "from-orange-500/30 to-yellow-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M6 46h52" />
+        <path d="M10 46V30M54 46V30" />
+        <path d="M10 30L32 14l22 16" />
+        <path d="M18 46v-8M26 46v-12M38 46v-12M46 46v-8" />
+        <path d="M14 38h36" />
+      </svg>
+    ),
+  },
+  {
+    name: "Mumbai",
+    state: "Maharashtra",
+    pincode: "400001",
+    landmark: "Gateway of India",
+    gradient: "from-cyan-500/30 to-blue-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 52V24a20 20 0 0140 0v28" />
+        <path d="M20 52V28a12 12 0 0124 0v24" />
+        <path d="M28 52V40a4 4 0 018 0v12" />
+        <path d="M10 52h44" />
+        <circle cx="32" cy="14" r="2" />
+      </svg>
+    ),
+  },
+  {
+    name: "Bangalore",
+    state: "Karnataka",
+    pincode: "560001",
+    landmark: "Vidhana Soudha",
+    gradient: "from-emerald-500/30 to-green-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M8 52V32h48v20" />
+        <path d="M14 32V22l18-8 18 8v10" />
+        <path d="M28 52V40h8v12" />
+        <path d="M18 38v8M24 38v8M40 38v8M46 38v8" />
+        <path d="M6 52h52" />
+      </svg>
+    ),
+  },
+  {
+    name: "Hyderabad",
+    state: "Telangana",
+    pincode: "500001",
+    landmark: "Charminar",
+    gradient: "from-fuchsia-500/30 to-purple-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="14" y="22" width="36" height="30" rx="1" />
+        <path d="M10 52h44" />
+        <path d="M14 22h36M18 22v-6M28 22v-6M36 22v-6M46 22v-6" />
+        <path d="M18 16c0-3 2-5 4-5M46 16c0-3-2-5-4-5" />
+        <path d="M32 30v18M22 38h20" />
+      </svg>
+    ),
+  },
+  {
+    name: "Chennai",
+    state: "Tamil Nadu",
+    pincode: "600001",
+    landmark: "Marina Lighthouse",
+    gradient: "from-sky-500/30 to-indigo-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M26 52V24h12v28" />
+        <path d="M22 24h20" />
+        <rect x="28" y="16" width="8" height="8" rx="1" />
+        <path d="M32 16v-6" />
+        <path d="M8 52h48" />
+        <path d="M14 46c4-2 8-2 12 0M38 46c4-2 8-2 12 0" />
+      </svg>
+    ),
+  },
+  {
+    name: "Pune",
+    state: "Maharashtra",
+    pincode: "411001",
+    landmark: "Shaniwar Wada",
+    gradient: "from-rose-500/30 to-pink-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 52V28h44v24" />
+        <path d="M22 52V36h6v16M36 52V36h6v16" />
+        <path d="M10 28l22-14 22 14" />
+        <path d="M6 52h52" />
+      </svg>
+    ),
+  },
+  {
+    name: "Jaipur",
+    state: "Rajasthan",
+    pincode: "302001",
+    landmark: "Hawa Mahal",
+    gradient: "from-orange-500/30 to-red-500/20",
+    Icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 52V20l22-12 22 12v32" />
+        <path d="M18 52V30M26 52V30M38 52V30M46 52V30" />
+        <path d="M14 30h36" />
+        <path d="M6 52h52" />
+      </svg>
+    ),
+  },
+];
+
 const LocationCheckScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState<"ask" | "detecting" | "manual" | "serviceable" | "not-serviceable">("detecting");
+  const [step, setStep] = useState<"detecting" | "manual" | "serviceable" | "not-serviceable">("detecting");
   const [pincode, setPincode] = useState("");
   const [detectedPincode, setDetectedPincode] = useState("");
   const [locationName, setLocationName] = useState("");
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showAreas, setShowAreas] = useState(false);
-  const [areas, setAreas] = useState<ServiceableArea[]>([]);
-  const [areasLoading, setAreasLoading] = useState(false);
+  const [serviceableSet, setServiceableSet] = useState<Set<string>>(new Set());
 
-  const reverseGeocode = async (lat: number, lon: number): Promise<{ pincode: string; display: string }> => {
+  // Single-flight guards — prevent React StrictMode / double-tap from saving the address twice
+  const savingRef = useRef(false);
+  const savedKeyRef = useRef<string | null>(null);
+
+  const reverseGeocode = async (lat: number, lon: number) => {
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
@@ -44,120 +186,111 @@ const LocationCheckScreen = () => {
     }
   };
 
-  const checkServiceability = async (pc: string): Promise<boolean> => {
-    const target = pc.trim();
-    // A pincode is "serviceable" iff at least one ACTIVE diagnostic center
-    // either has that pincode as its own, or lists it inside service_pincodes.
-    const { data, error } = await supabase
-      .from("diagnostic_centers")
-      .select("id, pincode, service_pincodes")
-      .eq("is_active", true);
-    if (error || !data) return false;
-    return data.some((lab: any) => {
-      const list = Array.isArray(lab.service_pincodes)
-        ? lab.service_pincodes.map((p: any) => String(p).trim())
-        : [];
-      if (list.includes(target)) return true;
-      const raw = (lab.pincode || "").trim();
-      if (!raw) return false;
-      const pins = raw.split(/[,;\s]+/).map((p: string) => p.trim()).filter(Boolean);
-      return pins.includes(target);
-    });
-  };
-
-  const fetchServiceableAreas = async () => {
-    setAreasLoading(true);
-    const { data } = await supabase
-      .from("diagnostic_centers")
-      .select("pincode, service_pincodes, city, state, is_active")
-      .eq("is_active", true);
-    const map = new Map<string, ServiceableArea>();
-    (data || []).forEach((lab: any) => {
-      const pins: string[] = [];
-      if (Array.isArray(lab.service_pincodes)) {
-        lab.service_pincodes.forEach((p: any) => {
-          const v = String(p).trim();
-          if (/^\d{6}$/.test(v)) pins.push(v);
+  // Load the full serviceable pincode set once on mount (used for both
+  // PIN entry validation and to highlight which curated cities are live).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("diagnostic_centers")
+        .select("pincode, service_pincodes, is_active")
+        .eq("is_active", true);
+      if (cancelled || !data) return;
+      const set = new Set<string>();
+      (data as any[]).forEach((lab) => {
+        if (Array.isArray(lab.service_pincodes)) {
+          lab.service_pincodes.forEach((p: any) => {
+            const v = String(p).trim();
+            if (/^\d{6}$/.test(v)) set.add(v);
+          });
+        }
+        const raw = (lab.pincode || "").trim();
+        if (raw) raw.split(/[,;\s]+/).forEach((p: string) => {
+          const v = p.trim();
+          if (/^\d{6}$/.test(v)) set.add(v);
         });
-      }
-      const raw = (lab.pincode || "").trim();
-      if (raw) raw.split(/[,;\s]+/).forEach((p: string) => {
-        const v = p.trim();
-        if (/^\d{6}$/.test(v)) pins.push(v);
       });
-      pins.forEach((pc) => {
-        if (!map.has(pc)) map.set(pc, { pincode: pc, city: lab.city || null, state: lab.state || null });
-      });
-    });
-    const areas = Array.from(map.values()).sort((a, b) => (a.city || "").localeCompare(b.city || ""));
-    setAreas(areas);
-    setAreasLoading(false);
-    setShowAreas(true);
-  };
+      setServiceableSet(set);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
+  const checkServiceability = (pc: string): boolean => serviceableSet.has(pc.trim());
+
+  /**
+   * Save address (idempotent). Guarantees:
+   *  - Never runs concurrently for the same user (`savingRef`).
+   *  - Never inserts twice for the same pincode (`savedKeyRef` + DB lookup).
+   *  - When the address already exists, simply flips it to default.
+   */
   const saveAddressAndProceed = async (pc: string, displayName: string, lat?: number, lon?: number) => {
     if (!user) return;
+    const key = `${user.id}:${pc.trim()}`;
+    if (savingRef.current || savedKeyRef.current === key) {
+      navigate("/home", { replace: true });
+      return;
+    }
+    savingRef.current = true;
     try {
-      // Check if an address with the same pincode already exists for this user
       const { data: existing } = await supabase
         .from("addresses")
-        .select("id")
+        .select("id, is_default")
         .eq("user_id", user.id)
         .eq("pincode", pc.trim())
         .limit(1);
 
-      if (!existing || existing.length === 0) {
-        // No duplicate found — insert new address
+      if (existing && existing.length > 0) {
+        if (!existing[0].is_default) {
+          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
+          await supabase.from("addresses").update({ is_default: true }).eq("id", existing[0].id);
+        }
+      } else {
+        await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
         await supabase.from("addresses").insert({
           user_id: user.id,
           address_line1: displayName || `Location - ${pc}`,
           city: displayName.split(",")[0]?.trim() || "",
           state: displayName.split(",")[1]?.trim() || "",
-          pincode: pc,
+          pincode: pc.trim(),
           latitude: lat || null,
           longitude: lon || null,
           is_default: true,
           type: "Home",
         });
       }
+      savedKeyRef.current = key;
+      sessionStorage.setItem(`location_checked_${user.id}`, "true");
+      navigate("/home", { replace: true });
     } catch (e) {
       console.error("Failed to save address:", e);
+      savingRef.current = false;
     }
-    sessionStorage.setItem(`location_checked_${user.id}`, "true");
-    navigate("/home", { replace: true });
   };
 
   const handleAllowLocation = () => {
     setStep("detecting");
     if (!navigator.geolocation) {
-      toast({ title: "GPS not supported", description: "Please enter your PIN code manually.", variant: "destructive" });
       setStep("manual");
       return;
     }
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        setCoords({ lat: latitude, lon: longitude });
         const { pincode: pc, display } = await reverseGeocode(latitude, longitude);
         if (!pc) {
-          toast({ title: "Could not detect PIN code", description: "Please enter manually.", variant: "destructive" });
           setStep("manual");
           return;
         }
         setDetectedPincode(pc);
         setLocationName(display);
-        const serviceable = await checkServiceability(pc);
-        if (serviceable) {
+        if (checkServiceability(pc)) {
           setStep("serviceable");
-          setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 1500);
+          setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 1200);
         } else {
           setStep("not-serviceable");
         }
       },
-      () => {
-        toast({ title: "Location permission denied", description: "Please enter your PIN code manually." });
-        setStep("manual");
-      },
+      () => setStep("manual"),
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
@@ -168,11 +301,10 @@ const LocationCheckScreen = () => {
       return;
     }
     setLoading(true);
-    const serviceable = await checkServiceability(pincode);
-    if (serviceable) {
+    if (checkServiceability(pincode)) {
       setDetectedPincode(pincode);
       setStep("serviceable");
-      setTimeout(() => saveAddressAndProceed(pincode, `PIN ${pincode}`), 1500);
+      setTimeout(() => saveAddressAndProceed(pincode, `PIN ${pincode}`), 1200);
     } else {
       setDetectedPincode(pincode);
       setStep("not-serviceable");
@@ -180,228 +312,176 @@ const LocationCheckScreen = () => {
     setLoading(false);
   };
 
-  // Auto-request GPS on mount — Zomato-style flow.
-  // If geolocation is unavailable or denied, falls back to manual entry.
+  const handleCityTap = (city: typeof LANDMARK_CITIES[number]) => {
+    if (!serviceableSet.has(city.pincode)) {
+      toast({ title: `${city.name} coming soon`, description: "We'll launch here very soon!" });
+      return;
+    }
+    setDetectedPincode(city.pincode);
+    setStep("serviceable");
+    setTimeout(() => saveAddressAndProceed(city.pincode, `${city.name}, ${city.state}`), 1000);
+  };
+
   useEffect(() => {
-    handleAllowLocation();
+    // Wait for serviceable set to load before auto-detecting
+    if (serviceableSet.size > 0) handleAllowLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [serviceableSet.size > 0]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6 max-w-[430px] mx-auto relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent pointer-events-none" />
-      <div className="absolute top-20 right-[-40px] w-40 h-40 rounded-full bg-primary/5 blur-3xl" />
-      <div className="absolute bottom-20 left-[-40px] w-40 h-40 rounded-full bg-success/5 blur-3xl" />
+    <div className="min-h-screen bg-background max-w-[430px] mx-auto relative overflow-x-hidden pb-12">
+      {/* Aurora background */}
+      <div className="absolute inset-0 pointer-events-none -z-0">
+        <div className="absolute -top-32 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-success/10 blur-3xl" />
+        <div className="absolute bottom-0 right-10 w-56 h-56 rounded-full bg-accent/10 blur-3xl" />
+      </div>
 
-      {/* View Available Areas FAB */}
-      <button
-        onClick={fetchServiceableAreas}
-        className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-full px-4 py-2 text-xs font-semibold transition-colors"
-      >
-        <List className="w-4 h-4" />
-        Available Areas
-      </button>
-
-      {/* Available Areas Bottom Sheet */}
-      <AnimatePresence>
-        {showAreas && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
-            onClick={() => setShowAreas(false)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-background rounded-t-2xl w-full max-w-[430px] max-h-[70vh] flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                <h3 className="text-base font-bold text-foreground">Serviceable Areas</h3>
-                <button onClick={() => setShowAreas(false)} className="text-muted-foreground text-sm">Close</button>
-              </div>
-              <div className="overflow-y-auto flex-1 px-5 py-3">
-                {areasLoading ? (
-                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-                ) : areas.length === 0 ? (
-                  <p className="text-muted-foreground text-sm text-center py-8">No serviceable areas found.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {areas.map((a) => (
-                      <div key={a.pincode} className="flex items-center justify-between p-3 rounded-xl bg-muted/50">
-                        <div>
-                          <p className="text-sm font-semibold text-foreground">{a.city || "Unknown City"}{a.state ? `, ${a.state}` : ""}</p>
-                          <p className="text-xs text-muted-foreground">PIN: {a.pincode}</p>
-                        </div>
-                        <span className="text-[10px] font-semibold text-success bg-success/10 px-2 py-0.5 rounded-full">Active</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Ask Permission */}
-      {step === "ask" && (
+      {/* Header */}
+      <div className="relative z-10 px-6 pt-12 pb-6">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 flex flex-col items-center text-center w-full"
+          className="inline-flex items-center gap-2 rounded-full bg-primary/10 ring-1 ring-primary/20 px-3 py-1 text-[11px] font-semibold text-primary"
         >
-          <motion.div
-            className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <MapPin className="w-12 h-12 text-primary" />
-          </motion.div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Enable Location</h1>
-          <p className="text-muted-foreground text-sm mb-8 max-w-[280px]">
-            We need your location to check if our services are available in your area.
-          </p>
-          <Button variant="hero" className="w-full mb-3" onClick={handleAllowLocation}>
-            <Navigation className="w-4 h-4 mr-2" />
-            Allow Location Access
-          </Button>
-          <Button variant="outline" className="w-full" onClick={() => setStep("manual")}>
-            Enter PIN Code Manually
-          </Button>
+          <Sparkles className="w-3.5 h-3.5" />
+          BloodLyn at your doorstep
         </motion.div>
-      )}
-
-      {/* Detecting */}
-      {step === "detecting" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="relative z-10 flex flex-col items-center text-center"
-        >
-          <motion.div
-            className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mb-6"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Navigation className="w-12 h-12 text-primary" />
-          </motion.div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Detecting Location...</h2>
-          <p className="text-muted-foreground text-sm">Please wait while we find your area</p>
-          <Loader2 className="w-6 h-6 animate-spin text-primary mt-6" />
-        </motion.div>
-      )}
-
-      {/* Manual Entry */}
-      {step === "manual" && (
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
+        <motion.h1
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 flex flex-col items-center text-center w-full"
+          transition={{ delay: 0.05 }}
+          className="mt-3 text-[26px] font-extrabold text-foreground tracking-tight leading-tight"
         >
-          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-            <MapPin className="w-10 h-10 text-primary" />
+          Where would you like<br />samples collected?
+        </motion.h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          We'll find labs serving your area in seconds.
+        </p>
+      </div>
+
+      {/* Main card */}
+      <div className="relative z-10 px-5">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-3xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-lg p-5"
+        >
+          <AnimatePresence mode="wait">
+            {step === "detecting" && (
+              <motion.div key="d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-6 text-center">
+                <motion.div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4" animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
+                  <Navigation className="w-10 h-10 text-primary" />
+                </motion.div>
+                <h2 className="text-base font-bold text-foreground">Detecting your location…</h2>
+                <p className="text-xs text-muted-foreground mt-1">This only takes a moment</p>
+              </motion.div>
+            )}
+
+            {step === "manual" && (
+              <motion.div key="m" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                <label className="text-[11px] uppercase tracking-[0.16em] font-semibold text-muted-foreground">PIN code</label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit PIN code"
+                  value={pincode}
+                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="mt-2 text-center tracking-[0.4em] text-base h-12 rounded-2xl"
+                  autoFocus
+                />
+                <Button
+                  variant="hero"
+                  className="w-full mt-3 h-12 rounded-2xl"
+                  onClick={handleManualCheck}
+                  disabled={pincode.length !== 6 || loading}
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
+                  Check Availability
+                </Button>
+                <button
+                  onClick={handleAllowLocation}
+                  className="w-full mt-3 flex items-center justify-center gap-2 text-sm text-primary font-semibold"
+                >
+                  <Navigation className="w-4 h-4" />
+                  Use my current location
+                </button>
+              </motion.div>
+            )}
+
+            {step === "serviceable" && (
+              <motion.div key="s" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center py-4 text-center">
+                <motion.div className="w-20 h-20 rounded-2xl bg-success/10 flex items-center justify-center mb-3" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 220 }}>
+                  <svg className="w-10 h-10 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <motion.path d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
+                  </svg>
+                </motion.div>
+                <h2 className="text-lg font-bold text-foreground">We're available here!</h2>
+                <p className="text-xs text-muted-foreground mt-1">PIN {detectedPincode}{locationName ? ` · ${locationName}` : ""}</p>
+                <Loader2 className="w-4 h-4 animate-spin text-primary mt-3" />
+              </motion.div>
+            )}
+
+            {step === "not-serviceable" && (
+              <motion.div key="n" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center py-2 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-3">
+                  <AlertCircle className="w-8 h-8 text-destructive" />
+                </div>
+                <h2 className="text-base font-bold text-foreground">Not in your area yet</h2>
+                <p className="text-xs text-muted-foreground mt-1 max-w-[260px]">
+                  We don't serve PIN {detectedPincode} yet. Try another PIN or pick a launched city below.
+                </p>
+                <Button variant="hero" className="w-full mt-4 h-11 rounded-2xl" onClick={() => toast({ title: "We'll notify you!", description: "You'll be first to know when we launch in your area." })}>
+                  <Bell className="w-4 h-4 mr-2" /> Notify Me
+                </Button>
+                <Button variant="outline" className="w-full mt-2 h-11 rounded-2xl" onClick={() => { setStep("manual"); setPincode(""); }}>
+                  Try Another PIN
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+
+      {/* City rail */}
+      <div className="relative z-10 mt-8 px-5">
+        <div className="flex items-end justify-between mb-3">
+          <div>
+            <h3 className="text-base font-extrabold text-foreground">Available Cities</h3>
+            <p className="text-xs text-muted-foreground">Tap a city to jump in instantly</p>
           </div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Enter Your PIN Code</h2>
-          <p className="text-muted-foreground text-sm mb-6">We'll check if our services are available in your area</p>
-          <Input
-            type="text"
-            inputMode="numeric"
-            maxLength={6}
-            placeholder="Enter 6-digit PIN code"
-            value={pincode}
-            onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            className="text-center tracking-widest mb-4 text-sm"
-          />
-          <Button
-            variant="hero"
-            className="w-full mb-3"
-            onClick={handleManualCheck}
-            disabled={pincode.length !== 6 || loading}
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-            Check Availability
-          </Button>
-          <Button variant="ghost" className="text-sm" onClick={() => setStep("ask")}>
-            ← Try GPS Instead
-          </Button>
-        </motion.div>
-      )}
-
-      {/* Serviceable */}
-      {step === "serviceable" && (
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="relative z-10 flex flex-col items-center text-center"
-        >
-          <motion.div
-            className="w-24 h-24 rounded-full bg-success/10 flex items-center justify-center mb-6"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-          >
-            <motion.div initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}>
-              <svg className="w-12 h-12 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <motion.path d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.2 }} />
-              </svg>
-            </motion.div>
-          </motion.div>
-          <h2 className="text-xl font-bold text-foreground mb-1">We're Available!</h2>
-          <p className="text-muted-foreground text-sm mb-1">
-            PIN Code: <span className="font-semibold text-foreground">{detectedPincode}</span>
-          </p>
-          {locationName && <p className="text-muted-foreground text-xs mb-4">{locationName}</p>}
-          <p className="text-success text-sm font-medium">Redirecting to home...</p>
-          <Loader2 className="w-5 h-5 animate-spin text-primary mt-4" />
-        </motion.div>
-      )}
-
-      {/* Not Serviceable */}
-      {step === "not-serviceable" && (
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative z-10 flex flex-col items-center text-center w-full"
-        >
-          <motion.div
-            className="w-24 h-24 rounded-full bg-destructive/10 flex items-center justify-center mb-6"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring" }}
-          >
-            <AlertCircle className="w-12 h-12 text-destructive" />
-          </motion.div>
-          <h2 className="text-xl font-bold text-foreground mb-2">Service Not Available</h2>
-          <p className="text-muted-foreground text-sm mb-1 max-w-[280px]">
-            Sorry, our services are not available in your area yet.
-          </p>
-          <p className="text-muted-foreground text-xs mb-6">
-            PIN Code: <span className="font-semibold text-foreground">{detectedPincode}</span>
-          </p>
-          <Button
-            variant="hero"
-            className="w-full mb-3"
-            onClick={() => {
-              toast({ title: "We'll notify you!", description: "You'll be the first to know when we launch in your area." });
-            }}
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            Notify Me When Available
-          </Button>
-          <Button variant="outline" className="w-full mb-3" onClick={() => { setStep("manual"); setPincode(""); }}>
-            Try Another PIN Code
-          </Button>
-          <Button variant="ghost" className="text-sm" onClick={() => setStep("ask")}>
-            ← Try GPS Instead
-          </Button>
-        </motion.div>
-      )}
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          {LANDMARK_CITIES.map((city) => {
+            const live = serviceableSet.has(city.pincode);
+            return (
+              <motion.button
+                key={city.name}
+                whileTap={{ scale: 0.94 }}
+                onClick={() => handleCityTap(city)}
+                className={`relative rounded-2xl border border-border/60 bg-card overflow-hidden text-left p-2.5 ${
+                  !live ? "opacity-55" : ""
+                }`}
+              >
+                <div className={`relative h-14 rounded-xl bg-gradient-to-br ${city.gradient} flex items-center justify-center mb-2`}>
+                  <city.Icon className="w-9 h-9 text-foreground/85" />
+                  {live && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-success ring-2 ring-card" />
+                  )}
+                </div>
+                <p className="text-[12px] font-bold text-foreground leading-tight">{city.name}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight truncate">{city.landmark}</p>
+              </motion.button>
+            );
+          })}
+        </div>
+        <p className="text-[11px] text-muted-foreground text-center mt-5">
+          Don't see your city? More launching soon.
+        </p>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   ShoppingBag,
@@ -8,51 +9,56 @@ import {
   Info,
   Check,
   Trash2,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useNotifications, Notification } from "@/contexts/NotificationContext";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, isToday, isYesterday } from "date-fns";
+
+const ICONS: Record<Notification["type"], any> = {
+  order: ShoppingBag,
+  report: FileText,
+  promo: Gift,
+  system: Info,
+};
+
+const COLOR_CLASSES: Record<Notification["type"], string> = {
+  order: "from-primary/20 to-primary/5 text-primary ring-primary/20",
+  report: "from-success/20 to-success/5 text-success ring-success/20",
+  promo: "from-warning/20 to-warning/5 text-warning ring-warning/20",
+  system: "from-muted to-muted/30 text-muted-foreground ring-border",
+};
+
+const groupKey = (iso: string) => {
+  const d = new Date(iso);
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return "Earlier";
+};
 
 const NotificationsScreen = () => {
   const navigate = useNavigate();
   const { notifications, markAsRead, markAllAsRead, clearNotifications, unreadCount } =
     useNotifications();
 
-  const getIcon = (type: Notification["type"]) => {
-    switch (type) {
-      case "order":
-        return ShoppingBag;
-      case "report":
-        return FileText;
-      case "promo":
-        return Gift;
-      default:
-        return Info;
-    }
-  };
+  const grouped = useMemo(() => {
+    const map = new Map<string, Notification[]>();
+    notifications.forEach((n) => {
+      const k = groupKey(n.created_at);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(n);
+    });
+    return Array.from(map.entries());
+  }, [notifications]);
 
-  const getIconColor = (type: Notification["type"]) => {
-    switch (type) {
-      case "order":
-        return "text-primary bg-primary/10";
-      case "report":
-        return "text-success bg-success/10";
-      case "promo":
-        return "text-warning bg-warning/10";
-      default:
-        return "text-muted-foreground bg-muted";
-    }
-  };
-
-  const handleNotificationClick = (notification: Notification) => {
-    markAsRead(notification.id);
-
-    if (notification.type === "order" && notification.data?.orderId) {
-      navigate("/tracking", { state: { orderId: notification.data.orderId } });
-    } else if (notification.type === "report" && notification.data?.reportId) {
-      navigate("/report-detail", { state: { reportId: notification.data.reportId } });
+  const handleClick = (n: Notification) => {
+    markAsRead(n.id);
+    if (n.type === "order" && n.data?.orderId) {
+      navigate(`/tracking/${n.data.orderId}`);
+    } else if (n.type === "report" && n.data?.reportId) {
+      navigate("/report-detail", { state: { reportId: n.data.reportId } });
     }
   };
 
@@ -70,85 +76,119 @@ const NotificationsScreen = () => {
         }
       />
 
-      <div className="px-4 pb-6">
+      {/* Hero summary */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mx-4 mt-2 mb-4 rounded-2xl overflow-hidden relative"
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent" />
+        <div className="relative px-4 py-4 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-primary/15 ring-1 ring-primary/30 flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-foreground">
+              {unreadCount > 0
+                ? `${unreadCount} new update${unreadCount > 1 ? "s" : ""}`
+                : "You're all caught up"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Booking, reports & offers — all in one place.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="px-4 pb-10">
         {notifications.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-20 text-center"
+            className="mt-16 text-center"
           >
-            <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center mb-4">
-              <Bell className="w-10 h-10 text-muted-foreground" />
+            <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-primary/15 to-primary/5 ring-1 ring-primary/15 flex items-center justify-center mb-5">
+              <Bell className="w-12 h-12 text-primary/70" />
             </div>
             <h2 className="text-lg font-bold text-foreground">No notifications yet</h2>
-            <p className="text-muted-foreground mt-2">
-              When you book tests or receive reports, notifications will appear here.
+            <p className="text-sm text-muted-foreground mt-2 max-w-[280px] mx-auto">
+              Book a test or upload a prescription — we'll keep you posted here.
             </p>
-            <Button variant="outline" className="mt-6" onClick={() => navigate("/home")}>
+            <Button variant="hero" className="mt-6" onClick={() => navigate("/home")}>
               Book a Test
             </Button>
           </motion.div>
         ) : (
           <>
-            {/* Clear all button */}
-            <div className="flex justify-end mt-2 mb-4">
+            <div className="flex justify-end -mt-1 mb-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearNotifications}
-                className="text-destructive hover:text-destructive"
+                className="text-destructive hover:text-destructive h-8 text-xs"
               >
-                <Trash2 className="w-4 h-4 mr-1" />
+                <Trash2 className="w-3.5 h-3.5 mr-1" />
                 Clear all
               </Button>
             </div>
 
-            {/* Notification list */}
-            <div className="space-y-3">
-              {notifications.map((notification, index) => {
-                const Icon = getIcon(notification.type);
-                return (
-                  <motion.button
-                    key={notification.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleNotificationClick(notification)}
-                    className={`w-full soft-card flex items-start gap-4 text-left transition-all ${
-                      !notification.read ? "border-l-4 border-l-primary" : ""
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${getIconColor(
-                        notification.type
-                      )}`}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`font-medium ${
-                          !notification.read ? "text-foreground" : "text-muted-foreground"
-                        }`}
-                      >
-                        {notification.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(notification.created_at), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                    {!notification.read && (
-                      <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 mt-2" />
-                    )}
-                  </motion.button>
-                );
-              })}
-            </div>
+            <AnimatePresence initial={false}>
+              {grouped.map(([label, items]) => (
+                <div key={label} className="mb-5">
+                  <p className="text-[11px] uppercase tracking-[0.16em] font-semibold text-muted-foreground/80 px-1 mb-2">
+                    {label}
+                  </p>
+                  <div className="space-y-2.5">
+                    {items.map((n, i) => {
+                      const Icon = ICONS[n.type];
+                      return (
+                        <motion.button
+                          key={n.id}
+                          layout
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -50 }}
+                          transition={{ delay: i * 0.03 }}
+                          onClick={() => handleClick(n)}
+                          className={`relative w-full text-left rounded-2xl border border-border/70 bg-card p-3.5 pr-4 flex items-start gap-3 active:scale-[0.985] transition-all overflow-hidden ${
+                            !n.read ? "shadow-sm" : "opacity-80"
+                          }`}
+                        >
+                          {!n.read && (
+                            <span className="absolute left-0 top-3 bottom-3 w-1 rounded-r-full bg-primary" />
+                          )}
+                          <div
+                            className={`w-11 h-11 rounded-xl bg-gradient-to-br ring-1 flex items-center justify-center flex-shrink-0 ${COLOR_CLASSES[n.type]}`}
+                          >
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <p
+                                className={`text-sm leading-tight ${
+                                  !n.read ? "font-semibold text-foreground" : "text-foreground/80"
+                                }`}
+                              >
+                                {n.title}
+                              </p>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-[13px] text-muted-foreground mt-1 line-clamp-2 leading-snug">
+                              {n.message}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground/80 mt-2">
+                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                            </p>
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </AnimatePresence>
           </>
         )}
       </div>

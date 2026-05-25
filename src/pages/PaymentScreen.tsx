@@ -259,6 +259,7 @@ const PaymentScreen = () => {
       clearCart();
 
       navigate("/order-success", {
+        replace: true,
         state: {
           ...paymentState,
           couponApplied,

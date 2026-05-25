@@ -166,6 +166,9 @@ const BookingsScreen = () => {
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {order.order_number || `#${order.id.slice(0, 8)}`}
                 </p>
+                <p className="text-[11px] text-muted-foreground/90 mt-0.5">
+                  Booked on {format(new Date(order.created_at), "dd MMM yyyy, hh:mm a")}
+                </p>
                 {order.lab_name && (
                   <p className="text-xs text-muted-foreground mt-0.5">{order.lab_name}</p>
                 )}

@@ -55,6 +55,7 @@ interface OrderItem {
 
 const workflowSteps = [
   { key: "confirmed", label: "Booking Confirmed", icon: CheckCircle },
+  { key: "accepted", label: "Order Accepted", icon: CheckCircle },
   { key: "assigned", label: "Collection Partner Assigned", icon: User },
   { key: "in_progress", label: "Sample Collected", icon: FlaskConical },
   { key: "completed", label: "Report Arrived", icon: FileText },
@@ -64,22 +65,23 @@ function getCompletedIndex(status: string | null): number {
   switch (status) {
     case "pending":
     case "confirmed":
-    case "accepted":
       return 0;
+    case "accepted":
+      return 1;
     case "processing":
     case "assigned":
     case "out_for_collection":
-      return 1;
+      return 2;
     case "sample_collected":
     case "in_progress":
     case "collection_complete":
     case "sample_received":
-      return 2;
+      return 3;
     case "lab_processing":
     case "report_ready":
     case "report_delivered":
     case "completed":
-      return 3;
+      return 4;
     default:
       return -1;
   }
