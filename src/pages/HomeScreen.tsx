@@ -98,8 +98,10 @@ const HomeScreen = () => {
 
   const { pincode: userPincode, loading: pincodeLoading } = useUserPincode();
 
-  // Fetch diagnostic centers (filtered by user's serviceable pincode — Zomato-style)
+  // Fetch diagnostic centers — only AFTER the user's pincode resolves so we
+  // never render labs from other areas first and then strip them (flicker bug).
   const fetchDiagnosticCenters = useCallback(async () => {
+    if (pincodeLoading) return; // wait until we know the user's pincode
     const { data } = await supabase
       .from("diagnostic_centers")
       .select("*")
@@ -115,7 +117,7 @@ const HomeScreen = () => {
         isActive: center.is_active !== false,
       })));
     }
-  }, [userPincode]);
+  }, [userPincode, pincodeLoading]);
 
   // Health packages fetch removed — replaced with ad banner
 
