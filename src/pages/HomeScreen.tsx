@@ -427,64 +427,61 @@ const HomeScreen = () => {
 
 
       {/* Previous Orders */}
-      <section className="mt-8">
-        <div className="flex items-center justify-between px-4 mb-4">
-          <h2 className="text-lg font-bold text-foreground">Previous Orders 📦</h2>
+      <section className="mt-10">
+        <div className="flex items-center justify-between px-6 mb-4">
+          <h2 className="text-[20px] font-extrabold text-foreground tracking-tight">Recent Orders 📦</h2>
           {previousOrders.length > 0 && (
             <button 
               onClick={() => navigate('/bookings')}
-              className="flex items-center gap-1 text-primary text-sm font-medium"
+              className="text-primary text-sm font-bold bg-primary/5 px-3 py-1 rounded-full"
             >
-              View all <ChevronRight className="w-4 h-4" />
+              View all
             </button>
           )}
         </div>
         {previousOrders.length === 0 ? (
           <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
+            <div className="flex gap-4 px-6 pb-2" style={{ width: 'max-content' }}>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="soft-card p-4" style={{ width: '200px', minHeight: '140px' }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
-                    <div className="w-16 h-5 rounded-full bg-muted animate-pulse" />
+                <div key={i} className="soft-card p-5 bg-white/50 backdrop-blur-sm border border-white/40" style={{ width: '220px', minHeight: '160px' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-muted animate-pulse" />
+                    <div className="w-20 h-6 rounded-full bg-muted animate-pulse" />
                   </div>
-                  <div className="w-3/4 h-4 rounded bg-muted animate-pulse mb-2" />
-                  <div className="w-1/2 h-3 rounded bg-muted animate-pulse mb-3" />
-                  <div className="flex justify-between">
-                    <div className="w-12 h-5 rounded bg-muted animate-pulse" />
-                    <div className="w-16 h-7 rounded-lg bg-muted animate-pulse" />
-                  </div>
+                  <div className="w-3/4 h-5 rounded-lg bg-muted animate-pulse mb-2" />
+                  <div className="w-1/2 h-4 rounded-lg bg-muted animate-pulse" />
                 </div>
               ))}
             </div>
           </div>
         ) : (
           <div className="overflow-x-auto scrollbar-hide">
-            <div className="flex gap-3 px-4 pb-2" style={{ width: 'max-content' }}>
+            <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
               {previousOrders.map((order) => (
-                <div
+                <motion.div
                   key={order.id}
-                  className="soft-card p-4 flex flex-col justify-between"
-                  style={{ width: '200px', minHeight: '140px' }}
+                  whileTap={{ scale: 0.96 }}
+                  className="soft-card p-5 flex flex-col justify-between border border-white/50 bg-white/60 backdrop-blur-md"
+                  style={{ width: '220px', minHeight: '160px' }}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Activity className="w-5 h-5 text-primary" />
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-12 h-12 rounded-[1.2rem] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                      <Activity className="w-6 h-6 text-primary" />
                     </div>
-                    <span className="text-[10px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-full capitalize">
+                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full capitalize">
                       {order.status || "pending"}
                     </span>
                   </div>
-                  <div className="flex-1 min-w-0 mb-2">
-                    <h3 className="font-semibold text-foreground text-sm line-clamp-2 leading-tight">
+                  <div className="flex-1 min-w-0 mb-3">
+                    <h3 className="font-bold text-foreground text-sm line-clamp-2 leading-snug">
                       {order.test_name || "Lab Test"}
                     </h3>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-[11px] font-medium text-muted-foreground mt-1 opacity-70">
                       {order.order_number || `#${order.id.slice(0, 8)}`}
                     </p>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-base font-bold text-foreground">₹{order.total}</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <p className="text-lg font-black text-foreground">₹{order.total}</p>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -496,13 +493,12 @@ const HomeScreen = () => {
                         });
                         if (success) toast.success(`${testName} added to cart`);
                       }}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-semibold active:scale-95 transition-transform"
+                      className="p-2.5 bg-primary text-white rounded-xl active:scale-90 transition-all shadow-md shadow-primary/20"
                     >
-                      <RotateCw className="w-3 h-3" />
-                      Reorder
+                      <RotateCw className="w-4 h-4" />
                     </button>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>

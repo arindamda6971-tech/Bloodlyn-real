@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import RouteFallback from "./RouteFallback";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -30,11 +30,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         if (cancelled) return;
 
         if (error) {
-          // Fail-open for the customer app: missing role row = default 'user'
           setIsAuthorized(true);
         } else {
           const roles = (data ?? []).map((r) => r.role);
-          // Customer app: block vendor / admin accounts
           const blocked = roles.some((r) => r === "vendor" || r === "admin");
           setIsAuthorized(!blocked);
         }
@@ -52,11 +50,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }, [user]);
 
   if (loading || (user && !roleChecked)) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center max-w-[430px] mx-auto">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <RouteFallback />;
   }
 
   if (!user) {
@@ -67,9 +61,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Always require location check on every login session
+  // Require location check if not already saved in this device
   if (location.pathname !== "/location-check" && location.pathname !== "/unauthorized") {
-    const locationChecked = sessionStorage.getItem(`location_checked_${user.id}`);
+    const locationChecked = localStorage.getItem(`location_checked_${user.id}`);
     if (locationChecked !== "true") {
       return <Navigate to="/location-check" replace />;
     }

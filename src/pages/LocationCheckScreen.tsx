@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 
 interface ServiceableArea {
   pincode: string;
@@ -259,7 +261,7 @@ const LocationCheckScreen = () => {
         });
       }
       savedKeyRef.current = key;
-      sessionStorage.setItem(`location_checked_${user.id}`, "true");
+      localStorage.setItem(`location_checked_${user.id}`, "true");
       navigate("/home", { replace: true });
     } catch (e) {
       console.error("Failed to save address:", e);
@@ -267,32 +269,58 @@ const LocationCheckScreen = () => {
     }
   };
 
-  const handleAllowLocation = () => {
+  const handleAllowLocation = async () => {
     setStep("detecting");
-    if (!navigator.geolocation) {
-      setStep("manual");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const { pincode: pc, display } = await reverseGeocode(latitude, longitude);
-        if (!pc) {
+
+    try {
+      let coords;
+
+      if (Capacitor.isNativePlatform()) {
+        const permission = await Geolocation.requestPermissions();
+        if (permission.location !== 'granted') {
           setStep("manual");
           return;
         }
-        setDetectedPincode(pc);
-        setLocationName(display);
-        if (checkServiceability(pc)) {
-          setStep("serviceable");
-          setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 1200);
-        } else {
-          setStep("not-serviceable");
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000
+        });
+        coords = position.coords;
+      } else {
+        if (!navigator.geolocation) {
+          setStep("manual");
+          return;
         }
-      },
-      () => setStep("manual"),
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000
+          });
+        });
+        coords = position.coords;
+      }
+
+      const { latitude, longitude } = coords;
+      const { pincode: pc, display } = await reverseGeocode(latitude, longitude);
+
+      if (!pc) {
+        setStep("manual");
+        return;
+      }
+
+      setDetectedPincode(pc);
+      setLocationName(display);
+
+      if (checkServiceability(pc)) {
+        setStep("serviceable");
+        setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 1200);
+      } else {
+        setStep("not-serviceable");
+      }
+    } catch (error) {
+      console.error("Location error:", error);
+      setStep("manual");
+    }
   };
 
   const handleManualCheck = async () => {

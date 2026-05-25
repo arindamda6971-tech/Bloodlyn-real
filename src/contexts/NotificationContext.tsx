@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { LocalNotifications } from '@capacitor/local-notifications';
+import { Capacitor } from '@capacitor/core';
 
 export interface Notification {
   id: string;
@@ -183,15 +185,48 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     } catch { /* silently ignore — autoplay may be blocked until first gesture */ }
   };
 
-  const addNotification = (notification: Omit<Notification, "id" | "read" | "created_at">) => {
+  // Request permission on mount for native devices
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      LocalNotifications.requestPermissions();
+    }
+  }, []);
+
+  const addNotification = async (notification: Omit<Notification, "id" | "read" | "created_at">) => {
+    const id = crypto.randomUUID();
     const newNotification: Notification = {
       ...notification,
-      id: crypto.randomUUID(),
+      id: id,
       read: false,
       created_at: new Date().toISOString(),
     };
     setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
     playChime(notification.type);
+
+    // Trigger native notification if on device
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const hasPerms = await LocalNotifications.checkPermissions();
+        if (hasPerms.display === 'granted') {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                title: notification.title,
+                body: notification.message,
+                id: Math.floor(Math.random() * 1000000),
+                schedule: { at: new Date(Date.now() + 1000) },
+                sound: 'beep.wav',
+                attachments: [],
+                actionTypeId: '',
+                extra: notification.data
+              }
+            ]
+          });
+        }
+      } catch (err) {
+        console.error("Failed to show native notification:", err);
+      }
+    }
   };
 
   const clearNotifications = () => {

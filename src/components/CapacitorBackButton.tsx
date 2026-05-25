@@ -7,20 +7,28 @@ const CapacitorBackButton = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handler = App.addListener('backButton', (data) => {
-      if (location.pathname === '/' || location.pathname === '/home' || location.pathname === '/login') {
-        // On main screens, minimize the app or exit
+    const handleBackButton = async () => {
+      // Exit the app if on main entry points
+      const isMainPage =
+        location.pathname === '/' ||
+        location.pathname === '/home' ||
+        location.pathname === '/login' ||
+        location.pathname === '/onboarding';
+
+      if (isMainPage) {
         App.exitApp();
       } else {
-        // Otherwise, go back in history
-        navigate(-1);
+        // Use browser history to go back naturally
+        window.history.back();
       }
-    });
+    };
+
+    const listener = App.addListener('backButton', handleBackButton);
 
     return () => {
-      handler.then(h => h.remove());
+      listener.then(l => l.remove());
     };
-  }, [location, navigate]);
+  }, [location]);
 
   return null;
 };

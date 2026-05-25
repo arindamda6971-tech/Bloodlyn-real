@@ -243,30 +243,36 @@
 @layer components {
   /* Glass morphism card */
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50;
-    box-shadow: var(--shadow-card);
+    @apply bg-white/70 backdrop-blur-2xl border border-white/20;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   /* Soft card with rounded corners */
   .soft-card {
-    @apply bg-card rounded-2xl p-4;
-    box-shadow: var(--shadow-card);
+    @apply bg-card rounded-[2rem] p-5;
+    box-shadow: 0 15px 35px -10px rgba(0,0,0,0.08);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backface-visibility: hidden;
+    transform: translateZ(0);
+  }
+
+  .soft-card:active {
+    transform: scale(0.96);
   }
 
   /* Primary gradient button */
   .btn-primary-gradient {
-    background: var(--gradient-primary);
-    @apply text-primary-foreground font-semibold rounded-xl px-6 py-3 transition-all duration-300;
-    box-shadow: var(--shadow-glow);
-  }
-
-  .btn-primary-gradient:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 0 30px hsl(201 88% 62% / 0.5);
+    background: linear-gradient(135deg, #4AB3F4 0%, #2D9CDB 100%);
+    @apply text-white font-bold rounded-2xl px-6 py-4 transition-all duration-300;
+    box-shadow: 0 10px 20px -5px rgba(74, 179, 244, 0.4);
+    backface-visibility: hidden;
+    transform: translateZ(0);
   }
 
   .btn-primary-gradient:active {
-    transform: translateY(0);
+    transform: scale(0.95);
   }
 
   /* Success gradient button */
