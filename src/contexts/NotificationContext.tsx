@@ -157,6 +157,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  const playChime = (type: Notification["type"]) => {
+    if (type !== "order" && type !== "report") return;
+    try {
+      const AudioCtx =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+      const tones = type === "order" ? [880, 1320] : [660, 990];
+      tones.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, now + i * 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.22, now + i * 0.18 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.18 + 0.28);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.18);
+        osc.stop(now + i * 0.18 + 0.3);
+      });
+      setTimeout(() => ctx.close().catch(() => {}), 800);
+    } catch { /* silently ignore — autoplay may be blocked until first gesture */ }
+  };
+
   const addNotification = (notification: Omit<Notification, "id" | "read" | "created_at">) => {
     const newNotification: Notification = {
       ...notification,
@@ -164,7 +190,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       read: false,
       created_at: new Date().toISOString(),
     };
-    setNotifications((prev) => [newNotification, ...prev].slice(0, 50)); // Keep max 50 notifications
+    setNotifications((prev) => [newNotification, ...prev].slice(0, 50));
+    playChime(notification.type);
   };
 
   const clearNotifications = () => {
