@@ -246,26 +246,27 @@ const HomeScreen = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-2xl bg-card/70 backdrop-blur-md border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => setShowCallSheet(true)}
               aria-label="Contact support"
             >
               <Phone className="w-5 h-5 text-foreground" />
             </button>
             <button
-              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-2xl bg-card/70 backdrop-blur-md border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => navigate("/notifications")}
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-white ring-2 ring-white">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-primary-foreground ring-2 ring-background">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
           </div>
         </motion.div>
+
 
         {/* Search bar moves up as header squeezes */}
         <motion.div style={{ y: searchY }} className="relative search-shell">
