@@ -25,10 +25,10 @@ const LANDMARK_CITIES: {
   name: string;
   state: string;
   pincode: string;
-  landmark: string;
   gradient: string;
   Icon: (props: { className?: string }) => JSX.Element;
 }[] = [
+
   {
     name: "Delhi",
     state: "Delhi",
