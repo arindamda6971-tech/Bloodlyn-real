@@ -66,6 +66,7 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return;
     if (!fullName.trim()) { toast.error("Full name is required"); return; }
     if (!age || Number(age) < 1 || Number(age) > 120) { toast.error("Enter valid age (1–120)"); return; }
     if (!gender) { toast.error("Gender is required"); return; }
@@ -73,8 +74,23 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
     if (!relationship) { toast.error("Relationship is required"); return; }
     if (relationship === "Other" && !customRelationship.trim()) { toast.error("Please specify relationship"); return; }
 
+    const trimmedName = fullName.trim();
+
+    // Dedup guard — block adding an identical member (same name+phone, or same name+relation)
+    if (!editMember) {
+      const duplicate = existingMembers.find((m) =>
+        m.fullName.trim().toLowerCase() === trimmedName.toLowerCase() &&
+        (m.phone === phone || m.relationship === relationship)
+      );
+      if (duplicate) {
+        toast.error("This family member already exists");
+        return;
+      }
+    }
+
+    submittingRef.current = true;
     const memberData = {
-      fullName: fullName.trim(),
+      fullName: trimmedName,
       age,
       gender,
       phone,
@@ -82,16 +98,21 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
       customRelationship: relationship === "Other" ? customRelationship.trim() : undefined,
     };
 
-    if (editMember && onEdit) {
-      await onEdit(editMember.id, memberData);
-      toast.success("Family member updated");
-    } else {
-      await onAdd(memberData);
-      toast.success("Family member added");
+    try {
+      if (editMember && onEdit) {
+        await onEdit(editMember.id, memberData);
+        toast.success("Family member updated");
+      } else {
+        await onAdd(memberData);
+        toast.success("Family member added");
+      }
+      reset();
+      onOpenChange(false);
+    } finally {
+      submittingRef.current = false;
     }
-    reset();
-    onOpenChange(false);
   };
+
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
