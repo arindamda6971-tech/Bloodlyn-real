@@ -492,8 +492,8 @@ const LocationCheckScreen = () => {
                     <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-success ring-2 ring-card" />
                   )}
                 </div>
-                <p className="text-[12px] font-bold text-foreground leading-tight">{city.name}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight truncate">{city.landmark}</p>
+                <p className="text-[12px] font-bold text-foreground leading-tight text-center">{city.name}</p>
+
               </motion.button>
             );
           })}
