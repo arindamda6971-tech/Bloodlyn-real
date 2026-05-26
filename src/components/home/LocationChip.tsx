@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Loader2, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,11 @@ const LocationChip = () => {
   const [open, setOpen] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [saving, setSaving] = useState(false);
+  // Single-flight guards — mirror LocationCheckScreen pattern so React StrictMode
+  // / accidental double-tap never inserts a duplicate address row.
+  const savingRef = useRef(false);
+  const savedKeyRef = useRef<string | null>(null);
+
 
   const checkServiceable = async (pc: string) => {
     const target = pc.trim();
