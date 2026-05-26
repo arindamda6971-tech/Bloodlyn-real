@@ -307,9 +307,11 @@ const LabDetailScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [addedTests, setAddedTests] = useState<Set<string>>(new Set());
+  const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Try to fetch lab from database first
   useEffect(() => {
