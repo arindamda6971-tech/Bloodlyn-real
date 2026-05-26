@@ -173,8 +173,15 @@
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: none; /* Critical: Stop the bounce that lifts the UI */
+    overscroll-behavior-y: contain; /* Stop nested-scroll bleed on My Orders / Reports / Tests */
   }
+
+  /* Any inner scroll container should never bleed scroll to the outer page */
+  .overflow-y-auto, .overflow-auto, .overflow-x-auto, [data-scroll-area] {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
 
   h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.022em;

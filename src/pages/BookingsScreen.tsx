@@ -23,6 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
+import { formatTestsLabel } from "@/lib/format-tests";
+
 
 type Order = {
   id: string;
@@ -161,9 +163,10 @@ const BookingsScreen = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <div>
-                <h3 className="font-semibold text-foreground text-sm">{order.test_name || bookingType}</h3>
+              <div className="min-w-0">
+                <h3 className="font-semibold text-foreground text-sm truncate">{formatTestsLabel(order.test_name, bookingType)}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
+
                   {order.order_number || `#${order.id.slice(0, 8)}`}
                 </p>
                 <p className="text-[11px] text-muted-foreground/90 mt-0.5">

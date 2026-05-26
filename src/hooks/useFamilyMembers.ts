@@ -115,6 +115,17 @@ export function useFamilyMembers() {
     async (member: Omit<FamilyMember, "id">) => {
       if (!supabaseUserId) return null;
 
+      // Dedup guard — never insert a duplicate (same name + same phone OR relationship)
+      const trimmedName = member.fullName.trim().toLowerCase();
+      const existsLocal = members.find(
+        (m) =>
+          m.fullName.trim().toLowerCase() === trimmedName &&
+          (m.phone === member.phone || m.relationship === member.relationship)
+      );
+      if (existsLocal) {
+        return existsLocal;
+      }
+
       const { data, error } = await supabase
         .from("family_members")
         .insert({
@@ -135,11 +146,16 @@ export function useFamilyMembers() {
       }
 
       const newMember = mapRowToMember(data);
-      setMembers((prev) => [...prev, newMember]);
+      setMembers((prev) => {
+        // Final guard in setter against race conditions
+        if (prev.some((m) => m.id === newMember.id)) return prev;
+        return [...prev, newMember];
+      });
       return newMember;
     },
-    [supabaseUserId]
+    [supabaseUserId, members]
   );
+
 
   const removeMember = useCallback(
     async (id: string) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Loader2, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,6 +19,11 @@ const LocationChip = () => {
   const [open, setOpen] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [saving, setSaving] = useState(false);
+  // Single-flight guards — mirror LocationCheckScreen pattern so React StrictMode
+  // / accidental double-tap never inserts a duplicate address row.
+  const savingRef = useRef(false);
+  const savedKeyRef = useRef<string | null>(null);
+
 
   const checkServiceable = async (pc: string) => {
     const target = pc.trim();
@@ -45,27 +50,31 @@ const LocationChip = () => {
       toast.error("Enter a valid 6-digit PIN code");
       return;
     }
+    const key = `${user.id}:${newPin.trim()}`;
+    if (savingRef.current || savedKeyRef.current === key) return;
+    savingRef.current = true;
     setSaving(true);
     try {
       const svc = await checkServiceable(newPin);
       if (!svc) {
         toast.error("Sorry, we don't serve this PIN code yet.");
-        setSaving(false);
         return;
       }
-      // Clear default flag on existing addresses, then upsert the new one
-      await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
 
       const { data: existing } = await supabase
         .from("addresses")
-        .select("id")
+        .select("id, is_default")
         .eq("user_id", user.id)
         .eq("pincode", newPin)
         .limit(1);
 
       if (existing && existing.length > 0) {
-        await supabase.from("addresses").update({ is_default: true }).eq("id", existing[0].id);
+        if (!existing[0].is_default) {
+          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
+          await supabase.from("addresses").update({ is_default: true }).eq("id", existing[0].id);
+        }
       } else {
+        await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
         await supabase.from("addresses").insert({
           user_id: user.id,
           address_line1: `Location - ${newPin}`,
@@ -76,17 +85,19 @@ const LocationChip = () => {
           type: "Home",
         });
       }
+      savedKeyRef.current = key;
       toast.success(`Location updated to ${svc.city || "PIN " + newPin}`);
       setOpen(false);
       setNewPin("");
-      // Soft refresh so dependent queries pick up new pincode
       setTimeout(() => window.location.reload(), 400);
     } catch (e) {
       toast.error("Failed to update location. Please try again.");
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   };
+
 
   return (
     <>

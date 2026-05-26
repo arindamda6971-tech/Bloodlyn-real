@@ -307,9 +307,11 @@ const LabDetailScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [addedTests, setAddedTests] = useState<Set<string>>(new Set());
+  const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
 
   // Try to fetch lab from database first
   useEffect(() => {
@@ -763,7 +765,12 @@ const LabDetailScreen = () => {
                 className="soft-card p-4"
               >
                 <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedTest(expandedTest === test.id ? null : test.id)}
+                    className="flex-1 min-w-0 text-left"
+                    aria-expanded={expandedTest === test.id}
+                  >
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium text-foreground text-sm">{test.name}</h3>
                       {test.popular && (
@@ -771,6 +778,7 @@ const LabDetailScreen = () => {
                           Popular
                         </Badge>
                       )}
+                      <ChevronRight className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${expandedTest === test.id ? "rotate-90" : ""}`} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {test.category}
@@ -778,10 +786,15 @@ const LabDetailScreen = () => {
                         <span> · {test.testsCount} tests included</span>
                       )}
                     </p>
-                    {test.description && (
-                      <p className="text-xs text-muted-foreground/90 mt-1 line-clamp-2">
-                        {test.description}
-                      </p>
+                    {expandedTest === test.id && (
+                      <motion.p
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="text-xs text-muted-foreground/90 mt-2 leading-relaxed"
+                      >
+                        {test.description ||
+                          `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart. Sample collection, preparation guidance and report timing are confirmed at booking.`}
+                      </motion.p>
                     )}
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="font-semibold text-foreground">₹{test.price}</span>
@@ -798,7 +811,7 @@ const LabDetailScreen = () => {
                         </Badge>
                       )}
                     </div>
-                  </div>
+                  </button>
                   <Button
                     size="sm"
                     variant={addedTests.has(test.id) ? "default" : "outline"}
@@ -820,6 +833,7 @@ const LabDetailScreen = () => {
                   </Button>
                 </div>
               </motion.div>
+
               );
             })}
 

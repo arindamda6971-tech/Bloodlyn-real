@@ -30,6 +30,8 @@ import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarous
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
+import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
+
 
 // Get greeting based on current time
 const getGreeting = () => {
@@ -244,26 +246,27 @@ const HomeScreen = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-2xl bg-card/70 backdrop-blur-md border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => setShowCallSheet(true)}
               aria-label="Contact support"
             >
               <Phone className="w-5 h-5 text-foreground" />
             </button>
             <button
-              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+              className="w-11 h-11 rounded-2xl bg-card/70 backdrop-blur-md border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => navigate("/notifications")}
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-white ring-2 ring-white">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-primary-foreground ring-2 ring-background">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
           </div>
         </motion.div>
+
 
         {/* Search bar moves up as header squeezes */}
         <motion.div style={{ y: searchY }} className="relative search-shell">
@@ -278,8 +281,9 @@ const HomeScreen = () => {
             }}
             onFocus={() => setShowSearchResults(true)}
             onKeyDown={handleSearchKeyDown}
-            className="w-full bg-white/50 backdrop-blur-md rounded-2xl py-4 pl-12 pr-10 text-sm font-medium border border-white/20 shadow-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full bg-card/80 backdrop-blur-md rounded-2xl py-4 pl-12 pr-10 text-sm font-medium border border-border shadow-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
           />
+
           {searchQuery && (
             <button
               onClick={() => {
@@ -401,7 +405,7 @@ const HomeScreen = () => {
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 px-6 pb-2" style={{ width: 'max-content' }}>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="soft-card p-5 bg-white/50 backdrop-blur-sm border border-white/40" style={{ width: '220px', minHeight: '160px' }}>
+                <div key={i} className="soft-card p-5 bg-card/80 backdrop-blur-sm border border-border" style={{ width: '220px', minHeight: '160px' }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-muted animate-pulse" />
                     <div className="w-20 h-6 rounded-full bg-muted animate-pulse" />
@@ -416,22 +420,20 @@ const HomeScreen = () => {
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
               {previousOrders.map((order) => {
-                // Split test names if they are comma separated (industry standard)
-                const names = (order.test_name || "").split(",").map(n => n.trim()).filter(Boolean);
-                const firstTest = names[0] || "Lab Test";
-                const othersCount = names.length > 1 ? names.length - 1 : 0;
+                const names = splitTestNames(order.test_name);
+                const label = formatTestsLabel(names, "Lab Test");
 
                 return (
                   <motion.div
                     key={order.id}
                     whileTap={{ scale: 0.96 }}
-                    className="soft-card p-5 flex flex-col justify-between border border-white/50 bg-white/60 backdrop-blur-md"
+                    className="soft-card p-5 flex flex-col justify-between border border-border bg-card backdrop-blur-md"
                     style={{ width: '240px', minHeight: '170px' }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-foreground text-sm line-clamp-1 leading-snug">
-                          {firstTest}{othersCount > 0 ? ` +${othersCount} others` : ""}
+                        <h3 className="font-bold text-foreground text-sm line-clamp-2 leading-snug">
+                          {label}
                         </h3>
                         <p className="text-[11px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">
                           {new Date(order.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -448,17 +450,45 @@ const HomeScreen = () => {
                         <p className="text-[20px] font-black text-foreground leading-none">₹{order.total}</p>
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          const testName = order.test_name || "Lab Test";
-                          const success = addToCart({
-                            id: `reorder-${order.id}`,
-                            name: testName,
-                            price: order.total,
-                          });
-                          // Removed toast per user request
+                          // Reorder = re-add the actual tests from the original order_items
+                          // (with real names), not a single aggregate "X tests added" row.
+                          try {
+                            const { data: items } = await supabase
+                              .from("order_items")
+                              .select("test_id, price")
+                              .eq("order_id", order.id);
+
+                            const splitNames = splitTestNames(order.test_name);
+                            const list = (items && items.length > 0)
+                              ? items.map((it, idx) => ({
+                                  id: it.test_id || `reorder-${order.id}-${idx}`,
+                                  name: splitNames[idx] || `Test ${idx + 1}`,
+                                  price: Number(it.price) || 0,
+                                }))
+                              : splitNames.length > 0
+                                ? splitNames.map((name, idx) => ({
+                                    id: `reorder-${order.id}-${idx}`,
+                                    name,
+                                    price: Math.round((order.total || 0) / Math.max(splitNames.length, 1)),
+                                  }))
+                                : [{ id: `reorder-${order.id}`, name: order.test_name || "Lab Test", price: order.total }];
+
+                            let added = 0;
+                            for (const t of list) {
+                              const ok = addToCart({ id: t.id, name: t.name, price: t.price });
+                              if (ok) added++;
+                            }
+                            if (added > 0) {
+                              toast.success(`${added} test${added > 1 ? "s" : ""} added to cart`);
+                              navigate("/cart");
+                            }
+                          } catch (err) {
+                            toast.error("Failed to reorder. Please try again.");
+                          }
                         }}
-                        className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-lg shadow-primary/25 active:scale-90 transition-all"
+                        className="flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-2xl font-black text-xs shadow-lg shadow-primary/25 active:scale-90 transition-all"
                       >
                         <RotateCw className="w-4 h-4" />
                         Reorder
@@ -467,6 +497,7 @@ const HomeScreen = () => {
                   </motion.div>
                 );
               })}
+
             </div>
           </div>
         )}
