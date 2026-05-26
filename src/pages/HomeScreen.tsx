@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import {
   Search,
   Bell,
@@ -121,19 +121,7 @@ const HomeScreen = () => {
 
   // Health packages fetch removed — replaced with ad banner
 
-  // Refresh handler for pull-to-refresh
-  const handleRefresh = useCallback(async () => {
-    await Promise.all([fetchTests(), fetchDiagnosticCenters(), fetchPreviousOrders()]);
-    toast.success("Data refreshed!");
-  }, [fetchTests, fetchDiagnosticCenters, fetchPreviousOrders]);
-
-  const {
-    isRefreshing,
-    pullDistance,
-    handleTouchStart,
-    handleTouchMove,
-    handleTouchEnd,
-  } = usePullToRefresh({ onRefresh: handleRefresh, threshold: 80 });
+  // Refresh handler removed per user request
 
   // Update greeting every minute
   useEffect(() => {
@@ -204,6 +192,13 @@ const HomeScreen = () => {
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
+  // Header Squeeze Animation Logic
+  const { scrollY } = useScroll();
+  const headerHeight = useTransform(scrollY, [0, 80], [140, 70]);
+  const welcomeOpacity = useTransform(scrollY, [0, 40], [1, 0]);
+  const welcomeScale = useTransform(scrollY, [0, 40], [1, 0.8]);
+  const searchY = useTransform(scrollY, [0, 80], [0, -45]);
+
   const handleAddFromSearch = (test: any) => {
     if (isInCart(test.id)) {
       navigate("/cart");
@@ -214,16 +209,11 @@ const HomeScreen = () => {
       name: test.name,
       price: test.price,
     });
-    if (success) {
-      toast.success(`${test.name} added to cart`);
-    }
+    // Removed toast for adding to cart per user request
   };
 
   return (
     <div
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
       className="relative home-aurora"
     >
       {/* Ambient aurora background — pure CSS, GPU-composited, no paint cost on scroll */}
@@ -233,82 +223,50 @@ const HomeScreen = () => {
         <div className="aurora-grid" />
       </div>
 
-      {/* Pull to Refresh Indicator */}
-      <AnimatePresence>
-        {(pullDistance > 0 || isRefreshing) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-            style={{ 
-              height: Math.max(pullDistance, isRefreshing ? 60 : 0),
-              paddingTop: "env(safe-area-inset-top, 0px)"
-            }}
-          >
-            <motion.div
-              animate={{ 
-                rotate: isRefreshing ? 360 : (pullDistance / 80) * 180,
-              }}
-              transition={isRefreshing ? { 
-                repeat: Infinity, 
-                duration: 1, 
-                ease: "linear" 
-              } : { duration: 0 }}
-            >
-              <RefreshCw 
-                className={`w-6 h-6 ${pullDistance >= 80 || isRefreshing ? 'text-primary' : 'text-muted-foreground'}`} 
-              />
-            </motion.div>
-            {pullDistance >= 80 && !isRefreshing && (
-              <span className="ml-2 text-sm text-primary font-medium">Release to refresh</span>
-            )}
-            {isRefreshing && (
-              <span className="ml-2 text-sm text-primary font-medium">Refreshing...</span>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-      
       <MobileLayout>
-      {/* Header */}
-      <header
-        className="px-4 pt-4 pb-2"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 12px) + 16px)" }}
+      {/* Sticky Squeezable Header */}
+      <motion.header
+        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden"
+        style={{
+          height: headerHeight,
+          paddingTop: "calc(env(safe-area-inset-top, 24px) + 12px)"
+        }}
       >
-        <div className="flex items-center justify-between mb-4">
+        <motion.div
+          style={{ opacity: welcomeOpacity, scale: welcomeScale, originX: 0 }}
+          className="flex items-center justify-between mb-4"
+        >
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground/80 font-semibold">{greeting}</p>
-            <h1 className="text-[22px] font-extrabold text-foreground tracking-tight leading-tight">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground/60 font-bold">{greeting}</p>
+            <h1 className="text-[24px] font-black text-foreground tracking-tight leading-tight">
               Welcome back <span className="inline-block hover:rotate-12 transition-transform duration-300">👋</span>
             </h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
-              className="icon-btn icon-btn-glass relative"
+              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => setShowCallSheet(true)}
               aria-label="Contact support"
             >
               <Phone className="w-5 h-5 text-foreground" />
             </button>
             <button
-              className="icon-btn icon-btn-glass relative"
+              className="w-11 h-11 rounded-2xl bg-white/50 backdrop-blur-md border border-white/20 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
               onClick={() => navigate("/notifications")}
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-foreground" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-destructive rounded-full flex items-center justify-center text-[10px] font-bold text-destructive-foreground ring-2 ring-background">
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-white ring-2 ring-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               )}
             </button>
           </div>
-        </div>
+        </motion.div>
 
-
-        {/* Search bar */}
-        <div className="relative search-shell">
+        {/* Search bar moves up as header squeezes */}
+        <motion.div style={{ y: searchY }} className="relative search-shell">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
           <input
             type="text"
@@ -320,7 +278,7 @@ const HomeScreen = () => {
             }}
             onFocus={() => setShowSearchResults(true)}
             onKeyDown={handleSearchKeyDown}
-            className="search-input search-input-premium"
+            className="w-full bg-white/50 backdrop-blur-md rounded-2xl py-4 pl-12 pr-10 text-sm font-medium border border-white/20 shadow-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           />
           {searchQuery && (
             <button
@@ -387,8 +345,8 @@ const HomeScreen = () => {
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
-      </header>
+        </motion.div>
+      </motion.header>
 
       {/* Delivery location chip */}
       <LocationChip />
@@ -457,49 +415,58 @@ const HomeScreen = () => {
         ) : (
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
-              {previousOrders.map((order) => (
-                <motion.div
-                  key={order.id}
-                  whileTap={{ scale: 0.96 }}
-                  className="soft-card p-5 flex flex-col justify-between border border-white/50 bg-white/60 backdrop-blur-md"
-                  style={{ width: '220px', minHeight: '160px' }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="w-12 h-12 rounded-[1.2rem] bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-                      <Activity className="w-6 h-6 text-primary" />
+              {previousOrders.map((order) => {
+                // Split test names if they are comma separated (industry standard)
+                const names = (order.test_name || "").split(",").map(n => n.trim()).filter(Boolean);
+                const firstTest = names[0] || "Lab Test";
+                const othersCount = names.length > 1 ? names.length - 1 : 0;
+
+                return (
+                  <motion.div
+                    key={order.id}
+                    whileTap={{ scale: 0.96 }}
+                    className="soft-card p-5 flex flex-col justify-between border border-white/50 bg-white/60 backdrop-blur-md"
+                    style={{ width: '240px', minHeight: '170px' }}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-foreground text-sm line-clamp-1 leading-snug">
+                          {firstTest}{othersCount > 0 ? ` +${othersCount} others` : ""}
+                        </h3>
+                        <p className="text-[11px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">
+                          {new Date(order.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-lg uppercase">
+                        {order.status || "pending"}
+                      </span>
                     </div>
-                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full capitalize">
-                      {order.status || "pending"}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0 mb-3">
-                    <h3 className="font-bold text-foreground text-sm line-clamp-2 leading-snug">
-                      {order.test_name || "Lab Test"}
-                    </h3>
-                    <p className="text-[11px] font-medium text-muted-foreground mt-1 opacity-70">
-                      {order.order_number || `#${order.id.slice(0, 8)}`}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto">
-                    <p className="text-lg font-black text-foreground">₹{order.total}</p>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const testName = order.test_name || "Lab Test";
-                        const success = addToCart({
-                          id: `reorder-${order.id}`,
-                          name: testName,
-                          price: order.total,
-                        });
-                        if (success) toast.success(`${testName} added to cart`);
-                      }}
-                      className="p-2.5 bg-primary text-white rounded-xl active:scale-90 transition-all shadow-md shadow-primary/20"
-                    >
-                      <RotateCw className="w-4 h-4" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+
+                    <div className="flex items-end justify-between mt-auto">
+                      <div>
+                        <p className="text-[10px] font-bold text-muted-foreground/50 uppercase mb-0.5">Total</p>
+                        <p className="text-[20px] font-black text-foreground leading-none">₹{order.total}</p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const testName = order.test_name || "Lab Test";
+                          const success = addToCart({
+                            id: `reorder-${order.id}`,
+                            name: testName,
+                            price: order.total,
+                          });
+                          // Removed toast per user request
+                        }}
+                        className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-lg shadow-primary/25 active:scale-90 transition-all"
+                      >
+                        <RotateCw className="w-4 h-4" />
+                        Reorder
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         )}
