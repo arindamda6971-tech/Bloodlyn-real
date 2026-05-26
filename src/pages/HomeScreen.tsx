@@ -418,22 +418,20 @@ const HomeScreen = () => {
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
               {previousOrders.map((order) => {
-                // Split test names if they are comma separated (industry standard)
-                const names = (order.test_name || "").split(",").map(n => n.trim()).filter(Boolean);
-                const firstTest = names[0] || "Lab Test";
-                const othersCount = names.length > 1 ? names.length - 1 : 0;
+                const names = splitTestNames(order.test_name);
+                const label = formatTestsLabel(names, "Lab Test");
 
                 return (
                   <motion.div
                     key={order.id}
                     whileTap={{ scale: 0.96 }}
-                    className="soft-card p-5 flex flex-col justify-between border border-white/50 bg-white/60 backdrop-blur-md"
+                    className="soft-card p-5 flex flex-col justify-between border border-border bg-card backdrop-blur-md"
                     style={{ width: '240px', minHeight: '170px' }}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-foreground text-sm line-clamp-1 leading-snug">
-                          {firstTest}{othersCount > 0 ? ` +${othersCount} others` : ""}
+                        <h3 className="font-bold text-foreground text-sm line-clamp-2 leading-snug">
+                          {label}
                         </h3>
                         <p className="text-[11px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">
                           {new Date(order.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -450,17 +448,45 @@ const HomeScreen = () => {
                         <p className="text-[20px] font-black text-foreground leading-none">₹{order.total}</p>
                       </div>
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
-                          const testName = order.test_name || "Lab Test";
-                          const success = addToCart({
-                            id: `reorder-${order.id}`,
-                            name: testName,
-                            price: order.total,
-                          });
-                          // Removed toast per user request
+                          // Reorder = re-add the actual tests from the original order_items
+                          // (with real names), not a single aggregate "X tests added" row.
+                          try {
+                            const { data: items } = await supabase
+                              .from("order_items")
+                              .select("test_id, price")
+                              .eq("order_id", order.id);
+
+                            const splitNames = splitTestNames(order.test_name);
+                            const list = (items && items.length > 0)
+                              ? items.map((it, idx) => ({
+                                  id: it.test_id || `reorder-${order.id}-${idx}`,
+                                  name: splitNames[idx] || `Test ${idx + 1}`,
+                                  price: Number(it.price) || 0,
+                                }))
+                              : splitNames.length > 0
+                                ? splitNames.map((name, idx) => ({
+                                    id: `reorder-${order.id}-${idx}`,
+                                    name,
+                                    price: Math.round((order.total || 0) / Math.max(splitNames.length, 1)),
+                                  }))
+                                : [{ id: `reorder-${order.id}`, name: order.test_name || "Lab Test", price: order.total }];
+
+                            let added = 0;
+                            for (const t of list) {
+                              const ok = addToCart({ id: t.id, name: t.name, price: t.price });
+                              if (ok) added++;
+                            }
+                            if (added > 0) {
+                              toast.success(`${added} test${added > 1 ? "s" : ""} added to cart`);
+                              navigate("/cart");
+                            }
+                          } catch (err) {
+                            toast.error("Failed to reorder. Please try again.");
+                          }
                         }}
-                        className="flex items-center gap-2 px-5 py-3 bg-primary text-white rounded-2xl font-black text-xs shadow-lg shadow-primary/25 active:scale-90 transition-all"
+                        className="flex items-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-2xl font-black text-xs shadow-lg shadow-primary/25 active:scale-90 transition-all"
                       >
                         <RotateCw className="w-4 h-4" />
                         Reorder
@@ -469,6 +495,7 @@ const HomeScreen = () => {
                   </motion.div>
                 );
               })}
+
             </div>
           </div>
         )}
