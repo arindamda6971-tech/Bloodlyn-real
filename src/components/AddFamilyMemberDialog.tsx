@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -25,15 +25,18 @@ interface Props {
   onAdd: (member: Omit<FamilyMember, "id">) => void | Promise<any>;
   editMember?: FamilyMember | null;
   onEdit?: (id: string, data: Omit<FamilyMember, "id">) => void | Promise<any>;
+  existingMembers?: FamilyMember[];
 }
 
-const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit }: Props) => {
+const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, existingMembers = [] }: Props) => {
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState("");
   const [gender, setGender] = useState("");
   const [phone, setPhone] = useState("");
   const [relationship, setRelationship] = useState("");
   const [customRelationship, setCustomRelationship] = useState("");
+  const submittingRef = useRef(false);
+
 
   // Populate fields when editing
   const populateFromMember = (member: FamilyMember) => {
