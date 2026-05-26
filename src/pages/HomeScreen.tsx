@@ -405,7 +405,7 @@ const HomeScreen = () => {
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-4 px-6 pb-2" style={{ width: 'max-content' }}>
               {[1, 2, 3].map((i) => (
-                <div key={i} className="soft-card p-5 bg-white/50 backdrop-blur-sm border border-white/40" style={{ width: '220px', minHeight: '160px' }}>
+                <div key={i} className="soft-card p-5 bg-card/80 backdrop-blur-sm border border-border" style={{ width: '220px', minHeight: '160px' }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 rounded-2xl bg-muted animate-pulse" />
                     <div className="w-20 h-6 rounded-full bg-muted animate-pulse" />
