@@ -23,6 +23,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
+import { formatTestsLabel } from "@/lib/format-tests";
+
 
 type Order = {
   id: string;
