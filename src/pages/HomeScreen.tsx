@@ -30,6 +30,8 @@ import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarous
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
+import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
+
 
 // Get greeting based on current time
 const getGreeting = () => {
