@@ -33,7 +33,6 @@ const LANDMARK_CITIES: {
     name: "Delhi",
     state: "Delhi",
     pincode: "110001",
-    landmark: "India Gate",
     gradient: "from-amber-500/30 to-rose-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -48,7 +47,6 @@ const LANDMARK_CITIES: {
     name: "Kolkata",
     state: "West Bengal",
     pincode: "700001",
-    landmark: "Howrah Bridge",
     gradient: "from-orange-500/30 to-yellow-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -64,7 +62,6 @@ const LANDMARK_CITIES: {
     name: "Mumbai",
     state: "Maharashtra",
     pincode: "400001",
-    landmark: "Gateway of India",
     gradient: "from-cyan-500/30 to-blue-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,7 +77,6 @@ const LANDMARK_CITIES: {
     name: "Bangalore",
     state: "Karnataka",
     pincode: "560001",
-    landmark: "Vidhana Soudha",
     gradient: "from-emerald-500/30 to-green-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -96,7 +92,6 @@ const LANDMARK_CITIES: {
     name: "Hyderabad",
     state: "Telangana",
     pincode: "500001",
-    landmark: "Charminar",
     gradient: "from-fuchsia-500/30 to-purple-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -112,7 +107,6 @@ const LANDMARK_CITIES: {
     name: "Chennai",
     state: "Tamil Nadu",
     pincode: "600001",
-    landmark: "Marina Lighthouse",
     gradient: "from-sky-500/30 to-indigo-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -129,7 +123,6 @@ const LANDMARK_CITIES: {
     name: "Pune",
     state: "Maharashtra",
     pincode: "411001",
-    landmark: "Shaniwar Wada",
     gradient: "from-rose-500/30 to-pink-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -144,7 +137,6 @@ const LANDMARK_CITIES: {
     name: "Jaipur",
     state: "Rajasthan",
     pincode: "302001",
-    landmark: "Hawa Mahal",
     gradient: "from-orange-500/30 to-red-500/20",
     Icon: ({ className }) => (
       <svg className={className} viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
