@@ -281,8 +281,9 @@ const HomeScreen = () => {
             }}
             onFocus={() => setShowSearchResults(true)}
             onKeyDown={handleSearchKeyDown}
-            className="w-full bg-white/50 backdrop-blur-md rounded-2xl py-4 pl-12 pr-10 text-sm font-medium border border-white/20 shadow-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full bg-card/80 backdrop-blur-md rounded-2xl py-4 pl-12 pr-10 text-sm font-medium border border-border shadow-sm outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
           />
+
           {searchQuery && (
             <button
               onClick={() => {
