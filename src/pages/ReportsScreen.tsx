@@ -24,6 +24,7 @@ const ReportsScreen = () => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<ReportOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     if (!user) return;
