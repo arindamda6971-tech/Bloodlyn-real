@@ -4,6 +4,7 @@ import { Building2, HeartPulse, ChevronRight, Package, Sparkles } from "lucide-r
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -12,6 +13,7 @@ const PackagesScreen = () => {
   const navigate = useNavigate();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
 
   const fetchPackages = useCallback(async () => {
     try {
@@ -77,12 +79,15 @@ const PackagesScreen = () => {
         map.set(key, entry);
       }
     });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [packages]);
+    return Array.from(map.values())
+      .filter((l) => !query.trim() || (l.name || "").toLowerCase().includes(query.trim().toLowerCase()))
+      .sort((a, b) => b.count - a.count);
+  }, [packages, query]);
 
   return (
     <MobileLayout>
       <ScreenHeader title="Health Packages" />
+      <StickySearch value={query} onChange={setQuery} placeholder="Search diagnostic labs..." />
 
       <div className="pb-6">
         {/* Hero Section */}

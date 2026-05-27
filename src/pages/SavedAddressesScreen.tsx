@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Edit2, Trash2, Loader, Star, Plus } from "lucide-react";
+import { MapPin, Edit2, Trash2, Loader, Star, Plus, Home, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -417,54 +417,61 @@ const SavedAddressesScreen = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {addresses.map((address) => (
-                  <div key={address.id} className="soft-card p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-foreground capitalize">{address.type || "Home"}</p>
-                          {address.is_default && <Badge variant="soft" className="text-xs">Default</Badge>}
+                {addresses.map((address) => {
+                  const t = (address.type || "Home").toLowerCase();
+                  const TypeIcon = t === "office" ? Briefcase : t === "other" ? MapPin : Home;
+                  const tint =
+                    t === "office"
+                      ? "from-secondary/20 to-secondary/5 text-secondary"
+                      : t === "other"
+                      ? "from-warning/20 to-warning/5 text-warning"
+                      : "from-primary/20 to-primary/5 text-primary";
+                  return (
+                    <div
+                      key={address.id}
+                      className="relative rounded-2xl border border-border bg-card p-4 shadow-sm overflow-hidden"
+                    >
+                      {address.is_default && (
+                        <div className="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-200 to-amber-100 text-amber-900 text-[10px] font-semibold">
+                          <Star className="w-3 h-3 fill-amber-700" /> Default
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {address.address_line1}
-                          {address.address_line2 && `, ${address.address_line2}`}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {address.city}, {address.state} - {address.pincode}
-                        </p>
+                      )}
+                      <div className="flex items-start gap-3">
+                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${tint} flex items-center justify-center flex-shrink-0`}>
+                          <TypeIcon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-foreground capitalize">{address.type || "Home"}</p>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {address.address_line1}
+                            {address.address_line2 && `, ${address.address_line2}`}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {address.city}, {address.state} <span className="text-foreground/70">- {address.pincode}</span>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
-                      {!address.is_default && (
+                      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                        {!address.is_default && (
+                          <Button variant="ghost" size="sm" className="text-xs flex-1" onClick={() => handleSetDefault(address.id)}>
+                            <Star className="w-3 h-3 mr-1" /> Set Default
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" className="text-xs" onClick={() => startEdit(address)}>
+                          <Edit2 className="w-3 h-3 mr-1" /> Edit
+                        </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-xs flex-1"
-                          onClick={() => handleSetDefault(address.id)}
+                          className="text-xs text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(address.id)}
                         >
-                          <Star className="w-3 h-3 mr-1" />
-                          Set Default
+                          <Trash2 className="w-3 h-3 mr-1" /> Delete
                         </Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => startEdit(address)}>
-                        <Edit2 className="w-3 h-3 mr-1" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(address.id)}
-                      >
-                        <Trash2 className="w-3 h-3 mr-1" />
-                        Delete
-                      </Button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </motion.div>

@@ -15,7 +15,7 @@ import {
   Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import StickySearch from "@/components/ui/StickySearch";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { supabase } from "@/integrations/supabase/client";
@@ -212,26 +212,13 @@ const BookingsScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title="My Orders" showBack={false} />
+      <StickySearch
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search by test, order #, or lab..."
+      />
 
       <div className="px-4 pb-6">
-        {/* Search Bar */}
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by test, order #, or lab..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9 h-10 rounded-xl bg-muted/50 border-none text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-          )}
-        </div>
 
         {/* Status Filter Chips */}
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">

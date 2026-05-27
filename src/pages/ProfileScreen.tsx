@@ -154,6 +154,30 @@ const ProfileScreen = () => {
           </Button>
         </motion.div>
 
+        {/* Quick Stats Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mt-3 grid grid-cols-3 gap-2"
+        >
+          {[
+            { label: "Family", value: String(familyMembers.length), onClick: () => navigate("/family-members") },
+            { label: "Addresses", value: String(addressCount), onClick: () => navigate("/saved-addresses") },
+            { label: "Orders", value: "View", onClick: () => navigate("/bookings") },
+          ].map((s) => (
+            <button
+              key={s.label}
+              onClick={s.onClick}
+              className="rounded-2xl bg-muted/60 hover:bg-muted active:scale-[0.97] transition-all border border-border/60 p-3 text-center"
+            >
+              <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{s.label}</p>
+            </button>
+          ))}
+        </motion.div>
+
+
         {/* Wallet card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
