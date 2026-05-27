@@ -20,9 +20,14 @@ const StickySearch = ({ value, onChange, placeholder = "Search…", topContent, 
   const [squeezed, setSqueezed] = useState(false);
 
   useEffect(() => {
-    const scroller = wrapRef.current?.closest("[data-mobile-scroll]") as HTMLElement | null;
+    let el: HTMLElement | null = wrapRef.current?.parentElement ?? null;
+    let scroller: HTMLElement | null = null;
+    while (el) {
+      const s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY)) { scroller = el; break; }
+      el = el.parentElement;
+    }
     const target: HTMLElement | Window = scroller ?? window;
-
     const onScroll = () => {
       const y = scroller ? scroller.scrollTop : window.scrollY;
       setSqueezed(y > 24);
