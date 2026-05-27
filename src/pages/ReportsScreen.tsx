@@ -90,7 +90,17 @@ const ReportsScreen = () => {
           </motion.div>
         ) : (
           <div className="space-y-3">
-            {orders.map((order, i) => (
+            {orders
+              .filter((o) => {
+                const q = query.trim().toLowerCase();
+                if (!q) return true;
+                return (
+                  o.test_name?.toLowerCase().includes(q) ||
+                  o.lab_name?.toLowerCase().includes(q) ||
+                  o.order_number?.toLowerCase().includes(q)
+                );
+              })
+              .map((order, i) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, y: 14 }}
