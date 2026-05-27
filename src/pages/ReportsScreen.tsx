@@ -8,6 +8,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+import StickySearch from "@/components/ui/StickySearch";
 
 interface ReportOrder {
   id: string;
@@ -63,6 +64,7 @@ const ReportsScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title="My Reports" showBack={false} />
+      <StickySearch value={query} onChange={setQuery} placeholder="Search reports by test or lab..." />
 
       <div className="px-4 pb-6 mt-2">
         {loading ? (
