@@ -101,7 +101,7 @@ const FamilyMembersScreen = () => {
                   className="soft-card"
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/15 to-accent/20 flex items-center justify-center shrink-0 ring-1 ring-primary/20">
                       <span className="text-lg font-bold text-primary">
                         {member.fullName.charAt(0).toUpperCase()}
                       </span>
