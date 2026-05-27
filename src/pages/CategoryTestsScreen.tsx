@@ -1,9 +1,12 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Loader2, FlaskConical, ShoppingCart, Plus } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { Loader2, FlaskConical, ShoppingCart, Plus, ArrowLeft } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
+<<<<<<< HEAD
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import StickySearch from "@/components/ui/StickySearch";
+=======
+>>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
@@ -30,6 +33,12 @@ const CategoryTestsScreen = () => {
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
   const [query, setQuery] = useState("");
 
+  // Header Squeeze Animation Logic
+  const { scrollY } = useScroll();
+  const headerHeight = useTransform(scrollY, [0, 60], [100, 70]);
+  const titleOpacity = useTransform(scrollY, [0, 30], [1, 0.5]);
+  const titleScale = useTransform(scrollY, [0, 30], [1, 0.9]);
+
   const tests = useMemo(() => {
     if (!bridgeData?.tests) return [];
     const q = query.trim().toLowerCase();
@@ -47,9 +56,7 @@ const CategoryTestsScreen = () => {
       name: test.test_name,
       price,
     });
-    if (success) {
-      toast.success(`${test.test_name} added to cart`);
-    }
+    // Removed toast per user request
   };
 
   const handleConfirmReplace = () => {
@@ -59,10 +66,30 @@ const CategoryTestsScreen = () => {
 
   return (
     <MobileLayout>
+<<<<<<< HEAD
       <ScreenHeader title={categoryName} />
       <StickySearch value={query} onChange={setQuery} placeholder={`Search in ${categoryName}...`} />
+=======
+      <motion.header
+        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden flex items-center gap-4"
+        style={{
+          height: headerHeight,
+          paddingTop: "calc(env(safe-area-inset-top, 24px) + 8px)"
+        }}
+      >
+        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center border border-white/20">
+          <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+        <motion.h1
+          style={{ opacity: titleOpacity, scale: titleScale, originX: 0 }}
+          className="text-lg font-black text-foreground tracking-tight"
+        >
+          {categoryName}
+        </motion.h1>
+      </motion.header>
+>>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 
-      <div className="px-4 mt-4 pb-32">
+      <div className="px-6 mt-4 pb-32">
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />

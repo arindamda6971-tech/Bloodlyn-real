@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
   User,
@@ -14,25 +14,20 @@ import {
   FileText,
   Wallet,
   Sparkles,
-  
-  ArrowDownLeft,
-  ArrowUpRight,
   History,
+  ArrowLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
-// Address count fetched directly from Supabase in useEffect
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-
 
 const menuItems: { icon: any; label: string; path: string; badge?: string | null }[] = [
   { icon: MapPin, label: "Saved Addresses", path: "/saved-addresses", badge: null },
@@ -48,51 +43,42 @@ const ProfileScreen = () => {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { membershipType, isActive } = useSubscription();
+  const { members: familyMembers } = useFamilyMembers();
+
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(user?.user_metadata?.avatar_url || null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileContact, setProfileContact] = useState<string | null>(null);
-  const { members: familyMembers } = useFamilyMembers();
   const [addressCount, setAddressCount] = useState(0);
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [walletTxns, setWalletTxns] = useState<Array<{ id: string; amount: number; type: string; description: string | null; created_at: string; balance_after: number }>>([]);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Header Squeeze Logic
+  const { scrollY } = useScroll();
+  const headerHeight = useTransform(scrollY, [0, 80], [130, 70]);
+  const titleOpacity = useTransform(scrollY, [0, 40], [1, 0]);
+  const titleScale = useTransform(scrollY, [0, 40], [1, 0.8]);
 
   useEffect(() => {
     const loadProfileData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
-        // Load full profile from DB (name, avatar, phone/email, wallet)
         const { data: profileData } = await supabase
           .from("profiles")
           .select("avatar_url, full_name, phone, email, wallet_balance")
           .eq("id", session.user.id)
           .maybeSingle();
-        if (profileData?.avatar_url) {
-          setProfileImageUrl(profileData.avatar_url);
+        if (profileData) {
+          if (profileData.avatar_url) setProfileImageUrl(profileData.avatar_url);
+          if (profileData.full_name) setProfileName(profileData.full_name);
+          if (profileData.phone || profileData.email) setProfileContact(profileData.phone || profileData.email || null);
+          setWalletBalance(Number((profileData as any)?.wallet_balance ?? 0));
         }
-        if (profileData?.full_name) {
-          setProfileName(profileData.full_name);
-        }
-        if (profileData?.phone || profileData?.email) {
-          setProfileContact(profileData.phone || profileData.email || null);
-        }
-        setWalletBalance(Number((profileData as any)?.wallet_balance ?? 0));
 
-        // Load address count directly from Supabase
         const { count } = await supabase
           .from("addresses")
           .select("id", { count: "exact", head: true })
           .eq("user_id", session.user.id);
         setAddressCount(count ?? 0);
-
-        // Load recent wallet transactions
-        const { data: txns } = await supabase
-          .from("wallet_transactions")
-          .select("id, amount, type, description, created_at, balance_after")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false })
-          .limit(20);
-        setWalletTxns((txns as any[]) || []);
       }
     };
     loadProfileData();
@@ -108,14 +94,22 @@ const ProfileScreen = () => {
     }
   };
 
-
   const displayName = profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
   const contactInfo = profileContact || user?.phone || user?.email || "";
 
   return (
     <MobileLayout>
-      <ScreenHeader title="Profile" showBack={false} />
+      <motion.header
+        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden flex items-center justify-between"
+        style={{ height: headerHeight, paddingTop: "calc(env(safe-area-inset-top, 24px) + 12px)" }}
+      >
+        <motion.h1 style={{ opacity: titleOpacity, scale: titleScale, originX: 0 }} className="text-[24px] font-black text-foreground tracking-tight">My Profile</motion.h1>
+        <button onClick={handleLogout} className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center border border-destructive/10 active:scale-90 transition-transform">
+          <LogOut className="w-5 h-5 text-destructive" />
+        </button>
+      </motion.header>
 
+<<<<<<< HEAD
       <div className="px-4 pb-6">
         {/* Profile card */}
         <motion.div
@@ -234,133 +228,64 @@ const ProfileScreen = () => {
                 <p className="text-sm text-muted-foreground">No wallet transactions yet</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Refunds and credits will appear here</p>
               </div>
+=======
+      <div className="px-6 pb-24">
+        {/* Profile Card */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="soft-card mt-6 border border-white/50 bg-white/60 backdrop-blur-md flex flex-col items-center text-center p-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+          <div className="relative">
+            {profileImageUrl ? (
+              <img src={profileImageUrl} className="w-24 h-24 rounded-[2rem] object-cover shadow-2xl border-4 border-white" />
+>>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
             ) : (
-              <ul className="divide-y divide-border">
-                {walletTxns.map((t) => {
-                  const isCredit = t.type === "credit";
-                  return (
-                    <li key={t.id} className="flex items-center gap-3 py-2.5">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isCredit ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"}`}>
-                        {isCredit ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{t.description || (isCredit ? "Wallet credit" : "Wallet debit")}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {new Date(t.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                          {" · "}Balance ₹{Number(t.balance_after).toFixed(0)}
-                        </p>
-                      </div>
-                      <p className={`text-sm font-bold ${isCredit ? "text-success" : "text-destructive"}`}>
-                        {isCredit ? "+" : "−"}₹{Number(t.amount).toFixed(0)}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </motion.div>
-        )}
-
-        {/* Quick settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="soft-card mt-4 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center">
-                <Moon className="w-5 h-5 text-secondary" />
+              <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-2xl border-4 border-white">
+                <User className="w-10 h-10 text-white" />
               </div>
-              <span className="font-medium text-foreground">Dark Mode</span>
-            </div>
+            )}
+            <button onClick={() => navigate("/edit-profile")} className="absolute -bottom-2 -right-2 w-10 h-10 rounded-xl bg-white shadow-lg flex items-center justify-center border border-border/50 active:scale-90 transition-transform">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </button>
+          </div>
+          <div className="mt-4">
+            <h2 className="text-xl font-black text-foreground">{displayName}</h2>
+            <p className="text-sm font-bold text-muted-foreground opacity-60 tracking-tight">{contactInfo}</p>
+          </div>
+        </motion.div>
+
+        {/* Wallet Card */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-4 soft-card p-6 bg-black text-white relative overflow-hidden group active:scale-[0.98] transition-transform">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/20 rounded-full -mr-20 -mt-20 blur-[80px]" />
+          <div className="relative flex justify-between items-center">
+            <div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Available Credits</p><h3 className="text-3xl font-black tracking-tighter">₹{walletBalance.toFixed(0)}</h3></div>
+            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/10"><Wallet className="w-6 h-6 text-white" /></div>
+          </div>
+        </motion.div>
+
+        {/* Settings */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="soft-card mt-6 space-y-4 border border-white/40 bg-white/40 backdrop-blur-sm p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3"><div className="w-12 h-12 rounded-[1.2rem] bg-secondary/10 flex items-center justify-center"><Moon className="w-6 h-6 text-secondary" /></div><span className="font-bold text-foreground">Dark Mode</span></div>
             <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
           </div>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-primary" />
-              </div>
-              <span className="font-medium text-foreground">Notifications</span>
-            </div>
+            <div className="flex items-center gap-3"><div className="w-12 h-12 rounded-[1.2rem] bg-primary/10 flex items-center justify-center"><Bell className="w-6 h-6 text-primary" /></div><span className="font-bold text-foreground">Notifications</span></div>
             <Switch defaultChecked />
           </div>
         </motion.div>
 
-        {/* Menu items */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-4 space-y-2"
-        >
+        {/* Menu */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-6 space-y-3">
           {menuItems.map((item, index) => (
-            <motion.button
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + index * 0.05 }}
-              onClick={() => navigate(item.path)}
-              className="w-full soft-card flex items-center gap-4"
-            >
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                <item.icon className="w-5 h-5 text-foreground" />
-              </div>
-              <span className="flex-1 text-left font-medium text-foreground">{item.label}</span>
-              {item.label === "Saved Addresses" ? (
-                <Badge variant={addressCount > 0 ? "softSuccess" : "secondary"}>
-                  {addressCount > 0 ? `${addressCount} saved` : "No saved"}
-                </Badge>
-              ) : item.label === "Family Members" ? (
-                <Badge variant={familyMembers.length > 0 ? "softSuccess" : "secondary"}>
-                  {familyMembers.length > 0 ? `${familyMembers.length} members` : "Add"}
-                </Badge>
-              ) : item.label === "Subscription Plans" && isActive && membershipType ? (
-                <Badge variant="softSuccess">
-                  Active
-                </Badge>
-              ) : (
-                item.badge && (
-                  <Badge variant={item.badge === "New" ? "soft" : item.badge.includes("₹") ? "softSuccess" : "secondary"}>
-                    {item.badge}
-                  </Badge>
-                )
-              )}
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            <motion.button key={item.label} whileTap={{ scale: 0.97 }} onClick={() => navigate(item.path)} className="w-full soft-card flex items-center gap-4 border border-white/40 bg-white/50 backdrop-blur-sm p-4">
+              <div className="w-12 h-12 rounded-[1.2rem] bg-background shadow-inner flex items-center justify-center border border-white"><item.icon className="w-6 h-6 text-foreground/80" /></div>
+              <span className="flex-1 text-left font-black text-foreground tracking-tight text-[15px]">{item.label}</span>
+              <ChevronRight className="w-5 h-5 text-muted-foreground opacity-50" />
             </motion.button>
           ))}
         </motion.div>
 
-        {/* Logout */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6"
-        >
-          <Button 
-            variant="ghost" 
-            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-5 h-5" />
-            Log Out
-          </Button>
-
-        </motion.div>
-
-        {/* Version */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center text-xs text-muted-foreground mt-6"
-        >
-           BloodLyn v2.1.0 • Made with ❤️
-        </motion.p>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 mt-10">BloodLyn v2.1.0 • Built for Performance</motion.p>
       </div>
-
     </MobileLayout>
   );
 };
