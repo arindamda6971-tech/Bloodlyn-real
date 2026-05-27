@@ -3,10 +3,11 @@ import { motion } from "framer-motion";
 import { Loader2, FlaskConical, ShoppingCart, Plus } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -27,11 +28,15 @@ const CategoryTestsScreen = () => {
 
   const { data: bridgeData, isLoading, error } = useBridgeTests();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
+  const [query, setQuery] = useState("");
 
   const tests = useMemo(() => {
     if (!bridgeData?.tests) return [];
-    return bridgeData.tests.filter((t) => t.category === categorySlug);
-  }, [bridgeData, categorySlug]);
+    const q = query.trim().toLowerCase();
+    return bridgeData.tests.filter(
+      (t) => t.category === categorySlug && (!q || t.test_name.toLowerCase().includes(q))
+    );
+  }, [bridgeData, categorySlug, query]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
@@ -55,6 +60,7 @@ const CategoryTestsScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title={categoryName} />
+      <StickySearch value={query} onChange={setQuery} placeholder={`Search in ${categoryName}...`} />
 
       <div className="px-4 mt-4 pb-32">
         {isLoading ? (
