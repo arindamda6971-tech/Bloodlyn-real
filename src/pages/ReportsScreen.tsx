@@ -1,17 +1,13 @@
 import { useEffect, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { Download, FileText, Loader2, Calendar, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { Download, FileText, Loader2, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MobileLayout from "@/components/layout/MobileLayout";
+import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
-<<<<<<< HEAD
-import StickySearch from "@/components/ui/StickySearch";
-=======
-import { useNavigate } from "react-router-dom";
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 
 interface ReportOrder {
   id: string;
@@ -26,45 +22,48 @@ interface ReportOrder {
 const ReportsScreen = () => {
   useSEO({ title: "Health Reports | BloodLyn", description: "Access your lab reports with AI-powered insights, trend analysis and easy sharing." });
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [orders, setOrders] = useState<ReportOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
 
-  // Header Squeeze Animation Logic
-  const { scrollY } = useScroll();
-  const headerHeight = useTransform(scrollY, [0, 60], [100, 70]);
-  const titleOpacity = useTransform(scrollY, [0, 30], [1, 0.5]);
-  const titleScale = useTransform(scrollY, [0, 30], [1, 0.9]);
+  useEffect(() => {
+    if (!user) return;
+    const fetchReports = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, test_name, report_url, status, lab_name, updated_at, order_number")
+        .eq("user_id", user.id)
+        .in("status", ["report_ready", "completed"])
+        .order("updated_at", { ascending: false });
 
-  // ... [useEffect fetchReports remains same] ...
+      if (!error && data) setOrders(data);
+      setLoading(false);
+    };
+    fetchReports();
+
+    const channel = supabase
+      .channel("reports-orders-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
+        fetchReports();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const handleDownload = (order: ReportOrder) => {
+    if (!order.report_url) {
+      toast.error("Report file not available yet");
+      return;
+    }
+    window.open(order.report_url, "_blank");
+  };
 
   return (
     <MobileLayout>
-<<<<<<< HEAD
       <ScreenHeader title="My Reports" showBack={false} />
-      <StickySearch value={query} onChange={setQuery} placeholder="Search reports by test or lab..." />
-=======
-      <motion.header
-        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden flex items-center gap-4"
-        style={{
-          height: headerHeight,
-          paddingTop: "calc(env(safe-area-inset-top, 24px) + 8px)"
-        }}
-      >
-        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center border border-white/20">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <motion.h1
-          style={{ opacity: titleOpacity, scale: titleScale, originX: 0 }}
-          className="text-lg font-black text-foreground tracking-tight"
-        >
-          My Reports
-        </motion.h1>
-      </motion.header>
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 
-      <div className="px-6 pb-6 mt-2">
+      <div className="px-4 pb-6 mt-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
             <Loader2 className="w-7 h-7 animate-spin text-primary" />
@@ -88,17 +87,7 @@ const ReportsScreen = () => {
           </motion.div>
         ) : (
           <div className="space-y-3">
-            {orders
-              .filter((o) => {
-                const q = query.trim().toLowerCase();
-                if (!q) return true;
-                return (
-                  o.test_name?.toLowerCase().includes(q) ||
-                  o.lab_name?.toLowerCase().includes(q) ||
-                  o.order_number?.toLowerCase().includes(q)
-                );
-              })
-              .map((order, i) => (
+            {orders.map((order, i) => (
               <motion.div
                 key={order.id}
                 initial={{ opacity: 0, y: 14 }}

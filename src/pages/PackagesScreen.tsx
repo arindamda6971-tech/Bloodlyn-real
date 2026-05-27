@@ -1,13 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { Building2, HeartPulse, ChevronRight, Package, Sparkles, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { Building2, HeartPulse, ChevronRight, Package, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
-<<<<<<< HEAD
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import StickySearch from "@/components/ui/StickySearch";
-=======
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -16,13 +12,6 @@ const PackagesScreen = () => {
   const navigate = useNavigate();
   const [packages, setPackages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-
-  // Header Squeeze Animation Logic
-  const { scrollY } = useScroll();
-  const headerHeight = useTransform(scrollY, [0, 60], [100, 70]);
-  const titleOpacity = useTransform(scrollY, [0, 30], [1, 0.5]);
-  const titleScale = useTransform(scrollY, [0, 30], [1, 0.9]);
 
   const fetchPackages = useCallback(async () => {
     try {
@@ -88,35 +77,12 @@ const PackagesScreen = () => {
         map.set(key, entry);
       }
     });
-    return Array.from(map.values())
-      .filter((l) => !query.trim() || (l.name || "").toLowerCase().includes(query.trim().toLowerCase()))
-      .sort((a, b) => b.count - a.count);
-  }, [packages, query]);
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  }, [packages]);
 
   return (
     <MobileLayout>
-<<<<<<< HEAD
       <ScreenHeader title="Health Packages" />
-      <StickySearch value={query} onChange={setQuery} placeholder="Search diagnostic labs..." />
-=======
-      <motion.header
-        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden flex items-center gap-4"
-        style={{
-          height: headerHeight,
-          paddingTop: "calc(env(safe-area-inset-top, 24px) + 8px)"
-        }}
-      >
-        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center border border-white/20">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <motion.h1
-          style={{ opacity: titleOpacity, scale: titleScale, originX: 0 }}
-          className="text-lg font-black text-foreground tracking-tight"
-        >
-          Health Packages
-        </motion.h1>
-      </motion.header>
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 
       <div className="pb-6">
         {/* Hero Section */}

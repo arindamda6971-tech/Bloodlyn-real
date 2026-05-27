@@ -1,81 +1,107 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Calendar, Clock, Activity, Heart, Stethoscope, TestTube, ChevronRight,
-  Package, Search, X, Filter, ArrowLeft, RotateCw
+  Calendar,
+  Clock,
+  Activity,
+  Heart,
+  Stethoscope,
+  TestTube,
+  ChevronRight,
+  Package,
+  Search,
+  X,
+  Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-<<<<<<< HEAD
-import StickySearch from "@/components/ui/StickySearch";
-=======
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
+import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
+import ScreenHeader from "@/components/layout/ScreenHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
-<<<<<<< HEAD
 import { formatTestsLabel } from "@/lib/format-tests";
 
-=======
-import { useCart } from "@/contexts/CartContext";
-import { toast } from "sonner";
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
 
 type Order = {
-  id: string; order_number: string | null; status: string | null;
-  scheduled_date: string | null; scheduled_time_slot: string | null;
-  total: number; created_at: string; payment_status: string | null;
-  test_name: string | null; lab_name: string | null;
+  id: string;
+  order_number: string | null;
+  status: string | null;
+  scheduled_date: string | null;
+  scheduled_time_slot: string | null;
+  total: number;
+  created_at: string;
+  payment_status: string | null;
+  test_name: string | null;
+  lab_name: string | null;
 };
 
 const STATUS_FILTERS = [
-  { key: "all", label: "All" }, { key: "confirmed", label: "Confirmed" },
-  { key: "in_progress", label: "Collected" }, { key: "completed", label: "Report Ready" },
+  { key: "all", label: "All" },
+  { key: "confirmed", label: "Confirmed" },
+  { key: "in_progress", label: "Collected" },
+  { key: "completed", label: "Report Ready" },
   { key: "cancelled", label: "Cancelled" },
 ] as const;
 
 const BookingsScreen = () => {
-  useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders." });
+  useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders, sample collection status and view past bookings." });
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
-  const { scrollY } = useScroll();
-  const headerHeight = useTransform(scrollY, [0, 80], [130, 70]);
-  const titleOpacity = useTransform(scrollY, [0, 40], [1, 0]);
-  const titleScale = useTransform(scrollY, [0, 40], [1, 0.8]);
-  const searchY = useTransform(scrollY, [0, 80], [0, -45]);
-
   useRealtimeOrders();
+
+  useEffect(() => {
+    if (user) fetchOrders();
+  }, [user]);
+
   const fetchOrders = async () => {
     try {
-      const { data } = await supabase.from("orders").select("*").order("created_at", { ascending: false });
-      setOrders(data || []);
-    } finally { setLoading(false); }
-  };
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-  useEffect(() => { if (user) fetchOrders(); }, [user]);
+      if (error) throw error;
+      setOrders(data || []);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredOrders = useMemo(() => {
     let result = orders;
+
     if (activeFilter !== "all") {
-      result = activeFilter === "confirmed" ? result.filter(o => o.status === "confirmed" || o.status === "pending") : result.filter(o => o.status === activeFilter);
+      if (activeFilter === "confirmed") {
+        result = result.filter((o) => o.status === "confirmed" || o.status === "pending");
+      } else {
+        result = result.filter((o) => o.status === activeFilter);
+      }
     }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(o => o.test_name?.toLowerCase().includes(q) || o.order_number?.toLowerCase().includes(q) || o.lab_name?.toLowerCase().includes(q));
+      result = result.filter(
+        (o) =>
+          o.test_name?.toLowerCase().includes(q) ||
+          o.order_number?.toLowerCase().includes(q) ||
+          o.lab_name?.toLowerCase().includes(q)
+      );
     }
+
     return result;
   }, [orders, activeFilter, searchQuery]);
 
-<<<<<<< HEAD
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
       case "completed":
@@ -186,62 +212,92 @@ const BookingsScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title="My Orders" showBack={false} />
-      <StickySearch
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Search by test, order #, or lab..."
-      />
 
       <div className="px-4 pb-6">
+        {/* Search Bar */}
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by test, order #, or lab..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9 h-10 rounded-xl bg-muted/50 border-none text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
 
         {/* Status Filter Chips */}
         <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-=======
-  return (
-    <MobileLayout>
-      <motion.header
-        className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 overflow-hidden"
-        style={{ height: headerHeight, paddingTop: "calc(env(safe-area-inset-top, 24px) + 8px)" }}
-      >
-        <motion.div style={{ opacity: titleOpacity, scale: titleScale, originX: 0 }} className="flex items-center gap-4 mb-4">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center border border-white/20 shadow-sm"><ArrowLeft className="w-5 h-5 text-foreground" /></button>
-          <h1 className="text-lg font-black text-foreground tracking-tight">My Orders</h1>
-        </motion.div>
-        <motion.div style={{ y: searchY }} className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-          <input type="text" placeholder="Search orders..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-white/50 backdrop-blur-md rounded-2xl py-3.5 pl-11 pr-10 text-sm font-medium border border-white/20 shadow-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all" />
-          {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 z-10"><X className="w-4 h-4 text-muted-foreground" /></button>}
-        </motion.div>
-      </motion.header>
-
-      <div className="px-6 pb-24">
-        <div className="flex gap-2.5 mt-6 overflow-x-auto pb-2 scrollbar-hide">
->>>>>>> d623537 (feat: Comprehensive Futuristic UI overhaul and Squeezable Header system)
           {STATUS_FILTERS.map((f) => (
-            <button key={f.key} onClick={() => setActiveFilter(f.key)} className={`px-5 py-2.5 rounded-xl text-xs font-black tracking-widest uppercase transition-all whitespace-nowrap ${activeFilter === f.key ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-white/50 text-muted-foreground border border-white/20"}`}>{f.label}</button>
+            <button
+              key={f.key}
+              onClick={() => setActiveFilter(f.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                activeFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {f.label}
+            </button>
           ))}
         </div>
 
-        <div className="mt-6 space-y-4">
-          {loading ? [1,2,3].map(i => <div key={i} className="soft-card h-32 animate-pulse bg-muted/50 rounded-[2rem]" />) : filteredOrders.map((order, idx) => (
-            <motion.div key={order.id} whileTap={{ scale: 0.98 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} onClick={() => order.status === "completed" ? navigate("/reports") : navigate(`/tracking/${order.id}`)} className="soft-card border border-white/50 bg-white/60 backdrop-blur-md p-5 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 border border-primary/10 text-primary"><TestTube className="w-7 h-7" /></div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-black text-foreground text-sm truncate">{order.test_name || "Lab Test"}</h3>
-                    <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-lg uppercase tracking-tighter">{order.status || "pending"}</span>
+        {/* Orders List */}
+        <div className="mt-4 space-y-3">
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="soft-card animate-pulse">
+                  <div className="flex gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-3 bg-muted rounded w-1/2" />
+                      <div className="h-3 bg-muted rounded w-2/3" />
+                    </div>
                   </div>
-                  <p className="text-[10px] font-bold text-muted-foreground opacity-60 uppercase tracking-widest">{order.lab_name || "Diagnostic Lab"}</p>
-                  <p className="text-[11px] font-black text-primary/80 mt-2">{format(new Date(order.created_at), "dd MMM yyyy • hh:mm a")}</p>
                 </div>
-              </div>
-              <div className="flex items-center justify-between mt-5 pt-4 border-t border-white/40">
-                <div><p className="text-[10px] font-bold text-muted-foreground/50 uppercase mb-0.5">Total Paid</p><p className="text-[18px] font-black text-foreground">₹{order.total}</p></div>
-                <button onClick={(e) => { e.stopPropagation(); addToCart({ id: `reorder-${order.id}`, name: order.test_name || "Test", price: order.total }); }} className="flex items-center gap-2 px-5 py-2.5 bg-white border border-border rounded-xl font-black text-[11px] uppercase tracking-widest shadow-sm active:scale-95 transition-all text-primary"><RotateCw className="w-3.5 h-3.5" /> Reorder</button>
-              </div>
+              ))}
+            </div>
+          ) : filteredOrders.length > 0 ? (
+            <AnimatePresence mode="popLayout">
+              {filteredOrders.map((order, idx) => renderOrderCard(order, idx))}
+            </AnimatePresence>
+          ) : orders.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+            >
+              <Filter className="w-10 h-10 text-muted-foreground mb-3" />
+              <h3 className="font-semibold text-foreground mb-1">No matching orders</h3>
+              <p className="text-sm text-muted-foreground max-w-[250px]">
+                Try a different search term or filter.
+              </p>
             </motion.div>
-          ))}
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-12 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Package className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-foreground mb-1">No Orders Yet</h3>
+              <p className="text-sm text-muted-foreground max-w-[250px]">
+                You haven't placed any orders yet. Book a test to get started!
+              </p>
+            </motion.div>
+          )}
         </div>
       </div>
     </MobileLayout>
