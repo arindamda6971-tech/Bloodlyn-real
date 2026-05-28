@@ -676,60 +676,48 @@ const LabDetailScreen = () => {
           </div>
         )}
 
-        <div className="px-4 py-4 space-y-4">
-          {/* Search */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="relative"
-          >
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search tests, packages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background/80 backdrop-blur-sm"
-            />
-          </motion.div>
-
-          {/* Segmented Tab Filter — All Tests / Health Packages */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="relative grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/60 border border-border/50"
-          >
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              const count = tab.key === "packages" ? packageCount : allTestsCount;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-colors"
-                >
-                  {isActive && (
-                    <motion.div
-                      layoutId="lab-tab-pill"
-                      className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg shadow-primary/30"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className={`relative ${isActive ? "text-primary-foreground" : "text-foreground/70"}`}>
-                    {tab.label}
-                  </span>
-                  <span
-                    className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isActive ? "bg-white/25 text-primary-foreground" : "bg-background text-muted-foreground"
-                    }`}
+        {/* Sticky search + tab filter (squeezes on scroll) */}
+        <StickySearch
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Search tests, packages..."
+          footer={
+            <div className="relative grid grid-cols-2 gap-1 p-1 rounded-2xl bg-muted/60 border border-border/50">
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.key;
+                const count = tab.key === "packages" ? packageCount : allTestsCount;
+                return (
+                  <button
+                    key={tab.key}
+                    onClick={() => setActiveTab(tab.key)}
+                    className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-colors"
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </motion.div>
+                    {isActive && (
+                      <motion.div
+                        layoutId="lab-tab-pill"
+                        className="absolute inset-0 bg-gradient-to-br from-primary to-primary/80 rounded-xl shadow-lg shadow-primary/30"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className={`relative ${isActive ? "text-primary-foreground" : "text-foreground/70"}`}>
+                      {tab.label}
+                    </span>
+                    <span
+                      className={`relative text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        isActive ? "bg-white/25 text-primary-foreground" : "bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          }
+        />
+
+        <div className="px-4 py-4 space-y-4">
+
 
           {/* Tests Count */}
           <motion.div
