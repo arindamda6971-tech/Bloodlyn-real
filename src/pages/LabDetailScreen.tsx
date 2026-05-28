@@ -23,12 +23,13 @@ import {
   TrendingUp,
   AlertCircle,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import MobileLayout from "@/components/layout/MobileLayout";
+import StickySearch from "@/components/ui/StickySearch";
 import { useCart } from "@/contexts/CartContext";
+
 import {
   AlertDialog,
   AlertDialogAction,
