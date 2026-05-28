@@ -15,15 +15,15 @@ import {
   Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel } from "@/lib/format-tests";
+
 
 
 type Order = {
