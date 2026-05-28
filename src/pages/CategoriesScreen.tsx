@@ -29,15 +29,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+
 
 // Large pool of icons so each category gets a unique one
 const iconPool: LucideIcon[] = [
