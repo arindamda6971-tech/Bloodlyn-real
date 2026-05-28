@@ -29,15 +29,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+
 
 // Large pool of icons so each category gets a unique one
 const iconPool: LucideIcon[] = [
@@ -135,24 +135,16 @@ const CategoriesScreen = () => {
 
   return (
     <MobileLayout>
-      <ScreenHeader title="Test Categories" showBack={false} />
+      <StickySearch
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search tests..."
+        header={
+          <h1 className="text-[22px] font-extrabold text-foreground tracking-tight">Test Categories</h1>
+        }
+      />
 
-      {/* Search Box */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-4 mt-4"
-      >
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search tests..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-muted border-0 rounded-xl h-11"
-          />
-        </div>
-      </motion.div>
+
 
       {/* Search Results — individual tests */}
       {searchQuery.trim() && (

@@ -15,15 +15,15 @@ import {
   Filter,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
+import StickySearch from "@/components/ui/StickySearch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel } from "@/lib/format-tests";
+
 
 
 type Order = {
@@ -211,47 +211,36 @@ const BookingsScreen = () => {
 
   return (
     <MobileLayout>
-      <ScreenHeader title="My Orders" showBack={false} />
+      <StickySearch
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder="Search by test, order #, or lab..."
+        header={
+          <h1 className="text-[22px] font-extrabold text-foreground tracking-tight">My Orders</h1>
+        }
+        footer={
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  activeFilter === f.key
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       <div className="px-4 pb-6">
-        {/* Search Bar */}
-        <div className="relative mt-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by test, order #, or lab..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9 h-10 rounded-xl bg-muted/50 border-none text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-muted-foreground" />
-            </button>
-          )}
-        </div>
-
-        {/* Status Filter Chips */}
-        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                activeFilter === f.key
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
         {/* Orders List */}
         <div className="mt-4 space-y-3">
+
           {loading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
