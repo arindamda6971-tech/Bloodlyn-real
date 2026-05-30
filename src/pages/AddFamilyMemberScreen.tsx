@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import { RELATIONSHIPS, type FamilyMember } from "@/hooks/useFamilyMembers";
+import { RELATIONSHIPS, type FamilyMember, useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
 
 interface LocationState {
@@ -34,6 +34,8 @@ const AddFamilyMemberScreen = () => {
   const [relationship, setRelationship] = useState("");
   const [customRelationship, setCustomRelationship] = useState("");
 
+  const { addMember, updateMember } = useFamilyMembers();
+
   useEffect(() => {
     if (editMember) {
       setFullName(editMember.fullName);
@@ -45,7 +47,11 @@ const AddFamilyMemberScreen = () => {
     }
   }, [editMember]);
 
+  const isSubmittingRef = useRef(false);
+
   const handleSubmit = () => {
+    if (isSubmittingRef.current) return;
+    
     if (!fullName.trim()) { toast.error("Full name is required"); return; }
     if (!age || Number(age) < 1 || Number(age) > 120) { toast.error("Enter valid age (1–120)"); return; }
     if (!gender) { toast.error("Gender is required"); return; }
@@ -62,13 +68,22 @@ const AddFamilyMemberScreen = () => {
       customRelationship: relationship === "Other" ? customRelationship.trim() : undefined,
     };
 
-    // Pass data back via navigation state
-    navigate(returnTo, {
-      state: {
-        newMember: memberData,
-        editMemberId: editMember?.id || null,
-      },
-    });
+    isSubmittingRef.current = true;
+
+    const saveAndNavigate = async () => {
+      try {
+        if (editMember) {
+          await updateMember(editMember.id, memberData);
+        } else {
+          await addMember(memberData);
+        }
+        navigate(returnTo);
+      } finally {
+        isSubmittingRef.current = false;
+      }
+    };
+
+    saveAndNavigate();
   };
 
   return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Edit2, Trash2, Loader, Star, Plus } from "lucide-react";
@@ -156,9 +156,6 @@ const SavedAddressesScreen = () => {
           state: geoData.address.state || "",
           pincode: geoData.address.postcode || "",
         }));
-        toast.success("Location found");
-      } else {
-        toast.success("Coordinates obtained");
       }
 
       setLocLoading(false);
@@ -170,7 +167,11 @@ const SavedAddressesScreen = () => {
     }, { enableHighAccuracy: true, timeout: 15000 });
   };
 
+  const isSavingRef = useRef(false);
+
   const handleSave = async () => {
+    if (isSavingRef.current) return;
+    
     if (!supabaseUserId) {
       toast.error("Please log in to save addresses");
       return;
@@ -186,6 +187,7 @@ const SavedAddressesScreen = () => {
       return;
     }
 
+    isSavingRef.current = true;
     setSaving(true);
 
     try {
@@ -206,7 +208,6 @@ const SavedAddressesScreen = () => {
           .eq("user_id", supabaseUserId);
 
         if (error) throw error;
-        toast.success("Address updated");
       } else {
         const { error } = await supabase
           .from("addresses")
@@ -224,7 +225,6 @@ const SavedAddressesScreen = () => {
           });
 
         if (error) throw error;
-        toast.success("Address added");
       }
 
       setEditing(null);
@@ -235,6 +235,7 @@ const SavedAddressesScreen = () => {
       console.error("Save error:", err);
       toast.error(err?.message || "Failed to save address");
     } finally {
+      isSavingRef.current = false;
       setSaving(false);
     }
   };
@@ -250,7 +251,6 @@ const SavedAddressesScreen = () => {
         .eq("user_id", supabaseUserId);
 
       if (error) throw error;
-      toast.success("Address removed");
       await fetchAddresses();
     } catch (err) {
       console.error("Delete error:", err);
@@ -274,7 +274,6 @@ const SavedAddressesScreen = () => {
         .eq("user_id", supabaseUserId);
 
       if (error) throw error;
-      toast.success("Default address updated");
       await fetchAddresses();
     } catch (err) {
       console.error("Set default error:", err);

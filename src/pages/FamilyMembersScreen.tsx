@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Pencil, Trash2, Phone, Users } from "lucide-react";
@@ -25,25 +25,9 @@ const FamilyMembersScreen = () => {
   const { members, addMember, removeMember, updateMember } = useFamilyMembers();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Handle returning from AddFamilyMemberScreen
-  const locationState = (location as any).state;
-  useEffect(() => {
-    if (locationState?.newMember) {
-      if (locationState.editMemberId) {
-        updateMember(locationState.editMemberId, locationState.newMember);
-        toast.success("Family member updated");
-      } else {
-        addMember(locationState.newMember);
-        toast.success("Family member added");
-      }
-      window.history.replaceState({}, document.title);
-    }
-  }, [locationState]);
-
   const handleDelete = async () => {
     if (deleteId) {
       await removeMember(deleteId);
-      toast.success("Family member removed");
       setDeleteId(null);
     }
   };
