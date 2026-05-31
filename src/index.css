@@ -489,6 +489,8 @@
     will-change: transform;
     transform: translate3d(0, 0, 0); /* Force GPU */
     pointer-events: none;
+    backface-visibility: hidden;
+    perspective: 1000;
   }
   .aurora-blob-1 {
     top: -180px;
