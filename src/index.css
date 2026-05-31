@@ -164,6 +164,7 @@
     height: 100%;
     width: 100%;
     overscroll-behavior: none;
+    background-color: hsl(var(--background)); /* Prevents white flash */
   }
 
   body {
@@ -178,6 +179,7 @@
     -ms-overflow-style: none;
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
+    background-color: hsl(var(--background)); /* Prevents white flash */
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeSpeed;
     font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";

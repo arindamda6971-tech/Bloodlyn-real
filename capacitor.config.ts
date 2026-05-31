@@ -6,6 +6,21 @@ const config: CapacitorConfig = {
   webDir: "dist",
   android: {
     allowMixedContent: false,
+    buildOptions: {
+      releaseType: "APK",
+    },
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 1000,
+      launchAutoHide: true,
+      backgroundColor: "#ffffffff",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
   },
 };
 

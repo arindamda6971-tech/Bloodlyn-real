@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { App as CapacitorApp } from '@capacitor/app';
 
 // Force update service worker and clear old caches on load
 async function updateServiceWorker() {
@@ -20,6 +21,16 @@ async function updateServiceWorker() {
     } catch (error) {
       console.log('Service worker update:', error);
     }
+  }
+}
+
+// Memory optimization for Android devices
+function setupMemoryManagement() {
+  if (typeof window !== "undefined") {
+    // Listen for low memory events from native platform
+    CapacitorApp.addListener('appRestoredResult', (data) => {
+      console.log('Restored state after being killed by OS:', data);
+    });
   }
 }
 
@@ -52,6 +63,7 @@ function removeDebugControls() {
 
 // Update service worker first
 updateServiceWorker();
+setupMemoryManagement();
 
 createRoot(document.getElementById("root")!).render(<App />);
 

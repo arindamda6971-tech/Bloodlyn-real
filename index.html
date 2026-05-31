@@ -70,8 +70,35 @@
   <meta name="twitter:description" content="Book home health tests in 60 minutes. NABL-certified labs, AI-powered reports, and live tracking. Your trusted health diagnostics partner.">
 </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="margin: 0; background: #f8fafc;">
+    <div id="root">
+      <!-- Fast-loading skeleton to prevent blank screen -->
+      <div id="app-loading-screen" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #f8fafc; z-index: 9999; font-family: system-ui, sans-serif;">
+        <div style="width: 60px; height: 60px; border-radius: 20px; background: linear-gradient(135deg, #4AB3F4 0%, #2D9CDB 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(74,179,244,0.3);">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div style="margin-top: 20px; width: 120px; height: 4px; background: #e2e8f0; border-radius: 2px; overflow: hidden;">
+          <div style="width: 40%; height: 100%; background: #4AB3F4; border-radius: 2px; animation: loading 1.5s infinite ease-in-out;"></div>
+        </div>
+        <style>
+          @keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+          .dark #app-loading-screen { background: #0f172a; }
+          .dark #app-loading-screen div:nth-child(2) { background: #1e293b; }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Remove loading screen when React is ready
+      window.addEventListener('load', () => {
+        const loader = document.getElementById('app-loading-screen');
+        if (loader) {
+          setTimeout(() => {
+            loader.style.opacity = '0';
+            setTimeout(() => loader.remove(), 400);
+          }, 500);
+        }
+      });
+    </script>
   </body>
 </html>
