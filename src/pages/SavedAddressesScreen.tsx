@@ -20,6 +20,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { Tables } from "@/integrations/supabase/types";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 type Address = Tables<"addresses">;
 
 const SavedAddressesScreen = () => {
@@ -31,6 +42,7 @@ const SavedAddressesScreen = () => {
   const [isAdding, setIsAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [locLoading, setLocLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -250,11 +262,20 @@ const SavedAddressesScreen = () => {
         .eq("id", id)
         .eq("user_id", supabaseUserId);
 
-      if (error) throw error;
-      await fetchAddresses();
-    } catch (err) {
+      if (error) {
+        if (error.code === "23503") {
+          toast.error("Cannot delete address as it is used in an existing order");
+        } else {
+          throw error;
+        }
+      } else {
+        await fetchAddresses();
+      }
+    } catch (err: any) {
       console.error("Delete error:", err);
-      toast.error("Failed to delete address");
+      toast.error(err.message || "Failed to delete address");
+    } finally {
+      setDeleteId(null);
     }
   };
 
@@ -456,9 +477,9 @@ const SavedAddressesScreen = () => {
                         variant="ghost"
                         size="sm"
                         className="text-xs text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(address.id)}
+                        onClick={() => setDeleteId(address.id)}
                       >
-                        <Trash2 className="w-3 h-3 mr-1" />
+                        <Trash2 className="w-3.5 h-3.5 mr-1" />
                         Delete
                       </Button>
                     </div>
@@ -469,6 +490,26 @@ const SavedAddressesScreen = () => {
           </motion.div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent className="max-w-[90vw] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Address?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this address? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId && handleDelete(deleteId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Bottom buttons — always show "Add Address Manually" */}
       {!isAdding && !editing && (

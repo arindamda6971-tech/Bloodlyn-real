@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserPlus, Pencil, Trash2, Phone, Users } from "lucide-react";
@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
-import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +20,7 @@ import {
 
 const FamilyMembersScreen = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { members, addMember, removeMember, updateMember } = useFamilyMembers();
+  const { members, removeMember } = useFamilyMembers();
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleDelete = async () => {

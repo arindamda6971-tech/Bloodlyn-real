@@ -34,7 +34,7 @@ const MobileLayout = ({
   );
 
   return (
-    <div className="min-h-screen h-screen bg-background max-w-[430px] mx-auto relative overflow-hidden contain-layout">
+    <div className="min-h-[100dvh] h-[100dvh] bg-background max-w-[430px] mx-auto relative overflow-hidden contain-layout">
       {enablePullToRefresh ? (
         <PullToRefresh onRefresh={handleRefresh}>
           {content}

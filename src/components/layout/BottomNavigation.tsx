@@ -14,13 +14,13 @@ const BottomNavigation = () => {
   const navigate = useNavigate();
 
   return (
-     <nav className="fixed bottom-0 left-0 right-0 z-50 w-full max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-       <div 
-         className="flex items-center justify-around px-2 my-0 mx-0 py-0 border-none"
-         style={{
-           paddingBottom: 'calc(env(safe-area-inset-bottom, 8px) + 4px)',
-         }}
-       >
+     <nav
+       className="fixed bottom-0 left-0 right-0 z-50 w-full max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] touch-none select-none"
+       style={{
+         paddingBottom: 'calc(env(safe-area-inset-bottom, 8px) + 4px)',
+       }}
+     >
+       <div className="flex items-center justify-around px-2 my-0 mx-0 py-0 border-none">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;

@@ -116,34 +116,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       )
       .subscribe();
 
-    // Also listen for new reports
-    const reportsChannel = supabase
-      .channel("reports-notifications")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "reports",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const report = payload.new as { status: string };
-          if (report.status === "completed") {
-            addNotification({
-              title: "Report Ready!",
-              message: "Your health report is now available with AI insights.",
-              type: "report",
-              data: { reportId: (payload.new as { id: string }).id },
-            });
-          }
-        }
-      )
-      .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
-      supabase.removeChannel(reportsChannel);
     };
   }, [user]);
 
