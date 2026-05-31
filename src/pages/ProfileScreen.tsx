@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   User,
   ChevronRight,
@@ -17,6 +17,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   History,
+  Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -56,9 +57,9 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 10);
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -93,7 +94,7 @@ const ProfileScreen = () => {
           .select("id, amount, type, description, created_at, balance_after")
           .eq("user_id", session.user.id)
           .order("created_at", { ascending: false })
-          .limit(20);
+          .limit(10); // Reduced limit for smoother rendering
         setWalletTxns((txns as any[]) || []);
       }
     };
@@ -113,16 +114,20 @@ const ProfileScreen = () => {
   const displayName = profileName || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
   const contactInfo = profileContact || user?.phone || user?.email || "";
 
-  return (
-    <MobileLayout className="relative min-h-screen overflow-x-hidden">
-      {/* Aurora Ambient Layers */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="home-aurora h-full w-full">
-          <div className="aurora-blob aurora-blob-1 opacity-[0.4] dark:opacity-[0.25]" />
-          <div className="aurora-blob aurora-blob-2 opacity-[0.35] dark:opacity-[0.2]" />
-          <div className="aurora-grid opacity-[0.15] dark:opacity-[0.1]" />
-        </div>
+  // Performance optimized background
+  const AuroraBackground = useMemo(() => (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+      <div className="home-aurora h-full w-full">
+        <div className="aurora-blob aurora-blob-1 opacity-[0.3] dark:opacity-[0.15]" />
+        <div className="aurora-blob aurora-blob-2 opacity-[0.25] dark:opacity-[0.1]" />
+        <div className="aurora-grid opacity-[0.1] dark:opacity-[0.05]" />
       </div>
+    </div>
+  ), []);
+
+  return (
+    <MobileLayout className="relative min-h-screen bg-background">
+      {AuroraBackground}
 
       <ScreenHeader
         title="Profile"
@@ -134,14 +139,15 @@ const ProfileScreen = () => {
       <div className="px-4 pb-12 relative z-10">
         {/* Profile Hero Section */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
           className="mt-6 flex flex-col items-center text-center"
         >
           <div className="relative group">
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 opacity-50 group-hover:opacity-80 transition-opacity" />
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 opacity-40 group-hover:opacity-60 transition-opacity" />
             <motion.div
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.96 }}
               className="relative w-28 h-28 rounded-[2.5rem] p-1 bg-gradient-to-tr from-primary via-primary/40 to-success/40 shadow-2xl"
             >
               <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card ring-4 ring-background">
@@ -149,7 +155,7 @@ const ProfileScreen = () => {
                   <img
                     src={profileImageUrl || user?.user_metadata?.avatar_url}
                     alt={displayName}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transform-gpu"
                     loading="lazy" decoding="async"
                   />
                 ) : (
@@ -160,10 +166,10 @@ const ProfileScreen = () => {
               </div>
             </motion.div>
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg ring-4 ring-background cursor-pointer active:scale-90 transition-transform"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="absolute -bottom-2 -right-2 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg ring-4 ring-background cursor-pointer active:scale-90 transition-transform z-20"
               onClick={() => navigate("/edit-profile")}
             >
               <Sparkles className="w-5 h-5" />
@@ -173,24 +179,38 @@ const ProfileScreen = () => {
           <div className="mt-6">
             <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{displayName}</h2>
             <p className="text-sm text-muted-foreground font-medium mt-1">{contactInfo}</p>
-            {isActive && membershipType && (
-              <div className="flex items-center justify-center mt-3">
-                <Badge className="bg-gradient-to-r from-primary/20 to-success/20 text-primary border-primary/20 backdrop-blur-md px-4 py-1.5 rounded-2xl flex items-center gap-2">
-                  <Crown className="w-3.5 h-3.5" />
-                  <span className="capitalize font-bold tracking-tight text-[11px]">{membershipType} Member</span>
-                </Badge>
-              </div>
-            )}
+
+            {/* Optimized Membership Capsule */}
+            <div className="flex items-center justify-center mt-3">
+              {isActive ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="relative overflow-hidden px-5 py-2 rounded-full border border-yellow-500/30 shadow-[0_0_15px_rgba(253,185,49,0.2)] bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#8A6424] text-white"
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse opacity-50" />
+                  <div className="relative flex items-center gap-2">
+                    <Crown className="w-3.5 h-3.5 fill-white" />
+                    <span className="font-black tracking-[0.1em] text-[11px] uppercase drop-shadow-md">Gold Member</span>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center gap-2 backdrop-blur-sm">
+                  <Zap className="w-3.5 h-3.5 fill-current" />
+                  <span className="font-bold tracking-tight text-[11px] uppercase">Plus Member</span>
+                </div>
+              )}
+            </div>
           </div>
         </motion.div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-3 mt-8">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="quick-action p-4 flex flex-col items-center justify-center text-center bg-card/40 backdrop-blur-md border-white/10 cursor-pointer"
+            className="quick-action p-4 flex flex-col items-center justify-center text-center bg-card/40 backdrop-blur-md border-white/10 cursor-pointer active:scale-[0.98] transition-transform transform-gpu"
             onClick={() => navigate("/saved-addresses")}
           >
             <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
@@ -201,10 +221,10 @@ const ProfileScreen = () => {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 }}
-            className="quick-action p-4 flex flex-col items-center justify-center text-center bg-card/40 backdrop-blur-md border-white/10 cursor-pointer"
+            className="quick-action p-4 flex flex-col items-center justify-center text-center bg-card/40 backdrop-blur-md border-white/10 cursor-pointer active:scale-[0.98] transition-transform transform-gpu"
             onClick={() => navigate("/family-members")}
           >
             <div className="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center mb-3">
@@ -217,18 +237,17 @@ const ProfileScreen = () => {
 
         {/* Wallet Section - Premium Card */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mt-6 group"
+          className="mt-6"
         >
-          <div className="relative overflow-hidden rounded-[2.5rem] p-6 bg-gradient-to-br from-secondary via-secondary to-secondary/80 text-white shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-success/10 blur-3xl rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+          <div className="relative overflow-hidden rounded-[2.5rem] p-6 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] text-white shadow-2xl border border-white/5 transform-gpu">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
             <div className="relative flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60">Current Balance</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Current Balance</span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="text-4xl font-black tabular-nums tracking-tighter">₹{walletBalance.toFixed(0)}</span>
                   <div className="px-2 py-0.5 rounded-lg bg-white/10 border border-white/10 backdrop-blur-md flex items-center gap-1">
@@ -237,7 +256,7 @@ const ProfileScreen = () => {
                   </div>
                 </div>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner backdrop-blur-xl">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner backdrop-blur-xl">
                 <Wallet className="w-7 h-7 text-white" />
               </div>
             </div>
@@ -257,17 +276,17 @@ const ProfileScreen = () => {
           </div>
         </motion.div>
 
-        {/* Wallet History - Animated Drawer Feel */}
+        {/* Wallet History - Optimized Animation */}
         <AnimatePresence>
           {showHistory && (
             <motion.div
-              initial={{ opacity: 0, height: 0, y: -20 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -20 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="soft-card mt-4 border border-border/40 bg-card/60 backdrop-blur-md p-5 rounded-[2rem]">
+              <div className="soft-card mt-4 border border-border/40 bg-card/60 backdrop-blur-md p-5 rounded-[2rem] transform-gpu">
                 <h3 className="font-bold text-foreground text-xs uppercase tracking-widest mb-4 px-1 flex items-center gap-2">
                   <History className="w-3.5 h-3.5 text-primary" />
                   Transaction Log
@@ -309,21 +328,18 @@ const ProfileScreen = () => {
           )}
         </AnimatePresence>
 
-        {/* Action Grid - Polished Menu */}
+        {/* Action Grid - Optimized List */}
         <div className="mt-8">
           <h3 className="text-xs font-black uppercase tracking-[0.25em] text-muted-foreground/50 px-2 mb-4">Settings & Management</h3>
-          <div className="grid grid-cols-1 gap-2.5">
+          <div className="space-y-2.5">
             {menuItems.map((item, index) => (
-              <motion.button
+              <button
                 key={item.label}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + index * 0.05 }}
                 onClick={() => navigate(item.path)}
-                className="group relative w-full flex items-center gap-4 p-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/40 hover:bg-card hover:border-primary/20 transition-all duration-300"
+                className="group relative w-full flex items-center gap-4 p-4 rounded-3xl bg-card/60 backdrop-blur-md border border-border/40 active:scale-[0.98] transition-all transform-gpu"
               >
-                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <item.icon className="w-5 h-5 text-foreground group-hover:text-primary transition-colors" />
+                <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center group-active:bg-primary/10 transition-colors">
+                  <item.icon className="w-5 h-5 text-foreground group-active:text-primary transition-colors" />
                 </div>
                 <div className="flex-1 flex flex-col items-start">
                   <span className="font-bold text-foreground tracking-tight">{item.label}</span>
@@ -334,27 +350,20 @@ const ProfileScreen = () => {
                      "Configure"}
                   </span>
                 </div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </motion.button>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Quick Settings - Elegant Toggles */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          className="mt-4 p-6 rounded-[2.5rem] bg-card/40 backdrop-blur-md border border-border/40 space-y-6"
-        >
+        {/* Quick Settings - Performance Optimized */}
+        <div className="mt-4 p-6 rounded-[2.5rem] bg-card/40 backdrop-blur-md border border-border/40 space-y-6 transform-gpu">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-2xl bg-secondary/10 flex items-center justify-center ring-1 ring-secondary/20">
                 <Moon className="w-5 h-5 text-secondary" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="font-bold text-foreground tracking-tight">Dark Aesthetic</span>
                 <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">High contrast mode</span>
               </div>
@@ -362,7 +371,7 @@ const ProfileScreen = () => {
             <Switch
               checked={theme === "dark"}
               onCheckedChange={toggleTheme}
-              className="data-[state=checked]:bg-primary shadow-sm"
+              className="data-[state=checked]:bg-primary"
             />
           </div>
 
@@ -371,27 +380,22 @@ const ProfileScreen = () => {
               <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20">
                 <Bell className="w-5 h-5 text-primary" />
               </div>
-              <div className="flex flex-col">
+              <div className="flex flex-col text-left">
                 <span className="font-bold text-foreground tracking-tight">Smart Alerts</span>
                 <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">Real-time order tracking</span>
               </div>
             </div>
-            <Switch defaultChecked className="data-[state=checked]:bg-primary shadow-sm" />
+            <Switch defaultChecked className="data-[state=checked]:bg-primary" />
           </div>
-        </motion.div>
+        </div>
 
         {/* Footer Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55 }}
-          className="mt-10 flex flex-col items-center gap-6"
-        >
+        <div className="mt-10 flex flex-col items-center gap-6 pb-4">
           <button
             onClick={handleLogout}
-            className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-destructive/5 hover:bg-destructive/10 text-destructive transition-all active:scale-95 border border-destructive/10 cursor-pointer"
+            className="group flex items-center gap-3 px-8 py-4 rounded-2xl bg-destructive/5 active:bg-destructive/10 text-destructive transition-all active:scale-95 border border-destructive/10"
           >
-            <LogOut className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+            <LogOut className="w-5 h-5" />
             <span className="font-bold tracking-tight">Sign Out Safely</span>
           </button>
 
@@ -400,10 +404,10 @@ const ProfileScreen = () => {
                BloodLyn Premium v2.1.0
             </p>
             <p className="text-[10px] font-bold text-muted-foreground/40 mt-1">
-              Optimized for high-refresh displays
+              Ultra-smooth performance enabled
             </p>
           </div>
-        </motion.div>
+        </div>
       </div>
     </MobileLayout>
   );
