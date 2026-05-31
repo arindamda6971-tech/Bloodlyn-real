@@ -239,6 +239,7 @@ const SavedAddressesScreen = () => {
         if (error) throw error;
       }
 
+      await triggerHaptic('success');
       setEditing(null);
       setIsAdding(false);
       resetForm();

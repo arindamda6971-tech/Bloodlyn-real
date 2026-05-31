@@ -14,6 +14,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { RELATIONSHIPS, type FamilyMember, useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
+import { triggerHaptic } from "@/utils/haptics";
 
 interface LocationState {
   editMember?: FamilyMember | null;
@@ -77,6 +78,7 @@ const AddFamilyMemberScreen = () => {
         } else {
           await addMember(memberData);
         }
+        await triggerHaptic('success');
         navigate(returnTo);
       } finally {
         isSubmittingRef.current = false;

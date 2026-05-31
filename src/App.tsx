@@ -17,7 +17,7 @@ import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
 import OfflineBanner from "@/components/OfflineBanner";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 
 // Critical path — eagerly loaded (shown before auth)
@@ -59,6 +59,45 @@ const safeImport = <T,>(factory: () => Promise<T>): Promise<T> =>
     // Return a never-resolving promise so React's Suspense doesn't try to render
     return new Promise<T>(() => {});
   });
+
+const CapacitorInitializer = () => {
+  useEffect(() => {
+    const initCapacitor = async () => {
+      try {
+        const { Capacitor } = await import("@capacitor/core");
+        if (!Capacitor.isNativePlatform()) return;
+        
+        const { StatusBar, Style } = await import("@capacitor/status-bar");
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        const { SplashScreen } = await import("@capacitor/splash-screen");
+
+        // Set Status Bar to light mode (dark text) and white background
+        await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+        await StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
+        
+        // Register for push notifications
+        let permStatus = await PushNotifications.checkPermissions().catch(() => ({ receive: 'prompt' as const }));
+        if (permStatus.receive === 'prompt') {
+          permStatus = await PushNotifications.requestPermissions().catch(() => ({ receive: 'denied' as const }));
+        }
+        if (permStatus.receive === 'granted') {
+          await PushNotifications.register().catch(() => {});
+        }
+
+        // Hide splash screen smoothly after React has mounted and layout is done
+        setTimeout(() => {
+          SplashScreen.hide().catch(() => {});
+        }, 500);
+      } catch (err) {
+        console.error("Capacitor Init Error:", err);
+      }
+    };
+    
+    initCapacitor();
+  }, []);
+  
+  return null;
+};
 
 // All other screens — lazily loaded with auto-reload fallback
 const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
@@ -128,6 +167,7 @@ const App = () => {
                     <Sonner />
                     <OfflineBanner />
                     <BrowserRouter>
+                      <CapacitorInitializer />
                       <CapacitorBackButton />
                       <ScrollToTop />
                       <RoutePrefetcher />

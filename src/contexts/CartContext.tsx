@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { triggerHaptic } from "@/utils/haptics";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -165,6 +166,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const addToCart = (item: Omit<CartItem, "quantity">): boolean => {
     if (import.meta.env.DEV) console.log("CartContext.addToCart called with:", item);
+    triggerHaptic('light');
 
     // Prevent duplicate adds — same test cannot be added twice
     if (items.some((i) => i.id === item.id)) {
