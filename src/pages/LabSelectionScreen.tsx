@@ -33,14 +33,42 @@ interface DiagnosticCenter {
   available_tests: any;
 }
 
-const timeSlots = [
-  { id: 1, time: "6:00 AM - 8:00 AM", label: "Morning", startHour: 6, available: true },
-  { id: 2, time: "8:00 AM - 10:00 AM", label: "Morning", startHour: 8, available: true },
-  { id: 3, time: "10:00 AM - 12:00 PM", label: "Morning", startHour: 10, available: true },
-  { id: 4, time: "12:00 PM - 2:00 PM", label: "Afternoon", startHour: 12, available: true },
-  { id: 5, time: "2:00 PM - 4:00 PM", label: "Afternoon", startHour: 14, available: true },
-  { id: 6, time: "4:00 PM - 6:00 PM", label: "Evening", startHour: 16, available: true },
-];
+interface SlotItem {
+  id: string;       // the raw string, used as stable key
+  time: string;     // raw "6:00 AM - 8:00 AM"
+  label: "Morning" | "Afternoon" | "Evening" | "Overnight";
+  startHour: number; // 0-23, for "today" gating
+}
+
+// Parse "6:00 AM - 8:00 AM" → startHour in 24h (e.g. 6). Returns null if unparseable.
+function parseStartHour(raw: string): number | null {
+  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const ampm = m[3].toUpperCase();
+  if (ampm === "PM" && h !== 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  return h;
+}
+
+function bucketFor(startHour: number): SlotItem["label"] {
+  if (startHour >= 5 && startHour < 12) return "Morning";
+  if (startHour >= 12 && startHour < 17) return "Afternoon";
+  if (startHour >= 17 && startHour < 21) return "Evening";
+  return "Overnight";
+}
+
+function toSlotItems(raw: string[] | null | undefined): SlotItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      const sh = parseStartHour(r);
+      if (sh === null) return null;
+      return { id: r, time: r, startHour: sh, label: bucketFor(sh) } as SlotItem;
+    })
+    .filter((x): x is SlotItem => !!x)
+    .sort((a, b) => a.startHour - b.startHour);
+}
 
 const LabSelectionScreen = () => {
   const navigate = useNavigate();
@@ -52,17 +80,23 @@ const LabSelectionScreen = () => {
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
   const [selectedLabName, setSelectedLabName] = useState<string | null>(hasVendorLab ? currentLabName : null);
+  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(0);
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
 
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
+  // Slots fetched from Partner project for the currently selected lab
+  const [labSlotsByDay, setLabSlotsByDay] = useState<
+    Record<number, { is_open: boolean; slots: string[] }>
+  >({});
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
   const dates = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
-    // Build YYYY-MM-DD from LOCAL date parts to avoid UTC off-by-one
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
@@ -71,20 +105,105 @@ const LabSelectionScreen = () => {
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
       fullDate: `${yyyy}-${mm}-${dd}`,
+      dayOfWeek: date.getDay(), // 0=Sun … 6=Sat
       available: true,
     };
   });
 
-  // Determine which time slots are selectable based on selected date
-  const getSlotAvailability = (slot: typeof timeSlots[0]) => {
-    if (selectedDate !== 0) return slot.available; // Not today, all available
-    // Today: disable slots whose end time has passed or is current
-    const now = new Date();
-    const currentHour = now.getHours();
-    // The slot covers startHour to startHour+2. If current hour >= startHour+2, it's past.
-    // If current hour >= startHour, the slot is "current" — also disable.
+  // Resolve selected lab's vendor_id (lab_user_id in Partner project)
+  useEffect(() => {
+    if (!selectedLabId) {
+      setSelectedLabVendorId(null);
+      return;
+    }
+    const known = labs.find((l) => l.id === selectedLabId);
+    if (known?.vendor_id) {
+      setSelectedLabVendorId(known.vendor_id);
+      return;
+    }
+    // Vendor-lab flow: lab isn't in `labs` array — fetch vendor_id from diagnostic_centers
+    let cancelled = false;
+    supabase
+      .from("diagnostic_centers")
+      .select("vendor_id")
+      .eq("id", selectedLabId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSelectedLabVendorId((data?.vendor_id as string) ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLabId, labs]);
+
+  // Fetch lab_time_slots from Partner project whenever the selected lab changes
+  useEffect(() => {
+    if (!selectedLabVendorId) {
+      setLabSlotsByDay({});
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    supabase.functions
+      .invoke("lab-slots", { body: { lab_user_id: selectedLabVendorId } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("lab-slots fetch failed:", error);
+          setLabSlotsByDay({});
+        } else {
+          const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> =
+            data?.rows ?? [];
+          const map: Record<number, { is_open: boolean; slots: string[] }> = {};
+          rows.forEach((r) => {
+            map[r.day_of_week] = {
+              is_open: !!r.is_open,
+              slots: Array.isArray(r.slots) ? r.slots : [],
+            };
+          });
+          setLabSlotsByDay(map);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("lab-slots invoke error:", err);
+          setLabSlotsByDay({});
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLabVendorId]);
+
+  // Compute slots for the currently selected date, bucketed and gated for "today"
+  const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
+  const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
+
+  const allSlotItems = useMemo<SlotItem[]>(
+    () => (activeDayRow ? toSlotItems(activeDayRow.slots) : []),
+    [activeDayRow]
+  );
+
+  const getSlotAvailability = (slot: SlotItem) => {
+    if (selectedDate !== 0) return true;
+    const currentHour = new Date().getHours();
     return slot.startHour > currentHour;
   };
+
+  const groupedSlots = useMemo(() => {
+    const groups: Record<SlotItem["label"], SlotItem[]> = {
+      Morning: [],
+      Afternoon: [],
+      Evening: [],
+      Overnight: [],
+    };
+    allSlotItems.forEach((s) => groups[s.label].push(s));
+    return groups;
+  }, [allSlotItems]);
+
 
   const { pincode: userPincode } = useUserPincode();
 
@@ -161,15 +280,16 @@ const LabSelectionScreen = () => {
     if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
-  // Reset time selection when date changes (to prevent selecting a greyed-out slot)
+  // Reset slot selection when date or lab changes — slot list is per (lab, day)
   useEffect(() => {
-    if (selectedTime !== null) {
-      const slot = timeSlots.find(s => s.id === selectedTime);
-      if (slot && !getSlotAvailability(slot)) {
-        setSelectedTime(null);
-      }
-    }
-  }, [selectedDate]);
+    setSelectedTime((prev) => {
+      if (prev === null) return null;
+      const stillAvailable = allSlotItems.find((s) => s.id === prev);
+      if (!stillAvailable) return null;
+      return getSlotAvailability(stillAvailable) ? prev : null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedLabVendorId, allSlotItems]);
 
   if (items.length === 0) {
     return (
@@ -228,7 +348,7 @@ const LabSelectionScreen = () => {
       updateLabForItems(labId, labName);
     }
 
-    const selectedSlot = timeSlots.find(s => s.id === selectedTime);
+    const selectedSlot = allSlotItems.find((s) => s.id === selectedTime);
 
     navigate("/payment", {
       state: {
@@ -371,54 +491,57 @@ const LabSelectionScreen = () => {
         {/* Time Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
           <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-2 font-medium">☀️ Morning Slots (AM)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label === "Morning").map((slot) => {
-                const isAvailable = getSlotAvailability(slot);
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => isAvailable && setSelectedTime(slot.id)}
-                    disabled={!isAvailable}
-                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                      !isAvailable
-                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
-                        : selectedTime === slot.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground"
-                    }`}
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
+
+          {!selectedLabVendorId ? (
+            <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
+          ) : slotsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
             </div>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 font-medium">🌤️ Afternoon & Evening</p>
-            <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label !== "Morning").map((slot) => {
-                const isAvailable = getSlotAvailability(slot);
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => isAvailable && setSelectedTime(slot.id)}
-                    disabled={!isAvailable}
-                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                      !isAvailable
-                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
-                        : selectedTime === slot.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground"
-                    }`}
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
+          ) : labIsClosedOnDate ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+              <Clock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">Lab is closed on this day</p>
+              <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
-          </div>
+          ) : allSlotItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No time slots configured for this day.</p>
+          ) : (
+            (["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
+              const items = groupedSlots[bucket];
+              if (items.length === 0) return null;
+              const emoji =
+                bucket === "Morning" ? "☀️" :
+                bucket === "Afternoon" ? "🌤️" :
+                bucket === "Evening" ? "🌆" : "🌙";
+              return (
+                <div key={bucket} className="mb-4 last:mb-0">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">{emoji} {bucket}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {items.map((slot) => {
+                      const isAvailable = getSlotAvailability(slot);
+                      return (
+                        <button
+                          key={slot.id}
+                          onClick={() => isAvailable && setSelectedTime(slot.id)}
+                          disabled={!isAvailable}
+                          className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
+                            !isAvailable
+                              ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
+                              : selectedTime === slot.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-card border border-border text-foreground"
+                          }`}
+                        >
+                          {slot.time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </motion.div>
       </div>
 
