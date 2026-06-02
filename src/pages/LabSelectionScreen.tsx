@@ -33,14 +33,42 @@ interface DiagnosticCenter {
   available_tests: any;
 }
 
-const timeSlots = [
-  { id: 1, time: "6:00 AM - 8:00 AM", label: "Morning", startHour: 6, available: true },
-  { id: 2, time: "8:00 AM - 10:00 AM", label: "Morning", startHour: 8, available: true },
-  { id: 3, time: "10:00 AM - 12:00 PM", label: "Morning", startHour: 10, available: true },
-  { id: 4, time: "12:00 PM - 2:00 PM", label: "Afternoon", startHour: 12, available: true },
-  { id: 5, time: "2:00 PM - 4:00 PM", label: "Afternoon", startHour: 14, available: true },
-  { id: 6, time: "4:00 PM - 6:00 PM", label: "Evening", startHour: 16, available: true },
-];
+interface SlotItem {
+  id: string;       // the raw string, used as stable key
+  time: string;     // raw "6:00 AM - 8:00 AM"
+  label: "Morning" | "Afternoon" | "Evening" | "Overnight";
+  startHour: number; // 0-23, for "today" gating
+}
+
+// Parse "6:00 AM - 8:00 AM" → startHour in 24h (e.g. 6). Returns null if unparseable.
+function parseStartHour(raw: string): number | null {
+  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const ampm = m[3].toUpperCase();
+  if (ampm === "PM" && h !== 12) h += 12;
+  if (ampm === "AM" && h === 12) h = 0;
+  return h;
+}
+
+function bucketFor(startHour: number): SlotItem["label"] {
+  if (startHour >= 5 && startHour < 12) return "Morning";
+  if (startHour >= 12 && startHour < 17) return "Afternoon";
+  if (startHour >= 17 && startHour < 21) return "Evening";
+  return "Overnight";
+}
+
+function toSlotItems(raw: string[] | null | undefined): SlotItem[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((r) => {
+      const sh = parseStartHour(r);
+      if (sh === null) return null;
+      return { id: r, time: r, startHour: sh, label: bucketFor(sh) } as SlotItem;
+    })
+    .filter((x): x is SlotItem => !!x)
+    .sort((a, b) => a.startHour - b.startHour);
+}
 
 const LabSelectionScreen = () => {
   const navigate = useNavigate();
