@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import { type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
 
 interface PatientState {
   patientName?: string;
@@ -19,6 +20,7 @@ interface PatientState {
   contactPhone?: string;
   addressId?: string | null;
   hasVendorLab?: boolean;
+  labVendorId?: string | null;
 }
 
 interface DiagnosticCenter {
@@ -31,45 +33,6 @@ interface DiagnosticCenter {
   opening_time: string | null;
   closing_time: string | null;
   available_tests: any;
-}
-
-interface SlotItem {
-  id: string;       // the raw string, used as stable key
-  time: string;     // raw "6:00 AM - 8:00 AM"
-  label: "Morning" | "Afternoon" | "Evening" | "Overnight";
-  startHour: number; // 0-23, for "today" gating
-}
-
-// Parse "6:00 AM - 8:00 AM" → startHour in 24h (e.g. 6). Returns null if unparseable.
-function parseStartHour(raw: string): number | null {
-  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const ampm = m[3].toUpperCase();
-  if (ampm === "PM" && h !== 12) h += 12;
-  if (ampm === "AM" && h === 12) h = 0;
-  return h;
-}
-
-function bucketFor(startHour: number): SlotItem["label"] {
-  // Morning: 5 AM – 11:59 AM, Afternoon: 12 PM – 4:59 PM,
-  // Evening: 5 PM – 9:59 PM, Overnight: 10 PM – 4:59 AM
-  if (startHour >= 5 && startHour < 12) return "Morning";
-  if (startHour >= 12 && startHour < 17) return "Afternoon";
-  if (startHour >= 17 && startHour < 22) return "Evening";
-  return "Overnight";
-}
-
-function toSlotItems(raw: string[] | null | undefined): SlotItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((r) => {
-      const sh = parseStartHour(r);
-      if (sh === null) return null;
-      return { id: r, time: r, startHour: sh, label: bucketFor(sh) } as SlotItem;
-    })
-    .filter((x): x is SlotItem => !!x)
-    .sort((a, b) => a.startHour - b.startHour);
 }
 
 const LabSelectionScreen = () => {
