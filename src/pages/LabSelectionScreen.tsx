@@ -114,6 +114,9 @@ const LabSelectionScreen = () => {
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
+    // Reset stale slot data immediately when switching labs
+    setLabSlotsByDay({});
+    setSelectedTime(null);
     if (!selectedLabId) {
       setSelectedLabVendorId(null);
       return;
