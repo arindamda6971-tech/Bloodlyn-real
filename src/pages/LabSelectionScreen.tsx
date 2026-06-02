@@ -45,7 +45,9 @@ const LabSelectionScreen = () => {
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
   const [selectedLabName, setSelectedLabName] = useState<string | null>(hasVendorLab ? currentLabName : null);
-  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(null);
+  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(
+    hasVendorLab ? (patientState.labVendorId || items.find((item) => item.labId === currentLabId)?.vendorId || null) : null
+  );
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
@@ -89,6 +91,11 @@ const LabSelectionScreen = () => {
       setSelectedLabVendorId(known.vendor_id);
       return;
     }
+    const cartVendorId = items.find((item) => item.labId === selectedLabId)?.vendorId;
+    if (cartVendorId) {
+      setSelectedLabVendorId(cartVendorId);
+      return;
+    }
     // Vendor-lab flow: lab isn't in `labs` array — fetch vendor_id from diagnostic_centers
     let cancelled = false;
     supabase
@@ -102,7 +109,7 @@ const LabSelectionScreen = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedLabId, labs]);
+  }, [selectedLabId, labs, items]);
 
   // Fetch lab_time_slots from Partner project whenever the selected lab changes
   useEffect(() => {
@@ -151,7 +158,7 @@ const LabSelectionScreen = () => {
   const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
 
   const allSlotItems = useMemo<SlotItem[]>(
-    () => (activeDayRow ? toSlotItems(activeDayRow.slots) : []),
+    () => (activeDayRow ? toSortedSlotItems(activeDayRow.slots) : []),
     [activeDayRow]
   );
 
