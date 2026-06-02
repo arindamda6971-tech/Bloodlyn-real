@@ -280,15 +280,16 @@ const LabSelectionScreen = () => {
     if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
-  // Reset time selection when date changes (to prevent selecting a greyed-out slot)
+  // Reset slot selection when date or lab changes — slot list is per (lab, day)
   useEffect(() => {
-    if (selectedTime !== null) {
-      const slot = timeSlots.find(s => s.id === selectedTime);
-      if (slot && !getSlotAvailability(slot)) {
-        setSelectedTime(null);
-      }
-    }
-  }, [selectedDate]);
+    setSelectedTime((prev) => {
+      if (prev === null) return null;
+      const stillAvailable = allSlotItems.find((s) => s.id === prev);
+      if (!stillAvailable) return null;
+      return getSlotAvailability(stillAvailable) ? prev : null;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedLabVendorId, allSlotItems]);
 
   if (items.length === 0) {
     return (
