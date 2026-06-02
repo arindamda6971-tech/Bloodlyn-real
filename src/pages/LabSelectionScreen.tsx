@@ -10,7 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
-import { type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
+import { getLabSlotDates, isSameDaySlotBookable, type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
 
 interface PatientState {
   patientName?: string;
@@ -61,21 +61,7 @@ const LabSelectionScreen = () => {
   >({});
   const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const yyyy = date.getFullYear();
-    const mm = String(date.getMonth() + 1).padStart(2, "0");
-    const dd = String(date.getDate()).padStart(2, "0");
-    return {
-      day: date.toLocaleDateString("en-US", { weekday: "short" }),
-      date: date.getDate(),
-      month: date.toLocaleDateString("en-US", { month: "short" }),
-      fullDate: `${yyyy}-${mm}-${dd}`,
-      dayOfWeek: date.getDay(), // 0=Sun … 6=Sat
-      available: true,
-    };
-  });
+  const dates = useMemo(() => getLabSlotDates(7), []);
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
@@ -165,9 +151,7 @@ const LabSelectionScreen = () => {
 
   const getSlotAvailability = (slot: SlotItem) => {
     if (selectedDate !== 0) return true;
-    const now = new Date();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    return slot.startMinutes > currentMinutes;
+    return isSameDaySlotBookable(slot.startMinutes);
   };
 
   const groupedSlots = useMemo(() => {

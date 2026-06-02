@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { bucketForSlotStart, parseSlotStartMinutes, toSortedSlotItems } from "@/lib/lab-slots";
+import {
+  bucketForSlotStart,
+  getLabSlotDates,
+  isSameDaySlotBookable,
+  parseSlotStartMinutes,
+  toSortedSlotItems,
+} from "@/lib/lab-slots";
 
 describe("lab slot bucketing", () => {
   const bucketFor = (time: string) => {
@@ -32,5 +38,22 @@ describe("lab slot bucketing", () => {
       "8:00 PM - 10:00 PM",
       "10:00 PM - 12:00 AM",
     ]);
+  });
+
+  it("builds today's date/day in the lab timezone", () => {
+    const dates = getLabSlotDates(1, new Date("2026-06-01T19:00:00.000Z"));
+
+    expect(dates[0].fullDate).toBe("2026-06-02");
+    expect(dates[0].day).toBe("Tue");
+    expect(dates[0].dayOfWeek).toBe(2);
+  });
+
+  it("filters only same-day slots that have already started in the lab timezone", () => {
+    const nowAtNinePmIst = new Date("2026-06-01T15:30:00.000Z");
+    const eightPm = parseSlotStartMinutes("8:00 PM - 10:00 PM")!;
+    const tenPm = parseSlotStartMinutes("10:00 PM - 12:00 AM")!;
+
+    expect(isSameDaySlotBookable(eightPm, nowAtNinePmIst)).toBe(false);
+    expect(isSameDaySlotBookable(tenPm, nowAtNinePmIst)).toBe(true);
   });
 });
