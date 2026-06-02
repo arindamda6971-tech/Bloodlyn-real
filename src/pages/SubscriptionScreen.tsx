@@ -39,7 +39,7 @@ const plans = [
 const features = [
   { icon: Home, text: "Unlimited free home sample collection" },
   { icon: Stethoscope, text: "2 free doctor consultations/month" },
-  { icon: HeadphonesIcon, text: "Priority 24/7 customer support" },
+  { icon: HeadphonesIcon, text: "Priority customer support" },
   { icon: Zap, text: "Express report delivery" },
   { icon: Star, text: "Exclusive member discounts (up to 30%)" },
 ];

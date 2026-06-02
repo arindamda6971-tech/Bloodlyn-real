@@ -145,7 +145,20 @@ const LabSelectionScreen = () => {
   const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
 
   const allSlotItems = useMemo<SlotItem[]>(
-    () => (activeDayRow ? toSortedSlotItems(activeDayRow.slots) : []),
+    () => {
+      if (!activeDayRow) return [];
+      // Filter out slots starting at or after 8 PM (1200 minutes)
+      const filteredSlots = activeDayRow.slots.filter((s) => {
+          const m = s.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+          if (!m) return false;
+          let h = parseInt(m[1], 10);
+          const ampm = m[3].toUpperCase();
+          if (ampm === "PM" && h !== 12) h += 12;
+          if (ampm === "AM" && h === 12) h = 0;
+          return h < 20;
+      });
+      return toSortedSlotItems(filteredSlots);
+    },
     [activeDayRow]
   );
 
@@ -155,13 +168,16 @@ const LabSelectionScreen = () => {
   };
 
   const groupedSlots = useMemo(() => {
-    const groups: Record<SlotItem["label"], SlotItem[]> = {
+    const groups: Record<string, SlotItem[]> = {
       Morning: [],
       Afternoon: [],
       Evening: [],
-      Overnight: [],
     };
-    allSlotItems.forEach((s) => groups[s.label].push(s));
+    allSlotItems.forEach((s) => {
+        if (s.label !== "Overnight") {
+            groups[s.label].push(s);
+        }
+    });
     return groups;
   }, [allSlotItems]);
 
@@ -469,7 +485,7 @@ const LabSelectionScreen = () => {
           ) : allSlotItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">No time slots configured for this day.</p>
           ) : (
-            (["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
+            (["Morning", "Afternoon", "Evening"] as const).map((bucket) => {
               const items = groupedSlots[bucket];
               if (items.length === 0) return null;
               const emoji =

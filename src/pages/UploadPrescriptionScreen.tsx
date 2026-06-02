@@ -116,19 +116,21 @@ const UploadPrescriptionScreen = () => {
       const aiName = aiTest.name.toLowerCase();
       const aiShort = (aiTest.shortName || "").toLowerCase();
 
-      // Try to find a matching test in app catalog
+      // Better fuzzy matching logic
       const found = appTests.find((at) => {
         const appName = at.name.toLowerCase();
-        return (
-          appName === aiName ||
-          appName.includes(aiName) ||
-          aiName.includes(appName) ||
-          (aiShort && (appName.includes(aiShort) || aiShort.includes(appName)))
-        );
+        // Exact match
+        if (appName === aiName) return true;
+        // Contains match (at least 4 chars to avoid false positives like 'Ca')
+        if (aiName.length > 3 && appName.includes(aiName)) return true;
+        if (appName.length > 3 && aiName.includes(appName)) return true;
+        // Abbreviation match
+        if (aiShort && (appName === aiShort || appName.includes(aiShort))) return true;
+        return false;
       });
 
       return {
-        id: found?.id || `unavailable-${aiTest.name}`,
+        id: found?.id || `unavailable-${aiTest.name}-${Math.random()}`,
         name: found?.name || aiTest.name,
         price: found?.price || 0,
         matched: !!found,
@@ -250,7 +252,7 @@ const UploadPrescriptionScreen = () => {
       (t) => t.matched && selectedTestIds.has(t.id) && !isInCart(t.id)
     );
     if (toAdd.length === 0) {
-      toast.error("Select at least one available test to add.");
+      toast.error("Select tests to add.");
       return;
     }
     let added = 0;
@@ -259,7 +261,6 @@ const UploadPrescriptionScreen = () => {
       if (success) added++;
     }
     if (added > 0) {
-      toast.success(`${added} ${added === 1 ? "test" : "tests"} added to cart`);
       setConfirmed(true);
     }
   };

@@ -44,7 +44,6 @@ const timeSlots = [
   { id: 5, time: "2:00 PM - 4:00 PM", available: true, phlebotomists: 4 },
   { id: 6, time: "4:00 PM - 6:00 PM", available: true, phlebotomists: 7 },
   { id: 7, time: "6:00 PM - 8:00 PM", available: true, phlebotomists: 3 },
-  { id: 8, time: "8:00 PM - 10:00 PM", available: true, phlebotomists: 2 },
 ];
 
 const BookingScreen = () => {
@@ -181,7 +180,6 @@ const BookingScreen = () => {
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-foreground">Select Time Slot</h3>
-            <Badge variant="soft">24/7 Available</Badge>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {timeSlots.map((slot) => (

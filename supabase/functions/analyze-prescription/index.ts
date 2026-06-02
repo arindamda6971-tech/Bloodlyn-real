@@ -177,73 +177,63 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = `You are an expert medical prescription and lab test order analyzer with extensive knowledge of diagnostic tests across India.
+    const systemPrompt = `You are an expert medical prescription and lab test order analyzer with specialized knowledge of Indian diagnostic standards.
 
-Your task: Carefully read the prescription/lab order image and extract EVERY medical or diagnostic test mentioned.
+Your task: Extract EVERY medical or diagnostic test mentioned in the image.
 
-CRITICAL INSTRUCTIONS:
-1. Read the ENTIRE prescription carefully - do not miss any test names
-2. Look for handwritten AND printed text
-3. Recognize common abbreviations and full forms
-4. If handwriting is unclear, make your best interpretation and note it
-5. Include ALL tests even if partially legible
-6. Do NOT include medications, dosages, or instructions - ONLY diagnostic tests
+CRITICAL EXTRACTION RULES:
+1. Extract the EXACT name as written in the prescription (e.g., if it says "S. Creat", extract "Serum Creatinine").
+2. DO NOT miss any test - look at both handwritten and printed parts.
+3. If a test is a "Profile" (e.g., LFT, KFT, Lipid), extract it as the profile name.
+4. Ignore medications, syrups, tablets, and follow-up instructions.
+5. If the handwriting is difficult to read, provide your most likely medical interpretation.
 
-COMMON TEST NAME MAPPINGS (use full names when possible):
-- CBC / CBP → Complete Blood Count
+COMPREHENSIVE TEST MAPPINGS:
+- CBC / CBP / Blood Counts → Complete Blood Count
 - FBS / FBG → Fasting Blood Sugar
 - PPBS / PPBG → Post Prandial Blood Sugar
 - RBS → Random Blood Sugar
-- HbA1c / A1C → Glycated Hemoglobin (HbA1c)
-- TFT / Thyroid → Thyroid Function Test / Thyroid Profile
-- TSH → Thyroid Stimulating Hormone
-- T3, T4 → Triiodothyronine, Thyroxine
+- HbA1c / A1C / Glycated Hb → HbA1c (Glycated Hemoglobin)
+- TFT / Thyroid Profile → Thyroid Function Test
+- TSH → TSH (Thyroid Stimulating Hormone)
+- T3, T4 → T3 & T4
 - LFT → Liver Function Test
-- KFT / RFT → Kidney Function Test / Renal Function Test
-- Lipid Profile → Lipid Profile
-- TC / TG / HDL / LDL → Total Cholesterol, Triglycerides, HDL, LDL
-- ESR → Erythrocyte Sedimentation Rate
-- CRP → C-Reactive Protein
-- Urine R/M / Urine RE → Urine Routine & Microscopy
-- Vit D / 25 OH → Vitamin D (25-Hydroxy)
+- KFT / RFT / Renal → Kidney Function Test
+- Lipid / Cholesterol → Lipid Profile
+- TC / TG / HDL / LDL → Lipid Profile
+- ESR / Sed Rate → ESR (Erythrocyte Sedimentation Rate)
+- CRP → CRP (C-Reactive Protein)
+- Urine R/M / Urine RE / Urine Exam → Urine Routine & Microscopy
+- Vit D / 25-OH Vit D → Vitamin D 25-Hydroxy
 - Vit B12 → Vitamin B12
-- Iron / Ferritin / TIBC → Iron Studies
-- PT / INR → Prothrombin Time
-- SGOT / AST → Aspartate Aminotransferase
-- SGPT / ALT → Alanine Aminotransferase
-- S. Creatinine → Serum Creatinine
-- BUN → Blood Urea Nitrogen
+- Iron / Ferritin → Iron Studies
+- S. Creatinine / Creat → Serum Creatinine
+- BUN / Urea → Blood Urea Nitrogen
 - Uric Acid → Serum Uric Acid
-- S. Calcium → Serum Calcium
-- Electrolytes → Serum Electrolytes (Na+, K+, Cl-)
-- PSA → Prostate Specific Antigen
-- RA Factor / RF → Rheumatoid Factor
-- ANA → Antinuclear Antibody
+- S. Calcium / Ca++ → Serum Calcium
+- Electrolytes / Na+ K+ Cl- → Serum Electrolytes
+- PSA → PSA (Prostate Specific Antigen)
+- RA Factor → RA Factor
+- ANA → ANA (Antinuclear Antibody)
 - Widal → Widal Test
-- HBsAg → Hepatitis B Surface Antigen
+- HBsAg → HBsAg (Hepatitis B Surface Antigen)
 - HIV → HIV 1 & 2 Antibody
-- Dengue NS1 → Dengue NS1 Antigen
-- MP → Malaria Parasite
+- Dengue / NS1 / IgG IgM → Dengue Profile
+- MP / Malaria → Malaria Parasite
 - Blood Group → Blood Grouping & Rh Typing
+- ECG / EKG → Electrocardiogram
 
 Respond with a JSON object:
 {
   "tests": [
     {
       "name": "Full standard test name",
-      "shortName": "Common abbreviation",
-      "category": "Blood/Thyroid/Liver/Kidney/Diabetes/Heart/Vitamin/Urine/Imaging/Infection/Hormone/Other"
+      "shortName": "Abbreviation used in image",
+      "category": "Blood/Thyroid/Liver/Kidney/Diabetes/Heart/Vitamin/Urine/Infection/Other"
     }
   ],
   "confidence": "high/medium/low",
-  "notes": "Brief observations about prescription quality, doctor details if visible, any unclear text"
-}
-
-If no tests found:
-{
-  "tests": [],
-  "confidence": "low",
-  "notes": "Reason why no tests were identified"
+  "notes": "Any doctor details or handwriting quality observations"
 }`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -253,7 +243,7 @@ If no tests found:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.0-flash-exp",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -261,7 +251,7 @@ If no tests found:
             content: [
               {
                 type: "text",
-                text: "Carefully analyze this medical prescription image. Extract every diagnostic/lab test name mentioned. Read handwritten text carefully. Use standard test names."
+                text: "Extract diagnostic tests from this image. Output JSON."
               },
               {
                 type: "image_url",

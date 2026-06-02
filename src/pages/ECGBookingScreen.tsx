@@ -111,7 +111,6 @@ const ECGBookingScreen = () => {
     "2:00 PM - 4:00 PM",
     "4:00 PM - 6:00 PM",
     "6:00 PM - 8:00 PM",
-    "8:00 PM - 10:00 PM",
   ];
 
   const slots = timeWindows;
@@ -389,7 +388,6 @@ const ECGBookingScreen = () => {
 
           <div className="mt-4 flex items-center gap-2 mb-3">
             <h3 className="font-semibold text-foreground">Select Time Slot</h3>
-            <Badge variant="soft" className="text-xs">24/7 Available</Badge>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

@@ -120,7 +120,7 @@ const labsData: Record<string, {
     rating: 4.8,
     reviews: 12500,
     location: "Pan India - 280+ Centers",
-    timing: "6:00 AM - 10:00 PM",
+    timing: "6:00 AM - 9:00 PM",
     homeCollection: true,
     accredited: ["NABL", "CAP"],
     tests: [
@@ -180,7 +180,7 @@ const labsData: Record<string, {
     rating: 4.6,
     reviews: 8500,
     location: "Pan India - 420+ Centers",
-    timing: "6:30 AM - 9:30 PM",
+    timing: "6:30 AM - 9:00 PM",
     homeCollection: true,
     accredited: ["NABL", "CAP"],
     tests: [
@@ -208,7 +208,7 @@ const labsData: Record<string, {
     rating: 4.5,
     reviews: 15000,
     location: "Pan India - 1200+ Centers",
-    timing: "6:00 AM - 11:00 PM",
+    timing: "6:00 AM - 9:00 PM",
     homeCollection: true,
     accredited: ["NABL", "ISO"],
     tests: [
