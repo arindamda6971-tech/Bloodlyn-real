@@ -348,7 +348,7 @@ const LabSelectionScreen = () => {
       updateLabForItems(labId, labName);
     }
 
-    const selectedSlot = timeSlots.find(s => s.id === selectedTime);
+    const selectedSlot = allSlotItems.find((s) => s.id === selectedTime);
 
     navigate("/payment", {
       state: {
@@ -491,54 +491,57 @@ const LabSelectionScreen = () => {
         {/* Time Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
           <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-2 font-medium">☀️ Morning Slots (AM)</p>
-            <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label === "Morning").map((slot) => {
-                const isAvailable = getSlotAvailability(slot);
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => isAvailable && setSelectedTime(slot.id)}
-                    disabled={!isAvailable}
-                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                      !isAvailable
-                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
-                        : selectedTime === slot.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground"
-                    }`}
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
+
+          {!selectedLabVendorId ? (
+            <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
+          ) : slotsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
             </div>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 font-medium">🌤️ Afternoon & Evening</p>
-            <div className="grid grid-cols-2 gap-2">
-              {timeSlots.filter(s => s.label !== "Morning").map((slot) => {
-                const isAvailable = getSlotAvailability(slot);
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => isAvailable && setSelectedTime(slot.id)}
-                    disabled={!isAvailable}
-                    className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                      !isAvailable
-                        ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
-                        : selectedTime === slot.id
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground"
-                    }`}
-                  >
-                    {slot.time}
-                  </button>
-                );
-              })}
+          ) : labIsClosedOnDate ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+              <Clock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">Lab is closed on this day</p>
+              <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
-          </div>
+          ) : allSlotItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No time slots configured for this day.</p>
+          ) : (
+            (["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
+              const items = groupedSlots[bucket];
+              if (items.length === 0) return null;
+              const emoji =
+                bucket === "Morning" ? "☀️" :
+                bucket === "Afternoon" ? "🌤️" :
+                bucket === "Evening" ? "🌆" : "🌙";
+              return (
+                <div key={bucket} className="mb-4 last:mb-0">
+                  <p className="text-xs text-muted-foreground mb-2 font-medium">{emoji} {bucket}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {items.map((slot) => {
+                      const isAvailable = getSlotAvailability(slot);
+                      return (
+                        <button
+                          key={slot.id}
+                          onClick={() => isAvailable && setSelectedTime(slot.id)}
+                          disabled={!isAvailable}
+                          className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
+                            !isAvailable
+                              ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
+                              : selectedTime === slot.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-card border border-border text-foreground"
+                          }`}
+                        >
+                          {slot.time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </motion.div>
       </div>
 
