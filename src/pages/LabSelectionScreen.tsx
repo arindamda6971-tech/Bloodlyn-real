@@ -10,6 +10,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import { type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
 
 interface PatientState {
   patientName?: string;
@@ -19,6 +20,7 @@ interface PatientState {
   contactPhone?: string;
   addressId?: string | null;
   hasVendorLab?: boolean;
+  labVendorId?: string | null;
 }
 
 interface DiagnosticCenter {
@@ -33,45 +35,6 @@ interface DiagnosticCenter {
   available_tests: any;
 }
 
-interface SlotItem {
-  id: string;       // the raw string, used as stable key
-  time: string;     // raw "6:00 AM - 8:00 AM"
-  label: "Morning" | "Afternoon" | "Evening" | "Overnight";
-  startHour: number; // 0-23, for "today" gating
-}
-
-// Parse "6:00 AM - 8:00 AM" → startHour in 24h (e.g. 6). Returns null if unparseable.
-function parseStartHour(raw: string): number | null {
-  const m = raw.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const ampm = m[3].toUpperCase();
-  if (ampm === "PM" && h !== 12) h += 12;
-  if (ampm === "AM" && h === 12) h = 0;
-  return h;
-}
-
-function bucketFor(startHour: number): SlotItem["label"] {
-  // Morning: 5 AM – 11:59 AM, Afternoon: 12 PM – 4:59 PM,
-  // Evening: 5 PM – 9:59 PM, Overnight: 10 PM – 4:59 AM
-  if (startHour >= 5 && startHour < 12) return "Morning";
-  if (startHour >= 12 && startHour < 17) return "Afternoon";
-  if (startHour >= 17 && startHour < 22) return "Evening";
-  return "Overnight";
-}
-
-function toSlotItems(raw: string[] | null | undefined): SlotItem[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((r) => {
-      const sh = parseStartHour(r);
-      if (sh === null) return null;
-      return { id: r, time: r, startHour: sh, label: bucketFor(sh) } as SlotItem;
-    })
-    .filter((x): x is SlotItem => !!x)
-    .sort((a, b) => a.startHour - b.startHour);
-}
-
 const LabSelectionScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,7 +45,9 @@ const LabSelectionScreen = () => {
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
   const [selectedLabName, setSelectedLabName] = useState<string | null>(hasVendorLab ? currentLabName : null);
-  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(null);
+  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(
+    hasVendorLab ? (patientState.labVendorId || items.find((item) => item.labId === currentLabId)?.vendorId || null) : null
+  );
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
@@ -121,9 +86,15 @@ const LabSelectionScreen = () => {
       setSelectedLabVendorId(null);
       return;
     }
+    setSelectedLabVendorId(null);
     const known = labs.find((l) => l.id === selectedLabId);
     if (known?.vendor_id) {
       setSelectedLabVendorId(known.vendor_id);
+      return;
+    }
+    const cartVendorId = items.find((item) => item.labId === selectedLabId)?.vendorId;
+    if (cartVendorId) {
+      setSelectedLabVendorId(cartVendorId);
       return;
     }
     // Vendor-lab flow: lab isn't in `labs` array — fetch vendor_id from diagnostic_centers
@@ -139,7 +110,7 @@ const LabSelectionScreen = () => {
     return () => {
       cancelled = true;
     };
-  }, [selectedLabId, labs]);
+  }, [selectedLabId, labs, items]);
 
   // Fetch lab_time_slots from Partner project whenever the selected lab changes
   useEffect(() => {
@@ -188,14 +159,15 @@ const LabSelectionScreen = () => {
   const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
 
   const allSlotItems = useMemo<SlotItem[]>(
-    () => (activeDayRow ? toSlotItems(activeDayRow.slots) : []),
+    () => (activeDayRow ? toSortedSlotItems(activeDayRow.slots) : []),
     [activeDayRow]
   );
 
   const getSlotAvailability = (slot: SlotItem) => {
     if (selectedDate !== 0) return true;
-    const currentHour = new Date().getHours();
-    return slot.startHour > currentHour;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return slot.startMinutes > currentMinutes;
   };
 
   const groupedSlots = useMemo(() => {
@@ -363,6 +335,7 @@ const LabSelectionScreen = () => {
         subtotal,
         selectedLabName: labName,
         selectedLabId: labId,
+        labVendorId: selectedLabVendorId,
         addressId: patientState.addressId,
         ...patientState,
       },
