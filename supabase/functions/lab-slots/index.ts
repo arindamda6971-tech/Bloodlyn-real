@@ -4,6 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Cache-Control": "no-store, no-cache, must-revalidate",
 };
 
 // Partner Real project (BloodLyn Partner Real)
@@ -37,13 +38,15 @@ Deno.serve(async (req) => {
 
     const url =
       `${PARTNER_URL}/rest/v1/lab_time_slots` +
-      `?select=day_of_week,is_open,slots&lab_user_id=eq.${labUserId}`;
+      `?select=day_of_week,is_open,slots&lab_user_id=eq.${labUserId}&order=day_of_week.asc`;
 
     const res = await fetch(url, {
       headers: {
         apikey: ANON,
         Authorization: `Bearer ${ANON}`,
         Accept: "application/json",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
       },
     });
 
