@@ -52,9 +52,11 @@ function parseStartHour(raw: string): number | null {
 }
 
 function bucketFor(startHour: number): SlotItem["label"] {
+  // Morning: 5 AM – 11:59 AM, Afternoon: 12 PM – 4:59 PM,
+  // Evening: 5 PM – 9:59 PM, Overnight: 10 PM – 4:59 AM
   if (startHour >= 5 && startHour < 12) return "Morning";
   if (startHour >= 12 && startHour < 17) return "Afternoon";
-  if (startHour >= 17 && startHour < 21) return "Evening";
+  if (startHour >= 17 && startHour < 22) return "Evening";
   return "Overnight";
 }
 
