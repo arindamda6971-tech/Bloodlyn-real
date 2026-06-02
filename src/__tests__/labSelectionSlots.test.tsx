@@ -63,7 +63,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     from: (table: string) => {
       if (table === "diagnostic_centers") {
         let selectedLabId = "";
-        const builder = {
+        const builder: any = {
           select: vi.fn(() => builder),
           order: vi.fn(async () => ({ data: mocks.labs, error: null })),
           eq: vi.fn((_field: string, value: string) => {
@@ -79,7 +79,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       }
 
       if (table === "products") {
-        const builder = {
+        const builder: any = {
           select: vi.fn(() => builder),
           in: vi.fn(() => builder),
           eq: vi.fn(async () => ({
