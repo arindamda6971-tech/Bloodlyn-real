@@ -16,7 +16,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const ANON = Deno.env.get("PARTNER_SUPABASE_ANON_KEY") || PARTNER_ANON_FALLBACK;
+    // Always use the BloodLyn Partner Real publishable key (safe to embed).
+    // Ignore PARTNER_SUPABASE_ANON_KEY env var — stale value pointed at wrong project.
+    const ANON = PARTNER_ANON_FALLBACK;
 
     let labUserId: string | null = null;
     if (req.method === "GET") {
