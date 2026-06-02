@@ -86,6 +86,7 @@ const LabSelectionScreen = () => {
       setSelectedLabVendorId(null);
       return;
     }
+    setSelectedLabVendorId(null);
     const known = labs.find((l) => l.id === selectedLabId);
     if (known?.vendor_id) {
       setSelectedLabVendorId(known.vendor_id);
