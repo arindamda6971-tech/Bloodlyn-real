@@ -52,9 +52,11 @@ function parseStartHour(raw: string): number | null {
 }
 
 function bucketFor(startHour: number): SlotItem["label"] {
+  // Morning: 5 AM – 11:59 AM, Afternoon: 12 PM – 4:59 PM,
+  // Evening: 5 PM – 9:59 PM, Overnight: 10 PM – 4:59 AM
   if (startHour >= 5 && startHour < 12) return "Morning";
   if (startHour >= 12 && startHour < 17) return "Afternoon";
-  if (startHour >= 17 && startHour < 21) return "Evening";
+  if (startHour >= 17 && startHour < 22) return "Evening";
   return "Overnight";
 }
 
@@ -112,6 +114,9 @@ const LabSelectionScreen = () => {
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
+    // Reset stale slot data immediately when switching labs
+    setLabSlotsByDay({});
+    setSelectedTime(null);
     if (!selectedLabId) {
       setSelectedLabVendorId(null);
       return;
@@ -492,10 +497,10 @@ const LabSelectionScreen = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
           <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
 
-          {!selectedLabVendorId ? (
+          {!selectedLabId ? (
             <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
-          ) : slotsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          ) : !selectedLabVendorId || slotsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
             </div>
           ) : labIsClosedOnDate ? (
