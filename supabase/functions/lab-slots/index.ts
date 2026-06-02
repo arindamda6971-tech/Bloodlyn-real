@@ -6,19 +6,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const PARTNER_URL = "https://uivexkxdhcubjcdxmjuu.supabase.co";
+// Partner Real project (BloodLyn Partner Real)
+const PARTNER_URL = "https://titjcfklrmytppvsoavv.supabase.co";
+// Publishable anon key — safe to embed (same kind as the one in .env)
+const PARTNER_ANON_FALLBACK =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdGpjZmtscm15dHBwdnNvYXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzMzNTIsImV4cCI6MjA4NzA0OTM1Mn0.tyKSMCLjnAVB8WCvKiHF7JrBkOEmBHoLkrrmXFVfunU";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const ANON = Deno.env.get("PARTNER_SUPABASE_ANON_KEY");
-    if (!ANON) {
-      return new Response(JSON.stringify({ error: "PARTNER_SUPABASE_ANON_KEY missing" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const ANON = Deno.env.get("PARTNER_SUPABASE_ANON_KEY") || PARTNER_ANON_FALLBACK;
 
     let labUserId: string | null = null;
     if (req.method === "GET") {
