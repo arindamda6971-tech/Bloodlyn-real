@@ -494,10 +494,10 @@ const LabSelectionScreen = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
           <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
 
-          {!selectedLabVendorId ? (
+          {!selectedLabId ? (
             <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
-          ) : slotsLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          ) : !selectedLabVendorId || slotsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
             </div>
           ) : labIsClosedOnDate ? (
