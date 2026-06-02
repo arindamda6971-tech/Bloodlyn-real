@@ -36,6 +36,8 @@ const mocks = vi.hoisted(() => {
     vendorAlpha,
     vendorBeta,
     labs,
+    cartItems: [{ id: "test-cbc", name: "CBC", price: 300, quantity: 1 }],
+    updateLabForItems: vi.fn(),
     invoke: vi.fn(),
   };
 });
@@ -47,8 +49,8 @@ vi.mock("@/hooks/useUserPincode", () => ({
 
 vi.mock("@/contexts/CartContext", () => ({
   useCart: () => ({
-    items: [{ id: "test-cbc", name: "CBC", price: 300, quantity: 1 }],
-    updateLabForItems: vi.fn(),
+    items: mocks.cartItems,
+    updateLabForItems: mocks.updateLabForItems,
     subtotal: 300,
     currentLabId: null,
     currentLabName: null,
