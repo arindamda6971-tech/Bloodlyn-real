@@ -80,17 +80,23 @@ const LabSelectionScreen = () => {
 
   const [selectedLabId, setSelectedLabId] = useState<string | null>(hasVendorLab ? currentLabId : null);
   const [selectedLabName, setSelectedLabName] = useState<string | null>(hasVendorLab ? currentLabName : null);
+  const [selectedLabVendorId, setSelectedLabVendorId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(0);
-  const [selectedTime, setSelectedTime] = useState<number | null>(null);
+  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [dateScrollStart, setDateScrollStart] = useState(0);
 
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
+  // Slots fetched from Partner project for the currently selected lab
+  const [labSlotsByDay, setLabSlotsByDay] = useState<
+    Record<number, { is_open: boolean; slots: string[] }>
+  >({});
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
   const dates = Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i);
-    // Build YYYY-MM-DD from LOCAL date parts to avoid UTC off-by-one
     const yyyy = date.getFullYear();
     const mm = String(date.getMonth() + 1).padStart(2, "0");
     const dd = String(date.getDate()).padStart(2, "0");
@@ -99,20 +105,105 @@ const LabSelectionScreen = () => {
       date: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
       fullDate: `${yyyy}-${mm}-${dd}`,
+      dayOfWeek: date.getDay(), // 0=Sun … 6=Sat
       available: true,
     };
   });
 
-  // Determine which time slots are selectable based on selected date
-  const getSlotAvailability = (slot: typeof timeSlots[0]) => {
-    if (selectedDate !== 0) return slot.available; // Not today, all available
-    // Today: disable slots whose end time has passed or is current
-    const now = new Date();
-    const currentHour = now.getHours();
-    // The slot covers startHour to startHour+2. If current hour >= startHour+2, it's past.
-    // If current hour >= startHour, the slot is "current" — also disable.
+  // Resolve selected lab's vendor_id (lab_user_id in Partner project)
+  useEffect(() => {
+    if (!selectedLabId) {
+      setSelectedLabVendorId(null);
+      return;
+    }
+    const known = labs.find((l) => l.id === selectedLabId);
+    if (known?.vendor_id) {
+      setSelectedLabVendorId(known.vendor_id);
+      return;
+    }
+    // Vendor-lab flow: lab isn't in `labs` array — fetch vendor_id from diagnostic_centers
+    let cancelled = false;
+    supabase
+      .from("diagnostic_centers")
+      .select("vendor_id")
+      .eq("id", selectedLabId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSelectedLabVendorId((data?.vendor_id as string) ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLabId, labs]);
+
+  // Fetch lab_time_slots from Partner project whenever the selected lab changes
+  useEffect(() => {
+    if (!selectedLabVendorId) {
+      setLabSlotsByDay({});
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    supabase.functions
+      .invoke("lab-slots", { body: { lab_user_id: selectedLabVendorId } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("lab-slots fetch failed:", error);
+          setLabSlotsByDay({});
+        } else {
+          const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> =
+            data?.rows ?? [];
+          const map: Record<number, { is_open: boolean; slots: string[] }> = {};
+          rows.forEach((r) => {
+            map[r.day_of_week] = {
+              is_open: !!r.is_open,
+              slots: Array.isArray(r.slots) ? r.slots : [],
+            };
+          });
+          setLabSlotsByDay(map);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error("lab-slots invoke error:", err);
+          setLabSlotsByDay({});
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedLabVendorId]);
+
+  // Compute slots for the currently selected date, bucketed and gated for "today"
+  const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
+  const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
+
+  const allSlotItems = useMemo<SlotItem[]>(
+    () => (activeDayRow ? toSlotItems(activeDayRow.slots) : []),
+    [activeDayRow]
+  );
+
+  const getSlotAvailability = (slot: SlotItem) => {
+    if (selectedDate !== 0) return true;
+    const currentHour = new Date().getHours();
     return slot.startHour > currentHour;
   };
+
+  const groupedSlots = useMemo(() => {
+    const groups: Record<SlotItem["label"], SlotItem[]> = {
+      Morning: [],
+      Afternoon: [],
+      Evening: [],
+      Overnight: [],
+    };
+    allSlotItems.forEach((s) => groups[s.label].push(s));
+    return groups;
+  }, [allSlotItems]);
+
 
   const { pincode: userPincode } = useUserPincode();
 
