@@ -18,6 +18,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { triggerHaptic } from "@/utils/haptics";
 import type { Tables } from "@/integrations/supabase/types";
 
 import {
