@@ -1,11 +1,33 @@
 export type SlotBucket = "Morning" | "Afternoon" | "Evening" | "Overnight";
 
+export const LAB_SLOT_TIME_ZONE = "Asia/Kolkata";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEKDAY_TO_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
 export interface SlotItem {
   id: string;
   time: string;
   label: SlotBucket;
   startHour: number;
   startMinutes: number;
+}
+
+export interface LabSlotDate {
+  day: string;
+  date: number;
+  month: string;
+  fullDate: string;
+  dayOfWeek: number;
+  available: boolean;
 }
 
 export function parseSlotStartMinutes(raw: string): number | null {
@@ -30,6 +52,57 @@ export function bucketForSlotStart(startMinutes: number): SlotBucket {
   if (hour >= 12 && hour < 17) return "Afternoon";
   if (hour >= 17 && hour < 24) return "Evening";
   return "Overnight";
+}
+
+function getPart(parts: Intl.DateTimeFormatPart[], type: Intl.DateTimeFormatPartTypes): string {
+  return parts.find((part) => part.type === type)?.value ?? "";
+}
+
+export function getCurrentLabSlotMinutes(now: Date = new Date()): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: LAB_SLOT_TIME_ZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+
+  return Number(getPart(parts, "hour")) * 60 + Number(getPart(parts, "minute"));
+}
+
+export function isSameDaySlotBookable(startMinutes: number, now: Date = new Date()): boolean {
+  return startMinutes > getCurrentLabSlotMinutes(now);
+}
+
+export function getLabSlotDates(count = 7, now: Date = new Date()): LabSlotDate[] {
+  return Array.from({ length: count }, (_, i) => {
+    const target = new Date(now.getTime() + i * DAY_MS);
+    const dateParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: LAB_SLOT_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(target);
+    const labelParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: LAB_SLOT_TIME_ZONE,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    }).formatToParts(target);
+    const weekday = getPart(labelParts, "weekday");
+    const month = getPart(labelParts, "month");
+    const day = Number(getPart(dateParts, "day"));
+    const numericMonth = getPart(dateParts, "month");
+    const year = getPart(dateParts, "year");
+
+    return {
+      day: weekday,
+      date: day,
+      month,
+      fullDate: `${year}-${numericMonth}-${String(day).padStart(2, "0")}`,
+      dayOfWeek: WEEKDAY_TO_INDEX[weekday] ?? 0,
+      available: true,
+    };
+  });
 }
 
 export function toSortedSlotItems(raw: string[] | null | undefined): SlotItem[] {
