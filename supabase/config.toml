@@ -24,4 +24,8 @@ verify_jwt = false
 verify_jwt = false
 # JWT validated in code; uses service role key to delete auth user
 
+[functions.lab-slots]
+verify_jwt = false
+# Public read-only proxy to Partner project's lab_time_slots table
+
 
