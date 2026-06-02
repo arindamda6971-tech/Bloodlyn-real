@@ -165,8 +165,9 @@ const LabSelectionScreen = () => {
 
   const getSlotAvailability = (slot: SlotItem) => {
     if (selectedDate !== 0) return true;
-    const currentHour = new Date().getHours();
-    return slot.startHour > currentHour;
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    return slot.startMinutes > currentMinutes;
   };
 
   const groupedSlots = useMemo(() => {
@@ -334,6 +335,7 @@ const LabSelectionScreen = () => {
         subtotal,
         selectedLabName: labName,
         selectedLabId: labId,
+        labVendorId: selectedLabVendorId,
         addressId: patientState.addressId,
         ...patientState,
       },
