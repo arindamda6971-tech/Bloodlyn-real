@@ -89,6 +89,38 @@ Deno.serve(async (req) => {
       addressDetails = address;
     }
 
+    // Parse structured patient fields out of special_instructions so the
+    // Partner project can display the *selected family member* (not the
+    // account holder's profile name). Format produced by create-order:
+    //   "Patient: <Name> (Age: <n>, Gender: <g>, Phone: <p>) | Prescription: <url>"
+    let patient: {
+      name: string | null;
+      age: string | null;
+      gender: string | null;
+      phone: string | null;
+    } | null = null;
+    let prescription_url: string | null = null;
+    if (order.special_instructions) {
+      const patientMatch = order.special_instructions.match(
+        /Patient:\s*([^()|]+?)\s*\(([^)]*)\)/i,
+      );
+      if (patientMatch) {
+        const name = patientMatch[1].trim();
+        const meta = patientMatch[2];
+        const ageM = meta.match(/Age:\s*([^,]+?)\s*(?:,|$)/i);
+        const genderM = meta.match(/Gender:\s*([^,]+?)\s*(?:,|$)/i);
+        const phoneM = meta.match(/Phone:\s*([^,]+?)\s*(?:,|$)/i);
+        patient = {
+          name,
+          age: ageM ? ageM[1].trim() : null,
+          gender: genderM ? genderM[1].trim() : null,
+          phone: phoneM ? phoneM[1].trim() : null,
+        };
+      }
+      const presM = order.special_instructions.match(/Prescription:\s*(\S+)/i);
+      if (presM) prescription_url = presM[1];
+    }
+
     // Prepare the notification payload for the vendor
     const vendorNotification = {
       order_id: order.id,
@@ -100,6 +132,10 @@ Deno.serve(async (req) => {
         email: vendorCenter.email,
         phone: vendorCenter.phone,
       } : null,
+      // Top-level patient block — Partner project should display these
+      // fields instead of looking up the buyer's profile name.
+      patient,
+      prescription_url,
       order_details: {
         lab_name: order.lab_name,
         test_name: order.test_name,
@@ -111,6 +147,11 @@ Deno.serve(async (req) => {
         payment_method: order.payment_method,
         payment_status: order.payment_status,
         special_instructions: order.special_instructions,
+        // Duplicate inside order_details too for partner UIs that read here
+        patient_name: patient?.name ?? null,
+        patient_age: patient?.age ?? null,
+        patient_gender: patient?.gender ?? null,
+        patient_phone: patient?.phone ?? null,
       },
       customer_address: addressDetails,
       created_at: order.created_at,
