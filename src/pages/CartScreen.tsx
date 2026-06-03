@@ -129,10 +129,46 @@ const CartScreen = () => {
     }
   }, [items.length, isLoading]);
 
+  // Fetch profile so 'Self' patient details are auto-filled from profile
+  useEffect(() => {
+    const fetchSelfProfile = async () => {
+      if (!supabaseUserId) { setSelfProfile(null); return; }
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name, date_of_birth, gender, phone")
+        .eq("id", supabaseUserId)
+        .maybeSingle();
+      let age = "";
+      const dob = (data as any)?.date_of_birth as string | undefined;
+      if (dob) {
+        const d = new Date(dob);
+        if (!isNaN(d.getTime())) {
+          const diff = Date.now() - d.getTime();
+          const years = Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+          if (years > 0 && years <= 120) age = String(years);
+        }
+      }
+      const phoneRaw = (data as any)?.phone || user?.phone || "";
+      const phone = String(phoneRaw).replace(/\D/g, "").slice(-10);
+      setSelfProfile({
+        full_name: (data as any)?.full_name || user?.user_metadata?.full_name || user?.user_metadata?.name || "",
+        age,
+        gender: (data as any)?.gender || "",
+        phone,
+      });
+    };
+    fetchSelfProfile();
+  }, [supabaseUserId, user]);
+
   useEffect(() => {
     if (selectedMemberId === "self") {
-      // Only reset if not loading from saved
-      if (!saved?.patientName) {
+      // Prefer saved session values; otherwise prefill from profile
+      if (!saved?.patientName && selfProfile) {
+        setPatientName(selfProfile.full_name);
+        setPatientAge(selfProfile.age);
+        setPatientGender(selfProfile.gender);
+        setPatientPhone(selfProfile.phone);
+      } else if (!saved?.patientName && !selfProfile) {
         setPatientName(""); setPatientAge(""); setPatientGender(""); setPatientPhone("");
       }
     } else {
@@ -143,7 +179,7 @@ const CartScreen = () => {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMemberId, familyMembers]);
+  }, [selectedMemberId, familyMembers, selfProfile]);
 
   // Fetch saved addresses
   useEffect(() => {
