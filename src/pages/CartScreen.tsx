@@ -70,8 +70,9 @@ const CartScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { items, removeFromCart, subtotal, currentLabName, isLoading, updateFamilyMember } = useCart();
-  const { supabaseUserId } = useAuth();
+  const { supabaseUserId, user } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
+  const [selfProfile, setSelfProfile] = useState<{ full_name: string; age: string; gender: string; phone: string } | null>(null);
 
   // Handle returning from AddFamilyMemberScreen
   const locationState = (location as any).state;
