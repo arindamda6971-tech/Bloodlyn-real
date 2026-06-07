@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
+import { render } from '@/test-utils';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 
 describe('LoginScreen redirect after auth', () => {

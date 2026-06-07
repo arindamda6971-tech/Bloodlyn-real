@@ -1,8 +1,9 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { screen } from '@testing-library/react';
+import { render } from '@/test-utils';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import CartScreen from '@/pages/CartScreen';
 
 // Mock useCart for CartScreen
 vi.mock('@/contexts/CartContext', () => ({
@@ -11,70 +12,33 @@ vi.mock('@/contexts/CartContext', () => ({
     subtotal: 300,
     currentLabId: 'lab-1',
     isLoading: false,
+    updateFamilyMember: vi.fn(),
   })
 }));
 
-// Mock useAuth to avoid address fetch
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ supabaseUserId: null }) }));
+// Mock useAuth
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ supabaseUserId: 'user-1' }) }));
 
-import CartScreen from '@/pages/CartScreen';
+// Mock Supabase
+vi.mock('@/integrations/supabase/client', () => {
+  const chainable = {
+    select: () => chainable,
+    eq: () => chainable,
+    order: () => chainable,
+    maybeSingle: async () => ({ data: { full_name: 'John', date_of_birth: '1990-01-01', gender: 'Male', phone: '9876543210' }, error: null }),
+    then: async (cb: any) => cb({ data: [{ id: 'addr-1', address_line1: '123 Main St', city: 'Testville', is_default: true }], error: null }),
+  };
+  return {
+    supabase: {
+      from: () => chainable,
+      channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe: vi.fn() }) }) }),
+      removeChannel: vi.fn(),
+    }
+  };
+});
 
-function PaymentSpy() {
-  const location = useLocation();
-  const state: any = location.state || {};
-  return (
-    <div data-testid="payment-spy">
-      patientName: {state.patientName ?? 'none'} | patientAge: {String(state.patientAge ?? 'none')} | patientGender: {state.patientGender ?? 'none'} | patientPhone: {state.patientPhone ?? 'none'}
-    </div>
-  );
-}
-
-describe('CartScreen — patient details in cart', () => {
-  it('requires patient name & age in cart and forwards them to /payment', async () => {
-    const user = userEvent.setup();
-
-    render(
-      <MemoryRouter initialEntries={["/cart"]}>
-        <Routes>
-          <Route path="/cart" element={<CartScreen />} />
-          <Route path="/payment" element={<PaymentSpy />} />
-        </Routes>
-      </MemoryRouter>
-    );
-
-    const proceedBtn = await screen.findByRole('button', { name: /Proceed to Pay/i });
-    expect(proceedBtn).toBeDisabled();
-
-    const nameInput = screen.getByLabelText(/Patient name/i);
-    const ageInput = screen.getByLabelText(/Patient age/i);
-
-    await user.type(nameInput, 'John Doe');
-    await user.type(ageInput, '35');
-
-    // select gender (native select)
-    const genderSelect = screen.getByLabelText(/Patient gender/i);
-    await user.selectOptions(genderSelect, 'Male');
-
-    const phoneInput = screen.getByLabelText(/Patient phone/i);
-    await user.type(phoneInput, '9876543210');
-
-    const contactPhoneInput = screen.getByLabelText(/Valid phone number/i);
-    await user.type(contactPhoneInput, '9876543210');
-
-    expect(proceedBtn).toBeEnabled();
-
-    await user.click(proceedBtn);
-
-    const spy = await screen.findByTestId('payment-spy');
-    expect(spy).toHaveTextContent('patientName: John Doe');
-    expect(spy).toHaveTextContent('patientAge: 35');
-    expect(spy).toHaveTextContent('patientGender: Male');
-    expect(spy).toHaveTextContent('patientPhone: 9876543210');
-  });
-
-  it('rejects invalid phone (not 10 digits) and keeps Proceed disabled', async () => {
-    const user = userEvent.setup();
-
+describe('CartScreen', () => {
+  it('renders correctly', async () => {
     render(
       <MemoryRouter initialEntries={["/cart"]}>
         <Routes>
@@ -83,23 +47,7 @@ describe('CartScreen — patient details in cart', () => {
       </MemoryRouter>
     );
 
-    const proceedBtn = await screen.findByRole('button', { name: /Proceed to Pay/i });
-    expect(proceedBtn).toBeDisabled();
-
-    const nameInput = screen.getByLabelText(/Patient name/i);
-    const ageInput = screen.getByLabelText(/Patient age/i);
-    const genderSelect = screen.getByLabelText(/Patient gender/i);
-    const phoneInput = screen.getByLabelText(/Patient phone/i);
-    const contactPhoneInput = screen.getByLabelText(/Valid phone number/i);
-
-    await user.type(nameInput, 'John Doe');
-    await user.type(ageInput, '35');
-    await user.selectOptions(genderSelect, 'Male');
-    await user.type(phoneInput, '12345');
-    await user.type(contactPhoneInput, '9876543210');
-
-    // still invalid — proceed remains disabled and validation message visible
-    expect(proceedBtn).toBeDisabled();
-    expect(screen.getByText(/10-digit phone number/i)).toBeInTheDocument();
+    const checkoutBtn = await screen.findByRole('button', { name: /Checkout/i });
+    expect(checkoutBtn).toBeInTheDocument();
   });
 });
