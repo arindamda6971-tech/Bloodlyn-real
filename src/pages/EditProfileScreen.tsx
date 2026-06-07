@@ -11,12 +11,17 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarUI } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
@@ -104,132 +109,123 @@ const EditProfileScreen = () => {
     <MobileLayout showNav={false} className="bg-background">
       <ScreenHeader title="Edit Profile" />
 
-      <div className="px-5 pb-32 pt-6 max-w-md mx-auto">
-        {/* Professional Profile Avatar Section */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center mb-10"
-        >
-          <div className="relative group">
-            <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-gradient-to-tr from-primary/40 via-primary to-success/40 shadow-2xl overflow-hidden transform group-hover:scale-105 transition-transform duration-300">
-              <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card ring-4 ring-background">
-                {user?.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary/5">
-                    <User className="w-12 h-12 text-primary/40" />
-                  </div>
-                )}
-              </div>
-            </div>
-            <button className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border-4 border-background active:scale-90 transition-transform">
-              <Camera className="w-5 h-5" />
-            </button>
-          </div>
-          <p className="text-xs font-bold text-primary uppercase tracking-widest mt-4">Change Photo</p>
-        </motion.div>
+      <div className="px-5 pb-40 pt-6 max-w-md mx-auto">
 
-        {/* Professional Form Layout */}
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 px-1">Basic Information</h3>
 
-            <div className="space-y-2">
-              <Label className="text-xs font-bold ml-1 text-foreground/70">Full Name</Label>
-              <div className="relative group">
-                <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  value={profile.full_name}
-                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                  placeholder="Enter full name"
-                  className="pl-12 bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-bold ml-1 text-foreground/70">Email Address</Label>
-              <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                  placeholder="name@example.com"
-                  className="pl-12 bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs font-bold ml-1 text-foreground/70">Phone Number</Label>
-              <div className="relative group">
-                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input
-                  value={profile.phone}
-                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  placeholder="+91 00000 00000"
-                  className="pl-12 bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20 focus:border-primary transition-all"
-                />
-              </div>
+        {/* Premium Unified Form Card */}
+        <div className="bg-card shadow-lg shadow-black/5 border border-border/40 rounded-[2rem] p-6 space-y-6">
+          
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Full Name</Label>
+            <div className="relative group">
+              <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                value={profile.full_name}
+                onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                placeholder="Enter full name"
+                className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t border-border/40">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 px-1">Personal Details</h3>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold ml-1 text-foreground/70">Date of Birth</Label>
-                <div className="relative group">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors z-10 pointer-events-none" />
-                  <Input
-                    type="date"
-                    value={profile.date_of_birth}
-                    onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
-                    className="pl-12 bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20 focus:border-primary transition-all appearance-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold ml-1 text-foreground/70">Gender</Label>
-                  <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
-                    <SelectTrigger className="bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20">
-                      <SelectValue placeholder="Gender" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                      <SelectItem value="male" className="rounded-xl">Male</SelectItem>
-                      <SelectItem value="female" className="rounded-xl">Female</SelectItem>
-                      <SelectItem value="other" className="rounded-xl">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold ml-1 text-foreground/70">Blood Group</Label>
-                  <Select value={profile.blood_group} onValueChange={(value) => setProfile({ ...profile, blood_group: value })}>
-                    <SelectTrigger className="bg-muted/30 border-border/50 rounded-2xl py-6 font-semibold focus:ring-primary/20">
-                      <div className="flex items-center gap-2">
-                        <Droplets className="w-4 h-4 text-destructive" />
-                        <SelectValue placeholder="Group" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
-                      {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(g => (
-                        <SelectItem key={g} value={g} className="rounded-xl font-bold">{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Phone Number</Label>
+            <div className="relative group">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                type="tel"
+                maxLength={10}
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                placeholder="00000 00000"
+                className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Email Address</Label>
+            <div className="relative group">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                placeholder="name@example.com"
+                className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="h-px w-full bg-border/40 my-4" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Date of Birth</Label>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full flex items-center gap-2 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all justify-start text-left text-foreground hover:bg-background/80 hover:text-foreground",
+                      !profile.date_of_birth && "text-muted-foreground"
+                    )}
+                  >
+                    <Calendar className="w-5 h-5 text-muted-foreground shrink-0" />
+                    <span className="truncate">
+                      {profile.date_of_birth ? format(new Date(profile.date_of_birth), "PP") : "Pick a date"}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
+                  <CalendarUI
+                    mode="single"
+                    selected={profile.date_of_birth ? new Date(profile.date_of_birth) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setProfile({ ...profile, date_of_birth: format(date, "yyyy-MM-dd") });
+                        setIsCalendarOpen(false);
+                      }
+                    }}
+                    initialFocus
+                    captionLayout="dropdown-buttons"
+                    fromYear={1900}
+                    toYear={new Date().getFullYear()}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Gender</Label>
+              <Select value={profile.gender} onValueChange={(value) => setProfile({ ...profile, gender: value })}>
+                <SelectTrigger className="bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20">
+                  <SelectValue placeholder="Gender" />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value="male" className="rounded-xl">Male</SelectItem>
+                  <SelectItem value="female" className="rounded-xl">Female</SelectItem>
+                  <SelectItem value="other" className="rounded-xl">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/70 ml-1">Blood Group</Label>
+            <Select value={profile.blood_group} onValueChange={(value) => setProfile({ ...profile, blood_group: value })}>
+              <SelectTrigger className="bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20">
+                <div className="flex items-center gap-2">
+                  <Droplets className="w-4 h-4 text-destructive" />
+                  <SelectValue placeholder="Group" />
+                </div>
+              </SelectTrigger>
+              <SelectContent className="rounded-2xl">
+                {["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"].map(g => (
+                  <SelectItem key={g} value={g} className="rounded-xl font-bold">{g}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

@@ -13,7 +13,7 @@ import {
   Users,
   FileText,
   Wallet,
-  Sparkles,
+  Pencil,
   ArrowDownLeft,
   ArrowUpRight,
   History,
@@ -139,7 +139,7 @@ const ProfileScreen = () => {
               onClick={() => navigate("/edit-profile")}
               className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border-4 border-background active:scale-90 transition-transform"
             >
-              <Sparkles className="w-5 h-5" />
+              <Pencil className="w-5 h-5" />
             </button>
           </div>
 
