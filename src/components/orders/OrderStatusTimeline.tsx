@@ -8,20 +8,36 @@ interface OrderStatusTimelineProps {
 
 const steps = [
   { key: "confirmed", label: "Booked" },
+  { key: "accepted", label: "Accepted" },
+  { key: "assigned", label: "Assigned" },
   { key: "in_progress", label: "Collected" },
-  { key: "processing", label: "Processing" },
   { key: "completed", label: "Report" },
 ];
 
 const OrderStatusTimeline = ({ status, className }: OrderStatusTimelineProps) => {
   const getStatusIndex = (currentStatus: string | null) => {
     switch (currentStatus) {
-      case "completed": return 3;
-      case "processing": return 2;
-      case "in_progress": return 1;
+      case "pending":
       case "confirmed":
-      case "pending": return 0;
-      default: return -1;
+        return 0;
+      case "accepted":
+        return 1;
+      case "processing":
+      case "assigned":
+      case "out_for_collection":
+        return 2;
+      case "sample_collected":
+      case "in_progress":
+      case "collection_complete":
+      case "sample_received":
+        return 3;
+      case "lab_processing":
+      case "report_ready":
+      case "report_delivered":
+      case "completed":
+        return 4;
+      default:
+        return -1;
     }
   };
 

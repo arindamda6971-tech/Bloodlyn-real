@@ -43,6 +43,11 @@ interface OrderData {
   report_url: string | null;
   delivery_partner_name: string | null;
   delivery_partner_phone: string | null;
+  patient_name?: string | null;
+  family_members?: {
+    full_name: string;
+  } | null;
+  special_instructions?: string | null;
 }
 
 interface OrderItem {
@@ -219,6 +224,17 @@ const TrackingScreen = () => {
   const completedIndex = getCompletedIndex(order.status);
   const isCancelled = order.status === "cancelled";
 
+  let patientName = order.patient_name || order.family_members?.full_name;
+  if (!patientName && order.special_instructions) {
+    const match = order.special_instructions.match(/Patient:\s*([^(|]+)/);
+    if (match && match[1]) {
+      patientName = match[1].trim();
+    }
+  }
+  if (!patientName) {
+    patientName = "Self";
+  }
+
   return (
     <MobileLayout showNav={false}>
       <ScreenHeader title="Order Details" />
@@ -268,6 +284,13 @@ const TrackingScreen = () => {
             ) : (
               <p className="text-sm text-muted-foreground">{order.test_name || "Lab Test"}</p>
             )}
+          </div>
+
+          {/* Patient Name */}
+          <div className="flex items-center gap-2 py-2.5 border-t border-border">
+            <User className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Patient:</span>
+            <span className="text-sm font-semibold text-foreground uppercase">{patientName}</span>
           </div>
 
           {/* Lab Name */}

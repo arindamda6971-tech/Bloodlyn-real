@@ -109,11 +109,20 @@ const BookingsScreen = () => {
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
       case "completed":
+      case "report_ready":
+      case "report_delivered":
         return { label: "Ready", color: "bg-success text-success-foreground", pulse: false };
       case "in_progress":
-        return { label: "Collected", color: "bg-primary text-primary-foreground", pulse: true };
+      case "sample_collected":
+        return { label: "Sample Collected", color: "bg-primary text-primary-foreground", pulse: true };
+      case "assigned":
+      case "out_for_collection":
+        return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
       case "processing":
+      case "lab_processing":
         return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
+      case "accepted":
+        return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
       case "confirmed":
         return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
       case "pending":
@@ -121,7 +130,7 @@ const BookingsScreen = () => {
       case "cancelled":
         return { label: "Cancelled", color: "bg-destructive text-destructive-foreground", pulse: false };
       default:
-        return { label: status || "Order Placed", color: "bg-muted text-muted-foreground", pulse: false };
+        return { label: status ? status.replace(/_/g, ' ') : "Order Placed", color: "bg-muted text-muted-foreground", pulse: false };
     }
   };
 
