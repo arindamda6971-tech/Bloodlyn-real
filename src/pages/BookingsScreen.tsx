@@ -43,7 +43,7 @@ type Order = {
 };
 
 const STATUS_FILTERS = [
-  { key: "all", label: "All Orders" },
+  { key: "all", label: "All" },
   { key: "confirmed", label: "Active" },
   { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
@@ -86,7 +86,12 @@ const BookingsScreen = () => {
 
     if (activeFilter !== "all") {
       if (activeFilter === "confirmed") {
-        result = result.filter((o) => ["confirmed", "pending", "in_progress", "processing"].includes(o.status || ""));
+        result = result.filter((o) => [
+          "confirmed", "pending", "accepted", "assigned", "out_for_collection",
+          "in_progress", "sample_collected", "processing", "lab_processing"
+        ].includes(o.status || ""));
+      } else if (activeFilter === "completed") {
+        result = result.filter((o) => ["completed", "report_ready", "report_delivered"].includes(o.status || ""));
       } else {
         result = result.filter((o) => o.status === activeFilter);
       }
@@ -272,19 +277,18 @@ const BookingsScreen = () => {
         placeholder="Search tests, orders, labs..."
         header={
           <div className="flex flex-col gap-1 mb-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Manage Health</p>
             <h1 className="text-3xl font-black text-foreground tracking-tight">My Orders</h1>
           </div>
         }
         footer={
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 mt-2">
+          <div className="flex w-full gap-1.5 pb-2 mt-2">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.key}
                 onClick={() => setActiveFilter(f.key)}
-                className={`px-5 py-2 rounded-2xl text-[11px] font-black tracking-wider uppercase transition-all duration-300 whitespace-nowrap shadow-sm ${
+                className={`flex-1 py-2 px-1 rounded-xl text-[9px] sm:text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center leading-tight ${
                   activeFilter === f.key
-                    ? "bg-primary text-primary-foreground scale-105"
+                    ? "bg-primary text-primary-foreground scale-[1.02]"
                     : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
                 }`}
               >
