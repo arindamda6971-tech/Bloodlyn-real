@@ -69,6 +69,7 @@ const TrackingScreen = () => {
   const { orderId: paramOrderId } = useParams();
   const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
+  const { supabaseUserId } = useAuth();
 
   const { data, isLoading: loading, error } = useOrderDetails(paramOrderId);
   const order = data?.order;
