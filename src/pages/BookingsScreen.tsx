@@ -24,23 +24,7 @@ import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel } from "@/lib/format-tests";
 import OrderStatusTimeline from "@/components/orders/OrderStatusTimeline";
-
-type Order = {
-  id: string;
-  order_number: string | null;
-  status: string | null;
-  scheduled_date: string | null;
-  scheduled_time_slot: string | null;
-  total: number;
-  created_at: string;
-  payment_status: string | null;
-  test_name: string | null;
-  lab_name: string | null;
-  patient_name?: string | null;
-  family_members?: {
-    full_name: string;
-  } | null;
-};
+import { useOrders, Order } from "@/hooks/useOrders";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All" },
@@ -52,34 +36,11 @@ const STATUS_FILTERS = [
 const BookingsScreen = () => {
   useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders, sample collection status and view past bookings." });
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: orders = [], isLoading: loading } = useOrders();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
   useRealtimeOrders();
-
-  useEffect(() => {
-    if (user) fetchOrders();
-  }, [user]);
-
-  const fetchOrders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setOrders(data as Order[] || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredOrders = useMemo(() => {
     let result = orders;

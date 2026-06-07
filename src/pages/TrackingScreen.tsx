@@ -27,36 +27,8 @@ import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
 
-interface OrderData {
-  id: string;
-  order_number: string | null;
-  status: string | null;
-  scheduled_date: string | null;
-  scheduled_time_slot: string | null;
-  total: number;
-  subtotal: number;
-  discount: number | null;
-  created_at: string;
-  test_name: string | null;
-  lab_name: string | null;
-  payment_status: string | null;
-  report_url: string | null;
-  delivery_partner_name: string | null;
-  delivery_partner_phone: string | null;
-  patient_name?: string | null;
-  family_members?: {
-    full_name: string;
-  } | null;
-  special_instructions?: string | null;
-}
-
-interface OrderItem {
-  id: string;
-  test_id: string | null;
-  package_id: string | null;
-  price: number;
-  quantity: number | null;
-}
+import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
+import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
   { key: "confirmed", label: "Booking Confirmed", icon: CheckCircle },
@@ -95,103 +67,28 @@ function getCompletedIndex(status: string | null): number {
 const TrackingScreen = () => {
   const navigate = useNavigate();
   const { orderId: paramOrderId } = useParams();
-  const { supabaseUserId } = useAuth();
-  const [order, setOrder] = useState<OrderData | null>(null);
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [testNames, setTestNames] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [cancelOpen, setCancelOpen] = useState(false);
+
+  const { data, isLoading: loading, error } = useOrderDetails(paramOrderId);
+  const order = data?.order;
+  const orderItems = data?.items || [];
+  const testNames = data?.testNames || [];
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
-  // Update order status in real-time
+  // Optimistically update order status in real-time
   useEffect(() => {
-    if (latestStatus && order) {
-      setOrder((prev) => (prev ? { ...prev, status: latestStatus } : prev));
-      if (paramOrderId) {
-        supabase
-          .from("orders")
-          .select("*")
-          .eq("id", paramOrderId)
-          .single()
-          .then(({ data }) => {
-            if (data) setOrder(data as OrderData);
-          });
-      }
+    if (latestStatus && paramOrderId) {
+      queryClient.setQueryData(["order", paramOrderId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          order: { ...old.order, status: latestStatus }
+        };
+      });
     }
-  }, [latestStatus]);
-
-  useEffect(() => {
-    if (!paramOrderId) {
-      setError("No order ID provided");
-      setLoading(false);
-      return;
-    }
-
-    const fetchOrder = async () => {
-      try {
-        // Fetch order and order items in parallel
-        const [orderRes, itemsRes] = await Promise.all([
-          supabase.from("orders").select("*").eq("id", paramOrderId).single(),
-          supabase.from("order_items").select("*").eq("order_id", paramOrderId),
-        ]);
-
-        if (orderRes.error || !orderRes.data) {
-          setError("Order not found");
-          return;
-        }
-
-        setOrder(orderRes.data as OrderData);
-
-        if (itemsRes.data && itemsRes.data.length > 0) {
-          setOrderItems(itemsRes.data as OrderItem[]);
-          
-          // Fetch test names for each item
-          const testIds = itemsRes.data
-            .filter((i: any) => i.test_id)
-            .map((i: any) => i.test_id);
-          const packageIds = itemsRes.data
-            .filter((i: any) => i.package_id)
-            .map((i: any) => i.package_id);
-
-          const names: string[] = [];
-
-          if (testIds.length > 0) {
-            const { data: tests } = await supabase
-              .from("tests")
-              .select("id, name")
-              .in("id", testIds);
-            if (tests) tests.forEach((t) => names.push(t.name));
-          }
-
-          if (packageIds.length > 0) {
-            const { data: packages } = await supabase
-              .from("test_packages")
-              .select("id, name")
-              .in("id", packageIds);
-            if (packages) packages.forEach((p) => names.push(p.name));
-          }
-
-          // If no names resolved from DB, fall back to order.test_name
-          if (names.length === 0 && orderRes.data.test_name) {
-            // Split comma-separated test names
-            names.push(...orderRes.data.test_name.split(",").map((n: string) => n.trim()).filter(Boolean));
-          }
-
-          setTestNames(names);
-        } else if (orderRes.data.test_name) {
-          setTestNames(orderRes.data.test_name.split(",").map((n: string) => n.trim()).filter(Boolean));
-        }
-      } catch {
-        setError("Failed to fetch order");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrder();
-  }, [paramOrderId]);
+  }, [latestStatus, paramOrderId, queryClient]);
 
   if (loading) {
     return (
