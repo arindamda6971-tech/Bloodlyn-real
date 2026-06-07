@@ -175,19 +175,60 @@ const HomeScreen = () => {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative z-50">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
             <input
               type="text"
               placeholder="Search health tests..."
               value={searchQuery}
+              onFocus={() => setShowSearchResults(true)}
+              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
               onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
               className="w-full bg-muted/50 rounded-2xl py-3.5 pl-11 pr-10 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground"
             />
             {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2">
+              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1">
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
+            )}
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchQuery.trim() && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/50 shadow-2xl shadow-black/5 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+                {searchResults.length > 0 ? (
+                  <div className="flex flex-col">
+                    {searchResults.map((test) => {
+                      const discount = test.discount_percent || 0;
+                      const finalPrice = Math.round(test.price * (1 - discount / 100));
+                      return (
+                        <button
+                          key={test.id}
+                          onClick={() => {
+                            setSearchQuery("");
+                            navigate(`/test/${test.id}`);
+                          }}
+                          className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center"
+                        >
+                          <div className="flex-1 min-w-0 pr-3">
+                            <p className="text-[13px] font-bold text-foreground leading-tight truncate">{test.name}</p>
+                            {discount > 0 && (
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{test.price}</span>
+                                <span className="text-[10px] font-black text-success">{discount}% OFF</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm font-black text-primary shrink-0">₹{finalPrice}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center">
+                    <p className="text-xs font-bold text-muted-foreground">No tests found for "{searchQuery}"</p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </header>
@@ -248,7 +289,35 @@ const HomeScreen = () => {
                           <p className="text-xl font-black text-foreground">₹{order.total}</p>
                         </div>
                         <button
-                          onClick={() => navigate('/bookings')}
+                          onClick={() => {
+                            const names = splitTestNames(order.test_name);
+                            let added = false;
+                            names.forEach((name) => {
+                              const cleanName = name.trim().toLowerCase();
+                              let foundTest = allTests.find((t) => (t.name || "").toLowerCase() === cleanName);
+                              if (!foundTest && bridgeData?.tests) {
+                                foundTest = bridgeData.tests.find((t) => (t.test_name || "").toLowerCase() === cleanName);
+                              }
+                              if (foundTest) {
+                                addToCart({
+                                  id: foundTest.id,
+                                  name: foundTest.name || foundTest.test_name,
+                                  price: foundTest.price || order.total,
+                                });
+                                added = true;
+                              }
+                            });
+
+                            if (!added) {
+                              // Fallback if tests aren't found in current catalog
+                              addToCart({
+                                id: `reorder-${order.id}`,
+                                name: order.test_name || "Lab Test",
+                                price: order.total,
+                              });
+                            }
+                            navigate('/cart');
+                          }}
                           className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center active:scale-90 transition-transform"
                         >
                           <RotateCw className="w-4 h-4" />
