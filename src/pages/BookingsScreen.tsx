@@ -10,9 +10,9 @@ import {
   TestTube,
   ChevronRight,
   Package,
-  Search,
-  X,
   Filter,
+  ArrowRight,
+  User,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -23,8 +23,7 @@ import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel } from "@/lib/format-tests";
-
-
+import OrderStatusTimeline from "@/components/orders/OrderStatusTimeline";
 
 type Order = {
   id: string;
@@ -37,13 +36,16 @@ type Order = {
   payment_status: string | null;
   test_name: string | null;
   lab_name: string | null;
+  patient_name?: string | null;
+  family_members?: {
+    full_name: string;
+  } | null;
 };
 
 const STATUS_FILTERS = [
-  { key: "all", label: "All" },
-  { key: "confirmed", label: "Confirmed" },
-  { key: "in_progress", label: "Collected" },
-  { key: "completed", label: "Report Ready" },
+  { key: "all", label: "All Orders" },
+  { key: "confirmed", label: "Active" },
+  { key: "completed", label: "Completed" },
   { key: "cancelled", label: "Cancelled" },
 ] as const;
 
@@ -67,10 +69,11 @@ const BookingsScreen = () => {
       const { data, error } = await supabase
         .from("orders")
         .select("*")
+        .eq("user_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders(data as Order[] || []);
     } catch (error) {
       console.error("Error fetching orders:", error);
     } finally {
@@ -83,7 +86,7 @@ const BookingsScreen = () => {
 
     if (activeFilter !== "all") {
       if (activeFilter === "confirmed") {
-        result = result.filter((o) => o.status === "confirmed" || o.status === "pending");
+        result = result.filter((o) => ["confirmed", "pending", "in_progress", "processing"].includes(o.status || ""));
       } else {
         result = result.filter((o) => o.status === activeFilter);
       }
@@ -95,7 +98,8 @@ const BookingsScreen = () => {
         (o) =>
           o.test_name?.toLowerCase().includes(q) ||
           o.order_number?.toLowerCase().includes(q) ||
-          o.lab_name?.toLowerCase().includes(q)
+          o.lab_name?.toLowerCase().includes(q) ||
+          (o.patient_name || o.family_members?.full_name || "").toLowerCase().includes(q)
       );
     }
 
@@ -105,17 +109,19 @@ const BookingsScreen = () => {
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
       case "completed":
-        return { label: "Report Arrived", color: "bg-success/10 text-success" };
+        return { label: "Ready", color: "bg-success text-success-foreground", pulse: false };
       case "in_progress":
-        return { label: "Sample Collected", color: "bg-primary/10 text-primary" };
+        return { label: "Collected", color: "bg-primary text-primary-foreground", pulse: true };
+      case "processing":
+        return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
       case "confirmed":
-        return { label: "Confirmed", color: "bg-primary/10 text-primary" };
+        return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
       case "pending":
-        return { label: "Confirmed", color: "bg-warning/10 text-warning" };
+        return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
       case "cancelled":
-        return { label: "Cancelled", color: "bg-destructive/10 text-destructive" };
+        return { label: "Cancelled", color: "bg-destructive text-destructive-foreground", pulse: false };
       default:
-        return { label: status || "Unknown", color: "bg-muted text-muted-foreground" };
+        return { label: status || "Order Placed", color: "bg-muted text-muted-foreground", pulse: false };
     }
   };
 
@@ -145,64 +151,95 @@ const BookingsScreen = () => {
     const BookingIcon = getBookingIcon(order.order_number);
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
+    const isActive = ["confirmed", "pending", "in_progress", "processing"].includes(order.status || "");
+    const patientName = order.patient_name || (order as any).family_members?.full_name || "Self";
 
     return (
       <motion.div
         key={order.id}
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
-        transition={{ delay: index * 0.04 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 25 }}
         layout
-        className="soft-card cursor-pointer active:scale-[0.98] transition-transform"
+        className="relative group"
         onClick={() => handleOrderClick(order)}
       >
-        <div className="flex items-start gap-3">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <BookingIcon className="w-6 h-6 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <h3 className="font-semibold text-foreground text-sm truncate">{formatTestsLabel(order.test_name, bookingType)}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-[2rem] blur opacity-0 group-active:opacity-100 transition duration-500" />
 
-                  {order.order_number || `#${order.id.slice(0, 8)}`}
-                </p>
-                <p className="text-[11px] text-muted-foreground/90 mt-0.5">
-                  Booked on {format(new Date(order.created_at), "dd MMM yyyy, hh:mm a")}
-                </p>
-                {order.lab_name && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{order.lab_name}</p>
-                )}
+        <div className="relative bg-card border border-border/50 rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all duration-200 overflow-hidden">
+          {/* Top Row: Icon & Status */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10">
+                <BookingIcon className="w-5 h-5 text-primary" />
               </div>
-              <Badge className={`text-[10px] shrink-0 ${statusInfo.color}`}>
-                {statusInfo.label}
+              <div>
+                <h3 className="font-bold text-foreground text-[15px] leading-tight">
+                  {formatTestsLabel(order.test_name, bookingType)}
+                </h3>
+                <div className="flex items-center gap-1.5 mt-1">
+                    <User className="w-3 h-3 text-muted-foreground/60" />
+                    <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase">
+                      Patient: {patientName}
+                    </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1">
+              <Badge variant="secondary" className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wide shadow-sm ${statusInfo.color}`}>
+                <span className="flex items-center gap-1.5">
+                  {statusInfo.pulse && (
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                    </span>
+                  )}
+                  {statusInfo.label}
+                </span>
               </Badge>
             </div>
+          </div>
 
-            <div className="mt-3 space-y-1.5">
-              {order.scheduled_date && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>{format(new Date(order.scheduled_date), "MMM dd, yyyy")}</span>
-                </div>
-              )}
-              {order.scheduled_time_slot && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{order.scheduled_time_slot}</span>
-                </div>
-              )}
+          {/* Middle Section: Lab & Schedule */}
+          <div className="grid grid-cols-2 gap-4 py-4 border-y border-border/40">
+            <div className="space-y-1">
+              <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Diagnostic Center</p>
+              <p className="text-xs font-bold text-foreground/80 truncate">
+                {order.lab_name || "BloodLyn Direct"}
+              </p>
             </div>
-
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-              <span className="font-semibold text-foreground">₹{order.total}</span>
-              <div className="flex items-center gap-1 text-xs text-primary font-medium">
-                {order.status === "completed" ? "View Report" : "Track Order"}
-                <ChevronRight className="w-4 h-4" />
+            <div className="space-y-1 text-right">
+              <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Scheduled For</p>
+              <div className="flex flex-col items-end">
+                <p className="text-xs font-bold text-foreground/80">
+                  {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM, yyyy") : "ASAP"}
+                </p>
+                <p className="text-[10px] text-muted-foreground font-medium italic">
+                  {order.scheduled_time_slot || "60 min express"}
+                </p>
               </div>
             </div>
+          </div>
+
+          {/* Visual Timeline (only for active orders) */}
+          {isActive && (
+            <div className="mt-5 mb-8">
+              <OrderStatusTimeline status={order.status} />
+            </div>
+          )}
+
+          {/* Bottom Row: Total & Action */}
+          <div className="flex items-center justify-between mt-5 pt-1">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Total Amount</span>
+              <span className="text-lg font-black text-foreground">₹{order.total}</span>
+            </div>
+
+            <button className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-primary hover:text-white">
+              {order.status === "completed" ? "VIEW REPORT" : "TRACK STATUS"}
+              <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+            </button>
           </div>
         </div>
       </motion.div>
@@ -214,20 +251,23 @@ const BookingsScreen = () => {
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
-        placeholder="Search by test, order #, or lab..."
+        placeholder="Search tests, orders, labs..."
         header={
-          <h1 className="text-[22px] font-extrabold text-foreground tracking-tight">My Orders</h1>
+          <div className="flex flex-col gap-1 mb-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60">Manage Health</p>
+            <h1 className="text-3xl font-black text-foreground tracking-tight">My Orders</h1>
+          </div>
         }
         footer={
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-2 px-2 mt-2">
             {STATUS_FILTERS.map((f) => (
               <button
                 key={f.key}
                 onClick={() => setActiveFilter(f.key)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-5 py-2 rounded-2xl text-[11px] font-black tracking-wider uppercase transition-all duration-300 whitespace-nowrap shadow-sm ${
                   activeFilter === f.key
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-primary text-primary-foreground scale-105"
+                    : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
                 }`}
               >
                 {f.label}
@@ -237,21 +277,23 @@ const BookingsScreen = () => {
         }
       />
 
-      <div className="px-4 pb-6">
+      <div className="px-5 pb-24 pt-4">
         {/* Orders List */}
-        <div className="mt-4 space-y-3">
-
+        <div className="space-y-5">
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="soft-card animate-pulse">
-                  <div className="flex gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-muted" />
-                    <div className="flex-1 space-y-2">
+                <div key={i} className="bg-card border border-border/50 rounded-[2rem] p-5 h-48 animate-pulse">
+                  <div className="flex gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-muted" />
+                    <div className="flex-1 space-y-3 py-1">
                       <div className="h-4 bg-muted rounded w-3/4" />
                       <div className="h-3 bg-muted rounded w-1/2" />
-                      <div className="h-3 bg-muted rounded w-2/3" />
                     </div>
+                  </div>
+                  <div className="mt-8 grid grid-cols-2 gap-4 pt-4 border-t border-muted/30">
+                    <div className="h-3 bg-muted rounded w-3/4" />
+                    <div className="h-3 bg-muted rounded w-1/2 ml-auto" />
                   </div>
                 </div>
               ))}
@@ -262,29 +304,37 @@ const BookingsScreen = () => {
             </AnimatePresence>
           ) : orders.length > 0 ? (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex flex-col items-center justify-center py-12 text-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
             >
-              <Filter className="w-10 h-10 text-muted-foreground mb-3" />
-              <h3 className="font-semibold text-foreground mb-1">No matching orders</h3>
-              <p className="text-sm text-muted-foreground max-w-[250px]">
-                Try a different search term or filter.
+              <div className="w-20 h-20 rounded-[2rem] bg-muted/30 flex items-center justify-center mb-6">
+                <Filter className="w-8 h-8 text-muted-foreground/40" />
+              </div>
+              <h3 className="text-lg font-black text-foreground mb-2">No Results Found</h3>
+              <p className="text-sm text-muted-foreground max-w-[220px] font-medium leading-relaxed">
+                We couldn't find any orders matching your current filter.
               </p>
             </motion.div>
           ) : (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-12 text-center"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-24 text-center"
             >
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Package className="w-8 h-8 text-muted-foreground" />
+              <div className="w-24 h-24 rounded-[2.5rem] bg-primary/5 flex items-center justify-center mb-8 border border-primary/10 shadow-inner">
+                <Package className="w-10 h-10 text-primary/30" />
               </div>
-              <h3 className="font-semibold text-foreground mb-1">No Orders Yet</h3>
-              <p className="text-sm text-muted-foreground max-w-[250px]">
-                You haven't placed any orders yet. Book a test to get started!
+              <h3 className="text-xl font-black text-foreground mb-3 tracking-tight">Your Health Journey Starts Here</h3>
+              <p className="text-[13px] text-muted-foreground max-w-[260px] font-medium leading-relaxed mb-8">
+                You haven't booked any tests yet. Take the first step towards wellness today!
               </p>
+              <button
+                onClick={() => navigate("/home")}
+                className="bg-primary text-primary-foreground px-8 py-3.5 rounded-[1.5rem] text-[13px] font-black tracking-wider uppercase shadow-xl shadow-primary/20 active:scale-95 transition-transform"
+              >
+                Book Your First Test
+              </button>
             </motion.div>
           )}
         </div>

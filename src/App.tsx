@@ -68,21 +68,15 @@ const CapacitorInitializer = () => {
         if (!Capacitor.isNativePlatform()) return;
         
         const { StatusBar, Style } = await import("@capacitor/status-bar");
-        const { PushNotifications } = await import("@capacitor/push-notifications");
         const { SplashScreen } = await import("@capacitor/splash-screen");
 
         // Set Status Bar to light mode (dark text) and white background
         await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
         await StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
         
-        // Register for push notifications
-        let permStatus = await PushNotifications.checkPermissions().catch(() => ({ receive: 'prompt' as const }));
-        if (permStatus.receive === 'prompt') {
-          permStatus = await PushNotifications.requestPermissions().catch(() => ({ receive: 'denied' as const }));
-        }
-        if (permStatus.receive === 'granted') {
-          await PushNotifications.register().catch(() => {});
-        }
+        /*
+        // Register for push notifications — DISABLED for now to prevent crash without google-services.json
+        */
 
         // Hide splash screen smoothly after React has mounted and layout is done
         setTimeout(() => {
