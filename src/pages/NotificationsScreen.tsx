@@ -66,39 +66,8 @@ const NotificationsScreen = () => {
     <MobileLayout showNav={false}>
       <ScreenHeader
         title="Notifications"
-        rightAction={
-          unreadCount > 0 ? (
-            <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-              <Check className="w-4 h-4 mr-1" />
-              Mark all read
-            </Button>
-          ) : undefined
-        }
       />
 
-      {/* Hero summary */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-4 mt-2 mb-4 rounded-2xl overflow-hidden relative"
-      >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/15 via-primary/5 to-transparent" />
-        <div className="relative px-4 py-4 flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-primary/15 ring-1 ring-primary/30 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-foreground">
-              {unreadCount > 0
-                ? `${unreadCount} new update${unreadCount > 1 ? "s" : ""}`
-                : "You're all caught up"}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Booking, reports & offers — all in one place.
-            </p>
-          </div>
-        </div>
-      </motion.div>
 
       <div className="px-4 pb-10">
         {notifications.length === 0 ? (
