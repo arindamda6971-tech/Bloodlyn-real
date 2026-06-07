@@ -152,7 +152,16 @@ const BookingsScreen = () => {
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
     const isActive = ["confirmed", "pending", "in_progress", "processing"].includes(order.status || "");
-    const patientName = order.patient_name || (order as any).family_members?.full_name || "Self";
+    let patientName = order.patient_name || (order as any).family_members?.full_name;
+    if (!patientName && (order as any).special_instructions) {
+      const match = (order as any).special_instructions.match(/Patient:\s*([^(|]+)/);
+      if (match && match[1]) {
+        patientName = match[1].trim();
+      }
+    }
+    if (!patientName) {
+      patientName = "Self";
+    }
 
     return (
       <motion.div

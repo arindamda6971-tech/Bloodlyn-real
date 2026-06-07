@@ -490,7 +490,7 @@ Deno.serve(async (req) => {
         special_instructions: specialInstructions,
         vendor_id: orderVendorId,
         lab_name: labName || cartItems[0]?.labName || null,
-        test_name: cartItems.length === 1 ? cartItems[0].name : `${cartItems.length} tests`,
+        test_name: cartItems.map(item => item.name).join(", "),
         client_idempotency_key: idempotencyKey || null,
       })
       .select()
