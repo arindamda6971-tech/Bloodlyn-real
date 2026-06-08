@@ -59,8 +59,8 @@ export const useOrderDetails = (orderId?: string) => {
       const testNames: string[] = [];
 
       if (items.length > 0) {
-        const testIds = items.filter((i) => i.test_id).map((i) => i.test_id);
-        const packageIds = items.filter((i) => i.package_id).map((i) => i.package_id);
+        const testIds = items.map((i) => i.test_id).filter((id): id is string => !!id);
+        const packageIds = items.map((i) => i.package_id).filter((id): id is string => !!id);
 
         if (testIds.length > 0) {
           const { data: tests } = await supabase.from("tests").select("id, name").in("id", testIds);
