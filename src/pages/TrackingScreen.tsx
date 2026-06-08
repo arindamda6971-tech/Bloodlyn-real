@@ -395,12 +395,48 @@ const TrackingScreen = () => {
                               variant="outline"
                               size="sm"
                               className="h-8 text-xs"
-                              onClick={() => {
-                                const link = document.createElement("a");
-                                link.href = order.report_url!;
-                                link.download = `report-${order.order_number || order.id.slice(0, 8)}.pdf`;
-                                link.target = "_blank";
-                                link.click();
+                              onClick={async () => {
+                                // Extract file extension from URL, fallback to .pdf
+                                const getExtension = (url: string) => {
+                                  const match = url.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
+                                  if (match && ['pdf', 'jpg', 'jpeg', 'png'].includes(match[1].toLowerCase())) {
+                                    return `.${match[1].toLowerCase()}`;
+                                  }
+                                  return '.pdf';
+                                };
+                                
+                                const ext = getExtension(order.report_url!);
+                                const filename = `report-${order.order_number || order.id.slice(0, 8)}${ext}`;
+
+                                try {
+                                  const response = await fetch(order.report_url!);
+                                  const blob = await response.blob();
+                                  
+                                  let finalExt = ext;
+                                  if (ext === '.pdf' && blob.type.includes('image/jpeg')) finalExt = '.jpg';
+                                  else if (ext === '.pdf' && blob.type.includes('image/png')) finalExt = '.png';
+                                  
+                                  const finalFilename = `report-${order.order_number || order.id.slice(0, 8)}${finalExt}`;
+
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = finalFilename;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                  console.error("Download failed:", error);
+                                  // Fallback
+                                  const link = document.createElement("a");
+                                  link.href = order.report_url!;
+                                  link.target = "_blank";
+                                  link.download = filename;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }
                               }}
                             >
                               <Download className="w-3.5 h-3.5 mr-1" />

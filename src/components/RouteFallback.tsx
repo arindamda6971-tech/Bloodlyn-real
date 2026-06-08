@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -7,17 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
  * visual layout shifts, making transitions feel "Ultra Smooth".
  */
 const RouteFallback = () => {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const t = window.setTimeout(() => setShow(true), 50);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  if (!show) return null;
-
   return (
-    <div className="min-h-screen bg-background max-w-[430px] mx-auto px-4 pb-24">
+    <div className="min-h-screen bg-background max-w-[430px] mx-auto px-4 pb-24 animate-in fade-in duration-300">
       {/* Header Skeleton */}
       <div className="pt-12 pb-6 flex items-center justify-between">
         <div className="space-y-2">

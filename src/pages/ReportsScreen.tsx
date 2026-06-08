@@ -73,12 +73,54 @@ const ReportsScreen = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const handleDownload = (order: ReportOrder) => {
+  const handleDownload = async (order: ReportOrder) => {
     if (!order.report_url) {
       toast.error("Report file not available yet");
       return;
     }
-    window.open(order.report_url, "_blank");
+    
+    // Extract file extension from URL, fallback to .pdf
+    const getExtension = (url: string) => {
+      const match = url.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
+      if (match && ['pdf', 'jpg', 'jpeg', 'png'].includes(match[1].toLowerCase())) {
+        return `.${match[1].toLowerCase()}`;
+      }
+      return '.pdf'; // Default fallback
+    };
+    
+    const ext = getExtension(order.report_url);
+    const filename = `report-${order.order_number || order.id.slice(0, 8)}${ext}`;
+
+    try {
+      const response = await fetch(order.report_url);
+      const blob = await response.blob();
+      
+      // If we didn't find an extension in URL, try to guess from blob type
+      let finalExt = ext;
+      if (ext === '.pdf' && blob.type.includes('image/jpeg')) finalExt = '.jpg';
+      else if (ext === '.pdf' && blob.type.includes('image/png')) finalExt = '.png';
+      
+      const finalFilename = `report-${order.order_number || order.id.slice(0, 8)}${finalExt}`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = finalFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Download failed:", error);
+      // Fallback if fetch fails (e.g., CORS)
+      const link = document.createElement("a");
+      link.href = order.report_url;
+      link.target = "_blank";
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (

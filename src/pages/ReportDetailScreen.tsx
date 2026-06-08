@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import { toast } from "sonner";
 
 const reportDetails = {
   name: "Complete Blood Count (CBC)",
@@ -210,7 +211,12 @@ const ReportDetailScreen = () => {
             <MessageCircle className="w-5 h-5" />
             Consult a Doctor
           </Button>
-          <Button variant="outline" className="w-full" size="lg">
+          <Button variant="outline" className="w-full" size="lg" onClick={() => {
+            toast.success("Downloading PDF...");
+            setTimeout(() => {
+              toast.error("Demo mode: No actual PDF file attached to this mock report.");
+            }, 1000);
+          }}>
             <Download className="w-5 h-5" />
             Download PDF Report
           </Button>

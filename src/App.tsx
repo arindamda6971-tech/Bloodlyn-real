@@ -1,7 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -138,11 +140,15 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 min — avoid redundant refetches
-      gcTime: 10 * 60 * 1000,
+      gcTime: 2 * 60 * 1000, // 2 min - aggressively free RAM since we have disk cache
       refetchOnWindowFocus: false,
       retry: 1,
     },
   },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
 });
 
 const App = () => {
@@ -150,7 +156,7 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
         <ThemeProvider>
           <AuthProvider>
             <CartProvider>
@@ -230,7 +236,7 @@ const App = () => {
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </ErrorBoundary>
   );
 };
