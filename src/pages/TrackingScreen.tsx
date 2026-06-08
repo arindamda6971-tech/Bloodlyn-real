@@ -110,7 +110,7 @@ const TrackingScreen = () => {
           <div className="w-16 h-16 rounded-full bg-destructive/15 flex items-center justify-center mb-4">
             <Clock className="w-8 h-8 text-destructive" />
           </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">{error || "Order not found"}</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-2">{error instanceof Error ? error.message : "Order not found"}</h2>
           <Button variant="soft" onClick={() => navigate("/bookings")} className="mt-4">
             Back to My Orders
           </Button>
