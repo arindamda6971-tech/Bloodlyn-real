@@ -439,10 +439,7 @@ const TrackingScreen = () => {
           userId={supabaseUserId}
           orderStatus={order.status}
           onSuccess={(mode) => {
-            // refresh the order
-            supabase.from("orders").select("*").eq("id", order.id).single().then(({ data }) => {
-              if (data) setOrder(data as OrderData);
-            });
+            queryClient.invalidateQueries({ queryKey: ["order", order.id] });
             if (mode === "cancelled") {
               setTimeout(() => navigate("/bookings"), 800);
             }
