@@ -92,6 +92,15 @@ const CategoriesScreen = () => {
           slug: cat.slug,
         };
       });
+
+      // Add "All Tests" tile at the beginning
+      cats.unshift({
+        icon: TestTubes,
+        name: "All Tests",
+        tests: bridgeData.tests?.length || 0,
+        color: "bg-primary/10 text-primary",
+        slug: "all",
+      });
     } else {
       cats = [];
     }

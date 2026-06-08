@@ -64,6 +64,34 @@ function getCompletedIndex(status: string | null): number {
   }
 }
 
+const getDisplayStatus = (status: string | null) => {
+  switch (status) {
+    case "completed":
+    case "report_ready":
+    case "report_delivered":
+      return { label: "Ready", color: "bg-success text-success-foreground", pulse: false };
+    case "in_progress":
+    case "sample_collected":
+      return { label: "Sample Collected", color: "bg-primary text-primary-foreground", pulse: true };
+    case "assigned":
+    case "out_for_collection":
+      return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
+    case "processing":
+    case "lab_processing":
+      return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
+    case "accepted":
+      return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
+    case "confirmed":
+      return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
+    case "pending":
+      return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
+    case "cancelled":
+      return { label: "Cancelled", color: "bg-destructive text-destructive-foreground", pulse: false };
+    default:
+      return { label: status ? status.replace(/_/g, ' ') : "Order Placed", color: "bg-muted text-muted-foreground", pulse: false };
+  }
+};
+
 const TrackingScreen = () => {
   const navigate = useNavigate();
   const { orderId: paramOrderId } = useParams();
@@ -121,6 +149,7 @@ const TrackingScreen = () => {
 
   const completedIndex = getCompletedIndex(order.status);
   const isCancelled = order.status === "cancelled";
+  const statusInfo = getDisplayStatus(order.status);
 
   let patientName = order.patient_name || order.family_members?.full_name;
   if (!patientName && order.special_instructions) {
@@ -148,8 +177,16 @@ const TrackingScreen = () => {
             <p className="text-xs text-muted-foreground">Order</p>
             <p className="font-bold text-foreground">{order.order_number || `#${order.id.slice(0, 8)}`}</p>
           </div>
-          <Badge className={isCancelled ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}>
-            {isCancelled ? "Cancelled" : workflowSteps[Math.min(completedIndex, 3)]?.label || "Processing"}
+          <Badge variant="secondary" className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wide shadow-sm ${statusInfo.color}`}>
+            <span className="flex items-center gap-1.5">
+              {statusInfo.pulse && (
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                </span>
+              )}
+              {statusInfo.label}
+            </span>
           </Badge>
         </motion.div>
 
@@ -240,7 +277,7 @@ const TrackingScreen = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-foreground">{order.delivery_partner_name}</p>
-                {order.delivery_partner_phone && (
+                {order.delivery_partner_phone && !["completed", "report_ready", "report_delivered"].includes(order.status || "") && (
                   <a
                     href={`tel:${order.delivery_partner_phone}`}
                     className="flex items-center gap-1 text-sm text-primary mt-0.5"
@@ -250,7 +287,7 @@ const TrackingScreen = () => {
                   </a>
                 )}
               </div>
-              {order.delivery_partner_phone && (
+              {order.delivery_partner_phone && !["completed", "report_ready", "report_delivered"].includes(order.status || "") && (
                 <a
                   href={`tel:${order.delivery_partner_phone}`}
                   className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0"

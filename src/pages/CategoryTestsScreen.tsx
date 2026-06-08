@@ -1,12 +1,12 @@
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, FlaskConical, ShoppingCart, Plus } from "lucide-react";
+import { Loader2, FlaskConical, ShoppingCart, Plus, Search } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -24,14 +24,26 @@ const CategoryTestsScreen = () => {
   const [searchParams] = useSearchParams();
   const categorySlug = searchParams.get("slug") || "";
   const categoryName = searchParams.get("name") || "Tests";
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: bridgeData, isLoading, error } = useBridgeTests();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
 
   const tests = useMemo(() => {
     if (!bridgeData?.tests) return [];
-    return bridgeData.tests.filter((t) => t.category === categorySlug);
-  }, [bridgeData, categorySlug]);
+    
+    let filtered = bridgeData.tests;
+    if (categorySlug !== "all") {
+      filtered = filtered.filter((t) => t.category === categorySlug);
+    }
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter((t) => t.test_name.toLowerCase().includes(q));
+    }
+    
+    return filtered;
+  }, [bridgeData, categorySlug, searchQuery]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
@@ -55,6 +67,19 @@ const CategoryTestsScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title={categoryName} />
+
+      <div className="px-4 mt-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={`Search in ${categoryName}...`}
+            className="w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
+          />
+        </div>
+      </div>
 
       <div className="px-4 mt-4 pb-32">
         {isLoading ? (
@@ -121,24 +146,7 @@ const CategoryTestsScreen = () => {
         )}
       </div>
 
-      {/* Cart Footer — show item count only, no price */}
-      {items.length > 0 && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <span className="text-sm font-semibold text-foreground">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-            </div>
-            <Button variant="hero" size="lg" className="py-[12px]" onClick={() => navigate("/cart")}>
-              View Cart
-            </Button>
-          </div>
-        </motion.div>
-      )}
+
 
       {/* Lab Conflict Alert Dialog */}
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>

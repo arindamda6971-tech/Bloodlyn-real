@@ -486,7 +486,7 @@ const LabDetailScreen = () => {
 
   if (isLoading) {
     return (
-      <MobileLayout showNav={false} showFloatingAdd={false}>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Loading..." />
         <div className="flex flex-col items-center justify-center h-[60vh]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -498,7 +498,7 @@ const LabDetailScreen = () => {
 
   if (!lab) {
     return (
-      <MobileLayout showNav={false} showFloatingAdd={false}>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Lab Not Found" />
         <div className="flex flex-col items-center justify-center h-[60vh]">
           <Building2 className="w-16 h-16 text-muted-foreground mb-4" />
@@ -560,7 +560,7 @@ const LabDetailScreen = () => {
   const logoUrl = brandData?.logo || (labFromDb?.logo_url) || null;
 
   return (
-    <MobileLayout showNav={false} showFloatingAdd={false}>
+    <MobileLayout showNav={false}>
       <ScreenHeader title="" />
 
       <div className="pb-24">
@@ -840,23 +840,7 @@ const LabDetailScreen = () => {
         </div>
       </div>
 
-      {/* Floating Cart Button */}
-      {addedTests.size > 0 && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed bottom-4 left-4 right-4 max-w-[398px] mx-auto"
-        >
-          <Button
-            className="w-full gap-2 shadow-lg"
-            size="lg"
-            onClick={() => navigate("/cart")}
-          >
-            <ShoppingCart className="w-5 h-5" />
-            View Cart ({addedTests.size} tests)
-          </Button>
-        </motion.div>
-      )}
+
 
       {/* Lab Conflict Alert Dialog */}
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>

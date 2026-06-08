@@ -106,7 +106,7 @@ const OrderSuccessScreen = () => {
 
   // Success state
   return (
-    <MobileLayout showNav={false}>
+    <MobileLayout showNav={false} showFloatingAdd={false}>
       <div className="relative flex flex-col items-center justify-center min-h-screen px-6 text-center overflow-hidden">
         {/* Confetti */}
         <AnimatePresence>

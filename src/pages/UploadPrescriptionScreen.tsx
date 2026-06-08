@@ -554,26 +554,7 @@ const UploadPrescriptionScreen = () => {
         )}
       </div>
 
-      {/* Cart Footer */}
-      {items.length > 0 && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40 bottom-0 safe-area-bottom"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <span className="text-xs text-muted-foreground">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
-              <p className="text-lg font-bold text-foreground">
-                ₹{items.reduce((sum, i) => sum + i.price * i.quantity, 0)}
-              </p>
-            </div>
-            <Button variant="hero" size="lg" onClick={() => navigate("/cart")}>
-              View Cart
-            </Button>
-          </div>
-        </motion.div>
-      )}
+
     </MobileLayout>
   );
 };

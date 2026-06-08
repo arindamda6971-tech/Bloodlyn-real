@@ -126,7 +126,7 @@ const BookingsScreen = () => {
     const BookingIcon = getBookingIcon(order.order_number);
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
-    const isActive = ["confirmed", "pending", "in_progress", "processing"].includes(order.status || "");
+    const showTimeline = !["completed", "report_ready", "report_delivered", "cancelled"].includes(order.status || "");
     let patientName = order.patient_name || (order as any).family_members?.full_name;
     if (!patientName && (order as any).special_instructions) {
       const match = (order as any).special_instructions.match(/Patient:\s*([^(|]+)/);
@@ -207,7 +207,7 @@ const BookingsScreen = () => {
           </div>
 
           {/* Visual Timeline (only for active orders) */}
-          {isActive && (
+          {showTimeline && (
             <div className="mt-5 mb-8">
               <OrderStatusTimeline status={order.status} />
             </div>

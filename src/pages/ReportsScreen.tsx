@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Download, FileText, Loader2, Calendar } from "lucide-react";
+import { Download, FileText, Loader2, Calendar, Activity, User, Hash, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -17,6 +17,10 @@ interface ReportOrder {
   lab_name: string | null;
   updated_at: string;
   order_number: string | null;
+  scheduled_date: string | null;
+  patient_name?: string | null;
+  family_member_id?: string | null;
+  family_members?: { full_name: string } | null;
 }
 
 const ReportsScreen = () => {
@@ -31,12 +35,30 @@ const ReportsScreen = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("orders")
-        .select("id, test_name, report_url, status, lab_name, updated_at, order_number")
+        .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, family_member_id")
         .eq("user_id", user.id)
         .in("status", ["report_ready", "completed"])
         .order("updated_at", { ascending: false });
 
-      if (!error && data) setOrders(data);
+      if (error) {
+        console.error("Reports fetch error:", error);
+      }
+      
+      const { data: familyMembers } = await supabase
+        .from("family_members")
+        .select("id, full_name")
+        .eq("user_id", user.id);
+        
+      const membersMap = new Map((familyMembers || []).map(m => [m.id, m.full_name]));
+      
+      const mappedOrders = (data || []).map((o: any) => ({
+        ...o,
+        family_members: o.family_member_id && membersMap.has(o.family_member_id) 
+          ? { full_name: membersMap.get(o.family_member_id) } 
+          : null
+      }));
+
+      if (!error && data) setOrders(mappedOrders as any);
       setLoading(false);
     };
     fetchReports();
@@ -86,45 +108,84 @@ const ReportsScreen = () => {
             </div>
           </motion.div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {orders.map((order, i) => (
               <motion.div
                 key={order.id}
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="rounded-2xl border border-border bg-card p-4 shadow-sm"
+                className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
               >
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-5 h-5 text-success" />
+
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 border border-primary/10">
+                    <FileText className="w-6 h-6 text-primary" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm truncate">
+                  <div className="flex-1 min-w-0 pt-0.5">
+                    <h3 className="font-semibold text-foreground text-base leading-tight">
                       {order.test_name || "Health Test"}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(order.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
-                      {order.lab_name && (
-                        <>
-                          <span className="text-border">•</span>
-                          <span className="truncate">{order.lab_name}</span>
-                        </>
-                      )}
+                    
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      {/* Patient Name & Lab */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" />
+                          <span className="font-medium text-foreground truncate max-w-[120px]">
+                            {order.patient_name || order.family_members?.full_name || user?.user_metadata?.full_name || "Patient"}
+                          </span>
+                        </div>
+                        {order.lab_name && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1 h-1 rounded-full bg-border"></div>
+                            <span className="truncate max-w-[120px]">By <span className="font-medium text-foreground">{order.lab_name}</span></span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Order Details */}
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md text-[11px] font-medium text-muted-foreground">
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            {order.scheduled_date 
+                              ? new Date(order.scheduled_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                              : new Date(order.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+                            }
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="mt-3">
-                  <Button
+                
+                <div className="mt-4 pt-4 border-t border-border/50 flex justify-between items-center relative z-10">
+                   <div className="text-xs font-medium text-muted-foreground">
+                      {order.report_url ? (
+                        <span className="text-success flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
+                          Ready to view
+                        </span>
+                      ) : (
+                        <span className="text-warning flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
+                          Processing report...
+                        </span>
+                      )}
+                   </div>
+                   <Button
                     size="sm"
-                    variant={order.report_url ? "default" : "secondary"}
-                    className="w-full gap-2"
+                    className={`gap-2 rounded-full px-5 h-9 font-semibold transition-all ${
+                      order.report_url 
+                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5" 
+                        : "bg-muted text-muted-foreground"
+                    }`}
                     onClick={() => handleDownload(order)}
                     disabled={!order.report_url}
                   >
                     <Download className="w-4 h-4" />
-                    {order.report_url ? "Download Report" : "Report Processing…"}
+                    {order.report_url ? "Download" : "Pending"}
                   </Button>
                 </div>
               </motion.div>

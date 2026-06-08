@@ -9,8 +9,7 @@ const FloatingCartButton = () => {
   
   const hiddenPaths = ["/login", "/onboarding", "/splash", "/cart", "/tracking", "/lab-selection", "/payment"];
   const shouldHide = hiddenPaths.some(path => location.pathname.startsWith(path));
-  
-  if (shouldHide || itemCount === 0) return null;
+  if (shouldHide) return null;
 
   return (
     <button
