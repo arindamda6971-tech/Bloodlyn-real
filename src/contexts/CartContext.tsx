@@ -29,6 +29,7 @@ interface CartContextType {
   updateFamilyMember: (id: string, familyMemberId: string | undefined) => void;
   updateLabForItems: (labId: string, labName: string) => void;
   clearCart: () => void;
+  replaceCart: (newItems: Omit<CartItem, "quantity">[]) => void;
   itemCount: number;
   subtotal: number;
   currentLabId: string | null;
@@ -253,6 +254,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     syncCartToSupabase([]);
   };
 
+  const replaceCart = (newItems: Omit<CartItem, "quantity">[]) => {
+    triggerHaptic('light');
+    const updated = newItems.map((item) => ({ ...item, quantity: 1 }));
+    setItems(updated);
+    // wait for next tick to bypass any isSyncing locks from previous clearCart if any
+    setTimeout(() => {
+      syncCartToSupabase(updated);
+    }, 50);
+  };
+
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -265,7 +276,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         updateQuantity, 
         updateFamilyMember, 
         updateLabForItems,
-        clearCart, 
+        clearCart,
+        replaceCart,
         itemCount, 
         subtotal,
         currentLabId,
@@ -293,6 +305,7 @@ export const useCart = () => {
       updateFamilyMember: () => {},
       updateLabForItems: () => {},
       clearCart: () => {},
+      replaceCart: () => {},
       itemCount: 0,
       subtotal: 0,
       currentLabId: null,

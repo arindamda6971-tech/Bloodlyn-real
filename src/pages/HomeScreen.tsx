@@ -29,6 +29,16 @@ import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Optimized greeting
 const getGreeting = () => {
@@ -60,7 +70,7 @@ const HomeScreen = () => {
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
   const { user } = useAuth();
-  const { addToCart, items } = useCart();
+  const { addToCart, items, clearCart, replaceCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
@@ -68,6 +78,67 @@ const HomeScreen = () => {
   const [showCallSheet, setShowCallSheet] = useState(false);
   const [previousOrders, setPreviousOrders] = useState<PreviousOrder[]>([]);
   const [diagnosticCenters, setDiagnosticCenters] = useState<any[]>([]);
+  const [reorderConfirm, setReorderConfirm] = useState<PreviousOrder | null>(null);
+
+  const handleReorder = async (order: PreviousOrder) => {
+    const toastId = toast.loading("Adding items to cart...");
+    
+    const { data: orderItems, error } = await supabase
+      .from("order_items")
+      .select("*")
+      .eq("order_id", order.id);
+
+    if (error || !orderItems || orderItems.length === 0) {
+      toast.error("Failed to load order items.", { id: toastId });
+      // Fallback
+      replaceCart([{
+        id: `reorder-${order.id}`,
+        name: order.test_name || "Lab Test",
+        price: order.total,
+      }]);
+      navigate('/cart');
+      return;
+    }
+
+    const testIds = orderItems.map((i) => i.test_id).filter(Boolean) as string[];
+    const packageIds = orderItems.map((i) => i.package_id).filter(Boolean) as string[];
+
+    let namesMap: Record<string, string> = {};
+    
+    if (testIds.length > 0) {
+      const { data: tests } = await supabase.from("tests").select("id, name").in("id", testIds);
+      tests?.forEach((t) => (namesMap[t.id] = t.name));
+    }
+    if (packageIds.length > 0) {
+      const { data: packages } = await supabase.from("test_packages").select("id, name").in("id", packageIds);
+      packages?.forEach((p) => (namesMap[p.id] = p.name));
+    }
+
+    const testNamesFromOrder = splitTestNames(order.test_name);
+
+    const newCartItems = orderItems.map((item, index) => {
+      const refId = item.test_id || item.package_id || item.id;
+      let resolvedName = "Lab Test";
+      
+      if (namesMap[refId]) {
+        resolvedName = namesMap[refId];
+      } else if (testNamesFromOrder[index]) {
+        resolvedName = testNamesFromOrder[index];
+      }
+
+      return {
+        id: refId,
+        name: resolvedName,
+        price: Number(item.price) || 0,
+        labId: (item as any).lab_id || undefined,
+        labName: (item as any).lab_name || undefined,
+      };
+    });
+
+    replaceCart(newCartItems);
+    toast.success("Items added to cart!", { id: toastId });
+    navigate('/cart');
+  };
 
   useRealtimeProducts();
   const { data: bridgeData } = useBridgeTests();
@@ -275,50 +346,31 @@ const HomeScreen = () => {
                   const names = splitTestNames(order.test_name);
                   const label = formatTestsLabel(names, "Lab Test");
                   return (
-                    <div key={order.id} className="bg-card border border-border/50 rounded-[2rem] p-5 flex flex-col justify-between shadow-sm active:scale-95 transition-transform" style={{ width: '240px', minHeight: '170px' }}>
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-foreground text-sm line-clamp-2 leading-snug">{label}</h3>
-                          <p className="text-[10px] font-bold text-muted-foreground/60 mt-1 uppercase">{new Date(order.created_at).toLocaleDateString()}</p>
+                    <div key={order.id} className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md active:scale-95 transition-all w-56 relative overflow-hidden z-0">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <h3 className="font-extrabold text-foreground text-[15px] line-clamp-2 leading-tight">{label}</h3>
+                          <p className="text-[10px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">{new Date(order.created_at).toLocaleDateString()}</p>
                         </div>
-                        <span className="text-[9px] font-black text-primary bg-primary/10 px-2 py-1 rounded-lg uppercase">{order.status || "pending"}</span>
+                        <Badge variant="secondary" className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm bg-primary/10 text-primary shrink-0">
+                          {order.status || "pending"}
+                        </Badge>
                       </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <div>
-                          <p className="text-[10px] font-bold text-muted-foreground/40 uppercase">Total</p>
-                          <p className="text-xl font-black text-foreground">₹{order.total}</p>
+                      <div className="flex items-end justify-between mt-2 pt-3 border-t border-border/40">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">Total</span>
+                          <span className="text-lg font-black text-foreground leading-none mt-1">₹{order.total}</span>
                         </div>
                         <button
                           onClick={() => {
-                            const names = splitTestNames(order.test_name);
-                            let added = false;
-                            names.forEach((name) => {
-                              const cleanName = name.trim().toLowerCase();
-                              let foundTest = allTests.find((t) => (t.name || "").toLowerCase() === cleanName);
-                              if (!foundTest && bridgeData?.tests) {
-                                foundTest = bridgeData.tests.find((t) => (t.test_name || "").toLowerCase() === cleanName);
-                              }
-                              if (foundTest) {
-                                addToCart({
-                                  id: foundTest.id,
-                                  name: foundTest.name || foundTest.test_name,
-                                  price: foundTest.price || order.total,
-                                });
-                                added = true;
-                              }
-                            });
-
-                            if (!added) {
-                              // Fallback if tests aren't found in current catalog
-                              addToCart({
-                                id: `reorder-${order.id}`,
-                                name: order.test_name || "Lab Test",
-                                price: order.total,
-                              });
+                            if (items.length > 0) {
+                              setReorderConfirm(order);
+                            } else {
+                              handleReorder(order);
                             }
-                            navigate('/cart');
                           }}
-                          className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center active:scale-90 transition-transform"
+                          className="w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center active:scale-90 transition-transform shadow-md shadow-primary/20 shrink-0"
                         >
                           <RotateCw className="w-4 h-4" />
                         </button>
@@ -382,6 +434,32 @@ const HomeScreen = () => {
             </>
           )}
         </AnimatePresence>
+        {/* Reorder Confirmation Dialog */}
+        <AlertDialog open={!!reorderConfirm} onOpenChange={(open) => !open && setReorderConfirm(null)}>
+          <AlertDialogContent className="w-[90vw] max-w-[400px] rounded-[2rem]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl font-black">Clear Cart?</AlertDialogTitle>
+              <AlertDialogDescription className="text-[13px] font-medium text-muted-foreground leading-relaxed">
+                Reordering these tests will clear out the tests currently in your cart. Do you want to proceed?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-6 flex-row gap-3">
+              <AlertDialogCancel className="mt-0 flex-1 rounded-[1.5rem] h-12 text-sm font-bold border-border/50">Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="flex-1 rounded-[1.5rem] h-12 text-sm font-bold bg-primary text-white"
+                onClick={() => {
+                  if (reorderConfirm) {
+                    handleReorder(reorderConfirm);
+                    setReorderConfirm(null);
+                  }
+                }}
+              >
+                Clear & Reorder
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
       </MobileLayout>
     </div>
   );
