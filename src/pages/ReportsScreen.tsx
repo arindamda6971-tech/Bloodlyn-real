@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, FileText, Loader2, Calendar, Activity, User, Hash, Clock, ChevronDown, FlaskConical, Building2, CreditCard, IndianRupee } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -120,6 +121,15 @@ const ReportsScreen = () => {
     const ext = getExtension(order.report_url);
     const filename = `report-${order.order_number || order.id.slice(0, 8)}${ext}`;
 
+    // Native mobile app webviews cannot download blobs via standard 'a' tags securely.
+    // Let the native OS handle the PDF URL directly.
+    if (Capacitor.isNativePlatform()) {
+      // Opening it in a new window triggers the system browser or native PDF viewer
+      window.open(order.report_url, "_system") || window.open(order.report_url, "_blank");
+      toast.success("Opening report...");
+      return;
+    }
+
     try {
       const response = await fetch(order.report_url);
       const blob = await response.blob();
@@ -139,6 +149,7 @@ const ReportsScreen = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
+      toast.success("Download started");
     } catch (error) {
       console.error("Download failed:", error);
       // Fallback if fetch fails (e.g., CORS)

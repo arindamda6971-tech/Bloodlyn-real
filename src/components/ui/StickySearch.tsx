@@ -46,12 +46,15 @@ const StickySearch = ({
 }: StickySearchProps) => {
   const shellRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const [progress, setProgress] = useState(0); // 0 → expanded, 1 → squeezed
-  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerWrapperRef = useRef<HTMLDivElement>(null);
+  const headerHeightRef = useRef<number>(0);
 
   useEffect(() => {
     if (headerRef.current) {
-      setHeaderHeight(headerRef.current.scrollHeight);
+      headerHeightRef.current = headerRef.current.scrollHeight;
+      if (headerWrapperRef.current) {
+        headerWrapperRef.current.style.height = `${headerHeightRef.current}px`;
+      }
     }
   }, [header]);
 
@@ -78,7 +81,20 @@ const StickySearch = ({
             ? window.scrollY
             : (scroller as HTMLElement).scrollTop;
         const p = Math.min(1, Math.max(0, y / squeezeDistance));
-        setProgress(p);
+        
+        if (headerWrapperRef.current && headerHeightRef.current > 0) {
+          headerWrapperRef.current.style.opacity = `${1 - p}`;
+          headerWrapperRef.current.style.transform = `scale(${1 - p * 0.15})`;
+          headerWrapperRef.current.style.height = `${headerHeightRef.current * (1 - p)}px`;
+        }
+        
+        if (shellRef.current) {
+          if (p > 0.05) {
+            shellRef.current.classList.add("shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]");
+          } else {
+            shellRef.current.classList.remove("shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]");
+          }
+        }
       });
     };
     scroller.addEventListener("scroll", onScroll as EventListener, { passive: true });
@@ -89,24 +105,17 @@ const StickySearch = ({
     };
   }, [squeezeDistance]);
 
-  // Animation tokens derived from scroll progress
-  const headerOpacity = 1 - progress;
-  const headerScale = 1 - progress * 0.15;
-  const shellShadow = progress > 0.05 ? "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]" : "shadow-none";
-
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/40 rounded-b-2xl transition-shadow ${shellShadow} ${className}`}
+      className={`sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/40 rounded-b-2xl transition-shadow shadow-none ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
     >
       {header && (
         <div
+          ref={headerWrapperRef}
           style={{
-            opacity: headerOpacity,
-            transform: `scale(${headerScale})`,
             transformOrigin: "left top",
-            height: headerHeight ? `${headerHeight * (1 - progress)}px` : "auto",
             overflow: "hidden",
             willChange: "opacity, transform, height",
           }}
