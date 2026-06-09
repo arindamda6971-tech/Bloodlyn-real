@@ -33,7 +33,7 @@ const ScreenHeader = ({
     <motion.header
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className={`sticky top-0 z-50 px-4 py-4 ${
+      className={`sticky top-0 z-50 px-4 py-4 rounded-b-2xl ${
         transparent
           ? "bg-transparent"
           : "bg-background/95 backdrop-blur-xl border-b border-border/50"
