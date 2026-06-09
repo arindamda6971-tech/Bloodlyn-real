@@ -1,10 +1,14 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  const { smartAlertsEnabled } = useNotifications();
+
+  if (!smartAlertsEnabled) return null;
 
   return (
     <Sonner

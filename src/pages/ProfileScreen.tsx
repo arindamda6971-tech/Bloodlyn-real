@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 const menuItems = [
   { icon: MapPin, label: "Saved Addresses", path: "/saved-addresses" },
@@ -49,6 +50,7 @@ const ProfileScreen = () => {
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
+  const { smartAlertsEnabled, setSmartAlertsEnabled } = useNotifications();
   const [addressCount, setAddressCount] = useState(0);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [walletTxns, setWalletTxns] = useState<any[]>([]);
@@ -282,7 +284,7 @@ const ProfileScreen = () => {
               </div>
               <span className="font-bold text-foreground tracking-tight">Smart Alerts</span>
             </div>
-            <Switch defaultChecked />
+            <Switch checked={smartAlertsEnabled} onCheckedChange={setSmartAlertsEnabled} />
           </div>
         </div>
 

@@ -21,6 +21,8 @@ interface NotificationContextType {
   markAllAsRead: () => void;
   addNotification: (notification: Omit<Notification, "id" | "read" | "created_at">) => void;
   clearNotifications: () => void;
+  smartAlertsEnabled: boolean;
+  setSmartAlertsEnabled: (enabled: boolean) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -32,6 +34,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const stored = sessionStorage.getItem("bloodlyn-notifications");
     return stored ? JSON.parse(stored) : [];
   });
+
+  const [smartAlertsEnabled, setSmartAlertsEnabled] = useState<boolean>(() => {
+    const stored = localStorage.getItem("bloodlyn-smart-alerts");
+    return stored ? JSON.parse(stored) : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("bloodlyn-smart-alerts", JSON.stringify(smartAlertsEnabled));
+  }, [smartAlertsEnabled]);
 
   // Auto-expire old notifications (7 days) and save to sessionStorage
   useEffect(() => {
@@ -167,6 +178,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addNotification = async (notification: Omit<Notification, "id" | "read" | "created_at">) => {
+    if (!smartAlertsEnabled && notification.type !== "order") {
+      return;
+    }
+
     const id = crypto.randomUUID();
     const newNotification: Notification = {
       ...notification,
@@ -216,6 +231,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         markAllAsRead,
         addNotification,
         clearNotifications,
+        smartAlertsEnabled,
+        setSmartAlertsEnabled,
       }}
     >
       {children}
