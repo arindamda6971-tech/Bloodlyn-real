@@ -16,6 +16,7 @@ import {
   Calendar,
   User,
   XCircle,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -244,6 +245,17 @@ const TrackingScreen = () => {
               <span className="text-sm text-muted-foreground">
                 {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
                 {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
+              </span>
+            </div>
+          )}
+
+          {/* Payment Method */}
+          {order.payment_method && (
+            <div className="flex items-center gap-2 py-2.5 border-t border-border">
+              <CreditCard className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Payment:</span>
+              <span className="text-sm font-semibold text-foreground capitalize">
+                {order.payment_method.replace(/_/g, ' ')}
               </span>
             </div>
           )}

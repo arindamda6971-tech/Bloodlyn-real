@@ -15,6 +15,7 @@ export interface OrderData {
   test_name: string | null;
   lab_name: string | null;
   payment_status: string | null;
+  payment_method: string | null;
   report_url: string | null;
   delivery_partner_name: string | null;
   delivery_partner_phone: string | null;

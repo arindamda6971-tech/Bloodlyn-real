@@ -17,7 +17,10 @@ export function formatTestsLabel(input: string | string[] | null | undefined, fa
     .filter(Boolean);
 
   if (names.length === 0) return fallback;
-  return names.join(", ");
+  if (names.length === 1) return names[0];
+  
+  const othersCount = names.length - 1;
+  return `${names[0]} + ${othersCount} more`;
 }
 
 /** Split a comma-aggregated `order.test_name` field into clean names. */
