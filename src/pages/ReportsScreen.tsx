@@ -42,7 +42,7 @@ const ReportsScreen = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("orders")
-        .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id")
+        .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id, special_instructions")
         .eq("user_id", user.id)
         .in("status", ["report_ready", "completed"])
         .order("updated_at", { ascending: false });
@@ -57,13 +57,23 @@ const ReportsScreen = () => {
         .eq("user_id", user.id);
         
       const membersMap = new Map((familyMembers || []).map(m => [m.id, m.full_name]));
-      
-      const mappedOrders = (data || []).map((o: any) => ({
-        ...o,
-        family_members: o.family_member_id && membersMap.has(o.family_member_id) 
-          ? { full_name: membersMap.get(o.family_member_id) } 
-          : null
-      }));
+
+      const parsePatientName = (instructions?: string | null): string | null => {
+        if (!instructions) return null;
+        const m = instructions.match(/Patient:\s*([^(]+?)\s*\(/);
+        return m ? m[1].trim() : null;
+      };
+
+      const mappedOrders = (data || []).map((o: any) => {
+        const memberName = o.family_member_id && membersMap.has(o.family_member_id)
+          ? membersMap.get(o.family_member_id)
+          : parsePatientName(o.special_instructions);
+        return {
+          ...o,
+          family_members: memberName ? { full_name: memberName } : null,
+        };
+      });
+
 
       if (!error && data) setOrders(mappedOrders as any);
       setLoading(false);
