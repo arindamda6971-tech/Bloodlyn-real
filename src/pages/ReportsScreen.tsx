@@ -96,7 +96,7 @@ const ReportsScreen = () => {
     return (
       order.test_name?.toLowerCase().includes(q) ||
       order.lab_name?.toLowerCase().includes(q) ||
-      order.patient_name?.toLowerCase().includes(q) ||
+      order.family_members?.full_name?.toLowerCase().includes(q) ||
       order.family_members?.full_name?.toLowerCase().includes(q) ||
       order.order_number?.toLowerCase().includes(q)
     );
