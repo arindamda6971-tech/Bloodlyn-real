@@ -104,7 +104,7 @@ const HomeScreen = () => {
     const testIds = orderItems.map((i) => i.test_id).filter(Boolean) as string[];
     const packageIds = orderItems.map((i) => i.package_id).filter(Boolean) as string[];
 
-    let namesMap: Record<string, string> = {};
+    const namesMap: Record<string, string> = {};
     
     if (testIds.length > 0) {
       const { data: tests } = await supabase.from("tests").select("id, name").in("id", testIds);
