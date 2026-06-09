@@ -125,7 +125,10 @@ const ReportsScreen = () => {
     // Let the native OS handle the PDF URL directly.
     if (Capacitor.isNativePlatform()) {
       // Opening it in a new window triggers the system browser or native PDF viewer
-      window.open(order.report_url, "_system") || window.open(order.report_url, "_blank");
+      const opened = window.open(order.report_url, "_system");
+      if (!opened) {
+        window.open(order.report_url, "_blank");
+      }
       toast.success("Opening report...");
       return;
     }
