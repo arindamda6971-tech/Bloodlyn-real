@@ -45,7 +45,15 @@ const StickySearch = ({
   rightSlot,
 }: StickySearchProps) => {
   const shellRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0); // 0 → expanded, 1 → squeezed
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  useEffect(() => {
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.scrollHeight);
+    }
+  }, [header]);
 
   useEffect(() => {
     const el = shellRef.current;
@@ -84,7 +92,6 @@ const StickySearch = ({
   // Animation tokens derived from scroll progress
   const headerOpacity = 1 - progress;
   const headerScale = 1 - progress * 0.15;
-  const headerMaxHeight = header ? (1 - progress) * 200 : 0; // collapse smoothly
   const shellShadow = progress > 0.05 ? "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]" : "shadow-none";
 
   return (
@@ -99,18 +106,18 @@ const StickySearch = ({
             opacity: headerOpacity,
             transform: `scale(${headerScale})`,
             transformOrigin: "left top",
-            maxHeight: headerMaxHeight,
+            height: headerHeight ? `${headerHeight * (1 - progress)}px` : "auto",
             overflow: "hidden",
-            transition: "opacity 80ms linear, transform 80ms linear, max-height 120ms ease-out",
-            willChange: "opacity, transform, max-height",
+            willChange: "opacity, transform, height",
           }}
-          className="px-4 pt-3"
         >
-          {header}
+          <div ref={headerRef} className="px-4 pt-3 pb-1">
+            {header}
+          </div>
         </div>
       )}
 
-      <div className="px-4 pt-3 pb-3">
+      <div className="px-4 pt-2 pb-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
