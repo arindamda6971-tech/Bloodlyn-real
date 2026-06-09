@@ -15,7 +15,7 @@ const BottomNavigation = () => {
 
   return (
      <nav
-       className="fixed bottom-0 left-0 right-0 z-50 w-full max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] touch-none select-none"
+       className="fixed bottom-0 left-0 right-0 z-50 w-full max-w-[430px] mx-auto bg-card border-t border-border rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] touch-none select-none"
        style={{
          paddingBottom: 'calc(env(safe-area-inset-bottom, 8px) + 4px)',
        }}
