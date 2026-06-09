@@ -29,6 +29,7 @@ import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
+import StickySearch from "@/components/ui/StickySearch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -219,53 +220,41 @@ const HomeScreen = () => {
 
       <MobileLayout>
         {/* Simplified Header for Performance */}
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-6 py-4 transform-gpu">
-          <div className="flex items-center justify-between mb-4 mt-2">
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{greeting}</p>
-              <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">Welcome back 👋</h1>
+        <StickySearch
+          value={searchQuery}
+          onChange={(v) => { setSearchQuery(v); setShowSearchResults(true); }}
+          onFocus={() => setShowSearchResults(true)}
+          placeholder="Search health tests..."
+          header={
+            <div className="flex items-center justify-between mb-2 mt-2">
+              <div className="min-w-0">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{greeting}</p>
+                <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">Welcome back 👋</h1>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <button
+                  className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center active:scale-90 transition-transform"
+                  onClick={() => setShowCallSheet(true)}
+                >
+                  <Phone className="w-5 h-5 text-foreground" />
+                </button>
+                <button
+                  className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+                  onClick={() => navigate("/notifications")}
+                >
+                  <Bell className="w-5 h-5 text-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-primary-foreground ring-2 ring-background">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5">
-              <button
-                className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center active:scale-90 transition-transform"
-                onClick={() => setShowCallSheet(true)}
-              >
-                <Phone className="w-5 h-5 text-foreground" />
-              </button>
-              <button
-                className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
-                onClick={() => navigate("/notifications")}
-              >
-                <Bell className="w-5 h-5 text-foreground" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-primary-foreground ring-2 ring-background">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="relative z-50">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-            <input
-              type="text"
-              placeholder="Search health tests..."
-              value={searchQuery}
-              onFocus={() => setShowSearchResults(true)}
-              onBlur={() => setTimeout(() => setShowSearchResults(false), 200)}
-              onChange={(e) => { setSearchQuery(e.target.value); setShowSearchResults(true); }}
-              className="w-full bg-muted/50 rounded-2xl py-3.5 pl-11 pr-10 text-sm font-bold border-none outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground"
-            />
-            {searchQuery && (
-              <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 p-1">
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            )}
-
-            {/* Search Results Dropdown */}
-            {showSearchResults && searchQuery.trim() && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border/50 shadow-2xl shadow-black/5 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+          }
+          results={
+            showSearchResults && searchQuery.trim() ? (
+              <div className="bg-card border border-border/50 shadow-2xl shadow-black/5 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
                 {searchResults.length > 0 ? (
                   <div className="flex flex-col">
                     {searchResults.map((test) => {
@@ -300,9 +289,9 @@ const HomeScreen = () => {
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </header>
+            ) : null
+          }
+        />
 
         <LocationChip />
 

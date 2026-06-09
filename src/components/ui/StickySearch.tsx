@@ -55,7 +55,7 @@ const StickySearch = ({
     while (parent) {
       const style = window.getComputedStyle(parent);
       const oy = style.overflowY;
-      if ((oy === "auto" || oy === "scroll") && parent.scrollHeight > parent.clientHeight) {
+      if (oy === "auto" || oy === "scroll") {
         break;
       }
       parent = parent.parentElement;
