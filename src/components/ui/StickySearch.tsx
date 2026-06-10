@@ -3,17 +3,12 @@ import { Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface StickySearchProps {
-  /** Controlled input value */
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
-  /** Optional header content that squeezes / fades on scroll (title row, chips, etc) */
   header?: ReactNode;
-  /** Optional element rendered BELOW the search input but still inside the sticky shell (e.g. filter chips) */
   footer?: ReactNode;
-  /** Dropdown / results portal rendered absolutely below the input */
   results?: ReactNode;
-  /** Scroll distance over which the header squeezes (px) */
   squeezeDistance?: number;
   className?: string;
   onClear?: () => void;
@@ -22,14 +17,10 @@ interface StickySearchProps {
   rightSlot?: ReactNode;
 }
 
-/**
- * Industry-standard sticky search bar with a "squeeze" animation:
- * - When the user scrolls inside the nearest `overflow-y-auto` ancestor, the
- *   `header` slot smoothly collapses (height + opacity + scale) and the search
- *   input rises into the visible chrome.
- * - GPU-only transforms + opacity → 60fps on mobile.
- * - Works inside MobileLayout's PullToRefresh container (no dependency on window scroll).
- */
+const SHADOW_CLASS = "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]";
+const THRESHOLD_ON = 8;
+const THRESHOLD_OFF = 2;
+
 const StickySearch = ({
   value,
   onChange,
@@ -37,7 +28,6 @@ const StickySearch = ({
   header,
   footer,
   results,
-  squeezeDistance = 80,
   className = "",
   onClear,
   onFocus,
@@ -48,6 +38,14 @@ const StickySearch = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const headerWrapperRef = useRef<HTMLDivElement>(null);
   const headerHeightRef = useRef<number>(0);
+
+  // Dev-only render counter to confirm re-renders are NOT happening during scroll.
+  const renderCountRef = useRef(0);
+  if (import.meta.env?.DEV) {
+    renderCountRef.current += 1;
+    // eslint-disable-next-line no-console
+    console.debug(`[StickySearch] render #${renderCountRef.current}`);
+  }
 
   useEffect(() => {
     if (headerRef.current) {
@@ -61,38 +59,56 @@ const StickySearch = ({
   useEffect(() => {
     const el = shellRef.current;
     if (!el) return;
-    // Find nearest scrollable ancestor
+
+    // Respect prefers-reduced-motion: skip the scroll listener entirely so
+    // there is zero scroll-driven visual feedback for opt-out users.
+    const mql =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+    if (mql?.matches) {
+      el.classList.remove(SHADOW_CLASS);
+      return;
+    }
+
     let parent: HTMLElement | null = el.parentElement;
     while (parent) {
       const style = window.getComputedStyle(parent);
       const oy = style.overflowY;
-      if (oy === "auto" || oy === "scroll") {
-        break;
-      }
+      if (oy === "auto" || oy === "scroll") break;
       parent = parent.parentElement;
     }
     const scroller: HTMLElement | Window = parent || window;
-    const SHADOW_CLASS = "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]";
-    const THRESHOLD_ON = 8;
-    const THRESHOLD_OFF = 2; // hysteresis to avoid flicker at boundary
+
     let raf = 0;
     let ticking = false;
     let hasShadow = false;
+    let scrollEvents = 0;
+    let domWrites = 0;
+
     const apply = () => {
       ticking = false;
       const y =
         scroller === window
           ? window.scrollY
           : (scroller as HTMLElement).scrollTop;
-      const el = shellRef.current;
-      if (!el) return;
+      const node = shellRef.current;
+      if (!node) return;
       const next = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
-      if (next === hasShadow) return; // no-op: skip DOM write
+      if (next === hasShadow) return;
       hasShadow = next;
-      if (next) el.classList.add(SHADOW_CLASS);
-      else el.classList.remove(SHADOW_CLASS);
+      domWrites += 1;
+      if (next) node.classList.add(SHADOW_CLASS);
+      else node.classList.remove(SHADOW_CLASS);
+      if (import.meta.env?.DEV) {
+        // eslint-disable-next-line no-console
+        console.debug(
+          `[StickySearch] shadow=${next} domWrites=${domWrites} scrollEvents=${scrollEvents}`,
+        );
+      }
     };
     const onScroll = () => {
+      scrollEvents += 1;
       if (ticking) return;
       ticking = true;
       raf = requestAnimationFrame(apply);
@@ -105,21 +121,17 @@ const StickySearch = ({
     };
   }, []);
 
-
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/40 rounded-b-2xl transition-shadow shadow-none ${className}`}
+      className={`sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/40 rounded-b-2xl motion-safe:transition-shadow shadow-none ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
+      data-testid="sticky-search-shell"
     >
       {header && (
         <div
           ref={headerWrapperRef}
-          style={{
-            transformOrigin: "left top",
-            overflow: "hidden",
-            willChange: "opacity, transform, height",
-          }}
+          style={{ transformOrigin: "left top", overflow: "hidden" }}
         >
           <div ref={headerRef} className="px-4 pt-3 pb-1">
             {header}
