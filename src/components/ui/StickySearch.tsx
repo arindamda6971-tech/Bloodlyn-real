@@ -73,12 +73,6 @@ const StickySearch = ({
     }
     const scroller: HTMLElement | Window = parent || window;
     let raf = 0;
-    let collapsed = false;
-    // Apply smooth CSS transitions so the discrete state change still animates
-    if (headerWrapperRef.current) {
-      headerWrapperRef.current.style.transition =
-        "height 220ms ease, opacity 200ms ease, transform 220ms ease";
-    }
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
@@ -86,23 +80,6 @@ const StickySearch = ({
           scroller === window
             ? window.scrollY
             : (scroller as HTMLElement).scrollTop;
-        // Discrete collapsed state with hysteresis — prevents the
-        // continuous-resize feedback loop that caused the "vibration".
-        const shouldCollapse = collapsed
-          ? y > squeezeDistance * 0.4
-          : y > squeezeDistance * 0.8;
-
-        if (shouldCollapse !== collapsed) {
-          collapsed = shouldCollapse;
-          if (headerWrapperRef.current && headerHeightRef.current > 0) {
-            headerWrapperRef.current.style.opacity = collapsed ? "0" : "1";
-            headerWrapperRef.current.style.transform = collapsed ? "scale(0.85)" : "scale(1)";
-            headerWrapperRef.current.style.height = collapsed
-              ? "0px"
-              : `${headerHeightRef.current}px`;
-          }
-        }
-
         if (shellRef.current) {
           if (y > 4) {
             shellRef.current.classList.add("shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]");
@@ -119,6 +96,7 @@ const StickySearch = ({
       scroller.removeEventListener("scroll", onScroll as EventListener);
     };
   }, [squeezeDistance]);
+
 
   return (
     <div
