@@ -72,30 +72,38 @@ const StickySearch = ({
       parent = parent.parentElement;
     }
     const scroller: HTMLElement | Window = parent || window;
+    const SHADOW_CLASS = "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]";
+    const THRESHOLD_ON = 8;
+    const THRESHOLD_OFF = 2; // hysteresis to avoid flicker at boundary
     let raf = 0;
+    let ticking = false;
+    let hasShadow = false;
+    const apply = () => {
+      ticking = false;
+      const y =
+        scroller === window
+          ? window.scrollY
+          : (scroller as HTMLElement).scrollTop;
+      const el = shellRef.current;
+      if (!el) return;
+      const next = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
+      if (next === hasShadow) return; // no-op: skip DOM write
+      hasShadow = next;
+      if (next) el.classList.add(SHADOW_CLASS);
+      else el.classList.remove(SHADOW_CLASS);
+    };
     const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const y =
-          scroller === window
-            ? window.scrollY
-            : (scroller as HTMLElement).scrollTop;
-        if (shellRef.current) {
-          if (y > 4) {
-            shellRef.current.classList.add("shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]");
-          } else {
-            shellRef.current.classList.remove("shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]");
-          }
-        }
-      });
+      if (ticking) return;
+      ticking = true;
+      raf = requestAnimationFrame(apply);
     };
     scroller.addEventListener("scroll", onScroll as EventListener, { passive: true });
-    onScroll();
+    apply();
     return () => {
       cancelAnimationFrame(raf);
       scroller.removeEventListener("scroll", onScroll as EventListener);
     };
-  }, [squeezeDistance]);
+  }, []);
 
 
   return (
