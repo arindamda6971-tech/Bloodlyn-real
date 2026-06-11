@@ -60,16 +60,11 @@ const StickySearch = ({
     const el = shellRef.current;
     if (!el) return;
 
-    // Respect prefers-reduced-motion: skip the scroll listener entirely so
-    // there is zero scroll-driven visual feedback for opt-out users.
     const mql =
       typeof window !== "undefined" && typeof window.matchMedia === "function"
         ? window.matchMedia("(prefers-reduced-motion: reduce)")
         : null;
-    if (mql?.matches) {
-      el.classList.remove(SHADOW_CLASS);
-      return;
-    }
+    const reducedMotion = mql?.matches || false;
 
     let parent: HTMLElement | null = el.parentElement;
     while (parent) {
@@ -88,8 +83,9 @@ const StickySearch = ({
       scroller === window
         ? window.scrollY
         : (scroller as HTMLElement).scrollTop;
+    let accumulatedDelta = 0;
     const HIDE_AFTER = 80; // start hiding only after scrolling past this
-    const DELTA = 6; // ignore tiny scroll jitter
+    const THRESHOLD = 20; // pixels of continuous scroll needed to trigger
 
     const apply = () => {
       ticking = false;
@@ -108,25 +104,37 @@ const StickySearch = ({
         else node.classList.remove(SHADOW_CLASS);
       }
 
-      // Flipkart-style hide/show
+      // True hysteresis: accumulate scroll distance in the same direction
       const diff = y - lastY;
-      if (Math.abs(diff) > DELTA) {
+      lastY = y;
+
+      if ((diff > 0 && accumulatedDelta > 0) || (diff < 0 && accumulatedDelta < 0)) {
+        accumulatedDelta += diff;
+      } else {
+        accumulatedDelta = diff; // Direction reversed, reset accumulation
+      }
+
+      if (Math.abs(accumulatedDelta) > THRESHOLD) {
         let nextHidden = hidden;
-        if (diff > 0 && y > HIDE_AFTER) nextHidden = true; // scrolling down
-        else if (diff < 0) nextHidden = false; // scrolling up
+        if (accumulatedDelta > 0 && y > HIDE_AFTER) {
+          nextHidden = true; // Scrolled down significantly
+        } else if (accumulatedDelta < 0) {
+          nextHidden = false; // Scrolled up significantly
+        }
+
         if (nextHidden !== hidden) {
           hidden = nextHidden;
           node.style.transform = hidden
             ? `translate3d(0, -${node.offsetHeight}px, 0)`
             : "translate3d(0, 0, 0)";
         }
-        lastY = y;
       }
       if (y <= 0) {
         if (hidden) {
           hidden = false;
           node.style.transform = "translate3d(0, 0, 0)";
         }
+        accumulatedDelta = 0;
       }
     };
     const onScroll = () => {
@@ -136,7 +144,9 @@ const StickySearch = ({
     };
     const node = shellRef.current;
     if (node) {
-      node.style.transition = "transform 250ms cubic-bezier(0.22, 1, 0.36, 1)";
+      if (!reducedMotion) {
+        node.style.transition = "transform 250ms cubic-bezier(0.22, 1, 0.36, 1)";
+      }
       node.style.willChange = "transform";
     }
     scroller.addEventListener("scroll", onScroll as EventListener, { passive: true });
