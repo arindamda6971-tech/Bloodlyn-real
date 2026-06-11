@@ -100,12 +100,13 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
       {/* Content container */}
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto overscroll-none"
+        className="h-full overflow-y-auto overscroll-contain"
         style={{
           transform: isActive ? `translateY(${pullDistance}px)` : undefined,
           transition: isPulling.current ? 'none' : 'transform 0.3s ease-out',
           willChange: isActive ? 'transform' : undefined,
-        }}
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties}
       >
         {children}
       </div>
