@@ -37,11 +37,15 @@ jobs:
 
       - name: Build Android AAB
         working-directory: ./android
-        run: ./gradlew bundleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew bundleRelease
 
       - name: Build Android APK
         working-directory: ./android
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
 
       - name: Upload Android AAB Artifact
         uses: actions/upload-artifact@v3

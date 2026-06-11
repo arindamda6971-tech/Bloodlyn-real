@@ -1,9 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
-import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -44,19 +42,7 @@ const safeImport = <T,>(factory: () => Promise<T>): Promise<T> =>
     if (Date.now() - last < 60_000) throw err;
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
 
-    try {
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-      if ("serviceWorker" in navigator) {
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
-      }
-    } catch {
-      /* ignore */
-    }
-    // Hard reload bypassing cache
+    // Hard reload bypassing cache without destroying all caches
     window.location.replace(window.location.pathname + window.location.search);
     // Return a never-resolving promise so React's Suspense doesn't try to render
     return new Promise<T>(() => {});
@@ -147,16 +133,14 @@ const queryClient = new QueryClient({
   },
 });
 
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
-});
+
 
 const App = () => {
   useAppLifecycle();
 
   return (
     <ErrorBoundary>
-      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister }}>
+      <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
             <CartProvider>
@@ -236,7 +220,7 @@ const App = () => {
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>
-      </PersistQueryClientProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 };

@@ -49,6 +49,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const isInitialized = useRef(false);
   const isSyncing = useRef(false);
+  const pendingSyncItems = useRef<CartItem[] | null>(null);
 
   // Load cart from Supabase
   const loadCartFromSupabase = useCallback(async () => {
@@ -95,49 +96,70 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // Sync items to Supabase
+  // Sync items to Supabase safely (Insert first, then delete old)
   const syncItemsToSupabase = async (cartItems: CartItem[], userId: string) => {
     try {
-      // Delete all existing cart items for this user
-      await supabase
-        .from("cart_items")
-        .delete()
-        .eq("user_id", userId);
-
-      // Insert new items if any
-      if (cartItems.length > 0) {
-        const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-        const cartItemsToInsert = cartItems.map((item) => ({
-          user_id: userId,
-          // Always null test_id to avoid FK constraint issues with bridge/external test IDs
-          test_id: null,
-          test_name: item.name,
-          price: item.price,
-          lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
-          lab_name: item.labName || null,
-          quantity: item.quantity,
-          family_member_id: item.familyMemberId || null,
-        } as any));
-
-        const { error } = await supabase
-          .from("cart_items")
-          .insert(cartItemsToInsert);
-
-        if (error) {
-          console.error("Error syncing cart:", error);
-        }
+      if (cartItems.length === 0) {
+        // If cart is empty, simply delete all for user
+        await supabase.from("cart_items").delete().eq("user_id", userId);
+        return;
       }
+
+      const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+      const cartItemsToInsert = cartItems.map((item) => ({
+        user_id: userId,
+        test_id: null,
+        test_name: item.name,
+        price: item.price,
+        lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
+        lab_name: item.labName || null,
+        quantity: item.quantity,
+        family_member_id: item.familyMemberId || null,
+      } as any));
+
+      const { data, error } = await supabase
+        .from("cart_items")
+        .insert(cartItemsToInsert)
+        .select("id");
+
+      if (error) {
+        console.error("Error syncing cart (insert failed):", error);
+        return; // Abort, do not delete existing items to prevent data loss
+      }
+
+      // If insert succeeded, delete old items that don't match the new IDs
+      if (data && data.length > 0) {
+        const newIds = data.map(d => d.id);
+        await supabase
+          .from("cart_items")
+          .delete()
+          .eq("user_id", userId)
+          .not("id", "in", `(${newIds.join(',')})`);
+      }
+
     } catch (err) {
       console.error("Error syncing cart:", err);
     }
   };
 
-  // Sync cart to Supabase when items change
+  // Sync cart to Supabase when items change with queueing
   const syncCartToSupabase = useCallback(async (newItems: CartItem[]) => {
-    if (!user || !isInitialized.current || isSyncing.current) return;
+    if (!user || !isInitialized.current) return;
+
+    if (isSyncing.current) {
+      pendingSyncItems.current = newItems;
+      return;
+    }
 
     isSyncing.current = true;
-    await syncItemsToSupabase(newItems, user.id);
+    let itemsToSync: CartItem[] | null = newItems;
+    
+    while (itemsToSync) {
+      pendingSyncItems.current = null;
+      await syncItemsToSupabase(itemsToSync, user.id);
+      itemsToSync = pendingSyncItems.current;
+    }
+
     isSyncing.current = false;
   }, [user]);
 
