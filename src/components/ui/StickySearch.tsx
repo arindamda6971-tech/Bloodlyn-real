@@ -83,8 +83,13 @@ const StickySearch = ({
     let raf = 0;
     let ticking = false;
     let hasShadow = false;
-    let scrollEvents = 0;
-    let domWrites = 0;
+    let hidden = false;
+    let lastY =
+      scroller === window
+        ? window.scrollY
+        : (scroller as HTMLElement).scrollTop;
+    const HIDE_AFTER = 80; // start hiding only after scrolling past this
+    const DELTA = 6; // ignore tiny scroll jitter
 
     const apply = () => {
       ticking = false;
@@ -94,25 +99,46 @@ const StickySearch = ({
           : (scroller as HTMLElement).scrollTop;
       const node = shellRef.current;
       if (!node) return;
-      const next = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
-      if (next === hasShadow) return;
-      hasShadow = next;
-      domWrites += 1;
-      if (next) node.classList.add(SHADOW_CLASS);
-      else node.classList.remove(SHADOW_CLASS);
-      if (import.meta.env?.DEV) {
-        // eslint-disable-next-line no-console
-        console.debug(
-          `[StickySearch] shadow=${next} domWrites=${domWrites} scrollEvents=${scrollEvents}`,
-        );
+
+      // Shadow (hysteresis)
+      const nextShadow = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
+      if (nextShadow !== hasShadow) {
+        hasShadow = nextShadow;
+        if (nextShadow) node.classList.add(SHADOW_CLASS);
+        else node.classList.remove(SHADOW_CLASS);
+      }
+
+      // Flipkart-style hide/show
+      const diff = y - lastY;
+      if (Math.abs(diff) > DELTA) {
+        let nextHidden = hidden;
+        if (diff > 0 && y > HIDE_AFTER) nextHidden = true; // scrolling down
+        else if (diff < 0) nextHidden = false; // scrolling up
+        if (nextHidden !== hidden) {
+          hidden = nextHidden;
+          node.style.transform = hidden
+            ? `translate3d(0, -${node.offsetHeight}px, 0)`
+            : "translate3d(0, 0, 0)";
+        }
+        lastY = y;
+      }
+      if (y <= 0) {
+        if (hidden) {
+          hidden = false;
+          node.style.transform = "translate3d(0, 0, 0)";
+        }
       }
     };
     const onScroll = () => {
-      scrollEvents += 1;
       if (ticking) return;
       ticking = true;
       raf = requestAnimationFrame(apply);
     };
+    const node = shellRef.current;
+    if (node) {
+      node.style.transition = "transform 250ms cubic-bezier(0.22, 1, 0.36, 1)";
+      node.style.willChange = "transform";
+    }
     scroller.addEventListener("scroll", onScroll as EventListener, { passive: true });
     apply();
     return () => {
