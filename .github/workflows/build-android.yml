@@ -38,12 +38,14 @@ jobs:
       - name: Build Android AAB
         working-directory: ./android
         run: |
+          sed -i 's/\r$//' ./gradlew
           chmod +x ./gradlew
           ./gradlew bundleRelease
 
       - name: Build Android APK
         working-directory: ./android
         run: |
+          sed -i 's/\r$//' ./gradlew
           chmod +x ./gradlew
           ./gradlew assembleRelease
 
