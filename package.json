@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "test": "vitest",
+    "test:e2e": "playwright test",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -80,6 +81,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.3.1",
     "@eslint/js": "^9.32.0",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.0.0",
     "@testing-library/react": "^14.0.0",
