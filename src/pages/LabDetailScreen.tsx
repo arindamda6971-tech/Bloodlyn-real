@@ -331,6 +331,11 @@ const LabDetailScreen = () => {
 
           let allDynamicTests: DynamicTest[] = [];
 
+          // Only show tests that the vendor has explicitly activated in the
+          // BloodLyn Partner dashboard (products table with availability=true).
+          // No fallback to preloaded `available_tests` or hardcoded catalog —
+          // a brand-new lab must start with an empty test list until they
+          // activate tests from their partner app.
           if (data.vendor_id) {
             const { data: products } = await supabase
               .from('products')
@@ -349,24 +354,7 @@ const LabDetailScreen = () => {
             }
           }
 
-          if (allDynamicTests.length === 0) {
-            const availableTests = data.available_tests as string[] | null;
-            const pricing = data.pricing as Record<string, number> | null;
-
-            if (availableTests && availableTests.length > 0 && pricing) {
-              allDynamicTests = availableTests.map((testName, idx) => ({
-                id: `dc-${data.id}-${idx}`,
-                name: testName,
-                price: pricing[testName] || 299,
-                category: categorizeTest(testName),
-                popular: idx < 3,
-              }));
-            }
-          }
-
-          if (allDynamicTests.length > 0) {
-            setDynamicTests(allDynamicTests);
-          }
+          setDynamicTests(allDynamicTests);
         }
       } catch (err) {
         console.error('Error fetching lab:', err);
