@@ -814,12 +814,23 @@ const LabDetailScreen = () => {
             })}
 
             {filteredTests.length === 0 && (
-              <div className="text-center py-12">
-                <Beaker className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  {activeTab === "packages"
-                    ? "This lab hasn't published any health packages yet."
-                    : "No tests found matching your search"}
+              <div className="text-center py-12 px-6">
+                <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+                  <Beaker className="w-8 h-8 text-warning" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {searchQuery
+                    ? "No matching tests"
+                    : activeTab === "packages"
+                      ? "No health packages yet"
+                      : "No tests activated yet"}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
+                  {searchQuery
+                    ? "Try a different search term."
+                    : activeTab === "packages"
+                      ? "This lab hasn't published any health packages yet."
+                      : "This lab hasn't activated any tests from their partner dashboard yet. Please check back soon."}
                 </p>
               </div>
             )}
