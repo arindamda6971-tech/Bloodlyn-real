@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { User, Camera, Mail, Phone, Calendar, UserCircle2, Droplets, Loader2 } from "lucide-react";
@@ -41,13 +41,7 @@ const EditProfileScreen = () => {
     getSupabaseUser();
   }, []);
 
-  useEffect(() => {
-    if (supabaseUserId) {
-      fetchProfile();
-    }
-  }, [supabaseUserId]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     if (!supabaseUserId) return;
     
     const { data } = await supabase
@@ -75,7 +69,13 @@ const EditProfileScreen = () => {
         blood_group: "",
       });
     }
-  };
+  }, [supabaseUserId, user]);
+
+  useEffect(() => {
+    if (supabaseUserId) {
+      fetchProfile();
+    }
+  }, [supabaseUserId, fetchProfile]);
 
   const handleSave = async () => {
     if (!supabaseUserId) {

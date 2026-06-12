@@ -95,22 +95,6 @@ const UploadPrescriptionScreen = () => {
     fetchAppTests();
   }, [bridgeData]);
 
-  // Load saved prescription on mount
-  useEffect(() => {
-    if (prescription && !isPrescriptionLoading) {
-      setUploadedImage(prescription.image_url);
-      if (prescription.analysis_result) {
-        const result = prescription.analysis_result as AIAnalysisResult;
-        if (result.tests && result.tests.length > 0) {
-          matchAITestsToApp(result.tests);
-          setAnalysisNotes(result.notes || "");
-          setConfidence(result.confidence);
-          setAnalysisComplete(true);
-        }
-      }
-    }
-  }, [prescription, isPrescriptionLoading, appTests, matchAITestsToApp]);
-
   const matchAITestsToApp = useCallback((aiTests: AIAnalysisResult["tests"]) => {
     const matched: MatchedTest[] = aiTests.map((aiTest) => {
       const aiName = aiTest.name.toLowerCase();
@@ -143,6 +127,23 @@ const UploadPrescriptionScreen = () => {
     setSelectedTestIds(new Set(matched.filter((t) => t.matched).map((t) => t.id)));
     setConfirmed(false);
   }, [appTests]);
+
+  // Load saved prescription on mount
+  useEffect(() => {
+    if (prescription && !isPrescriptionLoading) {
+      setUploadedImage(prescription.image_url);
+      if (prescription.analysis_result) {
+        const result = prescription.analysis_result as AIAnalysisResult;
+        if (result.tests && result.tests.length > 0) {
+          matchAITestsToApp(result.tests);
+          setAnalysisNotes(result.notes || "");
+          setConfidence(result.confidence);
+          setAnalysisComplete(true);
+        }
+      }
+    }
+  }, [prescription, isPrescriptionLoading, appTests, matchAITestsToApp]);
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

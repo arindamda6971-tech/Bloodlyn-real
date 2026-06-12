@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -134,21 +134,7 @@ const ECGDoctorsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
-  useEffect(() => {
-    // Get lab data from route state or fetch it
-    if (location.state?.lab) {
-      setLab(location.state.lab);
-    } else if (labId) {
-      fetchLab();
-    }
-
-    // In production, fetch doctors from database
-    // For now, use mock data
-    setDoctors(mockDoctors);
-    setLoading(false);
-  }, [labId]);
-
-  const fetchLab = async () => {
+  const fetchLab = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("diagnostic_centers")
@@ -166,7 +152,21 @@ const ECGDoctorsScreen = () => {
         variant: "destructive",
       });
     }
-  };
+  }, [labId, toast]);
+
+  useEffect(() => {
+    // Get lab data from route state or fetch it
+    if (location.state?.lab) {
+      setLab(location.state.lab);
+    } else if (labId) {
+      fetchLab();
+    }
+
+    // In production, fetch doctors from database
+    // For now, use mock data
+    setDoctors(mockDoctors);
+    setLoading(false);
+  }, [labId, location.state?.lab, fetchLab]);
 
   const handleBookDoctor = (doctor: Doctor) => {
     if (!lab) return;
