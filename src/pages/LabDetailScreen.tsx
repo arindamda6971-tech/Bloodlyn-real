@@ -440,11 +440,10 @@ const LabDetailScreen = () => {
       
       const localData = localKey ? labsData[localKey] : null;
       
-      // Use dynamic tests if available, otherwise fall back to local data
-      const baseTests = dynamicTests.length > 0
-        ? dynamicTests
-        : (localData?.tests || labsData["lal-pathlabs"].tests);
-      // Strip any locally-derived "Health Packages" so DB-synced packages are the source of truth
+      // Strictly use vendor-activated tests from the partner dashboard.
+      // No fallback to hardcoded catalog — empty means the lab hasn't
+      // activated any tests yet.
+      const baseTests = dynamicTests;
       const nonPackageBase = baseTests.filter((t) => t.category !== "Health Packages");
       const testsToUse = [...nonPackageBase, ...packages];
       
