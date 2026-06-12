@@ -331,6 +331,11 @@ const LabDetailScreen = () => {
 
           let allDynamicTests: DynamicTest[] = [];
 
+          // Only show tests that the vendor has explicitly activated in the
+          // BloodLyn Partner dashboard (products table with availability=true).
+          // No fallback to preloaded `available_tests` or hardcoded catalog —
+          // a brand-new lab must start with an empty test list until they
+          // activate tests from their partner app.
           if (data.vendor_id) {
             const { data: products } = await supabase
               .from('products')
@@ -349,24 +354,7 @@ const LabDetailScreen = () => {
             }
           }
 
-          if (allDynamicTests.length === 0) {
-            const availableTests = data.available_tests as string[] | null;
-            const pricing = data.pricing as Record<string, number> | null;
-
-            if (availableTests && availableTests.length > 0 && pricing) {
-              allDynamicTests = availableTests.map((testName, idx) => ({
-                id: `dc-${data.id}-${idx}`,
-                name: testName,
-                price: pricing[testName] || 299,
-                category: categorizeTest(testName),
-                popular: idx < 3,
-              }));
-            }
-          }
-
-          if (allDynamicTests.length > 0) {
-            setDynamicTests(allDynamicTests);
-          }
+          setDynamicTests(allDynamicTests);
         }
       } catch (err) {
         console.error('Error fetching lab:', err);
@@ -452,11 +440,10 @@ const LabDetailScreen = () => {
       
       const localData = localKey ? labsData[localKey] : null;
       
-      // Use dynamic tests if available, otherwise fall back to local data
-      const baseTests = dynamicTests.length > 0
-        ? dynamicTests
-        : (localData?.tests || labsData["lal-pathlabs"].tests);
-      // Strip any locally-derived "Health Packages" so DB-synced packages are the source of truth
+      // Strictly use vendor-activated tests from the partner dashboard.
+      // No fallback to hardcoded catalog — empty means the lab hasn't
+      // activated any tests yet.
+      const baseTests = dynamicTests;
       const nonPackageBase = baseTests.filter((t) => t.category !== "Health Packages");
       const testsToUse = [...nonPackageBase, ...packages];
       
@@ -827,12 +814,23 @@ const LabDetailScreen = () => {
             })}
 
             {filteredTests.length === 0 && (
-              <div className="text-center py-12">
-                <Beaker className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">
-                  {activeTab === "packages"
-                    ? "This lab hasn't published any health packages yet."
-                    : "No tests found matching your search"}
+              <div className="text-center py-12 px-6">
+                <div className="w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4">
+                  <Beaker className="w-8 h-8 text-warning" />
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-1">
+                  {searchQuery
+                    ? "No matching tests"
+                    : activeTab === "packages"
+                      ? "No health packages yet"
+                      : "No tests activated yet"}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
+                  {searchQuery
+                    ? "Try a different search term."
+                    : activeTab === "packages"
+                      ? "This lab hasn't published any health packages yet."
+                      : "This lab hasn't activated any tests from their partner dashboard yet. Please check back soon."}
                 </p>
               </div>
             )}
