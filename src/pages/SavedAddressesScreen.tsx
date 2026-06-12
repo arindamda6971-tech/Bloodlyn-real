@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Edit2, Trash2, Loader, Star, Plus } from "lucide-react";
@@ -58,7 +58,7 @@ const SavedAddressesScreen = () => {
   });
 
   // Fetch addresses from Supabase
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     if (!supabaseUserId) {
       setLoading(false);
       return;
@@ -85,11 +85,11 @@ const SavedAddressesScreen = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabaseUserId]);
 
   useEffect(() => {
     fetchAddresses();
-  }, [supabaseUserId]);
+  }, [fetchAddresses]);
 
   const resetForm = () => {
     setFormData({

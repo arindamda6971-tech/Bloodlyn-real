@@ -38,7 +38,7 @@ export const useOrderDetails = (orderId?: string) => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["order", orderId],
+    queryKey: ["order", orderId, user?.id],
     queryFn: async () => {
       if (!orderId || !user?.id) throw new Error("Missing parameters");
 
@@ -54,6 +54,10 @@ export const useOrderDetails = (orderId?: string) => {
 
       if (orderRes.error || !orderRes.data) {
         throw new Error("Order not found");
+      }
+      
+      if (itemsRes.error) {
+        throw new Error("Failed to load order items");
       }
 
       const items = (itemsRes.data as OrderItem[]) || [];

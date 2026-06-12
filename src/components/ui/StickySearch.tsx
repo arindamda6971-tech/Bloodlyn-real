@@ -96,6 +96,17 @@ const StickySearch = ({
       const node = shellRef.current;
       if (!node) return;
 
+      // Handle overscroll (rubber-banding on iOS)
+      if (y < 0) {
+        if (hidden) {
+          hidden = false;
+          node.style.transform = "translate3d(0, 0, 0)";
+        }
+        accumulatedDelta = 0;
+        lastY = y;
+        return;
+      }
+
       // Shadow (hysteresis)
       const nextShadow = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
       if (nextShadow !== hasShadow) {

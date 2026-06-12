@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -109,9 +109,9 @@ const UploadPrescriptionScreen = () => {
         }
       }
     }
-  }, [prescription, isPrescriptionLoading, appTests]);
+  }, [prescription, isPrescriptionLoading, appTests, matchAITestsToApp]);
 
-  const matchAITestsToApp = (aiTests: AIAnalysisResult["tests"]) => {
+  const matchAITestsToApp = useCallback((aiTests: AIAnalysisResult["tests"]) => {
     const matched: MatchedTest[] = aiTests.map((aiTest) => {
       const aiName = aiTest.name.toLowerCase();
       const aiShort = (aiTest.shortName || "").toLowerCase();
@@ -142,7 +142,7 @@ const UploadPrescriptionScreen = () => {
     // Pre-select all available tests so user can review then confirm
     setSelectedTestIds(new Set(matched.filter((t) => t.matched).map((t) => t.id)));
     setConfirmed(false);
-  };
+  }, [appTests]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

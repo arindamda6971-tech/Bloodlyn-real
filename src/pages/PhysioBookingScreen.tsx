@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -131,7 +131,7 @@ const PhysioBookingScreen = () => {
 
   const slots = timeWindows; // legacy name kept for rendering consistency
 
-  const fetchAddresses = async () => {
+  const fetchAddresses = useCallback(async () => {
     if (!supabaseUserId) {
       setLoadingAddresses(false);
       return;
@@ -164,7 +164,7 @@ const PhysioBookingScreen = () => {
     } finally {
       setLoadingAddresses(false);
     }
-  };
+  }, [supabaseUserId]);
 
   useEffect(() => {
     if (!physio) {
@@ -172,7 +172,7 @@ const PhysioBookingScreen = () => {
       return;
     }
     fetchAddresses();
-  }, [supabaseUserId, physio]);
+  }, [physio, fetchAddresses, navigate]);
 
   const handleSaveAddress = async () => {
     if (!supabaseUserId) {
