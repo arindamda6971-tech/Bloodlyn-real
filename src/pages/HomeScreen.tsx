@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
@@ -73,6 +74,7 @@ const HomeScreen = () => {
   const { user } = useAuth();
   const { addToCart, items, clearCart, replaceCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -196,7 +198,7 @@ const HomeScreen = () => {
   }, [fetchTests, fetchDiagnosticCenters, fetchPreviousOrders]);
 
   const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery.trim().toLowerCase();
     if (!q) return [];
     const pool: any[] = [];
     allTests.forEach((t) => pool.push({ id: t.id, name: t.name, price: t.price, discount_percent: t.discount_percent }));
@@ -210,7 +212,7 @@ const HomeScreen = () => {
       seen.add(name);
       return true;
     }).slice(0, 5);
-  }, [searchQuery, allTests, bridgeData]);
+  }, [debouncedSearchQuery, allTests, bridgeData]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
@@ -263,6 +265,7 @@ const HomeScreen = () => {
                       return (
                         <button
                           key={test.id}
+                          onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
                             setSearchQuery("");
                             navigate(`/test/${test.id}`);

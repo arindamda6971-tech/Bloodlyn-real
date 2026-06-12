@@ -34,6 +34,7 @@ import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
@@ -74,6 +75,7 @@ const CategoriesScreen = () => {
   const { data: bridgeData, isLoading } = useBridgeTests();
   const { addToCart, items } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const categories = useMemo(() => {
     let cats: { icon: LucideIcon; name: string; tests: number; color: string; slug: string }[];
@@ -109,7 +111,7 @@ const CategoriesScreen = () => {
 
   // Search results: search through individual tests, not just categories
   const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery.trim().toLowerCase();
     if (!q) return [];
 
     const results: BridgeTest[] = [];
@@ -121,12 +123,12 @@ const CategoriesScreen = () => {
       });
     }
     return results.slice(0, 10);
-  }, [searchQuery, bridgeData]);
+  }, [debouncedSearchQuery, bridgeData]);
 
   const filteredCategories = useMemo(() => {
-    if (searchQuery.trim()) return []; // When searching, hide categories and show test results
+    if (debouncedSearchQuery.trim()) return []; // When searching, hide categories and show test results
     return categories;
-  }, [searchQuery, categories]);
+  }, [debouncedSearchQuery, categories]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ const CategoryTestsScreen = () => {
   const categorySlug = searchParams.get("slug") || "";
   const categoryName = searchParams.get("name") || "Tests";
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const { data: bridgeData, isLoading, error } = useBridgeTests();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
@@ -37,13 +39,13 @@ const CategoryTestsScreen = () => {
       filtered = filtered.filter((t) => t.category === categorySlug);
     }
     
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
+    if (debouncedSearchQuery.trim()) {
+      const q = debouncedSearchQuery.toLowerCase().trim();
       filtered = filtered.filter((t) => t.test_name.toLowerCase().includes(q));
     }
     
     return filtered;
-  }, [bridgeData, categorySlug, searchQuery]);
+  }, [bridgeData, categorySlug, debouncedSearchQuery]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
@@ -76,8 +78,19 @@ const CategoryTestsScreen = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={`Search in ${categoryName}...`}
-            className="w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 pr-4 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
+            className="w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+              aria-label="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -93,7 +106,11 @@ const CategoryTestsScreen = () => {
         ) : tests.length === 0 ? (
           <div className="text-center py-12">
             <FlaskConical className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground font-medium">No tests available in this category yet</p>
+            <p className="text-muted-foreground font-medium">
+              {searchQuery.trim() 
+                ? `No results found for "${searchQuery}"` 
+                : "No tests available in this category yet"}
+            </p>
           </div>
         ) : (
           <div className="space-y-3">

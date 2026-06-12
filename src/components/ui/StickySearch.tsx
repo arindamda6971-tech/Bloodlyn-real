@@ -185,7 +185,7 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className="w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 pr-10 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground"
+            className={`w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 ${rightSlot ? 'pr-16' : 'pr-10'} text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground`}
           />
           {value && (
             <button
@@ -194,14 +194,14 @@ const StickySearch = ({
                 onChange("");
                 onClear?.();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
+              className={`absolute ${rightSlot ? 'right-9' : 'right-3'} top-1/2 -translate-y-1/2`}
               aria-label="Clear"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
           {rightSlot && (
-            <div className="absolute right-10 top-1/2 -translate-y-1/2">{rightSlot}</div>
+            <div className="absolute right-3 top-1/2 -translate-y-1/2">{rightSlot}</div>
           )}
           {results && (
             <motion.div

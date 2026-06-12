@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -38,6 +39,7 @@ const BookingsScreen = () => {
   const navigate = useNavigate();
   const { data: orders = [], isLoading: loading } = useOrders();
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
   useRealtimeOrders();
@@ -58,8 +60,8 @@ const BookingsScreen = () => {
       }
     }
 
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const q = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (o) =>
           o.test_name?.toLowerCase().includes(q) ||
@@ -70,7 +72,7 @@ const BookingsScreen = () => {
     }
 
     return result;
-  }, [orders, activeFilter, searchQuery]);
+  }, [orders, activeFilter, debouncedSearchQuery]);
 
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
