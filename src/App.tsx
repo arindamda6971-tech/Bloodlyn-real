@@ -1,7 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -16,6 +18,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
+import SmoothRoutes from "@/components/SmoothRoutes";
 import OfflineBanner from "@/components/OfflineBanner";
 import { Suspense, lazy, useEffect } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
@@ -126,11 +129,19 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 min — avoid redundant refetches
-      gcTime: 2 * 60 * 1000, // 2 min - aggressively free RAM since we have disk cache
+      gcTime: 24 * 60 * 60 * 1000, // 24h — kept in localStorage persister so revisits hydrate instantly
       refetchOnWindowFocus: false,
       retry: 1,
     },
   },
+});
+
+// Persist query cache to device storage (Capacitor WebView localStorage is durable)
+// so navigating back to a screen renders cached data immediately — no blank flash.
+const persister = createSyncStoragePersister({
+  storage: typeof window !== "undefined" ? window.localStorage : undefined,
+  key: "bloodlyn-query-cache",
+  throttleTime: 1000,
 });
 
 
@@ -140,7 +151,10 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: "v1" }}
+      >
         <ThemeProvider>
           <AuthProvider>
             <CartProvider>
@@ -157,7 +171,9 @@ const App = () => {
                       <RoutePrefetcher />
                       <Suspense fallback={<RouteFallback />}>
                         <PageTransition>
-                          <Routes>
+                          <SmoothRoutes>
+                            {(loc) => (
+                          <Routes location={loc}>
                             {/* Public Routes */}
                             <Route path="/" element={<SplashScreen />} />
                             <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -210,6 +226,8 @@ const App = () => {
                             {/* Catch-all */}
                             <Route path="*" element={<NotFound />} />
                           </Routes>
+                            )}
+                          </SmoothRoutes>
                         </PageTransition>
                       </Suspense>
                       <InstallPrompt />
@@ -220,7 +238,7 @@ const App = () => {
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </ErrorBoundary>
   );
 };
