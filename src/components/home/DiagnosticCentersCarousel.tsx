@@ -109,12 +109,13 @@ const DiagnosticCentersCarousel = ({ centers, autoPlayInterval = 4000 }: Diagnos
 
             return (
               <div key={center.id} className="flex-[0_0_90%] min-w-0 pl-4 first:pl-4 last:pr-4">
-                <motion.div
-                  animate={{ scale: isActive ? 1 : 0.92, opacity: isActive ? 1 : 0.5 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                <div
                   onClick={() => navigate(`/lab/${center.id}`)}
-                  className={`relative rounded-3xl cursor-pointer overflow-hidden ${isActive ? 'shadow-2xl' : 'shadow-xl'} ${isClosed ? 'grayscale' : ''}`}
-                  style={{ minHeight: '200px' }}
+                  className={`relative rounded-3xl cursor-pointer overflow-hidden shadow-xl ${isClosed ? 'grayscale' : ''}`}
+                  style={{
+                    minHeight: '200px',
+                    touchAction: 'pan-y'
+                  }}
                 >
                   {/* SVG Banner — instant render, no image fetch */}
                   <LabBanner labName={center.name} />
@@ -166,15 +167,14 @@ const DiagnosticCentersCarousel = ({ centers, autoPlayInterval = 4000 }: Diagnos
                         <Clock className="w-3.5 h-3.5" />
                         <span className="text-xs">Reports in 24 hrs</span>
                       </div>
-                      <motion.button
-                        className="flex items-center gap-1.5 bg-white text-gray-900 font-bold text-sm px-4 py-2 rounded-full shadow-lg"
-                        whileTap={{ scale: 0.98 }}
+                      <button
+                        className="flex items-center gap-1.5 bg-white text-gray-900 font-bold text-sm px-4 py-2 rounded-full shadow-lg active:scale-95 transition-transform"
                       >
                         Explore <ChevronRight className="w-4 h-4" />
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               </div>
             );
           })}

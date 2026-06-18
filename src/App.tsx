@@ -71,8 +71,10 @@ const CapacitorInitializer = () => {
 
         // Hide splash screen smoothly after React has mounted and layout is done
         setTimeout(() => {
-          SplashScreen.hide().catch(() => {});
-        }, 500);
+          SplashScreen.hide({
+            fadeOutDuration: 500
+          }).catch(() => {});
+        }, 1500);
       } catch (err) {
         console.error("Capacitor Init Error:", err);
       }
@@ -164,74 +166,68 @@ const App = () => {
                     <Toaster />
                     <Sonner />
                     <OfflineBanner />
-                    <BrowserRouter>
-                      <CapacitorInitializer />
-                      <CapacitorBackButton />
-                      <ScrollToTop />
-                      <RoutePrefetcher />
-                      <Suspense fallback={<RouteFallback />}>
-                        <SmoothRoutes>
-                          {(loc) => (
-                            <PageTransition routeKey={loc.pathname}>
-                              <Routes location={loc}>
-                                {/* Public Routes */}
-                                <Route path="/" element={<SplashScreen />} />
-                                <Route path="/onboarding" element={<OnboardingScreen />} />
-                                <Route path="/login" element={<LoginScreen />} />
-                                <Route path="/install" element={<InstallScreen />} />
+                      <BrowserRouter>
+                        <CapacitorInitializer />
+                        <CapacitorBackButton />
+                        <ScrollToTop />
+                        <RoutePrefetcher />
+                        <Suspense fallback={<RouteFallback />}>
+                          <Routes>
+                            {/* Public Routes */}
+                            <Route path="/" element={<SplashScreen />} />
+                            <Route path="/onboarding" element={<OnboardingScreen />} />
+                            <Route path="/login" element={<LoginScreen />} />
+                            <Route path="/install" element={<InstallScreen />} />
 
-                                {/* Location Gate */}
-                                <Route path="/location-check" element={<ProtectedRoute><LocationCheckScreen /></ProtectedRoute>} />
+                            {/* Location Gate */}
+                            <Route path="/location-check" element={<ProtectedRoute><LocationCheckScreen /></ProtectedRoute>} />
 
-                                {/* Protected Routes */}
-                                <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
-                                <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
-                                <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
-                                <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                                <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                                <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                                <Route path="/cart" element={<ProtectedRoute><CartScreen /></ProtectedRoute>} />
-                                <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
-                                <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
-                                <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
-                                <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
-                                <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                                <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                                <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
-                                <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
-                                <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
-                                <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
-                                <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
-                                <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
-                                <Route path="/family-members" element={<ProtectedRoute><FamilyMembersScreen /></ProtectedRoute>} />
-                                <Route path="/add-family-member" element={<ProtectedRoute><AddFamilyMemberScreen /></ProtectedRoute>} />
-                                <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
-                                <Route path="/partner-labs" element={<ProtectedRoute><PartnerLabsScreen /></ProtectedRoute>} />
-                                <Route path="/lab/:labId" element={<ProtectedRoute><LabDetailScreen /></ProtectedRoute>} />
-                                <Route path="/package/:packageId" element={<ProtectedRoute><PackageDetailScreen /></ProtectedRoute>} />
-                                <Route path="/packages" element={<ProtectedRoute><PackagesScreen /></ProtectedRoute>} />
-                                <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
-                                <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
-                                <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
-                                <Route path="/physio-booking" element={<ProtectedRoute><PhysioBookingScreen /></ProtectedRoute>} />
-                                <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
-                                <Route path="/ecg-booking" element={<ProtectedRoute><ECGBookingScreen /></ProtectedRoute>} />
-                                <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
-                                <Route path="/consultation-booking" element={<ProtectedRoute><ConsultationBookingScreen /></ProtectedRoute>} />
-                                <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
-                                <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-                                <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-                                <Route path="/terms" element={<ProtectedRoute><TermsScreen /></ProtectedRoute>} />
-                                <Route path="/unauthorized" element={<UnauthorizedScreen />} />
-                                {/* Catch-all */}
-                                <Route path="*" element={<NotFound />} />
-                              </Routes>
-                            </PageTransition>
-                          )}
-                        </SmoothRoutes>
-                      </Suspense>
-                      <InstallPrompt />
-                    </BrowserRouter>
+                            {/* Protected Routes */}
+                            <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
+                            <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
+                            <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
+                            <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+                            <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+                            <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+                            <Route path="/cart" element={<ProtectedRoute><CartScreen /></ProtectedRoute>} />
+                            <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
+                            <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
+                            <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
+                            <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
+                            <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
+                            <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
+                            <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+                            <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
+                            <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
+                            <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+                            <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
+                            <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
+                            <Route path="/family-members" element={<ProtectedRoute><FamilyMembersScreen /></ProtectedRoute>} />
+                            <Route path="/add-family-member" element={<ProtectedRoute><AddFamilyMemberScreen /></ProtectedRoute>} />
+                            <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
+                            <Route path="/partner-labs" element={<ProtectedRoute><PartnerLabsScreen /></ProtectedRoute>} />
+                            <Route path="/lab/:labId" element={<ProtectedRoute><LabDetailScreen /></ProtectedRoute>} />
+                            <Route path="/package/:packageId" element={<ProtectedRoute><PackageDetailScreen /></ProtectedRoute>} />
+                            <Route path="/packages" element={<ProtectedRoute><PackagesScreen /></ProtectedRoute>} />
+                            <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
+                            <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
+                            <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
+                            <Route path="/physio-booking" element={<ProtectedRoute><PhysioBookingScreen /></ProtectedRoute>} />
+                            <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
+                            <Route path="/ecg-booking" element={<ProtectedRoute><ECGBookingScreen /></ProtectedRoute>} />
+                            <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
+                            <Route path="/consultation-booking" element={<ProtectedRoute><ConsultationBookingScreen /></ProtectedRoute>} />
+                            <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
+                            <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+                            <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+                            <Route path="/terms" element={<ProtectedRoute><TermsScreen /></ProtectedRoute>} />
+                            <Route path="/unauthorized" element={<UnauthorizedScreen />} />
+                            {/* Catch-all */}
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </Suspense>
+                        <InstallPrompt />
+                      </BrowserRouter>
                   </TooltipProvider>
                 </NotificationProvider>
               </AddressProvider>

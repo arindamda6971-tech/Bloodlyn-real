@@ -1,31 +1,59 @@
-export const triggerHaptic = async (style: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
-  try {
-    const { Capacitor } = await import('@capacitor/core');
-    if (!Capacitor.isNativePlatform()) return;
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
 
-    const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
-    
-    switch (style) {
-      case 'light':
-        await Haptics.impact({ style: ImpactStyle.Light });
-        break;
-      case 'medium':
-        await Haptics.impact({ style: ImpactStyle.Medium });
-        break;
-      case 'heavy':
-        await Haptics.impact({ style: ImpactStyle.Heavy });
-        break;
-      case 'success':
-        await Haptics.notification({ type: 'SUCCESS' as any });
-        break;
-      case 'warning':
-        await Haptics.notification({ type: 'WARNING' as any });
-        break;
-      case 'error':
-        await Haptics.notification({ type: 'ERROR' as any });
-        break;
+/**
+ * Utility for triggering haptic feedback on mobile devices.
+ * Safely checks if the platform is native before calling Capacitor plugins.
+ */
+export const hapticImpact = async (style: ImpactStyle = ImpactStyle.Light) => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await Haptics.impact({ style });
+    } catch (e) {
+      // Ignore haptic errors
     }
-  } catch (err) {
-    console.error('Haptics failed:', err);
+  }
+};
+
+/**
+ * Backward compatible alias for hapticImpact
+ */
+export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' = 'light') => {
+  const map = {
+    light: ImpactStyle.Light,
+    medium: ImpactStyle.Medium,
+    heavy: ImpactStyle.Heavy,
+  };
+  hapticImpact(map[style]);
+};
+
+export const hapticSelection = async () => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await Haptics.selectionStart();
+      setTimeout(async () => {
+        await Haptics.selectionEnd();
+      }, 50);
+    } catch (e) {
+      // Ignore haptic errors
+    }
+  }
+};
+
+export const hapticNotification = async (type: 'SUCCESS' | 'WARNING' | 'ERROR') => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      // Map string to enum-like behavior if needed, or use directly if supported
+      // Capacitor Haptics.notification uses a specific type
+      const notificationTypeMap = {
+        SUCCESS: 'SUCCESS',
+        WARNING: 'WARNING',
+        ERROR: 'ERROR',
+      } as const;
+
+      // Haptics.notification({ type: notificationTypeMap[type] });
+    } catch (e) {
+      // Ignore haptic errors
+    }
   }
 };

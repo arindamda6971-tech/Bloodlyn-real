@@ -171,7 +171,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/40 rounded-b-2xl motion-safe:transition-shadow shadow-none ${className}`}
+      className={`sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40 motion-safe:transition-shadow shadow-none ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       data-testid="sticky-search-shell"
     >
@@ -180,15 +180,15 @@ const StickySearch = ({
           ref={headerWrapperRef}
           style={{ transformOrigin: "left top", overflow: "hidden" }}
         >
-          <div ref={headerRef} className="px-4 pt-3 pb-1">
+          <div ref={headerRef} className="px-5 pt-3 pb-1">
             {header}
           </div>
         </div>
       )}
 
-      <div className="px-4 pt-2 pb-3">
+      <div className="px-5 pt-2 pb-3.5">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground/60 pointer-events-none" />
           <input
             type="text"
             value={value}
@@ -196,7 +196,7 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className={`w-full h-11 rounded-xl bg-muted/60 border border-border/60 pl-10 ${rightSlot ? 'pr-16' : 'pr-10'} text-sm font-medium outline-none focus:ring-2 focus:ring-primary/30 transition-all text-foreground placeholder:text-muted-foreground`}
+            className={`w-full h-12 rounded-2xl bg-muted/40 border border-border/40 pl-11 ${rightSlot ? 'pr-16' : 'pr-11'} text-[15px] font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all text-foreground placeholder:text-muted-foreground/50`}
           />
           {value && (
             <button

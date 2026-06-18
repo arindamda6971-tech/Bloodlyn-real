@@ -70,12 +70,12 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
       {/* Pull indicator */}
       {isActive && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 z-50 flex items-center justify-center"
+          className="absolute left-1/2 -translate-x-1/2 z-50 flex items-center justify-center pointer-events-none"
           style={{
             top: Math.max(pullDistance - 40, -40),
             opacity: progress,
             transform: `translateX(-50%) scale(${0.5 + progress * 0.5})`,
-            transition: isPulling.current ? 'none' : 'all 0.3s ease-out',
+            transition: isPulling.current ? 'none' : 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
           }}
         >
           <div className="relative w-10 h-10 flex items-center justify-center">
@@ -102,10 +102,11 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
         ref={containerRef}
         className="h-full overflow-y-auto overscroll-contain"
         style={{
-          transform: isActive ? `translateY(${pullDistance}px)` : undefined,
-          transition: isPulling.current ? 'none' : 'transform 0.3s ease-out',
-          willChange: isActive ? 'transform' : undefined,
+          transform: isActive ? `translate3d(0, ${pullDistance}px, 0)` : 'translate3d(0, 0, 0)',
+          transition: isPulling.current ? 'none' : 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+          willChange: 'transform',
           WebkitOverflowScrolling: 'touch',
+          touchAction: 'pan-y'
         } as React.CSSProperties}
       >
         {children}

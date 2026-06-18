@@ -151,7 +151,7 @@ const CategoriesScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests..."
         header={
-          <h1 className="text-[22px] font-extrabold text-foreground tracking-tight">Test Categories</h1>
+          <h1 className="text-2xl font-black text-foreground tracking-tight mt-1 mb-1">Categories</h1>
         }
       />
 

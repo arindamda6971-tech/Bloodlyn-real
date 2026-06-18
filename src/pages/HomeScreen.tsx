@@ -26,7 +26,9 @@ import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
-import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
+import { useUserPincode } from "@/hooks/useUserPincode";
+import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
+import { usePreviousOrders } from "@/hooks/usePreviousOrders";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -79,11 +81,9 @@ const HomeScreen = () => {
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
-  const [previousOrders, setPreviousOrders] = useState<PreviousOrder[]>([]);
-  const [diagnosticCenters, setDiagnosticCenters] = useState<any[]>([]);
-  const [reorderConfirm, setReorderConfirm] = useState<PreviousOrder | null>(null);
+  const [reorderConfirm, setReorderConfirm] = useState<any | null>(null);
 
-  const handleReorder = async (order: PreviousOrder) => {
+  const handleReorder = async (order: any) => {
     const toastId = toast.loading("Adding items to cart...");
     
     const { data: orderItems, error } = await supabase
@@ -143,9 +143,23 @@ const HomeScreen = () => {
     navigate('/cart');
   };
 
-  useRealtimeProducts();
   const { data: bridgeData } = useBridgeTests();
-  const { pincode: userPincode, loading: pincodeLoading } = useUserPincode();
+  const { pincode: userPincode } = useUserPincode();
+
+  const { data: ordersData } = usePreviousOrders(3);
+  const { data: centersData } = useDiagnosticCenters(userPincode);
+
+  const previousOrders = ordersData || [];
+  const diagnosticCenters = useMemo(() => {
+    if (!centersData) return [];
+    return centersData.slice(0, 8).map(center => ({
+      id: center.id,
+      name: center.name,
+      rating: center.rating || 4.5,
+      tests: center.reviews_count || 100,
+      logo: center.logo_url || undefined,
+    }));
+  }, [centersData]);
 
   // Performance optimized background
   const StaticBackground = useMemo(() => (
@@ -155,16 +169,6 @@ const HomeScreen = () => {
     </div>
   ), []);
 
-  const fetchPreviousOrders = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("orders")
-      .select("id, order_number, test_name, total, status, created_at")
-      .order("created_at", { ascending: false })
-      .limit(3);
-    if (data) setPreviousOrders(data);
-  }, [user]);
-
   const fetchTests = useCallback(async () => {
     const { data } = await supabase
       .from("tests")
@@ -173,29 +177,9 @@ const HomeScreen = () => {
     if (data) setAllTests(data);
   }, []);
 
-  const fetchDiagnosticCenters = useCallback(async () => {
-    if (pincodeLoading) return;
-    const { data } = await supabase
-      .from("diagnostic_centers")
-      .select("*")
-      .order("rating", { ascending: false });
-    if (data) {
-      const serviceable = data.filter((c) => labServesPincode(c as any, userPincode));
-      setDiagnosticCenters(serviceable.slice(0, 8).map(center => ({
-        id: center.id,
-        name: center.name,
-        rating: center.rating || 4.5,
-        tests: center.reviews_count || 100,
-        logo: center.logo_url || undefined,
-      })));
-    }
-  }, [userPincode, pincodeLoading]);
-
   useEffect(() => {
     fetchTests();
-    fetchDiagnosticCenters();
-    fetchPreviousOrders();
-  }, [fetchTests, fetchDiagnosticCenters, fetchPreviousOrders]);
+  }, [fetchTests]);
 
   const searchResults = useMemo(() => {
     const q = debouncedSearchQuery.trim().toLowerCase();
@@ -228,20 +212,20 @@ const HomeScreen = () => {
           onFocus={() => setShowSearchResults(true)}
           placeholder="Search health tests..."
           header={
-            <div className="flex items-center justify-between mb-2 mt-2">
-              <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">{greeting}</p>
-                <h1 className="text-2xl font-black text-foreground tracking-tight leading-tight">Welcome back 👋</h1>
+            <div className="flex items-center justify-between mb-2.5 mt-1.5">
+              <div className="min-w-0 pt-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-0.5">{greeting}</p>
+                <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Welcome back 👋</h1>
               </div>
               <div className="flex items-center gap-2.5">
                 <button
-                  className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center active:scale-90 transition-transform"
+                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-90 transition-transform"
                   onClick={() => setShowCallSheet(true)}
                 >
                   <Phone className="w-5 h-5 text-foreground" />
                 </button>
                 <button
-                  className="w-11 h-11 rounded-2xl bg-card border border-border shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
+                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
                   onClick={() => navigate("/notifications")}
                 >
                   <Bell className="w-5 h-5 text-foreground" />

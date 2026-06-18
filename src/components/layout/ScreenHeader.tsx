@@ -31,31 +31,36 @@ const ScreenHeader = ({
 
   return (
     <motion.header
-      initial={{ y: -20, opacity: 0 }}
+      initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className={`sticky top-0 z-50 px-4 py-4 rounded-b-2xl ${
+      className={`sticky top-0 z-50 px-5 py-4 ${
         transparent
           ? "bg-transparent"
-          : "bg-background/95 backdrop-blur-xl border-b border-border/50"
+          : "bg-background/90 backdrop-blur-xl border-b border-border/40 shadow-sm shadow-black/5"
       }`}
-      style={{ paddingTop: "calc(env(safe-area-inset-top, 12px) + 16px)" }}
+      style={{
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        height: "calc(env(safe-area-inset-top, 0px) + 68px)",
+        display: "flex",
+        alignItems: "center"
+      }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3.5 min-w-0">
           {showBack && (
             <button
               onClick={handleBack}
-              className="icon-btn"
+              className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
           )}
-          <h1 className="text-lg font-bold text-foreground">{title}</h1>
+          <h1 className="text-xl font-black text-foreground tracking-tight truncate leading-none pt-0.5">{title}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 shrink-0">
           {rightAction}
           {showMenu && (
-            <button className="icon-btn">
+            <button className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center active:scale-90 transition-transform">
               <MoreVertical className="w-5 h-5 text-foreground" />
             </button>
           )}

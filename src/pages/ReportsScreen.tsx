@@ -172,7 +172,9 @@ const ReportsScreen = () => {
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search reports by test, lab, patient..."
-        header={<ScreenHeader title="My Reports" showBack={false} />}
+        header={
+          <h1 className="text-2xl font-black text-foreground tracking-tight mt-1 mb-1">My Reports</h1>
+        }
       />
 
       <div className="px-4 pb-6 mt-2">
