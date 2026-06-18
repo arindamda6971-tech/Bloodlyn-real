@@ -316,7 +316,7 @@ const HomeScreen = () => {
                 View all
               </button>
             </div>
-            <div className="overflow-x-auto scrollbar-hide">
+            <div className="overflow-x-auto scrollbar-hide" style={{ touchAction: 'pan-x', WebkitOverflowScrolling: 'touch' }}>
               <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
                 {previousOrders.map((order) => {
                   const names = splitTestNames(order.test_name);
