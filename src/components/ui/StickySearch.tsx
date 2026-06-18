@@ -39,13 +39,7 @@ const StickySearch = ({
   const headerWrapperRef = useRef<HTMLDivElement>(null);
   const headerHeightRef = useRef<number>(0);
 
-  // Dev-only render counter to confirm re-renders are NOT happening during scroll.
-  const renderCountRef = useRef(0);
-  if (import.meta.env?.DEV) {
-    renderCountRef.current += 1;
-    // eslint-disable-next-line no-console
-    console.debug(`[StickySearch] render #${renderCountRef.current}`);
-  }
+  // (removed dev render counter — was spamming console on every parent re-render)
 
   useEffect(() => {
     if (headerRef.current) {
