@@ -18,13 +18,17 @@ export const hapticImpact = async (style: ImpactStyle = ImpactStyle.Light) => {
 /**
  * Backward compatible alias for hapticImpact
  */
-export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' = 'light') => {
-  const map = {
+export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
+  const impactMap = {
     light: ImpactStyle.Light,
     medium: ImpactStyle.Medium,
     heavy: ImpactStyle.Heavy,
-  };
-  hapticImpact(map[style]);
+  } as const;
+  if (style === 'success' || style === 'warning' || style === 'error') {
+    hapticNotification(style.toUpperCase() as 'SUCCESS' | 'WARNING' | 'ERROR');
+    return;
+  }
+  hapticImpact(impactMap[style]);
 };
 
 export const hapticSelection = async () => {
