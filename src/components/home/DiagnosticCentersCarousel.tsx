@@ -1,8 +1,5 @@
-import { useCallback, useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import useEmblaCarousel from "embla-carousel-react";
-import { Building2, Star, ChevronRight, TestTubes, MapPin, Clock, BadgeCheck } from "lucide-react";
+import { Building2, Star, ChevronRight, MapPin, BadgeCheck } from "lucide-react";
 import LabBanner from "@/components/labs/LabBanner";
 
 interface DiagnosticCenter {
@@ -16,7 +13,6 @@ interface DiagnosticCenter {
 
 interface DiagnosticCentersCarouselProps {
   centers: DiagnosticCenter[];
-  autoPlayInterval?: number;
 }
 
 const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
@@ -33,169 +29,103 @@ const fallbackMeta = [
   { distance: "3.2 km", tagline: "Your Health, Our Priority", trustBadge: "Quality Assured" },
 ];
 
-const DiagnosticCentersCarousel = ({ centers, autoPlayInterval = 4000 }: DiagnosticCentersCarouselProps) => {
+const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) => {
   const navigate = useNavigate();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
-
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "center",
-    containScroll: false,
-    loop: true,
-    skipSnaps: false,
-    dragFree: false,
-  });
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setSelectedIndex(emblaApi.selectedScrollSnap());
-  }, [emblaApi]);
-
-  const startAutoPlay = useCallback(() => {
-    if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-    autoPlayRef.current = setInterval(() => {
-      if (emblaApi && isPlaying) emblaApi.scrollNext();
-    }, autoPlayInterval);
-  }, [emblaApi, isPlaying, autoPlayInterval]);
-
-  const stopAutoPlay = useCallback(() => {
-    if (autoPlayRef.current) { clearInterval(autoPlayRef.current); autoPlayRef.current = null; }
-  }, []);
-
-  const handlePointerDown = useCallback(() => { setIsPlaying(false); stopAutoPlay(); }, [stopAutoPlay]);
-  const handlePointerUp = useCallback(() => { setTimeout(() => setIsPlaying(true), 2000); }, []);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    onSelect();
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-    emblaApi.on("pointerDown", handlePointerDown);
-    emblaApi.on("pointerUp", handlePointerUp);
-    return () => {
-      emblaApi.off("select", onSelect);
-      emblaApi.off("reInit", onSelect);
-      emblaApi.off("pointerDown", handlePointerDown);
-      emblaApi.off("pointerUp", handlePointerUp);
-    };
-  }, [emblaApi, onSelect, handlePointerDown, handlePointerUp]);
-
-  useEffect(() => {
-    if (isPlaying) startAutoPlay(); else stopAutoPlay();
-    return () => stopAutoPlay();
-  }, [isPlaying, startAutoPlay, stopAutoPlay]);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-4">
+    <div className="mt-6 mb-2">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-4">
+      <div className="flex items-center justify-between mb-4 px-6">
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">Partner Labs Near You</h3>
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Building2 className="w-4 h-4 text-primary" />
+          </div>
+          <h3 className="font-bold text-lg text-foreground tracking-tight">Partner Labs</h3>
         </div>
-        <button onClick={() => navigate('/partner-labs')} className="flex items-center gap-1 text-primary text-sm font-medium">
-          View all <ChevronRight className="w-4 h-4" />
+        <button
+          onClick={() => navigate('/partner-labs')}
+          className="text-primary text-xs font-bold hover:opacity-70 transition-opacity"
+        >
+          View all
         </button>
       </div>
 
-      {/* Carousel */}
-      <div className="overflow-hidden" ref={emblaRef}>
-        <div className="flex">
-          {centers.map((center, index) => {
-            const isActive = index === selectedIndex;
-            const isClosed = center.isActive === false;
-            const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
+      {/* Horizontal Scroll List (Native feel) */}
+      <div
+        className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-6 gap-4"
+        style={{
+          WebkitOverflowScrolling: 'touch',
+          scrollPaddingLeft: '1.5rem',
+          scrollPaddingRight: '1.5rem',
+          touchAction: 'pan-x'
+        }}
+      >
+        {centers.map((center, index) => {
+          const isClosed = center.isActive === false;
+          const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
 
-            return (
-              <div key={center.id} className="flex-[0_0_90%] min-w-0 pl-4 first:pl-4 last:pr-4">
-                <div
-                  onClick={() => navigate(`/lab/${center.id}`)}
-                  className={`relative rounded-3xl cursor-pointer overflow-hidden shadow-xl ${isClosed ? 'grayscale' : ''}`}
-                  style={{
-                    minHeight: '200px',
-                    touchAction: 'pan-y'
-                  }}
-                >
-                  {/* SVG Banner — instant render, no image fetch */}
-                  <LabBanner labName={center.name} />
-                  {/* Dark Overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
+          return (
+            <div
+              key={center.id}
+              className="flex-shrink-0 w-[280px] snap-start"
+              style={{ contain: 'content' }}
+            >
+              <div
+                onClick={() => navigate(`/lab/${center.id}`)}
+                className={`relative rounded-3xl cursor-pointer overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
+                style={{ height: '180px' }}
+              >
+                {/* Visual Banner */}
+                <div className="absolute inset-0 z-0">
+                   <LabBanner labName={center.name} />
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                </div>
 
-                  {/* Closed Overlay */}
-                  {isClosed && (
-                    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
-                      <div className="bg-destructive px-4 py-1.5 rounded-lg shadow-lg">
-                        <p className="text-[10px] text-white font-medium">Currently</p>
-                        <p className="text-sm font-extrabold text-white -mt-0.5">CLOSED</p>
+                {/* Trust Badge */}
+                <div className="absolute top-3 left-3 z-10">
+                   <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-full">
+                      <BadgeCheck className="w-3 h-3 text-primary" />
+                      <span className="text-[9px] font-bold text-white uppercase tracking-wider">{meta.trustBadge}</span>
+                   </div>
+                </div>
+
+                {/* Closed Indicator */}
+                {isClosed && (
+                  <div className="absolute top-3 right-3 z-10 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
+                    Closed
+                  </div>
+                )}
+
+                {/* Lab Info */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <h4 className="font-black text-white text-base leading-tight truncate drop-shadow-sm">{center.name}</h4>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs font-bold text-white/90">{center.rating}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-white/60" />
+                        <span className="text-[11px] font-medium text-white/80">{meta.distance}</span>
                       </div>
                     </div>
-                  )}
-
-                  {/* Content */}
-                  <div className="relative p-5 flex flex-col h-full min-h-[200px] justify-end">
-                    {/* Trust Badge */}
-                    <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                      <BadgeCheck className="w-3.5 h-3.5 text-green-400" />
-                      <span className="text-[10px] font-medium text-white">{meta.trustBadge}</span>
-                    </div>
-
-                    <h4 className="font-bold text-white text-lg leading-tight drop-shadow-md">{center.name}</h4>
-                    <p className="text-white/80 text-xs font-medium mt-0.5 italic">
-                      {isClosed ? "Currently not accepting orders" : `"${meta.tagline}"`}
-                    </p>
-
-                    {/* Stats Row */}
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                        <Star className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                        <span className="text-xs font-bold text-white">{center.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                        <MapPin className="w-3.5 h-3.5 text-white" />
-                        <span className="text-xs font-medium text-white">{meta.distance}</span>
-                      </div>
-                      <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                        <TestTubes className="w-3.5 h-3.5 text-white" />
-                        <span className="text-xs font-medium text-white">{center.tests}+ tests</span>
-                      </div>
-                    </div>
-
-                    {/* Bottom CTA */}
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/20">
-                      <div className="flex items-center gap-1.5 text-white/70">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="text-xs">Reports in 24 hrs</span>
-                      </div>
-                      <button
-                        className="flex items-center gap-1.5 bg-white text-gray-900 font-bold text-sm px-4 py-2 rounded-full shadow-lg active:scale-95 transition-transform"
-                      >
-                        Explore <ChevronRight className="w-4 h-4" />
-                      </button>
+                    <div className="bg-primary/20 backdrop-blur-sm border border-primary/30 px-2.5 py-1 rounded-full">
+                      <p className="text-[10px] font-bold text-primary-foreground">{center.tests}+ Tests</p>
                     </div>
                   </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
+        {/* Spacer at the end for padding */}
+        <div className="flex-shrink-0 w-2 h-full" aria-hidden="true" />
       </div>
-
-      {/* Pagination Dots */}
-      <div className="flex justify-center gap-1.5 mt-4">
-        {centers.map((_, index) => (
-          <motion.div
-            key={index}
-            animate={{
-              width: index === selectedIndex ? 24 : 8,
-              backgroundColor: index === selectedIndex ? "hsl(var(--primary))" : "hsl(var(--muted-foreground) / 0.3)",
-            }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-2 rounded-full"
-          />
-        ))}
-      </div>
-    </motion.div>
+    </div>
   );
 };
 
