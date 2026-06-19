@@ -206,9 +206,12 @@
     position: relative;
   }
 
-  /* Any inner scroll container should never bleed scroll to the outer page */
-  .overflow-y-auto, .overflow-auto, .overflow-x-auto, [data-scroll-area] {
-    overscroll-behavior: contain;
+  .overflow-y-auto, .overflow-auto, [data-scroll-area] {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .overflow-x-auto {
+    overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
   }
 

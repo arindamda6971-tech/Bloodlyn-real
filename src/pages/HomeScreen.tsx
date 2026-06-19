@@ -322,7 +322,7 @@ const HomeScreen = () => {
                   const names = splitTestNames(order.test_name);
                   const label = formatTestsLabel(names, "Lab Test");
                   return (
-                    <div key={order.id} className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md active:scale-95 transition-all w-56 relative overflow-hidden z-0">
+                    <div key={order.id} className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0">
                       <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0 pr-2">
