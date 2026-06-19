@@ -569,7 +569,22 @@ const UploadPrescriptionScreen = () => {
                           {d.source === "manual" ? (
                             <Badge variant="soft" className="text-[10px]">Manual</Badge>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground">OCR: “{d.originalAiName}”</span>
+                            <span className="text-[11px] text-muted-foreground">OCR: "{d.originalAiName}"</span>
+                          )}
+                          {d.dictionaryHit && (
+                            <Badge
+                              data-testid={`dict-match-${d.uid}`}
+                              variant={
+                                d.dictionaryHit.score >= 0.9
+                                  ? "softSuccess"
+                                  : d.dictionaryHit.score >= 0.7
+                                  ? "soft"
+                                  : "softWarning"
+                              }
+                              className="text-[10px]"
+                            >
+                              Match {Math.round(d.dictionaryHit.score * 100)}%
+                            </Badge>
                           )}
                           {matchInfo?.app ? (
                             inCart ? (
