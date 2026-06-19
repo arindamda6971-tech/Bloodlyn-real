@@ -457,7 +457,7 @@ const CartScreen = () => {
       {/* Bottom CTA — full width checkout */}
       <motion.div
         initial={{ y: 100 }} animate={{ y: 0 }}
-        className="fixed left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40"
+        className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border shadow-[0_-4px_20px_rgba(0,0,0,0.08)] px-4 py-3 z-40"
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
       >
         <Button

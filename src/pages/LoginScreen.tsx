@@ -220,7 +220,7 @@ const LoginScreen = () => {
 
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-[430px] mx-auto">
+    <div className="min-h-screen bg-background flex flex-col w-full md:max-w-[430px] mx-auto">
       {/* Header with logo */}
       <motion.div
         initial={{ y: -20, opacity: 0 }}

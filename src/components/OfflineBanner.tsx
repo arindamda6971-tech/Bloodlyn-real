@@ -30,7 +30,7 @@ const OfflineBanner = () => {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -60, opacity: 0 }}
           transition={{ type: "spring", damping: 22, stiffness: 320 }}
-          className="fixed top-0 left-0 right-0 z-[100] mx-auto max-w-[430px] px-3"
+          className="fixed top-0 left-0 right-0 z-[100] mx-auto w-full md:max-w-[430px] px-3"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
         >
           <div className="flex items-center gap-3 rounded-2xl bg-destructive text-destructive-foreground shadow-lg px-4 py-3">

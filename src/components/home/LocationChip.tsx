@@ -127,7 +127,7 @@ const LocationChip = () => {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              className="bg-background rounded-t-2xl w-full max-w-[430px] p-5 pb-8"
+              className="bg-background rounded-t-2xl w-full w-full md:max-w-[430px] p-5 pb-8"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between mb-4">

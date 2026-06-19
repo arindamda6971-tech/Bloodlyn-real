@@ -13,7 +13,7 @@ const UnauthorizedScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center max-w-[430px] mx-auto px-6">
+    <div className="min-h-screen bg-background flex items-center justify-center w-full md:max-w-[430px] mx-auto px-6">
       <div className="text-center space-y-6">
         <div className="w-20 h-20 mx-auto rounded-full bg-destructive/10 flex items-center justify-center">
           <ShieldAlert className="w-10 h-10 text-destructive" />

@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  */
 const RouteFallback = () => {
   return (
-    <div className="min-h-screen bg-background max-w-[430px] mx-auto px-4 pb-24 animate-in fade-in duration-300">
+    <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto px-4 pb-24 animate-in fade-in duration-300">
       {/* Header Skeleton */}
       <div className="pt-12 pb-6 flex items-center justify-between">
         <div className="space-y-2">

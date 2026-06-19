@@ -43,7 +43,7 @@ const MobileLayout = ({
 
   return (
     <div 
-      className="min-h-[100dvh] h-[100dvh] bg-background max-w-[430px] mx-auto relative overflow-hidden"
+      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden"
       style={{
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',

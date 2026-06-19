@@ -22,7 +22,7 @@ const InstallScreen = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-[430px] mx-auto">
+    <div className="min-h-screen bg-background flex flex-col w-full md:max-w-[430px] mx-auto">
       {/* Header */}
       <div className="pt-12 pb-8 px-6 text-center">
         <motion.div

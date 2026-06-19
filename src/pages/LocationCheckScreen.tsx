@@ -349,7 +349,7 @@ const LocationCheckScreen = () => {
   }, [serviceableSet.size > 0]);
 
   return (
-    <div className="min-h-screen bg-background max-w-[430px] mx-auto relative overflow-x-hidden pb-12">
+    <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12">
       {/* Aurora background */}
       <div className="absolute inset-0 pointer-events-none -z-0">
         <div className="absolute -top-32 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-3xl" />

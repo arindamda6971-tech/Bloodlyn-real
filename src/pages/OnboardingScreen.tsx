@@ -66,7 +66,7 @@ const OnboardingScreen = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-[430px] mx-auto">
+    <div className="min-h-screen bg-background flex flex-col w-full md:max-w-[430px] mx-auto">
       {/* Skip button */}
       <div className="flex justify-end p-4 pt-safe">
         <Button variant="ghost" onClick={handleSkip} className="text-muted-foreground">

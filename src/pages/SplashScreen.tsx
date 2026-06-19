@@ -48,7 +48,7 @@ const SplashScreen = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 max-w-[430px] mx-auto">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-8 w-full md:max-w-[430px] mx-auto">
       <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
 
       <motion.div

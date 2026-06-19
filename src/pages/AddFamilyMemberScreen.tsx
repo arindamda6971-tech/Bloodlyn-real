@@ -176,7 +176,7 @@ const AddFamilyMemberScreen = () => {
 
       {/* Bottom CTA */}
       <div
-        className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-card border-t border-border px-4 py-4 safe-area-bottom z-40"
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-4 safe-area-bottom z-40"
       >
         <div className="flex gap-3">
           <Button variant="outline" className="flex-1" onClick={() => navigate(-1)}>
