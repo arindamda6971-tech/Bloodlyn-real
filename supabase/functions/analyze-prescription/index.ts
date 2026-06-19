@@ -243,7 +243,7 @@ Respond with a JSON object:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.0-flash-exp",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -264,7 +264,8 @@ Respond with a JSON object:
     });
 
     if (!response.ok) {
-      console.error("AI gateway error:", response.status);
+      const errBody = await response.text().catch(() => "");
+      console.error("AI gateway error:", response.status, errBody);
       if (response.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
