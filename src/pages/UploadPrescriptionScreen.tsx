@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
   Camera,
-  Image,
+  Image as ImageIcon,
   FileText,
   X,
   Sparkles,
@@ -14,34 +14,46 @@ import {
   Plus,
   ShoppingCart,
   AlertTriangle,
+  Pencil,
+  Trash2,
+  ZoomIn,
+  ZoomOut,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
+import { matchToDictionary, MEDICAL_TEST_DICTIONARY } from "@/lib/medical-dictionary";
 
 interface AIAnalysisResult {
-  tests: Array<{
-    name: string;
-    shortName?: string;
-    category?: string;
-  }>;
+  tests: Array<{ name: string; shortName?: string; category?: string }>;
   confidence: string;
   notes?: string;
 }
 
-interface MatchedTest {
-  id: string;
-  name: string;
-  price: number;
-  matched: boolean; // true = available in app, false = not available
+interface DetectedTest {
+  uid: string;
+  name: string;          // editable, user-facing
   originalAiName: string;
+  category?: string;
+  dictionaryHit?: { canonical: string; score: number } | null;
+  source: "ai" | "manual";
 }
+
+const PROCESSING_STEPS = [
+  "Enhancing image quality…",
+  "Reading handwriting with OCR…",
+  "Matching with medical database…",
+  "Verifying detected tests…",
+];
+
+const newUid = () => `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 const UploadPrescriptionScreen = () => {
   const navigate = useNavigate();
@@ -50,179 +62,146 @@ const UploadPrescriptionScreen = () => {
   const { addToCart, items } = useCart();
   const { data: bridgeData } = useBridgeTests();
 
-  const { prescription, isLoading: isPrescriptionLoading, savePrescription, updateAnalysisResult, deletePrescription } = usePrescriptionStorage();
+  const { prescription, isLoading: isPrescriptionLoading, savePrescription, updateAnalysisResult, deletePrescription } =
+    usePrescriptionStorage();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
   const [analysisComplete, setAnalysisComplete] = useState(false);
-  const [matchedTests, setMatchedTests] = useState<MatchedTest[]>([]);
   const [analysisNotes, setAnalysisNotes] = useState<string>("");
   const [confidence, setConfidence] = useState<string>("");
-  const [isUploading, setIsUploading] = useState(false);
-  const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
+
+  const [detected, setDetected] = useState<DetectedTest[]>([]);
+  const [editingUid, setEditingUid] = useState<string | null>(null);
+  const [manualName, setManualName] = useState("");
+  const [zoom, setZoom] = useState(1);
+
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
-  // Confirmation step: user must explicitly confirm which detected tests to add
-  const [selectedTestIds, setSelectedTestIds] = useState<Set<string>>(new Set());
-  const [confirmed, setConfirmed] = useState(false);
 
-  // Load available tests from Supabase + bridge
+  // ---------- Load app catalog (tests in user's locality) ----------
   useEffect(() => {
-    const fetchAppTests = async () => {
-      const { data } = await supabase
-        .from("tests")
-        .select("id, name, price")
-        .eq("is_active", true);
-      const localTests = (data || []).map((t) => ({ id: t.id, name: t.name, price: Number(t.price) }));
-
-      // Also include bridge tests
-      const bridgeTests = (bridgeData?.tests || []).map((t) => ({
+    (async () => {
+      const { data } = await supabase.from("tests").select("id, name, price").eq("is_active", true);
+      const local = (data || []).map((t) => ({ id: t.id, name: t.name, price: Number(t.price) }));
+      const bridge = (bridgeData?.tests || []).map((t) => ({
         id: t.id,
         name: t.test_name,
         price: t.price > 0 ? t.price : t.collection_fee || 0,
       }));
-
-      // Merge both, dedup by name
-      const combined = [...localTests];
-      const existingNames = new Set(combined.map((t) => t.name.toLowerCase()));
-      bridgeTests.forEach((bt) => {
-        if (!existingNames.has(bt.name.toLowerCase())) {
-          combined.push(bt);
-          existingNames.add(bt.name.toLowerCase());
+      const seen = new Set(local.map((t) => t.name.toLowerCase()));
+      const merged = [...local];
+      bridge.forEach((b) => {
+        if (!seen.has(b.name.toLowerCase())) {
+          merged.push(b);
+          seen.add(b.name.toLowerCase());
         }
       });
-      setAppTests(combined);
-    };
-    fetchAppTests();
+      setAppTests(merged);
+    })();
   }, [bridgeData]);
 
-  const matchAITestsToApp = useCallback((aiTests: AIAnalysisResult["tests"]) => {
-    const matched: MatchedTest[] = aiTests.map((aiTest) => {
-      const aiName = aiTest.name.toLowerCase();
-      const aiShort = (aiTest.shortName || "").toLowerCase();
-
-      // Better fuzzy matching logic
-      const found = appTests.find((at) => {
-        const appName = at.name.toLowerCase();
-        // Exact match
-        if (appName === aiName) return true;
-        // Contains match (at least 4 chars to avoid false positives like 'Ca')
-        if (aiName.length > 3 && appName.includes(aiName)) return true;
-        if (appName.length > 3 && aiName.includes(appName)) return true;
-        // Abbreviation match
-        if (aiShort && (appName === aiShort || appName.includes(aiShort))) return true;
-        return false;
-      });
-
-      return {
-        id: found?.id || `unavailable-${aiTest.name}-${Math.random()}`,
-        name: found?.name || aiTest.name,
-        price: found?.price || 0,
-        matched: !!found,
-        originalAiName: aiTest.name,
-      };
-    });
-
-    setMatchedTests(matched);
-    // Pre-select all available tests so user can review then confirm
-    setSelectedTestIds(new Set(matched.filter((t) => t.matched).map((t) => t.id)));
-    setConfirmed(false);
-  }, [appTests]);
-
-  // Load saved prescription on mount
+  // ---------- Restore previously saved prescription ----------
   useEffect(() => {
     if (prescription && !isPrescriptionLoading) {
       setUploadedImage(prescription.image_url);
-      if (prescription.analysis_result) {
-        const result = prescription.analysis_result as AIAnalysisResult;
-        if (result.tests && result.tests.length > 0) {
-          matchAITestsToApp(result.tests);
-          setAnalysisNotes(result.notes || "");
-          setConfidence(result.confidence);
-          setAnalysisComplete(true);
-        }
+      const result = prescription.analysis_result as AIAnalysisResult | null;
+      if (result?.tests?.length) {
+        ingestAiResult(result);
       }
     }
-  }, [prescription, isPrescriptionLoading, appTests, matchAITestsToApp]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prescription, isPrescriptionLoading]);
 
+  // ---------- Rolling processing step animation ----------
+  useEffect(() => {
+    if (!isAnalyzing) return;
+    setStepIndex(0);
+    const id = setInterval(() => setStepIndex((i) => (i + 1) % PROCESSING_STEPS.length), 1400);
+    return () => clearInterval(id);
+  }, [isAnalyzing]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error("File size should be less than 10MB");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Image = reader.result as string;
-        setImageBase64Cache(base64Image);
-        setUploadedImage(base64Image);
-        setAnalysisComplete(false);
-        setMatchedTests([]);
-        setAnalysisNotes("");
-        setConfidence("");
-        setIsUploading(true);
-        const savedUrl = await savePrescription(base64Image);
-        if (savedUrl) {
-          setUploadedImage(savedUrl);
-          toast.success("Prescription uploaded successfully!");
-        }
-        setIsUploading(false);
+  const ingestAiResult = (result: AIAnalysisResult) => {
+    const next: DetectedTest[] = (result.tests || []).map((t) => {
+      const dict = matchToDictionary(t.name) || (t.shortName ? matchToDictionary(t.shortName) : null);
+      return {
+        uid: newUid(),
+        name: dict?.canonical || t.name,
+        originalAiName: t.name,
+        category: t.category,
+        dictionaryHit: dict ? { canonical: dict.canonical, score: dict.score } : null,
+        source: "ai",
       };
-      reader.readAsDataURL(file);
-    }
+    });
+    setDetected(next);
+    setAnalysisNotes(result.notes || "");
+    setConfidence(result.confidence || "");
+    setAnalysisComplete(true);
   };
 
-  const handleAnalyzePrescription = async () => {
-    // Must have a base64 image for analysis — URLs won't work with the AI
+  // ---------- Upload ----------
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size should be less than 10MB");
+      return;
+    }
+    if (!/^image\/(jpeg|jpg|png)$/i.test(file.type)) {
+      toast.error("Only JPG or PNG images are accepted");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Image = reader.result as string;
+      setImageBase64Cache(base64Image);
+      setUploadedImage(base64Image);
+      setAnalysisComplete(false);
+      setDetected([]);
+      setAnalysisNotes("");
+      setConfidence("");
+      setZoom(1);
+      setIsUploading(true);
+      const savedUrl = await savePrescription(base64Image);
+      if (savedUrl) {
+        setUploadedImage(savedUrl);
+        toast.success("Prescription uploaded");
+      }
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // ---------- Analyze ----------
+  const handleAnalyze = async () => {
     if (!imageBase64Cache) {
-      toast.error("Please re-upload the prescription image to analyze it.");
+      toast.error("Please re-upload the prescription to analyze it.");
       return;
     }
     setIsAnalyzing(true);
-
     try {
-      const imageBase64 = imageBase64Cache;
-
-      const { data, error } = await supabase.functions.invoke('analyze-prescription', {
-        body: { imageBase64 }
+      const { data, error } = await supabase.functions.invoke("analyze-prescription", {
+        body: { imageBase64: imageBase64Cache },
       });
-
       if (error) {
-        console.error("Error analyzing prescription:", error);
-        toast.error("Failed to analyze prescription. Please try again.");
-        setIsAnalyzing(false);
+        console.error(error);
+        toast.error("Failed to analyze. Please try again.");
         return;
       }
-
       const result = data as AIAnalysisResult;
-
-      if (!result.tests || result.tests.length === 0) {
-        toast.error(result.notes || "No tests found in the prescription. Please upload a clearer image.");
-        setAnalysisNotes(result.notes || "");
-        setIsAnalyzing(false);
+      if (!result?.tests?.length) {
+        toast.error(result?.notes || "No tests found. Try a clearer image.");
+        setAnalysisNotes(result?.notes || "");
         return;
       }
-
-      matchAITestsToApp(result.tests);
-      setAnalysisNotes(result.notes || "");
-      setConfidence(result.confidence);
-      setAnalysisComplete(true);
+      ingestAiResult(result);
       await updateAnalysisResult(result);
-
-      const availableCount = result.tests.filter((t) => {
-        const aiName = t.name.toLowerCase();
-        const aiShort = (t.shortName || "").toLowerCase();
-        return appTests.some((at) => {
-          const appName = at.name.toLowerCase();
-          return appName === aiName || appName.includes(aiName) || aiName.includes(appName) || (aiShort && (appName.includes(aiShort) || aiShort.includes(appName)));
-        });
-      }).length;
-
-      toast.success(`Found ${result.tests.length} tests — ${availableCount} available in your area`);
+      toast.success(`Detected ${result.tests.length} test${result.tests.length > 1 ? "s" : ""}. Please review.`);
     } catch (err) {
-      console.error("Error:", err);
-      toast.error("Failed to analyze prescription. Please try again.");
+      console.error(err);
+      toast.error("Failed to analyze prescription.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -231,41 +210,82 @@ const UploadPrescriptionScreen = () => {
   const handleRemoveImage = async () => {
     await deletePrescription();
     setUploadedImage(null);
+    setImageBase64Cache("");
+    setDetected([]);
     setAnalysisComplete(false);
-    setMatchedTests([]);
-    setSelectedTestIds(new Set());
-    setConfirmed(false);
+    setZoom(1);
   };
 
-  const isInCart = (testId: string) => items.some((item) => item.id === testId);
+  // ---------- Verification panel actions ----------
+  const updateName = (uid: string, name: string) =>
+    setDetected((prev) => prev.map((d) => (d.uid === uid ? { ...d, name } : d)));
 
-  const toggleTestSelection = (testId: string) => {
-    setSelectedTestIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(testId)) next.delete(testId);
-      else next.add(testId);
-      return next;
-    });
-  };
+  const removeDetected = (uid: string) =>
+    setDetected((prev) => prev.filter((d) => d.uid !== uid));
 
-  const handleConfirmAddToCart = () => {
-    const toAdd = matchedTests.filter(
-      (t) => t.matched && selectedTestIds.has(t.id) && !isInCart(t.id)
+  const applyDictionarySuggestion = (uid: string) =>
+    setDetected((prev) =>
+      prev.map((d) => (d.uid === uid && d.dictionaryHit ? { ...d, name: d.dictionaryHit.canonical } : d)),
     );
-    if (toAdd.length === 0) {
-      toast.error("Select tests to add.");
+
+  const addManual = () => {
+    const trimmed = manualName.trim();
+    if (!trimmed) return;
+    const dict = matchToDictionary(trimmed);
+    setDetected((prev) => [
+      ...prev,
+      {
+        uid: newUid(),
+        name: dict?.canonical || trimmed,
+        originalAiName: trimmed,
+        dictionaryHit: dict ? { canonical: dict.canonical, score: dict.score } : null,
+        source: "manual",
+      },
+    ]);
+    setManualName("");
+    toast.success("Test added");
+  };
+
+  // ---------- Map verified tests → app catalog → cart ----------
+  const isInCart = useCallback((id: string) => items.some((i) => i.id === id), [items]);
+
+  const matchedAppTests = useMemo(() => {
+    return detected.map((d) => {
+      const q = d.name.toLowerCase();
+      const found = appTests.find((a) => {
+        const an = a.name.toLowerCase();
+        if (an === q) return true;
+        if (q.length > 3 && an.includes(q)) return true;
+        if (an.length > 3 && q.includes(an)) return true;
+        return false;
+      });
+      return { detected: d, app: found || null };
+    });
+  }, [detected, appTests]);
+
+  const availableCount = matchedAppTests.filter((m) => m.app && !isInCart(m.app!.id)).length;
+
+  const handleConfirmSave = () => {
+    if (detected.length === 0) {
+      toast.error("Add at least one test to confirm.");
       return;
     }
     let added = 0;
-    for (const test of toAdd) {
-      const success = addToCart({ id: test.id, name: test.name, price: test.price });
-      if (success) added++;
+    let missing = 0;
+    for (const m of matchedAppTests) {
+      if (m.app && !isInCart(m.app.id)) {
+        const ok = addToCart({ id: m.app.id, name: m.app.name, price: m.app.price });
+        if (ok) added++;
+      } else if (!m.app) {
+        missing++;
+      }
     }
-    if (added > 0) {
-      setConfirmed(true);
-    }
+    if (added > 0) toast.success(`${added} test${added > 1 ? "s" : ""} added to cart`);
+    if (missing > 0) toast.message(`${missing} test${missing > 1 ? "s are" : " is"} not available in your locality`);
+    if (added > 0) navigate("/cart");
   };
 
+  // ---------- Render ----------
   if (isPrescriptionLoading) {
     return (
       <MobileLayout showNav={false} showFloatingAdd={false}>
@@ -278,9 +298,6 @@ const UploadPrescriptionScreen = () => {
     );
   }
 
-  const availableTests = matchedTests.filter((t) => t.matched);
-  const unavailableTests = matchedTests.filter((t) => !t.matched);
-
   return (
     <MobileLayout showNav={false} showFloatingAdd={false}>
       {/* Header */}
@@ -291,129 +308,208 @@ const UploadPrescriptionScreen = () => {
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full bg-muted flex items-center justify-center"
+            aria-label="Back"
+          >
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Upload Prescription</h1>
-            <p className="text-xs text-muted-foreground">Get AI-powered test recommendations</p>
+            <h1 className="text-lg font-bold text-foreground">Prescription Scanner</h1>
+            <p className="text-xs text-muted-foreground">AI + medical dictionary verification</p>
           </div>
         </div>
       </motion.header>
 
       <div className="px-4 py-6 space-y-6 pb-32">
         {/* Upload Section */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          {!uploadedImage ? (
-            <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center bg-muted/30">
+        {!uploadedImage && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center bg-gradient-to-b from-primary/5 to-background">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground mb-2">Upload your prescription</h3>
-              <p className="text-sm text-muted-foreground mb-6">Take a photo or upload an image of your prescription</p>
+              <h3 className="font-semibold text-foreground mb-1">Upload your prescription</h3>
+              <p className="text-sm text-muted-foreground mb-6">JPG or PNG · up to 10 MB</p>
               <div className="flex gap-3 justify-center">
-                <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileUpload} className="hidden" />
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                <Button variant="outline" className="gap-2" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button className="gap-2" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
                   <Camera className="w-4 h-4" /> Camera
                 </Button>
                 <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                  <Image className="w-4 h-4" /> Gallery
+                  <ImageIcon className="w-4 h-4" /> Gallery
                 </Button>
               </div>
             </div>
-          ) : (
-            <div className="relative">
-              <div className="w-full rounded-2xl overflow-hidden border border-border bg-muted/20">
-                <img 
-                  src={uploadedImage} 
-                  alt="Uploaded prescription" 
-                  className="w-full rounded-2xl object-contain max-h-80"
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const fallback = target.nextElementSibling as HTMLElement;
-                    if (fallback) fallback.style.display = 'flex';
-                  }}
-                />
 
-                <div className="hidden items-center justify-center h-48 text-muted-foreground flex-col gap-2">
-                  <FileText className="w-12 h-12" />
-                  <p className="text-sm font-medium">Prescription uploaded</p>
-                  <p className="text-xs">Image preview unavailable</p>
+            <div className="soft-card p-4 mt-4">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-4 h-4 text-warning" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-foreground mb-1">For best accuracy</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Good, even lighting — no shadows</li>
+                    <li>• Lay the prescription flat, fully in frame</li>
+                    <li>• Avoid blur — tap focus before capturing</li>
+                  </ul>
                 </div>
               </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Image preview with zoom */}
+        {uploadedImage && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="relative rounded-2xl overflow-hidden border border-border bg-muted/30">
+              <div className="max-h-80 overflow-auto">
+                <img
+                  src={uploadedImage}
+                  alt="Uploaded prescription"
+                  style={{ transform: `scale(${zoom})`, transformOrigin: "top left", transition: "transform 0.2s ease" }}
+                  className="w-full object-contain select-none"
+                  draggable={false}
+                />
+              </div>
+
+              {/* Zoom controls */}
+              <div className="absolute bottom-3 right-3 flex gap-2">
+                <button
+                  onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))}
+                  className="w-9 h-9 rounded-full bg-background/90 border border-border shadow flex items-center justify-center"
+                  aria-label="Zoom out"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}
+                  className="w-9 h-9 rounded-full bg-background/90 border border-border shadow flex items-center justify-center"
+                  aria-label="Zoom in"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+              </div>
+
+              <button
+                onClick={handleRemoveImage}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-destructive shadow-lg flex items-center justify-center"
+                disabled={isUploading}
+                aria-label="Remove image"
+              >
+                <X className="w-4 h-4 text-destructive-foreground" />
+              </button>
+
               {isUploading && (
-                <div className="absolute inset-0 bg-background/80 rounded-2xl flex items-center justify-center">
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
                     <Sparkles className="w-8 h-8 text-primary" />
                   </motion.div>
-                  <span className="ml-2 text-sm text-muted-foreground">Uploading...</span>
-                </div>
-              )}
-              <button onClick={handleRemoveImage} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-destructive shadow-lg flex items-center justify-center" disabled={isUploading}>
-                <X className="w-4 h-4 text-destructive-foreground" />
-              </button>
-              {!analysisComplete && !isUploading && (
-                <div className="mt-4">
-                  <Button className="w-full gap-2" onClick={handleAnalyzePrescription} disabled={isAnalyzing}>
-                    {isAnalyzing ? (
-                      <>
-                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                          <Sparkles className="w-4 h-4" />
-                        </motion.div>
-                        Analyzing with AI...
-                      </>
-                    ) : (
-                      <><Sparkles className="w-4 h-4" /> Analyze Prescription</>
-                    )}
-                  </Button>
+                  <span className="ml-2 text-sm text-muted-foreground">Uploading…</span>
                 </div>
               )}
             </div>
-          )}
-        </motion.div>
 
-        {/* Analysis Status */}
+            {!analysisComplete && !isUploading && (
+              <Button className="w-full gap-2 mt-4" onClick={handleAnalyze} disabled={isAnalyzing}>
+                {isAnalyzing ? (
+                  <>
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                      <Sparkles className="w-4 h-4" />
+                    </motion.div>
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" /> Scan with AI
+                  </>
+                )}
+              </Button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Processing pipeline */}
         <AnimatePresence>
           {isAnalyzing && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="soft-card p-4">
-              <div className="flex items-center gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              className="soft-card p-4"
+            >
+              <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
                     <Sparkles className="w-5 h-5 text-primary" />
                   </motion.div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">AI is analyzing your prescription</p>
-                  <p className="text-sm text-muted-foreground">This may take a few seconds...</p>
+                <div className="flex-1">
+                  <p className="font-medium text-foreground">AI verification in progress</p>
+                  <motion.p
+                    key={stepIndex}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-sm text-muted-foreground"
+                  >
+                    {PROCESSING_STEPS[stepIndex]}
+                  </motion.p>
                 </div>
+              </div>
+              <div className="space-y-2">
+                {PROCESSING_STEPS.map((s, i) => (
+                  <div
+                    key={s}
+                    className={`h-2 rounded-full ${i <= stepIndex ? "bg-primary" : "bg-muted"}`}
+                  />
+                ))}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Analysis Complete */}
+        {/* Analysis summary */}
         <AnimatePresence>
-          {analysisComplete && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="soft-card p-4 border-success/30 bg-success/5">
+          {analysisComplete && !isAnalyzing && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="soft-card p-4 border-success/30 bg-success/5"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
                   <CheckCircle2 className="w-5 h-5 text-success" />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-foreground">Analysis Complete</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-foreground">Detected {detected.length} test{detected.length === 1 ? "" : "s"}</p>
                     {confidence && (
-                      <Badge variant={confidence === "high" ? "softSuccess" : confidence === "medium" ? "softWarning" : "softDestructive"} className="text-xs">
+                      <Badge
+                        variant={confidence === "high" ? "softSuccess" : confidence === "medium" ? "softWarning" : "softDestructive"}
+                        className="text-xs"
+                      >
                         {confidence} confidence
                       </Badge>
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {availableTests.length} available • {unavailableTests.length} not available
+                    Please verify, edit, or remove anything that looks wrong.
                   </p>
                   {analysisNotes && <p className="text-xs text-muted-foreground mt-1">{analysisNotes}</p>}
                 </div>
@@ -422,140 +518,156 @@ const UploadPrescriptionScreen = () => {
           )}
         </AnimatePresence>
 
-        {/* Available Tests — Confirmation step */}
-        <AnimatePresence>
-          {availableTests.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-base font-bold text-foreground">Review Detected Tests</h2>
-                <Badge variant="ai" className="text-xs">AI Detected</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                Tick the tests you want and tap <span className="font-semibold text-foreground">Confirm</span> to add them to your cart.
-              </p>
-              <div className="space-y-2">
-                {availableTests.map((test, index) => {
-                  const alreadyInCart = isInCart(test.id);
-                  const isSelected = selectedTestIds.has(test.id);
-                  return (
-                    <motion.label
-                      key={test.id}
-                      htmlFor={`presc-test-${test.id}`}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + index * 0.08 }}
-                      className={`soft-card p-3 flex items-center gap-3 cursor-pointer ${
-                        alreadyInCart ? "opacity-70" : ""
-                      } ${isSelected && !alreadyInCart ? "ring-2 ring-primary/40" : ""}`}
-                    >
-                      <Checkbox
-                        id={`presc-test-${test.id}`}
-                        checked={alreadyInCart || isSelected}
-                        disabled={alreadyInCart}
-                        onCheckedChange={() => toggleTestSelection(test.id)}
-                      />
-                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        {/* Verification panel */}
+        {(analysisComplete || detected.length > 0) && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-base font-bold text-foreground">Detected Blood Tests</h2>
+              <Badge variant="ai" className="text-xs">Verify before saving</Badge>
+            </div>
+
+            <div className="space-y-2">
+              {detected.map((d) => {
+                const matchInfo = matchedAppTests.find((m) => m.detected.uid === d.uid);
+                const inCart = matchInfo?.app ? isInCart(matchInfo.app.id) : false;
+                const editing = editingUid === d.uid;
+                const suggestion =
+                  d.dictionaryHit && d.dictionaryHit.canonical.toLowerCase() !== d.name.toLowerCase()
+                    ? d.dictionaryHit
+                    : null;
+
+                return (
+                  <div
+                    key={d.uid}
+                    className={`soft-card p-3 ${matchInfo?.app ? "" : "border-warning/30"}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <FlaskConical className="w-4 h-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground text-sm">{test.name}</h3>
-                        {test.price > 0 && (
-                          <p className="text-xs text-primary font-bold mt-0.5">₹{test.price}</p>
+                        {editing ? (
+                          <Input
+                            autoFocus
+                            value={d.name}
+                            onChange={(e) => updateName(d.uid, e.target.value)}
+                            onBlur={() => setEditingUid(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") setEditingUid(null);
+                            }}
+                            className="h-9 text-sm"
+                          />
+                        ) : (
+                          <button
+                            onClick={() => setEditingUid(d.uid)}
+                            className="text-left w-full"
+                          >
+                            <h3 className="font-semibold text-foreground text-sm leading-snug">{d.name}</h3>
+                          </button>
+                        )}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {d.source === "manual" ? (
+                            <Badge variant="soft" className="text-[10px]">Manual</Badge>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">OCR: “{d.originalAiName}”</span>
+                          )}
+                          {matchInfo?.app ? (
+                            inCart ? (
+                              <Badge variant="softSuccess" className="text-[10px]">
+                                <ShoppingCart className="w-3 h-3 mr-1" /> In cart
+                              </Badge>
+                            ) : (
+                              <Badge variant="softSuccess" className="text-[10px]">
+                                Available · ₹{matchInfo.app.price}
+                              </Badge>
+                            )
+                          ) : (
+                            <Badge variant="softWarning" className="text-[10px]">
+                              <AlertTriangle className="w-3 h-3 mr-1" /> Not in your locality
+                            </Badge>
+                          )}
+                        </div>
+
+                        {suggestion && (
+                          <button
+                            onClick={() => applyDictionarySuggestion(d.uid)}
+                            className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+                          >
+                            <Wand2 className="w-3 h-3" />
+                            Use suggestion: <span className="font-medium">{suggestion.canonical}</span>
+                          </button>
                         )}
                       </div>
-                      {alreadyInCart && (
-                        <Badge variant="softSuccess" className="text-[10px] flex-shrink-0">
-                          <ShoppingCart className="w-3 h-3 mr-1" /> In cart
-                        </Badge>
-                      )}
-                    </motion.label>
-                  );
-                })}
-              </div>
 
-              {/* Confirm CTA */}
-              {(() => {
-                const selectableCount = availableTests.filter(
-                  (t) => selectedTestIds.has(t.id) && !isInCart(t.id)
-                ).length;
-                return (
-                  <div className="mt-4 flex flex-col sm:flex-row gap-2">
-                    <Button
-                      className="flex-1 gap-2"
-                      onClick={handleConfirmAddToCart}
-                      disabled={selectableCount === 0}
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      Confirm & Add {selectableCount > 0 ? `${selectableCount} ` : ""}to Cart
-                    </Button>
-                    {confirmed && (
-                      <Button variant="outline" className="gap-2" onClick={() => navigate("/cart")}>
-                        <ShoppingCart className="w-4 h-4" /> Go to Cart
-                      </Button>
-                    )}
-                  </div>
-                );
-              })()}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-
-        {/* Unavailable Tests */}
-        <AnimatePresence>
-          {unavailableTests.length > 0 && (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-              <div className="flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-                <h2 className="text-sm font-semibold text-muted-foreground">Not Available in Your Locality</h2>
-              </div>
-              <div className="space-y-2">
-                {unavailableTests.map((test, index) => (
-                  <motion.div
-                    key={test.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 + index * 0.05 }}
-                    className="soft-card p-3 opacity-60"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                        <FlaskConical className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-muted-foreground text-sm">{test.originalAiName}</h3>
-                        <p className="text-xs text-muted-foreground/70 mt-0.5">Currently unavailable</p>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <button
+                          onClick={() => setEditingUid(editing ? null : d.uid)}
+                          className="w-8 h-8 rounded-lg bg-muted hover:bg-muted/70 flex items-center justify-center"
+                          aria-label="Edit"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-foreground" />
+                        </button>
+                        <button
+                          onClick={() => removeDetected(d.uid)}
+                          className="w-8 h-8 rounded-lg bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center"
+                          aria-label="Remove"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </button>
                       </div>
                     </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  </div>
+                );
+              })}
 
-        {/* Tips Section */}
-        {!uploadedImage && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="soft-card p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="w-4 h-4 text-warning" />
-              </div>
-              <div>
-                <h4 className="font-medium text-foreground mb-1">Tips for best results</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Ensure good lighting when taking a photo</li>
-                  <li>• Keep the prescription flat and fully visible</li>
-                  <li>• Make sure text is clear and readable</li>
-                  <li>• Avoid blurry or cropped images</li>
-                </ul>
-              </div>
+              {detected.length === 0 && (
+                <div className="soft-card p-4 text-center text-sm text-muted-foreground">
+                  No tests yet. Add one manually below.
+                </div>
+              )}
+            </div>
+
+            {/* Add manually */}
+            <div className="mt-3 flex gap-2">
+              <Input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") addManual();
+                }}
+                placeholder="Add a test manually (e.g. CBC, HbA1c, Lipid Profile)…"
+                list="dict-suggestions"
+                className="h-10"
+              />
+              <datalist id="dict-suggestions">
+                {MEDICAL_TEST_DICTIONARY.map((m) => (
+                  <option key={m.canonical} value={m.canonical} />
+                ))}
+              </datalist>
+              <Button variant="outline" className="gap-1" onClick={addManual} disabled={!manualName.trim()}>
+                <Plus className="w-4 h-4" /> Add
+              </Button>
+            </div>
+
+            {/* Confirm */}
+            <div className="mt-4 sticky bottom-20 z-30">
+              <Button
+                className="w-full gap-2 h-12 text-base shadow-lg"
+                onClick={handleConfirmSave}
+                disabled={detected.length === 0 || availableCount === 0}
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                Confirm & Save {availableCount > 0 ? `(${availableCount})` : ""}
+              </Button>
+              {detected.length > 0 && availableCount === 0 && (
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  None of the verified tests are available in your locality yet.
+                </p>
+              )}
             </div>
           </motion.div>
         )}
       </div>
-
-
     </MobileLayout>
   );
 };
