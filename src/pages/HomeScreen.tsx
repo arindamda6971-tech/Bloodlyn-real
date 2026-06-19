@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
@@ -72,6 +72,7 @@ type PreviousOrder = {
 const HomeScreen = () => {
   useSEO({ title: "BloodLyn — Book Health Tests at Home", description: "Book NABL-certified home health tests in 60 minutes." });
   const navigate = useNavigate();
+  const carouselRef = useRef<HTMLDivElement>(null);
   const { unreadCount } = useNotifications();
   const { user } = useAuth();
   const { addToCart, items, clearCart, replaceCart } = useCart();
@@ -316,8 +317,16 @@ const HomeScreen = () => {
                 View all
               </button>
             </div>
-            <div className="overflow-x-auto scrollbar-hide" style={{ touchAction: 'pan-x', WebkitOverflowScrolling: 'touch' }}>
-              <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
+            <div ref={carouselRef} className="overflow-hidden" style={{ touchAction: 'pan-y' }}>
+              <motion.div 
+                className="flex gap-4 px-6 pb-4" 
+                style={{ width: 'max-content' }}
+                drag="x"
+                dragConstraints={carouselRef}
+                dragDirectionLock
+                dragElastic={0.15}
+                whileTap={{ cursor: "grabbing" }}
+              >
                 {previousOrders.map((order) => {
                   const names = splitTestNames(order.test_name);
                   const label = formatTestsLabel(names, "Lab Test");
@@ -354,7 +363,7 @@ const HomeScreen = () => {
                     </div>
                   );
                 })}
-              </div>
+              </motion.div>
             </div>
           </section>
         )}
