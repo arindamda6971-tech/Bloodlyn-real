@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
+import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -143,7 +143,7 @@ const UploadPrescriptionScreen = () => {
 
   const captureImage = async (source: CameraSource) => {
     try {
-      const image = await Camera.getPhoto({
+      const image = await CapCamera.getPhoto({
         quality: 70,
         allowEditing: false,
         resultType: CameraResultType.Base64,
