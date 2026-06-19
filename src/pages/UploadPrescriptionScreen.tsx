@@ -1,6 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera as CapCamera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft,
@@ -56,9 +55,42 @@ const PROCESSING_STEPS = [
 
 const newUid = () => `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/**
+ * Compress an image file using a canvas so the resulting base64 payload
+ * stays well under the 5 MB AI limit (~7 MB base64). Works on every
+ * platform — web, PWA, and Capacitor WebView.
+ */
+const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Failed to decode image"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
 const UploadPrescriptionScreen = () => {
   const navigate = useNavigate();
-  // Refs no longer needed with Capacitor Camera
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const { addToCart, items } = useCart();
   const { data: bridgeData } = useBridgeTests();
 
@@ -141,49 +173,41 @@ const UploadPrescriptionScreen = () => {
     setAnalysisComplete(true);
   };
 
-  const captureImage = async (source: CameraSource) => {
-    try {
-      const image = await CapCamera.getPhoto({
-        quality: 70,
-        allowEditing: false,
-        resultType: CameraResultType.Base64,
-        source: source,
-        width: 1200,
-      });
-
-      if (image.base64String) {
-        const base64Image = `data:image/${image.format || 'jpeg'};base64,${image.base64String}`;
-        
-        if (base64Image.length > 7 * 1024 * 1024) {
-          toast.error("Image too large. Please take a picture with lower resolution.");
-          return;
-        }
-
-        setImageBase64Cache(base64Image);
-        setUploadedImage(base64Image);
-        setAnalysisComplete(false);
-        setDetected([]);
-        setAnalysisNotes("");
-        setConfidence("");
-        setZoom(1);
-        setIsUploading(true);
-        const savedUrl = await savePrescription(base64Image);
-        if (savedUrl) {
-          setUploadedImage(savedUrl);
-          toast.success("Prescription uploaded successfully!");
-        }
-        setIsUploading(false);
-      }
-    } catch (err: any) {
-      console.error("Camera error:", err);
-      if (err.message && !err.message.includes("User cancelled")) {
-        toast.error("Failed to access camera/gallery. Please check permissions.");
-      }
+  // ---------- Upload (with client-side compression) ----------
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File size should be less than 20 MB");
+      return;
     }
+    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      toast.error("Only JPG, PNG, or WebP images are accepted");
+      return;
+    }
+    try {
+      const base64Image = await compressImage(file, 1200, 0.7);
+      setImageBase64Cache(base64Image);
+      setUploadedImage(base64Image);
+      setAnalysisComplete(false);
+      setDetected([]);
+      setAnalysisNotes("");
+      setConfidence("");
+      setZoom(1);
+      setIsUploading(true);
+      const savedUrl = await savePrescription(base64Image);
+      if (savedUrl) {
+        setUploadedImage(savedUrl);
+        toast.success("Prescription uploaded");
+      }
+      setIsUploading(false);
+    } catch (err) {
+      console.error("Image compression error:", err);
+      toast.error("Failed to process image. Please try again.");
+    }
+    // Reset the input so the same file can be re-selected
+    event.target.value = "";
   };
-
-  const handleCameraCapture = () => captureImage(CameraSource.Camera);
-  const handleGalleryCapture = () => captureImage(CameraSource.Photos);
 
   // ---------- Analyze ----------
   const handleAnalyze = async () => {
@@ -344,10 +368,25 @@ const UploadPrescriptionScreen = () => {
               <h3 className="font-semibold text-foreground mb-1">Upload your prescription</h3>
               <p className="text-sm text-muted-foreground mb-6">JPG or PNG · up to 10 MB</p>
               <div className="flex gap-3 justify-center">
-                <Button variant="outline" className="gap-2" onClick={handleCameraCapture} disabled={isUploading}>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  capture="environment"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <Button className="gap-2" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
                   <Camera className="w-4 h-4" /> Camera
                 </Button>
-                <Button variant="outline" className="gap-2" onClick={handleGalleryCapture} disabled={isUploading}>
+                <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
                   <ImageIcon className="w-4 h-4" /> Gallery
                 </Button>
               </div>
