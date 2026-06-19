@@ -567,7 +567,7 @@ const UploadPrescriptionScreen = () => {
                         )}
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
                           {d.source === "manual" ? (
-                            <Badge variant="softInfo" className="text-[10px]">Manual</Badge>
+                            <Badge variant="soft" className="text-[10px]">Manual</Badge>
                           ) : (
                             <span className="text-[11px] text-muted-foreground">OCR: “{d.originalAiName}”</span>
                           )}
