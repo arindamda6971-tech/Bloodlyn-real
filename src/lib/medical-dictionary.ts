@@ -62,20 +62,34 @@ export function levenshtein(a: string, b: string): number {
 const normalize = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 
+// Strip generic medical filler words so "S. Creatinine Test" matches "creatinine"
+const STOPWORDS = new Set(["test", "serum", "s", "blood", "profile", "panel", "level", "report"]);
+const stripStop = (s: string) =>
+  normalize(s).split(" ").filter((w) => !STOPWORDS.has(w)).join(" ").trim() || normalize(s);
+
+const isAbbrev = (s: string) => s.length <= 6 && /^[a-z0-9]+$/.test(s);
+
 export interface DictionaryMatch {
   canonical: string;
   category: string;
   score: number; // 0..1 — 1 is perfect
+  confidencePct: number; // 0..100, rounded
   matchedAlias: string;
+  matchType: "exact" | "abbreviation" | "substring" | "fuzzy";
 }
 
 /**
  * Fuzzy-match a noisy OCR test name against the curated dictionary.
- * Returns the best canonical match (and confidence) or null if nothing close.
+ * - Exact alias match → score 1.0
+ * - Abbreviation match (CBC, TSH, T5H→TSH) → up to 0.95 with token-boundary or 1-edit tolerance
+ * - Substring containment → 0.88
+ * - Levenshtein fuzzy → 1 - dist/maxLen (typo tolerant)
  */
 export function matchToDictionary(raw: string, threshold = 0.55): DictionaryMatch | null {
-  const q = normalize(raw);
-  if (!q) return null;
+  const qRaw = normalize(raw);
+  if (!qRaw) return null;
+  const q = stripStop(qRaw);
+  const qTokens = new Set(qRaw.split(" "));
 
   let best: DictionaryMatch | null = null;
 
@@ -83,19 +97,52 @@ export function matchToDictionary(raw: string, threshold = 0.55): DictionaryMatc
     for (const alias of entry.aliases) {
       const a = normalize(alias);
       if (!a) continue;
+      const aStripped = stripStop(a);
 
-      // Exact / substring boosts
       let score = 0;
-      if (a === q) score = 1;
-      else if (q.includes(a) || a.includes(q)) score = 0.9;
-      else {
-        const dist = levenshtein(a, q);
-        const maxLen = Math.max(a.length, q.length);
-        score = 1 - dist / maxLen;
+      let matchType: DictionaryMatch["matchType"] = "fuzzy";
+
+      if (a === qRaw || aStripped === q) {
+        score = 1;
+        matchType = "exact";
+      } else if (isAbbrev(a)) {
+        // Abbreviation-aware: token-boundary match OR 1-edit typo (e.g. T5H → TSH)
+        if (qTokens.has(a)) {
+          score = 0.95;
+          matchType = "abbreviation";
+        } else if (isAbbrev(qRaw) && Math.abs(qRaw.length - a.length) <= 1) {
+          const d = levenshtein(qRaw, a);
+          if (d <= 1) {
+            score = 0.9;
+            matchType = "abbreviation";
+          }
+        }
+      }
+
+      if (score < 0.88 && (qRaw.includes(a) || a.includes(qRaw))) {
+        score = Math.max(score, 0.88);
+        matchType = score === 0.88 ? "substring" : matchType;
+      }
+
+      if (score < 0.85) {
+        const dist = levenshtein(aStripped, q);
+        const maxLen = Math.max(aStripped.length, q.length) || 1;
+        const fuzzy = 1 - dist / maxLen;
+        if (fuzzy > score) {
+          score = fuzzy;
+          matchType = "fuzzy";
+        }
       }
 
       if (!best || score > best.score) {
-        best = { canonical: entry.canonical, category: entry.category, score, matchedAlias: alias };
+        best = {
+          canonical: entry.canonical,
+          category: entry.category,
+          score,
+          confidencePct: Math.round(score * 100),
+          matchedAlias: alias,
+          matchType,
+        };
       }
     }
   }
@@ -103,3 +150,4 @@ export function matchToDictionary(raw: string, threshold = 0.55): DictionaryMatc
   if (best && best.score >= threshold) return best;
   return null;
 }
+
