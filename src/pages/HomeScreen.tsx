@@ -317,16 +317,8 @@ const HomeScreen = () => {
                 View all
               </button>
             </div>
-            <div ref={carouselRef} className="overflow-hidden" style={{ touchAction: 'pan-y' }}>
-              <motion.div 
-                className="flex gap-4 px-6 pb-4" 
-                style={{ width: 'max-content' }}
-                drag="x"
-                dragConstraints={carouselRef}
-                dragDirectionLock
-                dragElastic={0.15}
-                whileTap={{ cursor: "grabbing" }}
-              >
+            <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' }}>
+              <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
                 {previousOrders.map((order) => {
                   const names = splitTestNames(order.test_name);
                   const label = formatTestsLabel(names, "Lab Test");
@@ -363,7 +355,7 @@ const HomeScreen = () => {
                     </div>
                   );
                 })}
-              </motion.div>
+              </div>
             </div>
           </section>
         )}
