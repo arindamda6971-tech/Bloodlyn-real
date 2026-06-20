@@ -374,35 +374,65 @@ const UploadPrescriptionScreen = () => {
         {/* Upload Section */}
         {!uploadedImage && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center bg-gradient-to-b from-primary/5 to-background">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-primary" />
+            {/* Google Lens style viewfinder */}
+            <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-2xl">
+              {/* Corner brackets */}
+              {[
+                "top-4 left-4 border-t-2 border-l-2 rounded-tl-xl",
+                "top-4 right-4 border-t-2 border-r-2 rounded-tr-xl",
+                "bottom-4 left-4 border-b-2 border-l-2 rounded-bl-xl",
+                "bottom-4 right-4 border-b-2 border-r-2 rounded-br-xl",
+              ].map((c) => (
+                <div key={c} className={`absolute w-10 h-10 border-primary ${c}`} />
+              ))}
+
+              {/* Sweeping scan line */}
+              <motion.div
+                className="absolute inset-x-6 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_18px_2px_hsl(var(--primary))]"
+                initial={{ top: "10%" }}
+                animate={{ top: ["10%", "90%", "10%"] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+
+              {/* Center content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.4, repeat: Infinity }}
+                  className="w-16 h-16 rounded-2xl bg-primary/15 backdrop-blur-sm flex items-center justify-center mb-4 border border-primary/30"
+                >
+                  <FileText className="w-8 h-8 text-primary" />
+                </motion.div>
+                <h3 className="font-bold text-white text-lg">Scan your prescription</h3>
+                <p className="text-xs text-slate-300 mt-1 max-w-[240px]">
+                  Align the paper inside the frame. Nothing is stored — your prescription is processed and discarded.
+                </p>
               </div>
-              <h3 className="font-semibold text-foreground mb-1">Upload your prescription</h3>
-              <p className="text-sm text-muted-foreground mb-6">JPG or PNG · up to 10 MB</p>
-              <div className="flex gap-3 justify-center">
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button className="gap-2" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
-                  <Camera className="w-4 h-4" /> Camera
-                </Button>
-                <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                  <ImageIcon className="w-4 h-4" /> Gallery
-                </Button>
-              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button className="gap-2 h-12" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
+                <Camera className="w-4 h-4" /> Camera
+              </Button>
+              <Button variant="outline" className="gap-2 h-12" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                <ImageIcon className="w-4 h-4" /> Gallery
+              </Button>
             </div>
 
             <div className="soft-card p-4 mt-4">
@@ -422,6 +452,7 @@ const UploadPrescriptionScreen = () => {
             </div>
           </motion.div>
         )}
+
 
         {/* Image preview with zoom */}
         {uploadedImage && (
