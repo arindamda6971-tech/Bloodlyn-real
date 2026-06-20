@@ -208,13 +208,9 @@ const UploadPrescriptionScreen = () => {
       setAnalysisNotes("");
       setConfidence("");
       setZoom(1);
-      setIsUploading(true);
-      const savedUrl = await savePrescription(base64Image);
-      if (savedUrl) {
-        setUploadedImage(savedUrl);
-        toast.success("Prescription uploaded");
-      }
-      setIsUploading(false);
+      // No persistent upload — keep image in memory only. The base64 cache
+      // feeds the AI directly; nothing is written to the backend.
+      toast.success("Prescription loaded");
     } catch (err) {
       console.error("Image compression error:", err);
       toast.error("Failed to process image. Please try again.");
@@ -222,6 +218,7 @@ const UploadPrescriptionScreen = () => {
     // Reset the input so the same file can be re-selected
     event.target.value = "";
   };
+
 
   // ---------- Analyze ----------
   const handleAnalyze = async () => {
