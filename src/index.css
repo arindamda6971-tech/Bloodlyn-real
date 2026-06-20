@@ -161,7 +161,7 @@
   }
 
   html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto; /* Native momentum is better than smooth-scroll */
     overflow: hidden;
     height: 100%;
     width: 100%;
@@ -183,7 +183,7 @@
     -webkit-font-smoothing: antialiased;
     background-color: hsl(var(--background)); /* Prevents white flash */
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeSpeed;
+    text-rendering: optimizeLegibility;
     font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
     font-variant-ligatures: common-ligatures contextual;
     font-optical-sizing: auto;

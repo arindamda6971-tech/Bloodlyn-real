@@ -57,7 +57,7 @@ const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) 
           WebkitOverflowScrolling: 'touch',
           scrollPaddingLeft: '1.5rem',
           scrollPaddingRight: '1.5rem',
-          touchAction: 'pan-x'
+          touchAction: 'pan-x pan-y'
         }}
       >
         {centers.map((center, index) => {
@@ -68,7 +68,7 @@ const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) 
             <div
               key={center.id}
               className="flex-shrink-0 w-[280px] snap-start"
-              style={{ contain: 'content' }}
+              style={{ contain: 'content', touchAction: 'pan-x pan-y' }}
             >
               <div
                 onClick={() => navigate(`/lab/${center.id}`)}

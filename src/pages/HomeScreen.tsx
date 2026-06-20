@@ -162,11 +162,18 @@ const HomeScreen = () => {
     }));
   }, [centersData]);
 
-  // Performance optimized background
+  // High-performance static background (zero GPU blur overhead)
   const StaticBackground = useMemo(() => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/5 to-transparent" />
-      <div className="absolute top-[-50px] left-[-50px] w-80 h-80 bg-primary/10 rounded-full blur-[120px]" />
+      <svg className="absolute top-0 left-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="aurora-grad" cx="20%" cy="10%" r="50%">
+            <stop offset="0%" stopColor="hsl(var(--primary) / 0.15)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="1000" fill="url(#aurora-grad)" opacity="0.6" />
+      </svg>
     </div>
   ), []);
 
@@ -317,13 +324,13 @@ const HomeScreen = () => {
                 View all
               </button>
             </div>
-            <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain' }}>
+            <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
               <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
                 {previousOrders.map((order) => {
                   const names = splitTestNames(order.test_name);
                   const label = formatTestsLabel(names, "Lab Test");
                   return (
-                    <div key={order.id} className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0">
+                    <div key={order.id} className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0" style={{ touchAction: 'pan-x pan-y' }}>
                       <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0 pr-2">
