@@ -30,7 +30,7 @@ import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useMedicalWorker } from "@/hooks/useMedicalWorker";
-import { MEDICAL_TEST_DICTIONARY } from "@/lib/medical-dictionary";
+import { MEDICAL_TEST_DICTIONARY, matchToDictionary } from "@/lib/medical-dictionary";
 
 interface AIAnalysisResult {
   tests: Array<{ name: string; shortName?: string; category?: string }>;
@@ -95,7 +95,9 @@ const UploadPrescriptionScreen = () => {
   const { addToCart, items } = useCart();
   const { data: bridgeData } = useBridgeTests();
 
-  const { prescription, isLoading: isPrescriptionLoading, savePrescription, updateAnalysisResult, deletePrescription } =
+  // Storage hook is used only to wipe any leftover pending rows — we never
+  // persist a prescription. Scanned data stays in memory only.
+  const { prescription, isLoading: isPrescriptionLoading, deletePrescription } =
     usePrescriptionStorage();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -136,17 +138,23 @@ const UploadPrescriptionScreen = () => {
     })();
   }, [bridgeData]);
 
-  // ---------- Restore previously saved prescription ----------
+  // ---------- Wipe any leftover pending prescription on mount/unmount ----------
+  // The user has explicitly asked NOT to persist scanned prescriptions in the
+  // backend — they are processed in-memory only.
   useEffect(() => {
     if (prescription && !isPrescriptionLoading) {
-      setUploadedImage(prescription.image_url);
-      const result = prescription.analysis_result as AIAnalysisResult | null;
-      if (result?.tests?.length) {
-        ingestAiResult(result);
-      }
+      deletePrescription().catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prescription, isPrescriptionLoading]);
+
+  useEffect(() => {
+    return () => {
+      deletePrescription().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { matchAsync } = useMedicalWorker();
 
   // ---------- Rolling processing step animation ----------
@@ -200,13 +208,9 @@ const UploadPrescriptionScreen = () => {
       setAnalysisNotes("");
       setConfidence("");
       setZoom(1);
-      setIsUploading(true);
-      const savedUrl = await savePrescription(base64Image);
-      if (savedUrl) {
-        setUploadedImage(savedUrl);
-        toast.success("Prescription uploaded");
-      }
-      setIsUploading(false);
+      // No persistent upload — keep image in memory only. The base64 cache
+      // feeds the AI directly; nothing is written to the backend.
+      toast.success("Prescription loaded");
     } catch (err) {
       console.error("Image compression error:", err);
       toast.error("Failed to process image. Please try again.");
@@ -214,6 +218,7 @@ const UploadPrescriptionScreen = () => {
     // Reset the input so the same file can be re-selected
     event.target.value = "";
   };
+
 
   // ---------- Analyze ----------
   const handleAnalyze = async () => {
@@ -238,8 +243,10 @@ const UploadPrescriptionScreen = () => {
         return;
       }
       await ingestAiResult(result);
-      await updateAnalysisResult(result);
+      // Ephemeral by design: ensure no analysis result is ever stored server-side.
+      deletePrescription().catch(() => {});
       toast.success(`Detected ${result.tests.length} test${result.tests.length > 1 ? "s" : ""}. Please review.`);
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to analyze prescription.");
@@ -367,35 +374,65 @@ const UploadPrescriptionScreen = () => {
         {/* Upload Section */}
         {!uploadedImage && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="border-2 border-dashed border-primary/30 rounded-2xl p-8 text-center bg-gradient-to-b from-primary/5 to-background">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-primary" />
+            {/* Google Lens style viewfinder */}
+            <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-2xl">
+              {/* Corner brackets */}
+              {[
+                "top-4 left-4 border-t-2 border-l-2 rounded-tl-xl",
+                "top-4 right-4 border-t-2 border-r-2 rounded-tr-xl",
+                "bottom-4 left-4 border-b-2 border-l-2 rounded-bl-xl",
+                "bottom-4 right-4 border-b-2 border-r-2 rounded-br-xl",
+              ].map((c) => (
+                <div key={c} className={`absolute w-10 h-10 border-primary ${c}`} />
+              ))}
+
+              {/* Sweeping scan line */}
+              <motion.div
+                className="absolute inset-x-6 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_18px_2px_hsl(var(--primary))]"
+                initial={{ top: "10%" }}
+                animate={{ top: ["10%", "90%", "10%"] }}
+                transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+              />
+
+              {/* Center content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
+                <motion.div
+                  animate={{ scale: [1, 1.08, 1] }}
+                  transition={{ duration: 2.4, repeat: Infinity }}
+                  className="w-16 h-16 rounded-2xl bg-primary/15 backdrop-blur-sm flex items-center justify-center mb-4 border border-primary/30"
+                >
+                  <FileText className="w-8 h-8 text-primary" />
+                </motion.div>
+                <h3 className="font-bold text-white text-lg">Scan your prescription</h3>
+                <p className="text-xs text-slate-300 mt-1 max-w-[240px]">
+                  Align the paper inside the frame. Nothing is stored — your prescription is processed and discarded.
+                </p>
               </div>
-              <h3 className="font-semibold text-foreground mb-1">Upload your prescription</h3>
-              <p className="text-sm text-muted-foreground mb-6">JPG or PNG · up to 10 MB</p>
-              <div className="flex gap-3 justify-center">
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  capture="environment"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button className="gap-2" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
-                  <Camera className="w-4 h-4" /> Camera
-                </Button>
-                <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                  <ImageIcon className="w-4 h-4" /> Gallery
-                </Button>
-              </div>
+            </div>
+
+            {/* CTAs */}
+            <div className="grid grid-cols-2 gap-3 mt-4">
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              <Button className="gap-2 h-12" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
+                <Camera className="w-4 h-4" /> Camera
+              </Button>
+              <Button variant="outline" className="gap-2 h-12" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                <ImageIcon className="w-4 h-4" /> Gallery
+              </Button>
             </div>
 
             <div className="soft-card p-4 mt-4">
@@ -415,6 +452,7 @@ const UploadPrescriptionScreen = () => {
             </div>
           </motion.div>
         )}
+
 
         {/* Image preview with zoom */}
         {uploadedImage && (
@@ -457,14 +495,32 @@ const UploadPrescriptionScreen = () => {
                 <X className="w-4 h-4 text-destructive-foreground" />
               </button>
 
-              {isUploading && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                    <Sparkles className="w-8 h-8 text-primary" />
-                  </motion.div>
-                  <span className="ml-2 text-sm text-muted-foreground">Uploading…</span>
+              {(isUploading || isAnalyzing) && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Corner brackets */}
+                  {[
+                    "top-3 left-3 border-t-2 border-l-2 rounded-tl-lg",
+                    "top-3 right-3 border-t-2 border-r-2 rounded-tr-lg",
+                    "bottom-3 left-3 border-b-2 border-l-2 rounded-bl-lg",
+                    "bottom-3 right-3 border-b-2 border-r-2 rounded-br-lg",
+                  ].map((c) => (
+                    <div key={c} className={`absolute w-8 h-8 border-primary ${c}`} />
+                  ))}
+                  {/* Sweeping scan line */}
+                  <motion.div
+                    className="absolute inset-x-4 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_18px_2px_hsl(var(--primary))]"
+                    initial={{ top: "8%" }}
+                    animate={{ top: ["8%", "92%", "8%"] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <div className="absolute inset-x-0 bottom-3 flex justify-center">
+                    <span className="text-[11px] font-medium text-white bg-black/50 backdrop-blur px-2.5 py-1 rounded-full">
+                      {isAnalyzing ? "Scanning…" : "Loading…"}
+                    </span>
+                  </div>
                 </div>
               )}
+
             </div>
 
             {!analysisComplete && !isUploading && (
