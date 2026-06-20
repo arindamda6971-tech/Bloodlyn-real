@@ -311,21 +311,75 @@ const UploadPrescriptionScreen = () => {
   // ---------- Map verified tests → app catalog → cart ----------
   const isInCart = useCallback((id: string) => items.some((i) => i.id === id), [items]);
 
+  // ---------- Fuzzy auto-match scanned test → closest catalog test ----------
+  // Normalises both sides, strips common medical stop-words, then scores
+  // exact > substring > token-overlap > Levenshtein similarity. The best
+  // candidate above 0.55 is selected so noisy OCR still maps to a real test.
   const matchedAppTests = useMemo(() => {
+    const STOP = new Set(["test", "serum", "s", "blood", "profile", "panel", "level", "report", "the", "a", "of"]);
+    const norm = (s: string) =>
+      s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+    const tokens = (s: string) => norm(s).split(" ").filter((t) => t && !STOP.has(t));
+
+    const scorePair = (query: string, candidate: string): number => {
+      const q = norm(query);
+      const c = norm(candidate);
+      if (!q || !c) return 0;
+      if (q === c) return 1;
+
+      const qT = tokens(query);
+      const cT = tokens(candidate);
+      if (qT.join(" ") === cT.join(" ") && qT.length) return 0.98;
+
+      // Substring (either direction) — strong signal
+      if (q.length >= 3 && c.includes(q)) return 0.92;
+      if (c.length >= 3 && q.includes(c)) return 0.9;
+
+      // Token overlap (Jaccard) — handles reordered / extra words
+      if (qT.length && cT.length) {
+        const qs = new Set(qT);
+        const cs = new Set(cT);
+        let inter = 0;
+        qs.forEach((t) => cs.has(t) && inter++);
+        const jaccard = inter / (qs.size + cs.size - inter);
+        if (jaccard >= 0.5) return 0.7 + jaccard * 0.2; // 0.7 – 0.9
+      }
+
+      // Levenshtein similarity on the normalized strings
+      const dist = levenshtein(q, c);
+      const maxLen = Math.max(q.length, c.length) || 1;
+      const fuzzy = 1 - dist / maxLen;
+
+      // Slight boost if the first significant token matches
+      const tokenBoost = qT[0] && cT[0] && qT[0] === cT[0] ? 0.08 : 0;
+      return Math.min(1, fuzzy + tokenBoost);
+    };
+
+    const FUZZY_THRESHOLD = 0.55;
+
     return detected.map((d) => {
-      const q = d.name.toLowerCase();
-      const found = appTests.find((a) => {
-        const an = a.name.toLowerCase();
-        if (an === q) return true;
-        if (q.length > 3 && an.includes(q)) return true;
-        if (an.length > 3 && q.includes(an)) return true;
-        return false;
-      });
-      return { detected: d, app: found || null };
+      // Build candidate query set: user-edited name + AI's original + dictionary canonical
+      const queries = [d.name, d.originalAiName, d.dictionaryHit?.canonical]
+        .filter((q): q is string => !!q && q.trim().length > 0);
+
+      let best: { app: typeof appTests[number]; score: number } | null = null;
+      for (const app of appTests) {
+        let s = 0;
+        for (const q of queries) s = Math.max(s, scorePair(q, app.name));
+        if (!best || s > best.score) best = { app, score: s };
+      }
+
+      const matched = best && best.score >= FUZZY_THRESHOLD ? best : null;
+      return {
+        detected: d,
+        app: matched?.app || null,
+        matchScore: matched?.score ?? 0,
+      };
     });
   }, [detected, appTests]);
 
   const availableCount = matchedAppTests.filter((m) => m.app && !isInCart(m.app!.id)).length;
+
 
   const handleConfirmSave = () => {
     if (detected.length === 0) {
