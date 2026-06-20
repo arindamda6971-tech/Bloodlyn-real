@@ -12,6 +12,7 @@ import {
   HeartPulse,
   Activity,
   X,
+  Check,
   FileUp,
   Stethoscope,
   Plus,
@@ -34,6 +35,7 @@ import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { usePreviousOrders } from "@/hooks/usePreviousOrders";
 import { LabSkeleton, OrderSkeleton, ChipSkeleton } from "@/components/ui/SkeletonCard";
+import { intelligentSearch } from "@/utils/search-intelligence";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -202,23 +204,22 @@ const HomeScreen = () => {
   }, [fetchTests]);
 
   const searchResults = useMemo(() => {
-    const q = debouncedSearchQuery.trim().toLowerCase();
-    if (!q) return [];
-    const pool: any[] = [];
-    allTests.forEach((t) => pool.push({ id: t.id, name: t.name, price: t.price, discount_percent: t.discount_percent }));
-    if (bridgeData?.tests) {
-      bridgeData.tests.forEach((t) => pool.push({ id: t.id, name: t.test_name, price: t.price, discount_percent: 25 }));
-    }
-    const seen = new Set<string>();
-    return pool.filter(item => {
-      const name = (item.name || "").toLowerCase();
-      if (!name.includes(q) || seen.has(name)) return false;
-      seen.add(name);
-      return true;
-    }).slice(0, 5);
+    return intelligentSearch(debouncedSearchQuery, [...allTests, ...(bridgeData?.tests || [])]);
   }, [debouncedSearchQuery, allTests, bridgeData]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
+
+  const handleQuickAdd = (e: React.MouseEvent, test: any) => {
+    e.stopPropagation();
+    const ok = addToCart({
+      id: test.id,
+      name: test.name,
+      price: test.price,
+    });
+    if (ok) {
+      toast.success(`${test.name} added to cart!`);
+    }
+  };
 
   return (
     <div className="relative bg-background min-h-screen">
@@ -297,6 +298,7 @@ const HomeScreen = () => {
                     {searchResults.map((test) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
+                      const inCart = isInCart(test.id);
                       return (
                         <button
                           key={test.id}
@@ -309,14 +311,26 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-bold text-foreground leading-tight truncate">{test.name}</p>
-                            {discount > 0 && (
-                              <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{test.price}</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-sm font-black text-primary shrink-0">₹{finalPrice}</p>
+                              {discount > 0 && (
                                 <span className="text-[10px] font-black text-success">{discount}% OFF</span>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
-                          <p className="text-sm font-black text-primary shrink-0">₹{finalPrice}</p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => handleQuickAdd(e, test)}
+                              disabled={inCart}
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                inCart
+                                  ? "bg-success/10 text-success"
+                                  : "bg-primary text-white shadow-md shadow-primary/20 active:scale-90"
+                              }`}
+                            >
+                              {inCart ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                            </button>
+                          </div>
                         </button>
                       );
                     })}
