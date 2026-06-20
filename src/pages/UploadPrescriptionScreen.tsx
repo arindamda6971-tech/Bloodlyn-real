@@ -30,7 +30,7 @@ import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useMedicalWorker } from "@/hooks/useMedicalWorker";
-import { MEDICAL_TEST_DICTIONARY, matchToDictionary } from "@/lib/medical-dictionary";
+import { MEDICAL_TEST_DICTIONARY, matchToDictionary, levenshtein } from "@/lib/medical-dictionary";
 
 interface AIAnalysisResult {
   tests: Array<{ name: string; shortName?: string; category?: string }>;
