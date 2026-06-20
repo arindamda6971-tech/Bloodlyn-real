@@ -95,7 +95,9 @@ const UploadPrescriptionScreen = () => {
   const { addToCart, items } = useCart();
   const { data: bridgeData } = useBridgeTests();
 
-  const { prescription, isLoading: isPrescriptionLoading, savePrescription, updateAnalysisResult, deletePrescription } =
+  // Storage hook is used only to wipe any leftover pending rows — we never
+  // persist a prescription. Scanned data stays in memory only.
+  const { prescription, isLoading: isPrescriptionLoading, deletePrescription } =
     usePrescriptionStorage();
 
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -136,17 +138,23 @@ const UploadPrescriptionScreen = () => {
     })();
   }, [bridgeData]);
 
-  // ---------- Restore previously saved prescription ----------
+  // ---------- Wipe any leftover pending prescription on mount/unmount ----------
+  // The user has explicitly asked NOT to persist scanned prescriptions in the
+  // backend — they are processed in-memory only.
   useEffect(() => {
     if (prescription && !isPrescriptionLoading) {
-      setUploadedImage(prescription.image_url);
-      const result = prescription.analysis_result as AIAnalysisResult | null;
-      if (result?.tests?.length) {
-        ingestAiResult(result);
-      }
+      deletePrescription().catch(() => {});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prescription, isPrescriptionLoading]);
+
+  useEffect(() => {
+    return () => {
+      deletePrescription().catch(() => {});
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { matchAsync } = useMedicalWorker();
 
   // ---------- Rolling processing step animation ----------
