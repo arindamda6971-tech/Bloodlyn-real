@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Loader2, FlaskConical, ShoppingCart, Plus, Search } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import BannerGraphic from "@/components/BannerGraphic";
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
@@ -40,30 +41,22 @@ const TestItem = React.memo(({
       <div className="flex-1 min-w-0">
         <h3 className="font-semibold text-foreground text-sm truncate">{test.test_name}</h3>
         <p className="text-[10px] text-muted-foreground mt-0.5">Report in {test.report_delivery_time || "24h"}</p>
-        <p className="text-sm font-bold text-primary mt-1">₹{test.price || test.collection_fee}</p>
       </div>
       <div className="flex-shrink-0">
-        {isInCart ? (
-          <Button
-            variant="softSuccess"
-            size="sm"
-            className="h-8 px-3 text-xs font-bold"
-            onClick={onViewCart}
-          >
-            <ShoppingCart className="w-3.5 h-3.5 mr-1" />
-            Added
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 px-4 text-xs font-bold border-primary/30 text-primary"
-            onClick={() => onAdd(test)}
-          >
-            <Plus className="w-3.5 h-3.5 mr-1" />
-            Add
-          </Button>
-        )}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isInCart) onViewCart();
+            else onAdd(test);
+          }}
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+            isInCart
+              ? "bg-success text-white shadow-md active:scale-90"
+              : "bg-[#38bdf8] text-white shadow-md active:scale-90"
+          }`}
+        >
+          {isInCart ? <ShoppingCart className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+        </button>
       </div>
     </div>
   </div>
@@ -156,6 +149,17 @@ const CategoryTestsScreen = () => {
               </svg>
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="px-4 mt-6 mb-2">
+        <div className="w-full relative overflow-hidden rounded-3xl group">
+          <BannerGraphic variant={0} className="w-full h-44 block object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-primary/40 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-center px-6">
+            <p className="text-white/80 text-[10px] font-black uppercase tracking-widest mb-1">Doctor Recommended</p>
+            <h3 className="text-white text-xl font-black leading-tight">Full Body Health<br/>Checkup Today</h3>
+          </div>
         </div>
       </div>
 

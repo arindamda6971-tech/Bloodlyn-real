@@ -62,10 +62,10 @@ const getGreeting = () => {
 };
 
 const quickActions = [
-  { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-primary/10 text-primary", subtext: "AI Analysis" },
-  { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-success/10 text-success", subtext: "Live Video" },
-  { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-secondary/10 text-secondary", subtext: "Expert Care" },
-  { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-destructive/10 text-destructive", subtext: "At Home" },
+  { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-[#f0f9ff] text-[#0ea5e9]", subtext: "AI Analysis" },
+  { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-[#ecfdf5] text-[#10b981]", subtext: "Live Video" },
+  { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-[#f1f5f9] text-[#0f172a]", subtext: "Expert Care" },
+  { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-[#fef2f2] text-[#ef4444]", subtext: "At Home" },
 ];
 
 const trendingTests = [
@@ -253,10 +253,6 @@ const HomeScreen = () => {
             <div className="flex items-center justify-between mb-2.5 mt-1.5">
               <div className="min-w-0 pt-1">
                 <div className="flex items-center gap-1.5 mb-1">
-                  <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
-                    <Wallet className="w-3 h-3 text-primary" />
-                    <span className="text-[10px] font-black text-primary tracking-tight">₹150 Credits</span>
-                  </div>
                   <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -275,6 +271,12 @@ const HomeScreen = () => {
                   onClick={() => setShowCallSheet(true)}
                 >
                   <Phone className="w-5 h-5 text-foreground" />
+                </button>
+                <button
+                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-90 transition-transform"
+                  onClick={() => navigate("/rewards")}
+                >
+                  <Wallet className="w-5 h-5 text-foreground" />
                 </button>
                 <button
                   className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
@@ -311,12 +313,6 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-bold text-foreground leading-tight truncate">{test.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <p className="text-sm font-black text-primary shrink-0">₹{finalPrice}</p>
-                              {discount > 0 && (
-                                <span className="text-[10px] font-black text-success">{discount}% OFF</span>
-                              )}
-                            </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <button

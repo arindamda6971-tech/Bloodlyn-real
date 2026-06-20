@@ -31,37 +31,38 @@ const ScreenHeader = ({
 
   return (
     <motion.header
-      initial={{ y: -10, opacity: 0 }}
+      initial={{ y: -15, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className={`sticky top-0 z-50 px-5 py-4 ${
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className={`sticky top-0 z-50 px-5 py-4 transition-colors duration-300 ${
         transparent
           ? "bg-transparent"
-          : "bg-background/90 backdrop-blur-xl border-b border-border/40 shadow-sm shadow-black/5"
+          : "bg-background/70 backdrop-blur-[32px] saturate-150 border-b border-border/20 shadow-[0_8px_32px_-12px_rgba(0,0,0,0.08)]"
       }`}
       style={{
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)",
-        height: "calc(env(safe-area-inset-top, 0px) + 68px)",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
+        height: "calc(env(safe-area-inset-top, 0px) + 72px)",
         display: "flex",
         alignItems: "center"
       }}
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-3.5 min-w-0">
+        <div className="flex items-center gap-4 min-w-0">
           {showBack && (
             <button
               onClick={handleBack}
-              className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center active:scale-90 transition-transform shrink-0"
+              className="w-11 h-11 rounded-2xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-95 transition-transform shrink-0 hover:bg-accent/50"
             >
-              <ArrowLeft className="w-5 h-5 text-foreground" />
+              <ArrowLeft className="w-[22px] h-[22px] text-foreground" />
             </button>
           )}
-          <h1 className="text-xl font-black text-foreground tracking-tight truncate leading-none pt-0.5">{title}</h1>
+          <h1 className="text-[22px] font-black text-foreground tracking-tight truncate leading-none pt-0.5">{title}</h1>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {rightAction}
           {showMenu && (
-            <button className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center active:scale-90 transition-transform">
-              <MoreVertical className="w-5 h-5 text-foreground" />
+            <button className="w-11 h-11 rounded-2xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-95 transition-transform hover:bg-accent/50">
+              <MoreVertical className="w-[22px] h-[22px] text-foreground" />
             </button>
           )}
         </div>
