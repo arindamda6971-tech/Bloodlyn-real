@@ -49,6 +49,8 @@ const MobileLayout = ({
       style={{
         WebkitOverflowScrolling: 'touch',
         touchAction: 'none',
+        /* Force 120Hz physics */
+        scrollSnapType: 'y proximity',
       }}
     >
       {enablePullToRefresh ? (

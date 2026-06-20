@@ -204,11 +204,16 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain; /* Stop nested-scroll bleed */
     position: relative;
+    /* Native Momentum & Weighted Scroll */
+    scroll-snap-type: y proximity;
+    scroll-behavior: auto;
   }
 
   .overflow-y-auto, .overflow-auto, [data-scroll-area] {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    /* High refresh rate physics */
+    scroll-behavior: auto;
   }
   .overflow-x-auto {
     overscroll-behavior-x: contain;
