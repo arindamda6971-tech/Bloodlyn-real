@@ -55,6 +55,38 @@ const PROCESSING_STEPS = [
 
 const newUid = () => `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
+/**
+ * Compress an image file using a canvas so the resulting base64 payload
+ * stays well under the 5 MB AI limit (~7 MB base64). Works on every
+ * platform — web, PWA, and Capacitor WebView.
+ */
+const compressImage = (file: File, maxWidth = 1200, quality = 0.7): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Failed to decode image"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas not supported")); return; }
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl);
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+
 const UploadPrescriptionScreen = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,21 +173,20 @@ const UploadPrescriptionScreen = () => {
     setAnalysisComplete(true);
   };
 
-  // ---------- Upload ----------
+  // ---------- Upload (with client-side compression) ----------
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size should be less than 10MB");
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error("File size should be less than 20 MB");
       return;
     }
-    if (!/^image\/(jpeg|jpg|png)$/i.test(file.type)) {
-      toast.error("Only JPG or PNG images are accepted");
+    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
+      toast.error("Only JPG, PNG, or WebP images are accepted");
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64Image = reader.result as string;
+    try {
+      const base64Image = await compressImage(file, 1200, 0.7);
       setImageBase64Cache(base64Image);
       setUploadedImage(base64Image);
       setAnalysisComplete(false);
@@ -170,8 +201,12 @@ const UploadPrescriptionScreen = () => {
         toast.success("Prescription uploaded");
       }
       setIsUploading(false);
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Image compression error:", err);
+      toast.error("Failed to process image. Please try again.");
+    }
+    // Reset the input so the same file can be re-selected
+    event.target.value = "";
   };
 
   // ---------- Analyze ----------
@@ -336,7 +371,7 @@ const UploadPrescriptionScreen = () => {
                 <input
                   ref={cameraInputRef}
                   type="file"
-                  accept="image/jpeg,image/png"
+                  accept="image/jpeg,image/png,image/webp"
                   capture="environment"
                   onChange={handleFileUpload}
                   className="hidden"
@@ -344,7 +379,7 @@ const UploadPrescriptionScreen = () => {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="image/jpeg,image/png"
+                  accept="image/jpeg,image/png,image/webp"
                   onChange={handleFileUpload}
                   className="hidden"
                 />
