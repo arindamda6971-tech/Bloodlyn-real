@@ -243,8 +243,10 @@ const UploadPrescriptionScreen = () => {
         return;
       }
       await ingestAiResult(result);
-      await updateAnalysisResult(result);
+      // Ephemeral by design: ensure no analysis result is ever stored server-side.
+      deletePrescription().catch(() => {});
       toast.success(`Detected ${result.tests.length} test${result.tests.length > 1 ? "s" : ""}. Please review.`);
+
     } catch (err) {
       console.error(err);
       toast.error("Failed to analyze prescription.");
