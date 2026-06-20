@@ -131,15 +131,6 @@ const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/Unauthori
 
 const AnimatedRoutes = () => {
   const location = useLocation();
-  const [buffer, setBuffer] = useState<Record<string, React.ReactNode>>({});
-  const lastPath = useRef<string>(location.pathname);
-
-  // Buffer recently visited pages to prevent blank flashes on back-navigation
-  useEffect(() => {
-    if (lastPath.current !== location.pathname) {
-      lastPath.current = location.pathname;
-    }
-  }, [location.pathname]);
 
   return (
     <AnimatePresence mode="popLayout" initial={false}>
@@ -155,8 +146,7 @@ const AnimatedRoutes = () => {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          /* Page Persistence: Ensure the container doesn't collapse */
-          minHeight: '100dvh'
+          minHeight: "100dvh"
         }}
       >
         <Routes location={location}>

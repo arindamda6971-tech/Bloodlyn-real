@@ -15,8 +15,10 @@ public class MainActivity extends BridgeActivity {
         try {
             // Force maximum refresh rate (120Hz/90Hz) if available on device
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                Display display = getDisplay();
-                if (display != null) {
+                // Use a safer way to get Display context
+                WindowManager windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+                if (windowManager != null) {
+                    Display display = windowManager.getDefaultDisplay();
                     WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
                     Display.Mode[] modes = display.getSupportedModes();
                     
@@ -35,7 +37,7 @@ public class MainActivity extends BridgeActivity {
                         getWindow().setAttributes(layoutParams);
                     }
                 }
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            } else {
                 // Older legacy way for 120Hz support (Android 6.0+)
                 WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
                 layoutParams.preferredRefreshRate = 0; // Requests highest available
