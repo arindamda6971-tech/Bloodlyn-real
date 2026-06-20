@@ -54,6 +54,16 @@
     --input: 210 20% 90%;
     --ring: 201 88% 62%;
 
+    /* Status indicators - New Pastel Palette */
+    --status-success-bg: 153 52% 95%;
+    --status-success-text: 153 52% 30%;
+    --status-warning-bg: 38 92% 95%;
+    --status-warning-text: 38 92% 30%;
+    --status-destructive-bg: 0 84% 95%;
+    --status-destructive-text: 0 84% 35%;
+    --status-info-bg: 201 88% 95%;
+    --status-info-text: 201 88% 30%;
+
     --radius: 1rem;
 
     /* Shadows */
@@ -340,20 +350,52 @@
     @apply text-success-foreground font-semibold rounded-xl px-6 py-3 transition-all duration-300;
   }
 
-  /* Status indicators */
+  /* Status indicators - Unified Pastel Classes */
   .status-success {
-    @apply bg-success-light text-success;
+    background-color: hsl(var(--status-success-bg));
+    color: hsl(var(--status-success-text));
+    @apply font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider;
   }
 
   .status-warning {
-    @apply bg-warning-light text-warning;
+    background-color: hsl(var(--status-warning-bg));
+    color: hsl(var(--status-warning-text));
+    @apply font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider;
   }
 
   .status-destructive {
-    @apply bg-destructive-light text-destructive;
+    background-color: hsl(var(--status-destructive-bg));
+    color: hsl(var(--status-destructive-text));
+    @apply font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider;
   }
 
-  /* Mobile safe area */
+  .status-info {
+    background-color: hsl(var(--status-info-bg));
+    color: hsl(var(--status-info-text));
+    @apply font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider;
+  }
+
+  /* Refined Shimmer Effect */
+  .shimmer {
+    @apply relative overflow-hidden bg-muted/60;
+  }
+
+  .shimmer::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.08),
+      transparent
+    );
+    animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
   .safe-area-top {
     padding-top: env(safe-area-inset-top, 20px);
   }

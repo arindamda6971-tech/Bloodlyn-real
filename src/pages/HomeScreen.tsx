@@ -17,6 +17,10 @@ import {
   Plus,
   Phone,
   RotateCw,
+  Wallet,
+  Zap,
+  TrendingUp,
+  MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -29,6 +33,7 @@ import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarous
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { usePreviousOrders } from "@/hooks/usePreviousOrders";
+import { LabSkeleton, OrderSkeleton, ChipSkeleton } from "@/components/ui/SkeletonCard";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -55,10 +60,21 @@ const getGreeting = () => {
 };
 
 const quickActions = [
-  { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-primary/10 text-primary" },
-  { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-success/10 text-success" },
-  { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-secondary/10 text-secondary" },
-  { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-destructive/10 text-destructive" },
+  { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-primary/10 text-primary", subtext: "AI Analysis" },
+  { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-success/10 text-success", subtext: "Live Video" },
+  { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-secondary/10 text-secondary", subtext: "Expert Care" },
+  { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-destructive/10 text-destructive", subtext: "At Home" },
+];
+
+const trendingTests = [
+  "CBC", "Thyroid", "HbA1c", "Full Body", "Vitamin D", "Lipid Profile"
+];
+
+const healthTips = [
+  "Drinking water before a blood test makes the process easier for the technician.",
+  "Fasting for 8-12 hours is usually required for a Lipid Profile test.",
+  "Regular full-body checkups can detect issues before they become serious.",
+  "Your HbA1c level gives a 3-month average of your blood sugar levels.",
 ];
 
 type PreviousOrder = {
@@ -148,8 +164,10 @@ const HomeScreen = () => {
   const { data: bridgeData } = useBridgeTests();
   const { pincode: userPincode } = useUserPincode();
 
-  const { data: ordersData } = usePreviousOrders(3);
-  const { data: centersData } = useDiagnosticCenters(userPincode);
+  const { data: ordersData, isLoading: ordersLoading } = usePreviousOrders(3);
+  const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
+
+  const [currentTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
 
   const previousOrders = ordersData || [];
   const diagnosticCenters = useMemo(() => {
@@ -213,9 +231,40 @@ const HomeScreen = () => {
           onChange={(v) => { setSearchQuery(v); setShowSearchResults(true); }}
           onFocus={() => setShowSearchResults(true)}
           placeholder="Search health tests..."
+          footer={
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 pt-1">
+              {trendingTests.map((test) => (
+                <button
+                  key={test}
+                  onClick={() => {
+                    setSearchQuery(test);
+                    setShowSearchResults(true);
+                  }}
+                  className="flex-shrink-0 px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 text-[11px] font-bold text-foreground/70 active:scale-95 transition-transform flex items-center gap-1.5"
+                >
+                  <TrendingUp className="w-3 h-3 text-primary" />
+                  {test}
+                </button>
+              ))}
+            </div>
+          }
           header={
             <div className="flex items-center justify-between mb-2.5 mt-1.5">
               <div className="min-w-0 pt-1">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20">
+                    <Wallet className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-black text-primary tracking-tight">₹150 Credits</span>
+                  </div>
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center gap-1 bg-success/10 px-2 py-0.5 rounded-full border border-success/20"
+                  >
+                    <Zap className="w-3 h-3 text-success fill-success" />
+                    <span className="text-[10px] font-black text-success tracking-tight">8 active bookings</span>
+                  </motion.div>
+                </div>
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-0.5">{greeting}</p>
                 <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Welcome back 👋</h1>
               </div>
@@ -284,8 +333,30 @@ const HomeScreen = () => {
 
         <LocationChip />
 
+        {/* Health Tip of the Day */}
+        <section className="px-4 mt-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-br from-primary/5 to-success/5 border border-primary/10 rounded-2xl p-4 flex gap-3 items-start"
+          >
+            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
+              <MessageCircle className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Health Tip of the Day</p>
+              <p className="text-[13px] font-bold text-foreground leading-snug">{currentTip}</p>
+            </div>
+          </motion.div>
+        </section>
+
         {/* Diagnostic Centers */}
-        {diagnosticCenters.length > 0 && (
+        {centersLoading ? (
+          <div className="flex gap-4 px-6 mt-6 overflow-hidden">
+            <LabSkeleton />
+            <LabSkeleton />
+          </div>
+        ) : diagnosticCenters.length > 0 && (
           <div className="mt-4 transform-gpu">
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
@@ -303,7 +374,10 @@ const HomeScreen = () => {
                 <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0`}>
                   <action.icon className="w-6 h-6" />
                 </div>
-                <span className="text-[13px] font-bold text-foreground leading-tight">{action.label}</span>
+                <div className="flex flex-col">
+                  <span className="text-[13px] font-bold text-foreground leading-tight">{action.label}</span>
+                  <span className="text-[10px] font-medium text-muted-foreground mt-0.5">{action.subtext}</span>
+                </div>
               </button>
             ))}
           </div>
@@ -318,59 +392,67 @@ const HomeScreen = () => {
                 View all
               </button>
             </div>
-            <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
-              <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
-                {previousOrders.map((order) => {
-                  const names = splitTestNames(order.test_name);
-                  const label = formatTestsLabel(names, "Lab Test");
-                  return (
-                    <PredictiveLink
-                      key={order.id}
-                      to={`/bookings`}
-                      prefetchKey={["order-details", order.id]}
-                      prefetchFn={async () => {
-                        const { data } = await supabase
-                          .from("orders")
-                          .select("*")
-                          .eq("id", order.id)
-                          .maybeSingle();
-                        return data;
-                      }}
-                      className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0"
-                    >
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1 min-w-0 pr-2">
-                          <h3 className="font-extrabold text-foreground text-[15px] line-clamp-2 leading-tight">{label}</h3>
-                          <p className="text-[10px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">{new Date(order.created_at).toLocaleDateString()}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-[9px] font-black uppercase px-2 py-0.5 rounded-md shadow-sm bg-primary/10 text-primary shrink-0">
-                          {order.status || "pending"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-end justify-between mt-2 pt-3 border-t border-border/40">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">Total</span>
-                          <span className="text-lg font-black text-foreground leading-none mt-1">₹{order.total}</span>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (items.length > 0) {
-                              setReorderConfirm(order);
-                            } else {
-                              handleReorder(order);
-                            }
-                          }}
-                          className="w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center active:scale-90 transition-transform shadow-md shadow-primary/20 shrink-0"
-                        >
-                          <RotateCw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </PredictiveLink>
-                  );
-                })}
+            {ordersLoading ? (
+              <div className="flex gap-4 px-6 overflow-hidden">
+                <OrderSkeleton />
+                <OrderSkeleton />
               </div>
-            </div>
+            ) : (
+              <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
+                <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
+                  {previousOrders.map((order) => {
+                    const names = splitTestNames(order.test_name);
+                    const label = formatTestsLabel(names, "Lab Test");
+                    return (
+                      <PredictiveLink
+                        key={order.id}
+                        to={`/bookings`}
+                        prefetchKey={["order-details", order.id]}
+                        prefetchFn={async () => {
+                          const { data } = await supabase
+                            .from("orders")
+                            .select("*")
+                            .eq("id", order.id)
+                            .maybeSingle();
+                          return data;
+                        }}
+                        className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0"
+                      >
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1 min-w-0 pr-2">
+                            <h3 className="font-extrabold text-foreground text-[15px] line-clamp-2 leading-tight">{label}</h3>
+                            <p className="text-[10px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">{new Date(order.created_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className={order.status === 'completed' ? 'status-success' : 'status-warning'}>
+                            {order.status || "pending"}
+                          </div>
+                        </div>
+                        <div className="flex items-end justify-between mt-2 pt-3 border-t border-border/40">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">Total</span>
+                            <span className="text-lg font-black text-foreground leading-none mt-1">₹{order.total}</span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (items.length > 0) {
+                                setReorderConfirm(order);
+                              } else {
+                                handleReorder(order);
+                              }
+                            }}
+                            className="w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center active:scale-90 transition-transform shadow-md shadow-primary/20 shrink-0"
+                          >
+                            <RotateCw className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </PredictiveLink>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </section>
         )}
 
