@@ -233,9 +233,23 @@ const UploadPrescriptionScreen = () => {
       });
       if (error) {
         console.error(error);
-        toast.error("Failed to analyze. Please try again.");
+        const ctx: any = (error as any).context;
+        const status = ctx?.status;
+        let serverMsg = "";
+        try {
+          const body = await ctx?.json?.();
+          serverMsg = body?.error || "";
+        } catch { /* ignore */ }
+        if (status === 402 || /credit/i.test(serverMsg)) {
+          toast.error("AI credits exhausted. Please top up Lovable AI credits to scan prescriptions.");
+        } else if (status === 429) {
+          toast.error("Too many scans right now. Please try again in a minute.");
+        } else {
+          toast.error(serverMsg || "Failed to analyze. Please try again.");
+        }
         return;
       }
+
       const result = data as AIAnalysisResult;
       if (!result?.tests?.length) {
         toast.error(result?.notes || "No tests found. Try a clearer image.");
