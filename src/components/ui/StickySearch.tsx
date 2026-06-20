@@ -90,16 +90,8 @@ const StickySearch = ({
       const node = shellRef.current;
       if (!node) return;
 
-      // Simple shadow logic
-      const nextShadow = y > THRESHOLD_ON;
-      if (nextShadow !== hasShadow) {
-        hasShadow = nextShadow;
-        if (nextShadow) node.classList.add(SHADOW_CLASS);
-        else node.classList.remove(SHADOW_CLASS);
-      }
-
-      // Fast-exit for top of page
-      if (y <= 0) {
+      // Handle overscroll (rubber-banding on iOS)
+      if (y < 0) {
         if (hidden) {
           hidden = false;
           node.style.transform = "translate3d(0, 0, 0)";
@@ -109,33 +101,43 @@ const StickySearch = ({
         return;
       }
 
+      // Shadow (hysteresis)
+      const nextShadow = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
+      if (nextShadow !== hasShadow) {
+        hasShadow = nextShadow;
+        if (nextShadow) node.classList.add(SHADOW_CLASS);
+        else node.classList.remove(SHADOW_CLASS);
+      }
+
+      // True hysteresis: accumulate scroll distance in the same direction
       const diff = y - lastY;
       lastY = y;
-
-      // Only hide if we've scrolled past a reasonable header height
-      if (y < HIDE_AFTER) {
-        if (hidden) {
-          hidden = false;
-          node.style.transform = "translate3d(0, 0, 0)";
-        }
-        return;
-      }
 
       if ((diff > 0 && accumulatedDelta > 0) || (diff < 0 && accumulatedDelta < 0)) {
         accumulatedDelta += diff;
       } else {
-        accumulatedDelta = diff;
+        accumulatedDelta = diff; // Direction reversed, reset accumulation
       }
 
       if (Math.abs(accumulatedDelta) > THRESHOLD) {
-        const nextHidden = accumulatedDelta > 0;
+        let nextHidden = hidden;
+        if (accumulatedDelta > 0 && y > HIDE_AFTER) {
+          nextHidden = true; // Scrolled down significantly
+        } else if (accumulatedDelta < 0) {
+          nextHidden = false; // Scrolled up significantly
+        }
+
         if (nextHidden !== hidden) {
           hidden = nextHidden;
-          // Use fixed value for performance if height is known, or keep dynamic if needed
-          const hideY = node.offsetHeight || 120;
           node.style.transform = hidden
-            ? `translate3d(0, -${hideY}px, 0)`
+            ? `translate3d(0, -${node.offsetHeight}px, 0)`
             : "translate3d(0, 0, 0)";
+        }
+      }
+      if (y <= 0) {
+        if (hidden) {
+          hidden = false;
+          node.style.transform = "translate3d(0, 0, 0)";
         }
         accumulatedDelta = 0;
       }

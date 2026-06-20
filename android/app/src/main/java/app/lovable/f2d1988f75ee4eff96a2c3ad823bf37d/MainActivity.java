@@ -35,7 +35,7 @@ public class MainActivity extends BridgeActivity {
                         getWindow().setAttributes(layoutParams);
                     }
                 }
-            } else {
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 // Older legacy way for 120Hz support (Android 6.0+)
                 WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
                 layoutParams.preferredRefreshRate = 0; // Requests highest available

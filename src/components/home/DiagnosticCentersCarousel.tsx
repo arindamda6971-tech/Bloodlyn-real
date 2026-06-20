@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Building2, Star, ChevronRight, MapPin, BadgeCheck } from "lucide-react";
 import LabBanner from "@/components/labs/LabBanner";
+import { PredictiveLink } from "@/components/ui/PredictiveLink";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DiagnosticCenter {
   id: string;
@@ -65,15 +67,26 @@ const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) 
           const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
 
           return (
-            <div
+            <PredictiveLink
               key={center.id}
+              to={`/lab/${center.id}`}
+              prefetchKey={["lab-details", center.id]}
+              prefetchFn={async () => {
+                const { data } = await supabase
+                  .from('diagnostic_centers')
+                  .select('*')
+                  .eq('id', center.id)
+                  .maybeSingle();
+                return data;
+              }}
               className="flex-shrink-0 w-[280px] snap-start"
-              style={{ contain: 'content', touchAction: 'pan-x pan-y' }}
             >
               <div
-                onClick={() => navigate(`/lab/${center.id}`)}
-                className={`relative rounded-3xl cursor-pointer overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
-                style={{ height: '180px' }}
+                className={`relative rounded-3xl overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
+                style={{
+                  height: '180px',
+                  touchAction: 'pan-x pan-y'
+                }}
               >
                 {/* Visual Banner */}
                 <div className="absolute inset-0 z-0">
@@ -119,7 +132,7 @@ const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) 
                   </div>
                 </div>
               </div>
-            </div>
+            </PredictiveLink>
           );
         })}
         {/* Spacer at the end for padding */}

@@ -1,3 +1,4 @@
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, FlaskConical, ShoppingCart, Plus, Search } from "lucide-react";
@@ -6,7 +7,6 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
-import { useMemo, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
 import {
@@ -20,6 +20,57 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+// High-performance memoized test item
+const TestItem = React.memo(({
+  test,
+  isInCart,
+  onAdd,
+  onViewCart
+}: {
+  test: BridgeTest;
+  isInCart: boolean;
+  onAdd: (t: BridgeTest) => void;
+  onViewCart: () => void
+}) => (
+  <div className="soft-card p-4 transition-transform active:scale-[0.98]">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <FlaskConical className="w-5 h-5 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-foreground text-sm truncate">{test.test_name}</h3>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Report in {test.report_delivery_time || "24h"}</p>
+        <p className="text-sm font-bold text-primary mt-1">₹{test.price || test.collection_fee}</p>
+      </div>
+      <div className="flex-shrink-0">
+        {isInCart ? (
+          <Button
+            variant="softSuccess"
+            size="sm"
+            className="h-8 px-3 text-xs font-bold"
+            onClick={onViewCart}
+          >
+            <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+            Added
+          </Button>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 px-4 text-xs font-bold border-primary/30 text-primary"
+            onClick={() => onAdd(test)}
+          >
+            <Plus className="w-3.5 h-3.5 mr-1" />
+            Add
+          </Button>
+        )}
+      </div>
+    </div>
+  </div>
+));
+
+TestItem.displayName = "TestItem";
+
 const CategoryTestsScreen = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -31,7 +82,10 @@ const CategoryTestsScreen = () => {
   const { data: bridgeData, isLoading, error } = useBridgeTests();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
 
-  const tests = useMemo(() => {
+  // Incremental rendering for ultra-smooth list population
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  const allTests = useMemo(() => {
     if (!bridgeData?.tests) return [];
     
     let filtered = bridgeData.tests;
@@ -46,6 +100,17 @@ const CategoryTestsScreen = () => {
     
     return filtered;
   }, [bridgeData, categorySlug, debouncedSearchQuery]);
+
+  const tests = useMemo(() => allTests.slice(0, visibleCount), [allTests, visibleCount]);
+
+  useEffect(() => {
+    if (visibleCount < allTests.length) {
+      const id = requestAnimationFrame(() => {
+        setVisibleCount(prev => Math.min(prev + 20, allTests.length));
+      });
+      return () => cancelAnimationFrame(id);
+    }
+  }, [visibleCount, allTests.length]);
 
   const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
@@ -114,51 +179,15 @@ const CategoryTestsScreen = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {tests.map((test, index) => {
-              const alreadyInCart = isInCart(test.id);
-
-              return (
-                <motion.div
-                  key={test.id}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="soft-card"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <FlaskConical className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-sm">{test.test_name}</h3>
-                    </div>
-                    <div className="flex-shrink-0">
-                      {alreadyInCart ? (
-                        <Button
-                          variant="softSuccess"
-                          size="sm"
-                          className="h-8 px-3 text-xs"
-                          onClick={() => navigate("/cart")}
-                        >
-                          <ShoppingCart className="w-3 h-3 mr-1" />
-                          Added
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 px-3 text-xs"
-                          onClick={() => handleAddToCart(test)}
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Add
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+            {tests.map((test) => (
+              <TestItem
+                key={test.id}
+                test={test}
+                isInCart={isInCart(test.id)}
+                onAdd={handleAddToCart}
+                onViewCart={() => navigate("/cart")}
+              />
+            ))}
           </div>
         )}
       </div>

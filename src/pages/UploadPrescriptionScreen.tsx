@@ -29,7 +29,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
-import { matchToDictionary, MEDICAL_TEST_DICTIONARY } from "@/lib/medical-dictionary";
+import { useMedicalWorker } from "@/hooks/useMedicalWorker";
+import { MEDICAL_TEST_DICTIONARY } from "@/lib/medical-dictionary";
 
 interface AIAnalysisResult {
   tests: Array<{ name: string; shortName?: string; category?: string }>;
@@ -146,6 +147,7 @@ const UploadPrescriptionScreen = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prescription, isPrescriptionLoading]);
+  const { matchAsync } = useMedicalWorker();
 
   // ---------- Rolling processing step animation ----------
   useEffect(() => {
@@ -155,18 +157,22 @@ const UploadPrescriptionScreen = () => {
     return () => clearInterval(id);
   }, [isAnalyzing]);
 
-  const ingestAiResult = (result: AIAnalysisResult) => {
-    const next: DetectedTest[] = (result.tests || []).map((t) => {
-      const dict = matchToDictionary(t.name) || (t.shortName ? matchToDictionary(t.shortName) : null);
-      return {
+  const ingestAiResult = async (result: AIAnalysisResult) => {
+    const tests = result.tests || [];
+    const next: DetectedTest[] = [];
+
+    for (const t of tests) {
+      const dict = await matchAsync(t.name) || (t.shortName ? await matchAsync(t.shortName) : null);
+      next.push({
         uid: newUid(),
         name: dict?.canonical || t.name,
         originalAiName: t.name,
         category: t.category,
         dictionaryHit: dict ? { canonical: dict.canonical, score: dict.score } : null,
         source: "ai",
-      };
-    });
+      });
+    }
+
     setDetected(next);
     setAnalysisNotes(result.notes || "");
     setConfidence(result.confidence || "");
@@ -231,7 +237,7 @@ const UploadPrescriptionScreen = () => {
         setAnalysisNotes(result?.notes || "");
         return;
       }
-      ingestAiResult(result);
+      await ingestAiResult(result);
       await updateAnalysisResult(result);
       toast.success(`Detected ${result.tests.length} test${result.tests.length > 1 ? "s" : ""}. Please review.`);
     } catch (err) {

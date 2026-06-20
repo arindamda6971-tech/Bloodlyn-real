@@ -35,6 +35,8 @@ const MobileLayout = ({
         backfaceVisibility: 'hidden',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
+        /* Transition Isolation: Prevent re-paints of the background during transitions */
+        contain: 'layout style',
       }}
     >
       {children}
@@ -43,10 +45,10 @@ const MobileLayout = ({
 
   return (
     <div 
-      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden"
+      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden contain-strict"
       style={{
         WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y',
+        touchAction: 'none',
       }}
     >
       {enablePullToRefresh ? (
@@ -59,7 +61,8 @@ const MobileLayout = ({
           style={{
             WebkitOverflowScrolling: 'touch',
             willChange: 'scroll-position',
-            touchAction: 'pan-y'
+            touchAction: 'pan-y',
+            contain: 'content'
           }}
         >
           {content}
