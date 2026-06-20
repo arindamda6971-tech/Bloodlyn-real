@@ -495,14 +495,32 @@ const UploadPrescriptionScreen = () => {
                 <X className="w-4 h-4 text-destructive-foreground" />
               </button>
 
-              {isUploading && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
-                    <Sparkles className="w-8 h-8 text-primary" />
-                  </motion.div>
-                  <span className="ml-2 text-sm text-muted-foreground">Uploading…</span>
+              {(isUploading || isAnalyzing) && (
+                <div className="absolute inset-0 pointer-events-none">
+                  {/* Corner brackets */}
+                  {[
+                    "top-3 left-3 border-t-2 border-l-2 rounded-tl-lg",
+                    "top-3 right-3 border-t-2 border-r-2 rounded-tr-lg",
+                    "bottom-3 left-3 border-b-2 border-l-2 rounded-bl-lg",
+                    "bottom-3 right-3 border-b-2 border-r-2 rounded-br-lg",
+                  ].map((c) => (
+                    <div key={c} className={`absolute w-8 h-8 border-primary ${c}`} />
+                  ))}
+                  {/* Sweeping scan line */}
+                  <motion.div
+                    className="absolute inset-x-4 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_18px_2px_hsl(var(--primary))]"
+                    initial={{ top: "8%" }}
+                    animate={{ top: ["8%", "92%", "8%"] }}
+                    transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  <div className="absolute inset-x-0 bottom-3 flex justify-center">
+                    <span className="text-[11px] font-medium text-white bg-black/50 backdrop-blur px-2.5 py-1 rounded-full">
+                      {isAnalyzing ? "Scanning…" : "Loading…"}
+                    </span>
+                  </div>
                 </div>
               )}
+
             </div>
 
             {!analysisComplete && !isUploading && (
