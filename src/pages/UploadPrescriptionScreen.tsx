@@ -768,6 +768,18 @@ const UploadPrescriptionScreen = () => {
                           )}
                         </div>
 
+                        {matchInfo?.app && matchInfo.app.name.toLowerCase() !== d.name.toLowerCase() && (
+                          <p className="mt-1.5 text-[11px] text-muted-foreground">
+                            Auto-matched to{" "}
+                            <span className="font-medium text-foreground">{matchInfo.app.name}</span>
+                            {typeof matchInfo.matchScore === "number" && (
+                              <span className="ml-1 text-primary">
+                                · {Math.round(matchInfo.matchScore * 100)}%
+                              </span>
+                            )}
+                          </p>
+                        )}
+
                         {suggestion && (
                           <button
                             onClick={() => applyDictionarySuggestion(d.uid)}
@@ -778,6 +790,7 @@ const UploadPrescriptionScreen = () => {
                           </button>
                         )}
                       </div>
+
 
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
