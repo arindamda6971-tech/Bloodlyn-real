@@ -680,10 +680,10 @@ const UploadPrescriptionScreen = () => {
                     Run a 100% free high-fidelity Simulated AI scan to preview the OCR detection and auto-matching.
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    <Button size="xs" variant="secondary" onClick={() => handleSimulateDemo("general")}>
+                    <Button size="sm" variant="secondary" className="h-8 text-[11px] px-2.5" onClick={() => handleSimulateDemo("general")}>
                       Simulate CBC & LFT
                     </Button>
-                    <Button size="xs" variant="secondary" onClick={() => handleSimulateDemo("diabetes")}>
+                    <Button size="sm" variant="secondary" className="h-8 text-[11px] px-2.5" onClick={() => handleSimulateDemo("diabetes")}>
                       Simulate Diabetes
                     </Button>
                   </div>
