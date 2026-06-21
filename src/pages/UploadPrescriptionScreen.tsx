@@ -539,9 +539,74 @@ const UploadPrescriptionScreen = () => {
       </motion.header>
 
       <div className="px-4 py-6 space-y-6 pb-32">
-        {/* Upload Section */}
+        {/* Toggle Mode Tab */}
         {!uploadedImage && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="flex bg-muted p-1 rounded-xl">
+            <button
+              onClick={() => setActiveTab("image")}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "image" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Scan Prescription
+            </button>
+            <button
+              onClick={() => setActiveTab("text")}
+              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+                activeTab === "text" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Paste Text (Free Fallback)
+            </button>
+          </div>
+        )}
+
+        {/* Text Mode (100% Free Fallback) */}
+        {!uploadedImage && activeTab === "text" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <div className="soft-card p-4 space-y-4">
+              <div>
+                <h3 className="font-bold text-foreground text-sm">Paste Prescription Text</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  No camera or Lovable AI credits needed! Paste prescription text, Doctor instructions or WhatsApp messages below to instantly extract blood tests.
+                </p>
+              </div>
+              <textarea
+                value={pastedText}
+                onChange={(e) => setPastedText(e.target.value)}
+                placeholder="Example: Please book Complete Blood Count, Liver Function, and Lipid Profile for tomorrow..."
+                className="w-full h-32 p-3 text-sm bg-muted rounded-xl border border-border focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <Button
+                className="w-full gap-2 h-11"
+                onClick={() => handleExtractText(pastedText)}
+                disabled={isAnalyzing || !pastedText.trim()}
+              >
+                <Sparkles className="w-4 h-4" /> Extract Tests For Free
+              </Button>
+            </div>
+
+            {/* Quick Presets for Demo / Testing */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Or Try Free Presets:</h4>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" size="sm" className="h-10 text-xs" onClick={() => setPastedText("Complete Blood Count, Serum Creatinine, Liver Function Test (LFT)")}>
+                  General Health
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 text-xs" onClick={() => setPastedText("Fasting Blood Sugar, Post Prandial Blood Sugar, HbA1c Test")}>
+                  Diabetes
+                </Button>
+                <Button variant="outline" size="sm" className="h-10 text-xs" onClick={() => setPastedText("Thyroid Function Test (TFT), TSH, T3, T4 Profile")}>
+                  Thyroid
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Upload Section (Image Mode) */}
+        {!uploadedImage && activeTab === "image" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             {/* Google Lens style viewfinder */}
             <div className="relative aspect-[4/5] rounded-3xl overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-2xl">
               {/* Corner brackets */}
@@ -579,7 +644,7 @@ const UploadPrescriptionScreen = () => {
             </div>
 
             {/* CTAs */}
-            <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="grid grid-cols-2 gap-3">
               <input
                 ref={cameraInputRef}
                 type="file"
@@ -603,7 +668,30 @@ const UploadPrescriptionScreen = () => {
               </Button>
             </div>
 
-            <div className="soft-card p-4 mt-4">
+            {/* Sandbox Simulation fallback card */}
+            <div className="soft-card p-4 border-primary/30 bg-primary/5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-foreground text-sm">Want to try without Lovable credits?</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5 mb-2.5">
+                    Run a 100% free high-fidelity Simulated AI scan to preview the OCR detection and auto-matching.
+                  </p>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="xs" variant="secondary" onClick={() => handleSimulateDemo("general")}>
+                      Simulate CBC & LFT
+                    </Button>
+                    <Button size="xs" variant="secondary" onClick={() => handleSimulateDemo("diabetes")}>
+                      Simulate Diabetes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="soft-card p-4">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
                   <AlertCircle className="w-4 h-4 text-warning" />
