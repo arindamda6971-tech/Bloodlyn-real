@@ -113,6 +113,8 @@ const UploadPrescriptionScreen = () => {
   const [editingUid, setEditingUid] = useState<string | null>(null);
   const [manualName, setManualName] = useState("");
   const [zoom, setZoom] = useState(1);
+  const [activeTab, setActiveTab] = useState<"image" | "text">("image");
+  const [pastedText, setPastedText] = useState("");
 
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
