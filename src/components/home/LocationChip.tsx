@@ -91,7 +91,8 @@ const LocationChip = () => {
       toast.success(`Location updated to ${svc.city || "PIN " + newPin}`);
       setOpen(false);
       setNewPin("");
-      setTimeout(() => window.location.reload(), 400);
+      // Refetch active queries instead of a full WebView reload (un-native).
+      setTimeout(() => { queryClient.invalidateQueries(); }, 200);
     } catch (e) {
       toast.error("Failed to update location. Please try again.");
     } finally {
