@@ -1,4 +1,5 @@
-import { ReactNode, useCallback, useEffect, useRef } from "react";
+import { ReactNode, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import BottomNavigation from "./BottomNavigation";
 import FloatingAddButton from "./FloatingAddButton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
@@ -12,30 +13,30 @@ interface MobileLayoutProps {
   enablePullToRefresh?: boolean;
 }
 
-const MobileLayout = ({ 
-  children, 
-  showNav = true, 
-  showFloatingAdd = true, 
+const MobileLayout = ({
+  children,
+  showNav = true,
+  showFloatingAdd = true,
   className = "",
   onRefresh,
   enablePullToRefresh = true,
 }: MobileLayoutProps) => {
+  const queryClient = useQueryClient();
+
   const defaultRefresh = useCallback(async () => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    window.location.reload();
-  }, []);
+    // Native-feeling refresh: refetch all active queries on the current screen
+    // instead of doing a full WebView reload.
+    await queryClient.invalidateQueries();
+  }, [queryClient]);
 
   const handleRefresh = onRefresh || defaultRefresh;
 
   const content = (
-    <main 
+    <main
       className={`${showNav ? "pb-24" : ""} ${className}`}
       style={{
-        willChange: 'scroll-position',
-        backfaceVisibility: 'hidden',
         WebkitFontSmoothing: 'antialiased',
         MozOsxFontSmoothing: 'grayscale',
-        /* Transition Isolation: Prevent re-paints of the background during transitions */
         contain: 'layout style',
       }}
     >
@@ -44,13 +45,10 @@ const MobileLayout = ({
   );
 
   return (
-    <div 
-      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden contain-strict"
+    <div
+      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden"
       style={{
-        WebkitOverflowScrolling: 'touch',
-        touchAction: 'none',
-        /* Force 120Hz physics */
-        scrollSnapType: 'y proximity',
+        touchAction: 'pan-y',
       }}
     >
       {enablePullToRefresh ? (
@@ -58,13 +56,12 @@ const MobileLayout = ({
           {content}
         </PullToRefresh>
       ) : (
-        <div 
+        <div
           className="h-full overflow-y-auto overscroll-y-none"
           style={{
             WebkitOverflowScrolling: 'touch',
             willChange: 'scroll-position',
             touchAction: 'pan-y',
-            contain: 'content'
           }}
         >
           {content}

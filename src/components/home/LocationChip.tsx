@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Loader2, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 const LocationChip = () => {
   const { user } = useAuth();
   const { pincode } = useUserPincode();
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [newPin, setNewPin] = useState("");
   const [saving, setSaving] = useState(false);
@@ -89,7 +91,8 @@ const LocationChip = () => {
       toast.success(`Location updated to ${svc.city || "PIN " + newPin}`);
       setOpen(false);
       setNewPin("");
-      setTimeout(() => window.location.reload(), 400);
+      // Refetch active queries instead of a full WebView reload (un-native).
+      setTimeout(() => { queryClient.invalidateQueries(); }, 200);
     } catch (e) {
       toast.error("Failed to update location. Please try again.");
     } finally {

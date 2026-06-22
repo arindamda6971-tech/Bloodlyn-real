@@ -1,4 +1,4 @@
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Capacitor } from '@capacitor/core';
 
 /**
@@ -15,22 +15,6 @@ export const hapticImpact = async (style: ImpactStyle = ImpactStyle.Light) => {
   }
 };
 
-/**
- * Backward compatible alias for hapticImpact
- */
-export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
-  const impactMap = {
-    light: ImpactStyle.Light,
-    medium: ImpactStyle.Medium,
-    heavy: ImpactStyle.Heavy,
-  } as const;
-  if (style === 'success' || style === 'warning' || style === 'error') {
-    hapticNotification(style.toUpperCase() as 'SUCCESS' | 'WARNING' | 'ERROR');
-    return;
-  }
-  hapticImpact(impactMap[style]);
-};
-
 export const hapticSelection = async () => {
   if (Capacitor.isNativePlatform()) {
     try {
@@ -45,19 +29,31 @@ export const hapticSelection = async () => {
 };
 
 export const hapticNotification = async (type: 'SUCCESS' | 'WARNING' | 'ERROR') => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      // Map string to enum-like behavior if needed, or use directly if supported
-      // Capacitor Haptics.notification uses a specific type
-      const notificationTypeMap = {
-        SUCCESS: 'SUCCESS',
-        WARNING: 'WARNING',
-        ERROR: 'ERROR',
-      } as const;
-
-      // Haptics.notification({ type: notificationTypeMap[type] });
-    } catch (e) {
-      // Ignore haptic errors
-    }
+  if (!Capacitor.isNativePlatform()) return;
+  try {
+    const map: Record<'SUCCESS' | 'WARNING' | 'ERROR', NotificationType> = {
+      SUCCESS: NotificationType.Success,
+      WARNING: NotificationType.Warning,
+      ERROR: NotificationType.Error,
+    };
+    await Haptics.notification({ type: map[type] });
+  } catch (e) {
+    // Ignore haptic errors
   }
+};
+
+/**
+ * Backward compatible alias for hapticImpact / hapticNotification
+ */
+export const triggerHaptic = (style: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
+  const impactMap = {
+    light: ImpactStyle.Light,
+    medium: ImpactStyle.Medium,
+    heavy: ImpactStyle.Heavy,
+  } as const;
+  if (style === 'success' || style === 'warning' || style === 'error') {
+    hapticNotification(style.toUpperCase() as 'SUCCESS' | 'WARNING' | 'ERROR');
+    return;
+  }
+  hapticImpact(impactMap[style]);
 };
