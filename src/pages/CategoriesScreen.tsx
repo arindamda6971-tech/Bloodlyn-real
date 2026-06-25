@@ -152,7 +152,7 @@ const CategoriesScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests..."
         header={
-          <PremiumPageHeader
+          <PremiumPageHeader flush
             title="Explore Tests"
             subtitle="Curated diagnostics · NABL certified labs"
             icon={Beaker}

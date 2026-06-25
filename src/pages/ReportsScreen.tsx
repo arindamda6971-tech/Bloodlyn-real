@@ -174,7 +174,7 @@ const ReportsScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search reports by test, lab, patient..."
         header={
-          <PremiumPageHeader
+          <PremiumPageHeader flush
             title="My Reports"
             subtitle="AI insights · secure & shareable"
             icon={FileText}

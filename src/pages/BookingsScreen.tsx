@@ -240,7 +240,7 @@ const BookingsScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests, orders, labs..."
         header={
-          <PremiumPageHeader
+          <PremiumPageHeader flush
             title="My Orders"
             subtitle="Track bookings · live status updates"
             icon={Package}
