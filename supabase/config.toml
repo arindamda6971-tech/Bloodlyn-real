@@ -28,4 +28,9 @@ verify_jwt = false
 verify_jwt = false
 # Public read-only proxy to Partner project's lab_time_slots table
 
+[functions.test-description]
+verify_jwt = false
+# Public read-only helper that returns a short patient-friendly description for a test name
+
+
 

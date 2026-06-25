@@ -9,17 +9,14 @@ import {
   Utensils,
   MapPin,
   ShoppingCart,
-  Wallet,
-  MoreVertical,
-  Sparkles,
   ShieldCheck,
-  FileText,
   BadgePercent,
   Bike,
   Stethoscope,
   Smartphone,
   AlertCircle,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -121,6 +118,28 @@ const TestDetailScreen = () => {
     })();
   }, [id, test]);
 
+  // AI-fetched short description (replaces hardcoded sentence)
+  const [aiDescription, setAiDescription] = useState<string>("");
+  const [aiDescLoading, setAiDescLoading] = useState(false);
+  useEffect(() => {
+    if (!test?.name || test.description?.trim()) return;
+    let cancelled = false;
+    setAiDescLoading(true);
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("test-description", {
+          body: { testName: test.name },
+        });
+        if (!cancelled && data?.description) setAiDescription(String(data.description));
+      } catch (err) {
+        console.warn("test-description failed", err);
+      } finally {
+        if (!cancelled) setAiDescLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [test?.name, test?.description]);
+
   const isInCart = useMemo(() => !!test && items.some((i) => i.id === test.id), [items, test]);
 
   const handleAddToCart = () => {
@@ -132,6 +151,7 @@ const TestDetailScreen = () => {
     const ok = addToCart({ id: test.id, name: test.name, price: test.price });
     if (ok) toast.success(`${test.name} added to cart`);
   };
+
 
   if (loading) {
     return (
@@ -160,8 +180,8 @@ const TestDetailScreen = () => {
     "No special prerequisites. This test can be performed at any time of the day. Please carry a valid ID and any previous medical records for reference.";
 
   const aboutText =
-    test.description?.trim() ||
-    `${test.name} is performed in a NABL-accredited laboratory using state-of-the-art equipment. Results are reviewed by qualified pathologists and delivered digitally within ${test.reportTime || "24 hours"}.`;
+    test.description?.trim() || aiDescription.trim() || "";
+
 
   return (
     <MobileLayout showFloatingAdd={false}>
@@ -176,27 +196,9 @@ const TestDetailScreen = () => {
             <ArrowLeft className="w-6 h-6" />
           </button>
           <h1 className="text-lg font-semibold tracking-tight">Lab Tests</h1>
-          <div className="flex items-center gap-1">
-            <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition" aria-label="Wallet">
-              <Wallet className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => navigate("/cart")}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition relative"
-              aria-label="Cart"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              {itemCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {itemCount > 9 ? "9+" : itemCount}
-                </span>
-              )}
-            </button>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition" aria-label="More">
-              <MoreVertical className="w-5 h-5" />
-            </button>
-          </div>
+          <div className="w-10 h-10" aria-hidden />
         </div>
+
 
         <div className="flex items-center gap-1.5 mt-3 text-white/95 text-sm">
           <MapPin className="w-4 h-4" />
@@ -226,7 +228,7 @@ const TestDetailScreen = () => {
         </motion.div>
       </div>
 
-      <div className="px-4 pt-6 pb-40 space-y-7">
+      <div className="px-4 pt-6 pb-12 space-y-7">
         {/* About */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">About the test</h3>
@@ -236,7 +238,17 @@ const TestDetailScreen = () => {
             <Chip icon={<Activity className="w-3.5 h-3.5 text-emerald-500" />} label="All Age Groups" />
             <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={`Report in ${test.reportTime || "24h"}`} />
           </div>
-          <p className="text-[15px] leading-relaxed text-muted-foreground">{aboutText}</p>
+          {aiDescLoading && !aboutText ? (
+            <div className="space-y-2">
+              <div className="h-3.5 w-full rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-11/12 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
+            </div>
+          ) : (
+            <p className="text-[15px] leading-relaxed text-muted-foreground">
+              {aboutText || `${test.name} — short description unavailable right now.`}
+            </p>
+          )}
         </motion.section>
 
         {/* Prerequisites */}
@@ -294,69 +306,28 @@ const TestDetailScreen = () => {
           </ul>
         </motion.section>
 
-        {/* AI insight strip */}
+        {/* Inline Add to Cart CTA (replaces AI strip) */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-sky-100/40 to-emerald-50 border border-primary/20"
+          className="pt-2"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-semibold text-secondary text-sm">AI will explain your report</p>
-              <p className="text-xs text-muted-foreground">Get insights in simple, plain language</p>
-            </div>
-          </div>
+          {itemCount > 0 && !isInCart && (
+            <p className="text-xs text-muted-foreground mb-2 text-center">
+              {itemCount} {itemCount === 1 ? "test" : "tests"} already in cart · ₹{subtotal}
+            </p>
+          )}
+          <Button
+            onClick={handleAddToCart}
+            className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl active:scale-[0.99]"
+          >
+            <ShoppingCart className="w-5 h-5 mr-2" />
+            {isInCart ? "Go to Cart" : "Add to Cart"}
+          </Button>
         </motion.div>
       </div>
 
-      {/* Sticky dual-CTA footer */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-[430px] z-40">
-        <motion.div
-          initial={{ y: 80 }}
-          animate={{ y: 0 }}
-          transition={{ type: "spring", stiffness: 260, damping: 28 }}
-          className="bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.15)]"
-        >
-          {itemCount === 0 ? (
-            <div className="px-4 py-3">
-              <Button
-                onClick={handleAddToCart}
-                className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-lg active:scale-[0.99]"
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
-              </Button>
-            </div>
-          ) : (
-            <>
-              <div className="px-4 pt-3">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={isInCart}
-                  className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-lg active:scale-[0.99] disabled:opacity-90"
-                >
-                  {isInCart ? "Added to Cart" : (<><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>)}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between px-4 py-3 mt-2 border-t border-border/50 bg-muted/30">
-                <div>
-                  <p className="text-xs text-muted-foreground">{itemCount} {itemCount === 1 ? "Test" : "Tests"} Added</p>
-                  <p className="text-lg font-extrabold text-foreground">₹{subtotal}/-*</p>
-                </div>
-                <Button
-                  onClick={() => navigate("/cart")}
-                  className="h-11 px-6 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-md"
-                >
-                  Go to Cart
-                </Button>
-              </div>
-            </>
-          )}
-        </motion.div>
-      </div>
 
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
         <AlertDialogContent className="max-w-[90%] rounded-2xl">
