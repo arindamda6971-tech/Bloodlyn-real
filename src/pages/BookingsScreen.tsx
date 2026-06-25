@@ -240,9 +240,12 @@ const BookingsScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests, orders, labs..."
         header={
-          <div className="flex flex-col gap-1 mb-2">
-            <h1 className="text-3xl font-black text-foreground tracking-tight">My Orders</h1>
-          </div>
+          <PremiumPageHeader
+            title="My Orders"
+            subtitle="Track bookings · live status updates"
+            icon={Package}
+            accent="from-emerald-500 via-teal-500 to-primary"
+          />
         }
         footer={
           <div className="flex w-full gap-1.5 pb-2 mt-2">
