@@ -1,26 +1,38 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   Clock,
-  FileText,
-  Home,
-  Shield,
-  Sparkles,
-  Check,
-  Plus,
-  Minus,
+  Users,
+  Activity,
+  Utensils,
+  MapPin,
   ShoppingCart,
+  Wallet,
+  MoreVertical,
+  Sparkles,
+  ShieldCheck,
+  FileText,
+  BadgePercent,
+  Bike,
+  Stethoscope,
+  Smartphone,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { useUserPincode } from "@/hooks/useUserPincode";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,92 +44,99 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface TestData {
+interface UnifiedTest {
   id: string;
   name: string;
-  description: string | null;
   price: number;
-  original_price: number | null;
-  discount_percent: number | null;
-  report_time_hours: number | null;
-  sample_type: string | null;
-  fasting_required: boolean | null;
-  fasting_hours: number | null;
-  preparation_instructions: string | null;
-  parameters: any;
+  originalPrice?: number;
+  discountPercent?: number;
+  reportTime?: string;
+  fastingRequired?: boolean;
+  fastingHours?: number;
+  description?: string | null;
+  prerequisites?: string | null;
+  category?: string;
 }
 
-const defaultIncludes = [
-  { icon: Home, text: "Home sample collection" },
-  { icon: Shield, text: "NABL certified lab" },
-  { icon: FileText, text: "Digital report" },
-  { icon: Sparkles, text: "AI-powered insights" },
+const whyBookItems = [
+  { Icon: Bike, color: "from-rose-400 to-pink-500", text: "Free Home Sample Collection" },
+  { Icon: Stethoscope, color: "from-sky-400 to-blue-500", text: "Results Reviewed by Specialists" },
+  { Icon: Smartphone, color: "from-emerald-400 to-teal-500", text: "100% Accurate Digital Lab Reports" },
+  { Icon: BadgePercent, color: "from-amber-400 to-orange-500", text: "Best Price & Deals Guaranteed" },
 ];
 
 const TestDetailScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const [quantity, setQuantity] = useState(1);
-  const [test, setTest] = useState<TestData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { addToCart, itemCount, items, subtotal, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { pincode } = useUserPincode();
+
+  const bridgeTest = (location.state as any)?.bridgeTest;
+  const [test, setTest] = useState<UnifiedTest | null>(() => {
+    if (bridgeTest) {
+      return {
+        id: bridgeTest.id,
+        name: bridgeTest.test_name,
+        price: bridgeTest.price > 0 ? bridgeTest.price : bridgeTest.collection_fee || 0,
+        reportTime: bridgeTest.report_delivery_time,
+        prerequisites: bridgeTest.prerequisites,
+        category: bridgeTest.category,
+      };
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(!bridgeTest);
   const [error, setError] = useState<string | null>(null);
-  const { addToCart, itemCount, pendingItem, confirmReplace, cancelReplace } = useCart();
 
   useEffect(() => {
-    const fetchTest = async () => {
-      if (!id) {
-        setError("Test ID not provided");
-        setLoading(false);
-        return;
-      }
-
+    if (test || !id) {
+      setLoading(false);
+      return;
+    }
+    (async () => {
       try {
-        const { data, error: fetchError } = await supabase
-          .from("tests")
-          .select("*")
-          .eq("id", id)
-          .maybeSingle();
-
-        if (fetchError) {
-          console.error("Error fetching test:", fetchError);
-          setError("Failed to load test details");
-        } else if (!data) {
+        const { data } = await supabase.from("tests").select("*").eq("id", id).maybeSingle();
+        if (!data) {
           setError("Test not found");
         } else {
-          setTest(data);
+          setTest({
+            id: data.id,
+            name: data.name,
+            price: data.price,
+            originalPrice: data.original_price || undefined,
+            discountPercent: data.discount_percent || undefined,
+            reportTime: data.report_time_hours ? `${data.report_time_hours} hours` : undefined,
+            fastingRequired: !!data.fasting_required,
+            fastingHours: data.fasting_hours || undefined,
+            description: data.description,
+            prerequisites: data.preparation_instructions,
+          });
         }
-      } catch (err) {
-        console.error("Error:", err);
+      } catch {
         setError("Something went wrong");
       } finally {
         setLoading(false);
       }
-    };
+    })();
+  }, [id, test]);
 
-    fetchTest();
-  }, [id]);
+  const isInCart = useMemo(() => !!test && items.some((i) => i.id === test.id), [items, test]);
 
   const handleAddToCart = () => {
     if (!test) return;
-    let addedAny = false;
-    for (let i = 0; i < quantity; i++) {
-      const ok = addToCart({ id: test.id, name: test.name, price: test.price });
-      if (!ok) break;
-      addedAny = true;
+    if (isInCart) {
+      navigate("/cart");
+      return;
     }
-    if (addedAny) toast.success(`${test.name} added to cart!`);
-  };
-
-  const handleConfirmReplace = () => {
-    confirmReplace();
-    toast.success("Cart replaced with new lab items");
+    const ok = addToCart({ id: test.id, name: test.name, price: test.price });
+    if (ok) toast.success(`${test.name} added to cart`);
   };
 
   if (loading) {
     return (
       <MobileLayout showFloatingAdd={false}>
-        <ScreenHeader title="Test Details" />
-        <div className="flex items-center justify-center h-[60vh]">
+        <div className="flex items-center justify-center h-screen">
           <LoadingSpinner size="lg" />
         </div>
       </MobileLayout>
@@ -127,263 +146,235 @@ const TestDetailScreen = () => {
   if (error || !test) {
     return (
       <MobileLayout showFloatingAdd={false}>
-        <ScreenHeader title="Test Details" />
-        <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
+        <div className="flex flex-col items-center justify-center h-[80vh] px-6 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold text-foreground mb-2">
-            {error || "Test not found"}
-          </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            The test you're looking for doesn't exist or has been removed.
-          </p>
-          <Button onClick={() => navigate("/categories")}>
-            Browse Tests
-          </Button>
+          <h2 className="text-lg font-semibold mb-2">{error || "Test not found"}</h2>
+          <Button onClick={() => navigate(-1)}>Go Back</Button>
         </div>
       </MobileLayout>
     );
   }
 
-  const discount = test.discount_percent || 0;
-  const originalPrice = test.original_price || test.price;
-  const reportTime = test.report_time_hours ? `${test.report_time_hours} hours` : "24 hours";
-  const parameters = Array.isArray(test.parameters) ? test.parameters : [];
+  const prereqText =
+    test.prerequisites?.trim() ||
+    "No special prerequisites. This test can be performed at any time of the day. Please carry a valid ID and any previous medical records for reference.";
+
+  const aboutText =
+    test.description?.trim() ||
+    `${test.name} is performed in a NABL-accredited laboratory using state-of-the-art equipment. Results are reviewed by qualified pathologists and delivered digitally within ${test.reportTime || "24 hours"}.`;
 
   return (
     <MobileLayout showFloatingAdd={false}>
-      <ScreenHeader
-        title="Test Details"
-        rightAction={
-          <button onClick={() => navigate("/cart")} className="icon-btn relative">
-            <ShoppingCart className="w-5 h-5 text-foreground" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
-                {itemCount > 9 ? "9+" : itemCount}
-              </span>
-            )}
+      {/* Gradient Hero Header */}
+      <div className="relative bg-gradient-to-br from-[#2196F3] via-[#1E88E5] to-[#1565C0] text-white px-4 pt-3 pb-8 rounded-b-3xl shadow-lg">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-6 h-6" />
           </button>
-        }
-      />
-
-      <div className="px-4 pb-32">
-        {/* Main info */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-4"
-        >
-          <div className="flex items-start justify-between gap-4 mb-4">
-            <div>
-              {discount > 0 && (
-                <Badge variant="softSuccess" className="mb-2">{discount}% OFF</Badge>
+          <h1 className="text-lg font-semibold tracking-tight">Lab Tests</h1>
+          <div className="flex items-center gap-1">
+            <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition" aria-label="Wallet">
+              <Wallet className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => navigate("/cart")}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition relative"
+              aria-label="Cart"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  {itemCount > 9 ? "9+" : itemCount}
+                </span>
               )}
-              <h1 className="text-xl font-bold text-foreground">{test.name}</h1>
-            </div>
+            </button>
+            <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/10 active:scale-90 transition" aria-label="More">
+              <MoreVertical className="w-5 h-5" />
+            </button>
           </div>
+        </div>
 
-          {test.description && (
-            <p className="text-muted-foreground text-sm leading-relaxed mb-6">
-              {test.description}
-            </p>
-          )}
+        <div className="flex items-center gap-1.5 mt-3 text-white/95 text-sm">
+          <MapPin className="w-4 h-4" />
+          <span className="font-medium">{pincode ? `Pincode ${pincode}` : "Set your location"}</span>
+        </div>
 
-          {/* Quick info */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <div className="soft-card flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Report in</p>
-                <p className="font-semibold text-foreground text-sm">{reportTime}</p>
-              </div>
-            </div>
-            <div className="soft-card flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Fasting</p>
-                <p className="font-semibold text-foreground text-sm">
-                  {test.fasting_required ? `${test.fasting_hours || 8} hours` : "Not required"}
-                </p>
-              </div>
-            </div>
+        {/* Floating test title card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="mt-5 bg-white text-foreground rounded-2xl shadow-xl px-4 py-4"
+        >
+          <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase mb-1">
+            {test.category || "Diagnostic Test"}
+          </p>
+          <h2 className="text-xl font-extrabold leading-tight text-secondary">{test.name}</h2>
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-xl font-extrabold text-foreground">₹{test.price}</span>
+            {test.originalPrice && test.originalPrice > test.price && (
+              <span className="text-sm text-muted-foreground line-through">₹{test.originalPrice}</span>
+            )}
+            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+              <ShieldCheck className="w-3 h-3" /> NABL Certified
+            </span>
           </div>
         </motion.div>
+      </div>
 
-        {/* AI Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-success/10 border border-primary/20 mb-6"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-success flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground text-sm">AI will explain your report</p>
-              <p className="text-xs text-muted-foreground">Get insights in simple language</p>
-            </div>
-            <Badge variant="ai">AI</Badge>
+      <div className="px-4 pt-6 pb-40 space-y-7">
+        {/* About */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+          <h3 className="text-[22px] font-bold text-secondary mb-3">About the test</h3>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Chip icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />} label={test.fastingRequired ? `Fast ${test.fastingHours || 8}h` : "No Preparation"} />
+            <Chip icon={<Users className="w-3.5 h-3.5 text-violet-500" />} label="Unisex" />
+            <Chip icon={<Activity className="w-3.5 h-3.5 text-emerald-500" />} label="All Age Groups" />
+            <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={`Report in ${test.reportTime || "24h"}`} />
           </div>
-        </motion.div>
+          <p className="text-[15px] leading-relaxed text-muted-foreground">{aboutText}</p>
+        </motion.section>
 
-        {/* What's included */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <h2 className="text-lg font-bold text-foreground mb-3">What's Included</h2>
-          <div className="soft-card space-y-3">
-            {defaultIncludes.map((item, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-                  <item.icon className="w-4 h-4 text-success" />
+        {/* Prerequisites */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <h3 className="text-[22px] font-bold text-secondary mb-3">Prerequisites</h3>
+          <p className="text-[15px] leading-relaxed text-muted-foreground mb-4">{prereqText}</p>
+
+          <Accordion type="single" collapsible className="space-y-3">
+            {[
+              { v: "diseases", title: "Diseases Covered", body: "Helps detect and monitor a range of conditions related to this test category. Discuss results with your physician for accurate diagnosis." },
+              { v: "body", title: "Body Functions", body: "Provides insights into key biochemical and physiological functions assessed by this panel." },
+              { v: "lifestyle", title: "Life Style", body: "Use the results to make informed decisions around diet, exercise, sleep, and stress management." },
+            ].map((it) => (
+              <AccordionItem
+                key={it.v}
+                value={it.v}
+                className="border border-border/60 rounded-2xl px-4 bg-card shadow-sm"
+              >
+                <AccordionTrigger className="text-base font-semibold text-secondary hover:no-underline py-4 [&>svg]:text-primary">
+                  {it.title}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground pb-4">
+                  {it.body}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.section>
+
+        {/* Why book with us */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <h3 className="text-[22px] font-bold text-secondary mb-4">Why to Book with us?</h3>
+          <div className="space-y-4">
+            {whyBookItems.map(({ Icon, color, text }, i) => (
+              <div key={i} className="flex items-center gap-4">
+                <div className={`relative w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md`}>
+                  <Icon className="w-6 h-6 text-white" />
+                  <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white flex items-center justify-center shadow">
+                    <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+                  </span>
                 </div>
-                <span className="text-foreground text-sm">{item.text}</span>
+                <p className="text-[15px] font-medium text-secondary">{text}</p>
               </div>
             ))}
           </div>
-        </motion.div>
+        </motion.section>
 
-        {/* Parameters */}
-        {parameters.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="mb-6"
-          >
-            <h2 className="text-lg font-bold text-foreground mb-3">
-              Parameters ({parameters.length})
-            </h2>
-            <div className="soft-card">
-              <div className="flex flex-wrap gap-2">
-                {parameters.map((param: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-full text-sm"
-                  >
-                    <Check className="w-3 h-3 text-success" />
-                    <span className="text-foreground">
-                      {typeof param === 'string' ? param : param.name || param}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
+        {/* How to prepare */}
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <h3 className="text-[22px] font-bold text-secondary mb-3">How to prepare for the Lab test ?</h3>
+          <ul className="space-y-2 text-[15px] text-muted-foreground">
+            <li className="flex gap-2"><span className="text-primary">—</span> Our Lab Technician will collect samples from Home</li>
+            <li className="flex gap-2"><span className="text-primary">—</span> Stay well hydrated and rested before the collection</li>
+            <li className="flex gap-2"><span className="text-primary">—</span> Carry a valid government photo ID for verification</li>
+          </ul>
+        </motion.section>
 
-        {/* Preparation Instructions */}
-        {test.preparation_instructions && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-            className="mb-6"
-          >
-            <h2 className="text-lg font-bold text-foreground mb-3">Preparation</h2>
-            <div className="soft-card">
-              <p className="text-sm text-muted-foreground">{test.preparation_instructions}</p>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Pricing */}
+        {/* AI insight strip */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="soft-card mb-6"
+          transition={{ delay: 0.25 }}
+          className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-sky-100/40 to-emerald-50 border border-primary/20"
         >
-          <h2 className="text-lg font-bold text-foreground mb-3">Price Breakdown</h2>
-          <div className="space-y-2">
-            {discount > 0 && (
-              <>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Test Price</span>
-                  <span className="text-foreground line-through">₹{originalPrice}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Discount ({discount}%)</span>
-                  <span className="text-success">-₹{Math.round(originalPrice - test.price)}</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success">FREE</span>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-emerald-400 flex items-center justify-center shadow">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <div className="h-px bg-border my-3" />
-            <div className="flex justify-between">
-              <span className="font-semibold text-foreground">Total</span>
-              <span className="font-bold text-lg text-foreground">₹{test.price * quantity}</span>
+            <div>
+              <p className="font-semibold text-secondary text-sm">AI will explain your report</p>
+              <p className="text-xs text-muted-foreground">Get insights in simple, plain language</p>
             </div>
           </div>
         </motion.div>
       </div>
 
-      {/* Bottom CTA */}
-      <nav className="fixed bottom-14 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-24px)] max-w-[380px]">
+      {/* Sticky dual-CTA footer */}
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full md:max-w-[430px] z-40">
         <motion.div
-          initial={{ y: 100 }}
+          initial={{ y: 80 }}
           animate={{ y: 0 }}
-          className="flex items-center justify-around px-1 py-1.5 rounded-2xl backdrop-blur-xl bg-background/70 border border-border/30 shadow-md"
-          style={{
-            WebkitBackdropFilter: 'blur(16px)',
-            backdropFilter: 'blur(16px)',
-          }}
+          transition={{ type: "spring", stiffness: 260, damping: 28 }}
+          className="bg-card/95 backdrop-blur-xl border-t border-border/60 shadow-[0_-10px_30px_-12px_rgba(0,0,0,0.15)]"
         >
-          {/* Quantity selector */}
-          <div className="flex items-center gap-0.5 bg-muted/50 rounded-xl px-1 py-0.5">
-            <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-6 h-6 rounded-lg bg-card flex items-center justify-center hover:bg-muted/50 transition-all"
-            >
-              <Minus className="w-3 h-3 text-muted-foreground" />
-            </button>
-            <span className="w-5 text-center text-xs font-medium text-foreground">{quantity}</span>
-            <button
-              onClick={() => setQuantity(quantity + 1)}
-              className="w-6 h-6 rounded-lg bg-card flex items-center justify-center hover:bg-muted/50 transition-all"
-            >
-              <Plus className="w-3 h-3 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Add to cart */}
-          <Button
-            variant="hero"
-            size="sm"
-            className="text-[10px] px-4 py-1 h-7 rounded-xl"
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="w-3 h-3 mr-1" />
-            Add to Cart
-          </Button>
+          {itemCount === 0 ? (
+            <div className="px-4 py-3">
+              <Button
+                onClick={handleAddToCart}
+                className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-lg active:scale-[0.99]"
+              >
+                <ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="px-4 pt-3">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={isInCart}
+                  className="w-full h-12 rounded-xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-lg active:scale-[0.99] disabled:opacity-90"
+                >
+                  {isInCart ? "Added to Cart" : (<><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>)}
+                </Button>
+              </div>
+              <div className="flex items-center justify-between px-4 py-3 mt-2 border-t border-border/50 bg-muted/30">
+                <div>
+                  <p className="text-xs text-muted-foreground">{itemCount} {itemCount === 1 ? "Test" : "Tests"} Added</p>
+                  <p className="text-lg font-extrabold text-foreground">₹{subtotal}/-*</p>
+                </div>
+                <Button
+                  onClick={() => navigate("/cart")}
+                  className="h-11 px-6 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-md"
+                >
+                  Go to Cart
+                </Button>
+              </div>
+            </>
+          )}
         </motion.div>
-      </nav>
+      </div>
 
-      {/* Lab Conflict Alert Dialog */}
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
         <AlertDialogContent className="max-w-[90%] rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Change Lab?</AlertDialogTitle>
+            <AlertDialogTitle>Different Lab Selected</AlertDialogTitle>
             <AlertDialogDescription>
-              Changing labs will clear your current cart. Proceed?
+              You already have items from <span className="font-semibold text-foreground">{pendingItem?.existingLabName}</span>. Tests from another lab can't be mixed.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-2">
-            <AlertDialogCancel className="flex-1 mt-0" onClick={cancelReplace}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction className="flex-1" onClick={handleConfirmReplace}>
+            <AlertDialogCancel className="flex-1 mt-0" onClick={cancelReplace}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="flex-1"
+              onClick={() => {
+                confirmReplace();
+                toast.success("Cart replaced");
+              }}
+            >
               Replace Cart
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -392,5 +383,11 @@ const TestDetailScreen = () => {
     </MobileLayout>
   );
 };
+
+const Chip = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
+  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/60 border border-border/60 text-xs font-semibold text-secondary">
+    {icon} {label}
+  </span>
+);
 
 export default TestDetailScreen;
