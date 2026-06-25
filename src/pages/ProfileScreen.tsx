@@ -116,7 +116,19 @@ const ProfileScreen = () => {
     <MobileLayout className="bg-background">
       {StaticBackground}
 
-      <ScreenHeader title="Profile" showBack={false} />
+      <div
+        className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
+      >
+        <div className="px-5 pt-3 pb-3">
+          <PremiumPageHeader
+            title="My Profile"
+            subtitle="Account · preferences · rewards"
+            icon={User}
+            accent="from-amber-500 via-orange-500 to-primary"
+          />
+        </div>
+      </div>
 
       <div className="px-4 pb-12 relative z-10 overflow-hidden">
         {/* Profile Hero */}
