@@ -196,6 +196,7 @@ const CategoryTestsScreen = () => {
                 isInCart={isInCart(test.id)}
                 onAdd={handleAddToCart}
                 onViewCart={() => navigate("/cart")}
+                onOpen={(t) => navigate(`/test/${t.id}`, { state: { bridgeTest: t } })}
               />
             ))}
           </div>
