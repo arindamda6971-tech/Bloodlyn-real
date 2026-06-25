@@ -118,6 +118,28 @@ const TestDetailScreen = () => {
     })();
   }, [id, test]);
 
+  // AI-fetched short description (replaces hardcoded sentence)
+  const [aiDescription, setAiDescription] = useState<string>("");
+  const [aiDescLoading, setAiDescLoading] = useState(false);
+  useEffect(() => {
+    if (!test?.name || test.description?.trim()) return;
+    let cancelled = false;
+    setAiDescLoading(true);
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("test-description", {
+          body: { testName: test.name },
+        });
+        if (!cancelled && data?.description) setAiDescription(String(data.description));
+      } catch (err) {
+        console.warn("test-description failed", err);
+      } finally {
+        if (!cancelled) setAiDescLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [test?.name, test?.description]);
+
   const isInCart = useMemo(() => !!test && items.some((i) => i.id === test.id), [items, test]);
 
   const handleAddToCart = () => {
@@ -129,6 +151,7 @@ const TestDetailScreen = () => {
     const ok = addToCart({ id: test.id, name: test.name, price: test.price });
     if (ok) toast.success(`${test.name} added to cart`);
   };
+
 
   if (loading) {
     return (
@@ -157,8 +180,8 @@ const TestDetailScreen = () => {
     "No special prerequisites. This test can be performed at any time of the day. Please carry a valid ID and any previous medical records for reference.";
 
   const aboutText =
-    test.description?.trim() ||
-    `${test.name} is performed in a NABL-accredited laboratory using state-of-the-art equipment. Results are reviewed by qualified pathologists and delivered digitally within ${test.reportTime || "24 hours"}.`;
+    test.description?.trim() || aiDescription.trim() || "";
+
 
   return (
     <MobileLayout showFloatingAdd={false}>
