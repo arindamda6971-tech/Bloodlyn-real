@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
