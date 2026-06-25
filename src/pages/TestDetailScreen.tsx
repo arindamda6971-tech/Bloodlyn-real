@@ -9,17 +9,14 @@ import {
   Utensils,
   MapPin,
   ShoppingCart,
-  Wallet,
-  MoreVertical,
-  Sparkles,
   ShieldCheck,
-  FileText,
   BadgePercent,
   Bike,
   Stethoscope,
   Smartphone,
   AlertCircle,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
