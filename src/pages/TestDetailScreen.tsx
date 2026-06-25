@@ -238,7 +238,17 @@ const TestDetailScreen = () => {
             <Chip icon={<Activity className="w-3.5 h-3.5 text-emerald-500" />} label="All Age Groups" />
             <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={`Report in ${test.reportTime || "24h"}`} />
           </div>
-          <p className="text-[15px] leading-relaxed text-muted-foreground">{aboutText}</p>
+          {aiDescLoading && !aboutText ? (
+            <div className="space-y-2">
+              <div className="h-3.5 w-full rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-11/12 rounded bg-muted animate-pulse" />
+              <div className="h-3.5 w-3/4 rounded bg-muted animate-pulse" />
+            </div>
+          ) : (
+            <p className="text-[15px] leading-relaxed text-muted-foreground">
+              {aboutText || `${test.name} — short description unavailable right now.`}
+            </p>
+          )}
         </motion.section>
 
         {/* Prerequisites */}
