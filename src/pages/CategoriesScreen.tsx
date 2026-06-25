@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
@@ -151,7 +152,12 @@ const CategoriesScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests..."
         header={
-          <h1 className="text-2xl font-black text-foreground tracking-tight mt-1 mb-1">Categories</h1>
+          <PremiumPageHeader
+            title="Explore Tests"
+            subtitle="Curated diagnostics · NABL certified labs"
+            icon={Beaker}
+            accent="from-sky-500 via-primary to-indigo-600"
+          />
         }
       />
 

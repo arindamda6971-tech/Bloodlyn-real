@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import StickySearch from "@/components/ui/StickySearch";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 
 interface ReportOrder {
@@ -173,7 +174,12 @@ const ReportsScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search reports by test, lab, patient..."
         header={
-          <h1 className="text-2xl font-black text-foreground tracking-tight mt-1 mb-1">My Reports</h1>
+          <PremiumPageHeader
+            title="My Reports"
+            subtitle="AI insights · secure & shareable"
+            icon={FileText}
+            accent="from-violet-500 via-fuchsia-500 to-primary"
+          />
         }
       />
 
