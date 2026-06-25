@@ -22,7 +22,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSubscription } from "@/hooks/useSubscription";
