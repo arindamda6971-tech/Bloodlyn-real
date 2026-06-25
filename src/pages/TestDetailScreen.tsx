@@ -135,7 +135,7 @@ const TestDetailScreen = () => {
 
   if (loading) {
     return (
-      <MobileLayout showFloatingAdd={false} showBottomNav={false}>
+      <MobileLayout showFloatingAdd={false}>
         <div className="flex items-center justify-center h-screen">
           <LoadingSpinner size="lg" />
         </div>
@@ -145,7 +145,7 @@ const TestDetailScreen = () => {
 
   if (error || !test) {
     return (
-      <MobileLayout showFloatingAdd={false} showBottomNav={false}>
+      <MobileLayout showFloatingAdd={false}>
         <div className="flex flex-col items-center justify-center h-[80vh] px-6 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
           <h2 className="text-lg font-semibold mb-2">{error || "Test not found"}</h2>
@@ -164,7 +164,7 @@ const TestDetailScreen = () => {
     `${test.name} is performed in a NABL-accredited laboratory using state-of-the-art equipment. Results are reviewed by qualified pathologists and delivered digitally within ${test.reportTime || "24 hours"}.`;
 
   return (
-    <MobileLayout showFloatingAdd={false} showBottomNav={false}>
+    <MobileLayout showFloatingAdd={false}>
       {/* Gradient Hero Header */}
       <div className="relative bg-gradient-to-br from-[#2196F3] via-[#1E88E5] to-[#1565C0] text-white px-4 pt-3 pb-8 rounded-b-3xl shadow-lg">
         <div className="flex items-center justify-between">
