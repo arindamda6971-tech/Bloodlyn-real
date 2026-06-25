@@ -26,14 +26,19 @@ const TestItem = React.memo(({
   test,
   isInCart,
   onAdd,
-  onViewCart
+  onViewCart,
+  onOpen,
 }: {
   test: BridgeTest;
   isInCart: boolean;
   onAdd: (t: BridgeTest) => void;
-  onViewCart: () => void
+  onViewCart: () => void;
+  onOpen: (t: BridgeTest) => void;
 }) => (
-  <div className="soft-card p-4 transition-transform active:scale-[0.98]">
+  <div
+    onClick={() => onOpen(test)}
+    className="soft-card p-4 transition-transform active:scale-[0.98] cursor-pointer"
+  >
     <div className="flex items-center gap-3">
       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
         <FlaskConical className="w-5 h-5 text-primary" />
@@ -61,6 +66,7 @@ const TestItem = React.memo(({
     </div>
   </div>
 ));
+
 
 TestItem.displayName = "TestItem";
 
