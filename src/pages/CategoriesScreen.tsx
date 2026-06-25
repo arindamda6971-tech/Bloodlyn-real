@@ -151,7 +151,12 @@ const CategoriesScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search tests..."
         header={
-          <h1 className="text-2xl font-black text-foreground tracking-tight mt-1 mb-1">Categories</h1>
+          <PremiumPageHeader
+            title="Explore Tests"
+            subtitle="Curated diagnostics · NABL certified labs"
+            icon={Beaker}
+            accent="from-sky-500 via-primary to-indigo-600"
+          />
         }
       />
 
