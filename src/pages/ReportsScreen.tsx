@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import StickySearch from "@/components/ui/StickySearch";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 
 interface ReportOrder {
