@@ -9,6 +9,9 @@ interface PremiumPageHeaderProps {
   /** Tailwind gradient classes, e.g. "from-primary via-primary to-blue-600" */
   accent?: string;
   rightSlot?: ReactNode;
+  /** When true, removes card chrome (rounded, border, margin) so it blends
+   *  seamlessly with a sibling search bar inside the same sticky shell. */
+  flush?: boolean;
 }
 
 /**
@@ -21,24 +24,27 @@ const PremiumPageHeader = ({
   icon: Icon,
   accent = "from-primary via-primary to-blue-600",
   rightSlot,
+  flush = false,
 }: PremiumPageHeaderProps) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-      className="relative overflow-hidden rounded-2xl mb-1"
+      className={`relative ${flush ? "-mx-5 -mt-3 -mb-1 pb-2" : "rounded-2xl mb-1 overflow-hidden"}`}
     >
       {/* Layered gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08]`} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)]" />
-      {/* Decorative orbs */}
-      <div className="pointer-events-none absolute -top-8 -right-6 w-28 h-28 rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-10 -left-6 w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl" />
-      {/* Fine grain border */}
-      <div className="absolute inset-0 rounded-2xl border border-white/40 dark:border-white/5" />
+      <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08] pointer-events-none`} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
+      {/* Decorative orbs — bleed downward in flush mode to reach the search */}
+      <div className={`pointer-events-none absolute -top-8 -right-6 ${flush ? "w-36 h-36" : "w-28 h-28"} rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl`} />
+      <div className={`pointer-events-none absolute ${flush ? "-bottom-16 -left-8 w-40 h-40" : "-bottom-10 -left-6 w-24 h-24"} rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl`} />
+      {/* Fine grain border — only in card mode */}
+      {!flush && (
+        <div className="absolute inset-0 rounded-2xl border border-white/40 dark:border-white/5 pointer-events-none" />
+      )}
 
-      <div className="relative flex items-center gap-3.5 px-3.5 py-3">
+      <div className={`relative flex items-center gap-3.5 ${flush ? "px-5 pt-4 pb-2" : "px-3.5 py-3"}`}>
         {/* Icon medallion */}
         <div className="relative shrink-0">
           <div className={`absolute -inset-0.5 rounded-2xl bg-gradient-to-br ${accent} opacity-70 blur-[6px]`} />
@@ -66,8 +72,10 @@ const PremiumPageHeader = ({
         {rightSlot && <div className="shrink-0">{rightSlot}</div>}
       </div>
 
-      {/* Bottom shimmer line */}
-      <div className={`absolute bottom-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent`} />
+      {/* Bottom shimmer line — only in card mode (flush blends instead) */}
+      {!flush && (
+        <div className="absolute bottom-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      )}
     </motion.div>
   );
 };
