@@ -173,6 +173,7 @@ const ReportsScreen = () => {
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search reports by test, lab, patient..."
+        accent="from-violet-500 via-fuchsia-500 to-primary"
         header={
           <PremiumPageHeader flush
             title="My Reports"
