@@ -33,15 +33,15 @@ const PremiumPageHeader = ({
       transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       className={`relative ${flush ? "-mx-5 -mt-3 -mb-1 pb-2" : "rounded-2xl mb-1 overflow-hidden"}`}
     >
-      {/* Layered gradient background */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08] pointer-events-none`} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
-      {/* Decorative orbs — bleed downward in flush mode to reach the search */}
-      <div className={`pointer-events-none absolute -top-8 -right-6 ${flush ? "w-36 h-36" : "w-28 h-28"} rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl`} />
-      <div className={`pointer-events-none absolute ${flush ? "-bottom-16 -left-8 w-40 h-40" : "-bottom-10 -left-6 w-24 h-24"} rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl`} />
-      {/* Fine grain border — only in card mode */}
+      {/* Layered gradient background — only if not flush (as StickySearch handles it in flush mode) */}
       {!flush && (
-        <div className="absolute inset-0 rounded-2xl border border-white/40 dark:border-white/5 pointer-events-none" />
+        <>
+          <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08] pointer-events-none`} />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
+          <div className="pointer-events-none absolute -top-8 -right-6 w-28 h-28 rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-10 -left-6 w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl" />
+          <div className="absolute inset-0 rounded-2xl border border-white/40 dark:border-white/5 pointer-events-none" />
+        </>
       )}
 
       <div className={`relative flex items-center gap-3.5 ${flush ? "px-5 pt-4 pb-2" : "px-3.5 py-3"}`}>
