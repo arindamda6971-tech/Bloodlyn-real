@@ -168,10 +168,20 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40 motion-safe:transition-shadow shadow-none ${className}`}
+      className={`sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40 motion-safe:transition-shadow shadow-none overflow-hidden ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       data-testid="sticky-search-shell"
     >
+      {/* Seamless unified premium background elements across both header and search bar */}
+      {accent && (
+        <>
+          <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08] pointer-events-none`} />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
+          <div className="pointer-events-none absolute -top-8 -right-6 w-36 h-36 rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-16 -left-8 w-40 h-40 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl" />
+        </>
+      )}
+
       {header && (
         <div
           ref={headerWrapperRef}
@@ -183,7 +193,7 @@ const StickySearch = ({
         </div>
       )}
 
-      <div className="px-5 pt-2 pb-3.5">
+      <div className={`px-5 ${header ? "pt-1" : "pt-2"} pb-3.5`}>
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground/60 pointer-events-none" />
           <input
