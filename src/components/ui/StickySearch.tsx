@@ -15,6 +15,8 @@ interface StickySearchProps {
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   rightSlot?: ReactNode;
+  /** Accent gradient classes for continuous premium layout */
+  accent?: string;
 }
 
 const SHADOW_CLASS = "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]";
