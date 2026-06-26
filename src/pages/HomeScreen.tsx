@@ -467,6 +467,9 @@ const HomeScreen = () => {
           </section>
         )}
 
+        {/* Health Packages (real-time, vendor-driven) */}
+        <HealthPackagesSection />
+
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 transform-gpu">
           <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform">
