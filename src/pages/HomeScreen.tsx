@@ -31,6 +31,7 @@ import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
+import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { usePreviousOrders } from "@/hooks/usePreviousOrders";
@@ -465,6 +466,9 @@ const HomeScreen = () => {
             )}
           </section>
         )}
+
+        {/* Health Packages (real-time, vendor-driven) */}
+        <HealthPackagesSection />
 
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 transform-gpu">
