@@ -151,6 +151,7 @@ const CategoriesScreen = () => {
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests..."
+        accent="from-sky-500 via-primary to-indigo-600"
         header={
           <PremiumPageHeader flush
             title="Explore Tests"
