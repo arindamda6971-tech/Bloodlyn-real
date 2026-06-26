@@ -239,6 +239,7 @@ const BookingsScreen = () => {
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests, orders, labs..."
+        accent="from-emerald-500 via-teal-500 to-primary"
         header={
           <PremiumPageHeader flush
             title="My Orders"
