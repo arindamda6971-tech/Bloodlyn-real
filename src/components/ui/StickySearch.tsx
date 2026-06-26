@@ -35,6 +35,7 @@ const StickySearch = ({
   onFocus,
   onKeyDown,
   rightSlot,
+  accent,
 }: StickySearchProps) => {
   const shellRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
