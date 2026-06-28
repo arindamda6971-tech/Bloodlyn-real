@@ -112,7 +112,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
       const cartItemsToInsert = cartItems.map((item) => ({
         user_id: userId,
-        test_id: null,
+        test_id: item.kind === "test" && isUuid(item.id) ? item.id : null,
+        package_id: item.kind === "package" && isUuid(item.id) ? item.id : null,
         test_name: item.name,
         price: item.price,
         lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
@@ -120,6 +121,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantity: item.quantity,
         family_member_id: item.familyMemberId || null,
       } as any));
+
 
       const { data, error } = await supabase
         .from("cart_items")
