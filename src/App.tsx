@@ -22,7 +22,7 @@ import PageTransition from "@/components/PageTransition";
 import SmoothRoutes from "@/components/SmoothRoutes";
 import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 
 // Critical path — eagerly loaded (shown before auth)
