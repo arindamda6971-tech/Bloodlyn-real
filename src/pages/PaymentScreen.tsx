@@ -225,18 +225,23 @@ const PaymentScreen = () => {
       const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
         headers: { "Idempotency-Key": idempotencyKey },
         body: {
-          cartItems: cartItems.map((item) => ({
-            id: normalizeItemId(item.id),
-            name: item.name,
-            price: Number(item.price) || 0,
-            quantity: Number(item.quantity) || 1,
-            familyMemberId: item.familyMemberId || null,
-            packageId: item.packageId || null,
-            category: item.category || undefined,
-            labId: item.labId || labId || null,
-            labName: item.labName || labName,
-            vendorId: item.vendorId || resolvedVendorId,
-          })),
+          cartItems: cartItems.map((item) => {
+            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+            const derivedPackageId = item.packageId || (item.kind === "package" && isUuid ? item.id : null);
+            return {
+              id: normalizeItemId(item.id),
+              name: item.name,
+              price: Number(item.price) || 0,
+              quantity: Number(item.quantity) || 1,
+              familyMemberId: item.familyMemberId || null,
+              packageId: derivedPackageId,
+              category: item.category || undefined,
+              labId: item.labId || labId || null,
+              labName: item.labName || labName,
+              vendorId: item.vendorId || resolvedVendorId,
+            };
+          }),
+
           addressId: paymentState?.addressId || null,
           scheduledDate: paymentState?.scheduledDate || null,
           scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
