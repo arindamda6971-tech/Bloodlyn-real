@@ -86,11 +86,33 @@ const LoginScreen = () => {
       if (isSignUp) {
         const { error } = await signUpWithEmail(email, password, fullName || undefined);
         if (error) {
-          const friendlyMessage = getAuthErrorMessage(error);
-          toast({ title: "Sign Up Failed", description: friendlyMessage, variant: "destructive" });
+          const msg = (error as Error).message?.toLowerCase() || '';
+          // If the user already exists, transparently fall back to sign-in with the same creds.
+          if (msg.includes('already') || msg.includes('registered') || msg.includes('exists')) {
+            const { error: signInErr } = await signInWithEmail(email, password);
+            if (signInErr) {
+              toast({ title: "Account Exists", description: "This email is already registered. Please sign in or reset your password.", variant: "destructive" });
+              setIsSignUp(false);
+            } else {
+              resetRateLimit();
+              toast({ title: "Welcome back!", description: "Signed in to your existing account." });
+            }
+          } else {
+            const friendlyMessage = getAuthErrorMessage(error);
+            toast({ title: "Sign Up Failed", description: friendlyMessage, variant: "destructive" });
+          }
         } else {
-          resetRateLimit(); // Reset on success
-          toast({ title: "Check Your Email", description: "We've sent you a confirmation link. Please check your email." });
+          resetRateLimit();
+          // If email confirmation is disabled in Supabase, signUp returns a session immediately
+          // and the auth listener will redirect. Otherwise, try to sign in right away — if that
+          // also fails because confirmation is required, tell the user to check their inbox.
+          const { error: signInErr } = await signInWithEmail(email, password);
+          if (signInErr) {
+            toast({ title: "Check Your Email", description: "We've sent you a confirmation link. Verify your email, then sign in." });
+            setIsSignUp(false);
+          } else {
+            toast({ title: "Account Created", description: "Welcome to BloodLyn!" });
+          }
         }
       } else {
         const { error } = await signInWithEmail(email, password);
