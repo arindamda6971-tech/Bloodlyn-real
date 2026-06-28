@@ -14,7 +14,9 @@ interface CartItem {
   quantity: number;
   familyMemberId?: string;
   category?: string;
+  kind?: "test" | "package";
 }
+
 
 interface PendingItem {
   item: Omit<CartItem, "quantity">;
