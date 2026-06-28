@@ -273,10 +273,13 @@ const PaymentScreen = () => {
           discount,
           total,
           selectedPayment: selectedPaymentMethod.id,
+          selectedPaymentName: selectedPaymentMethod.name,
           paymentVerified: true,
           orderId: fnData?.orderId || null,
           orderNumber: fnData?.orderNumber || null,
           vendorId: resolvedVendorId,
+          selectedLabName: paymentState?.selectedLabName || labName,
+          selectedLabId: paymentState?.selectedLabId || labId,
         },
       });
     } catch (error) {
