@@ -26,6 +26,7 @@ interface BookingState {
   discount?: number;
   total?: number;
   selectedPayment?: string;
+  selectedPaymentName?: string;
   paymentVerified?: boolean;
   patientName?: string;
   patientAge?: number | string;
@@ -33,6 +34,8 @@ interface BookingState {
   patientPhone?: string | null;
   orderId?: string | null;
   orderNumber?: string | null;
+  selectedLabName?: string;
+  selectedLabId?: string;
 }
 
 const confettiColors = [
