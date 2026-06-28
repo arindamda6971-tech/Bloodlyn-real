@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Home, Package, Sparkles, Calendar, User, Phone } from "lucide-react";
+import { CheckCircle, Home, Package, Sparkles, Calendar, User, Phone, Beaker, Receipt, CreditCard, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 
