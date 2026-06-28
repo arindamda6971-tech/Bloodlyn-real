@@ -26,7 +26,9 @@ interface PaymentState {
     labName?: string;
     vendorId?: string;
     category?: string;
+    kind?: "test" | "package";
   }>;
+
   addressId?: string | null;
   scheduledDate?: string | null;
   scheduledTimeSlot?: string | null;
