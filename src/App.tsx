@@ -129,47 +129,68 @@ const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
 
-const AnimatedRoutes = () => {
-  const location = useLocation();
+const SwipeBackWrapper = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const edgeStartRef = { current: false } as { current: boolean };
 
   const handleDragStart = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
-    // Only treat as a back-swipe if the gesture started near the left edge
     edgeStartRef.current = info.point.x <= 30;
   };
-
   const handleDragEnd = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
     if (!edgeStartRef.current) return;
-    if (info.offset.x > 80 || info.velocity.x > 200) {
-      navigate(-1);
-    }
+    if (info.offset.x > 80 || info.velocity.x > 200) navigate(-1);
   };
 
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0, x: 16 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -16 }}
-        transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.22 }}
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0}
-        dragDirectionLock
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        style={{
-          width: "100%",
-          position: "relative",
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100dvh"
-        }}
-      >
-        <Routes location={location}>
+    <motion.div
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0}
+      dragDirectionLock
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      style={{
+        width: "100%",
+        position: "relative",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100dvh",
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const AnimatedRoutes = () => {
+  return (
+    <SwipeBackWrapper>
+      {/*
+        SmoothRoutes defers the location swap with useTransition so the
+        previous page stays mounted on screen until the next lazy chunk
+        + data is ready — eliminating the blank Suspense flash on back nav.
+      */}
+      <SmoothRoutes>
+        {(deferredLocation) => (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={deferredLocation.pathname}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.2 }}
+              style={{
+                width: "100%",
+                position: "relative",
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "100dvh",
+                willChange: "opacity, transform",
+              }}
+            >
+              <Routes location={deferredLocation}>
           {/* Public Routes */}
           <Route path="/" element={<SplashScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
