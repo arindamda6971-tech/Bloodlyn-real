@@ -524,11 +524,13 @@ const LabDetailScreen = () => {
             labId: labId || "",
             labName: lab.name,
             vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
+            kind: test.category === "Health Packages" ? "package" : "test",
           });
           if (ok) {
             toast.success(`${testName} added to cart`);
           }
         }
+
       }
       return newSet;
     });
