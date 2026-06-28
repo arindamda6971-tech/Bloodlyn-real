@@ -126,10 +126,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
+      // Use a stable, https redirect target so Supabase can complete the OAuth round-trip.
+      // Falling back to `/home` ensures the user lands inside the app shell post-auth.
+      const redirectTo = `${window.location.origin}/home`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
         }
       });
       return { error };
