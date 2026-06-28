@@ -76,7 +76,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const cartItems: CartItem[] = data
           .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
           .map((item) => ({
-            id: item.test_id || item.package_id || item.id,
+            id: item.package_id || item.test_id || item.id,
             name: item.test_name!,
             price: Number(item.price) || 0,
             labId: item.lab_id || undefined,
@@ -84,11 +84,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             vendorId: (item as any).vendor_id || undefined,
             quantity: item.quantity || 1,
             familyMemberId: item.family_member_id || undefined,
+            kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
           }));
         setItems(cartItems);
       } else {
         setItems([]);
       }
+
     } catch (err) {
       console.error("Error loading cart:", err);
       setItems([]);
