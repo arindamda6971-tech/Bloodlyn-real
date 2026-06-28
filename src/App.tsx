@@ -242,11 +242,15 @@ const AnimatedRoutes = () => {
           <Route path="/unauthorized" element={<UnauthorizedScreen />} />
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+              </Routes>
+            </motion.div>
+          </AnimatePresence>
+        )}
+      </SmoothRoutes>
+    </SwipeBackWrapper>
   );
 };
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
