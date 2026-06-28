@@ -245,15 +245,83 @@ const OrderSuccessScreen = () => {
             </div>
           )}
 
+          {/* Lab */}
+          {bookingState?.selectedLabName && (
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <Building2 className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Diagnostic Lab</p>
+                <p className="text-sm font-medium text-foreground truncate">{bookingState.selectedLabName}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Items */}
+          {bookingState?.cartItems?.length ? (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <div className="flex items-center gap-2 mb-2">
+                <Beaker className="w-3.5 h-3.5 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {bookingState.cartItems.length} {bookingState.cartItems.length > 1 ? "Items" : "Item"}
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                {bookingState.cartItems.map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-foreground font-medium truncate">{item.name}</p>
+                      {item.category && (
+                        <p className="text-[11px] text-muted-foreground">{item.category}</p>
+                      )}
+                    </div>
+                    <p className="text-foreground font-semibold shrink-0">
+                      ₹{(item.price * (item.quantity || 1)).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Bill summary */}
+          <div className="mt-3 pt-3 border-t border-border/50 space-y-1.5">
+            <div className="flex items-center gap-2 mb-1">
+              <Receipt className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Bill Summary</p>
+            </div>
+            {bookingState?.subtotal != null && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-foreground">₹{bookingState.subtotal.toLocaleString()}</span>
+              </div>
+            )}
+            {bookingState?.discount ? (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Discount</span>
+                <span className="text-success">- ₹{bookingState.discount.toLocaleString()}</span>
+              </div>
+            ) : null}
+            {bookingState?.selectedPaymentName && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <CreditCard className="w-3.5 h-3.5" /> Payment
+                </span>
+                <span className="text-foreground">{bookingState.selectedPaymentName}</span>
+              </div>
+            )}
+          </div>
+
           {/* Total */}
           {bookingState?.total != null && (
-            <div className="flex items-center gap-3 pt-3 mt-1 border-t border-border/50">
+            <div className="flex items-center gap-3 pt-3 mt-2 border-t border-border/50">
               <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 text-success" />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">Amount Paid</p>
-                <p className="text-sm font-bold text-foreground">₹{bookingState.total}</p>
+                <p className="text-base font-bold text-foreground">₹{bookingState.total.toLocaleString()}</p>
               </div>
             </div>
           )}
