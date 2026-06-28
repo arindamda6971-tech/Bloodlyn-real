@@ -14,7 +14,9 @@ interface CartItem {
   quantity: number;
   familyMemberId?: string;
   category?: string;
+  kind?: "test" | "package";
 }
+
 
 interface PendingItem {
   item: Omit<CartItem, "quantity">;
@@ -74,7 +76,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         const cartItems: CartItem[] = data
           .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
           .map((item) => ({
-            id: item.test_id || item.package_id || item.id,
+            id: item.package_id || item.test_id || item.id,
             name: item.test_name!,
             price: Number(item.price) || 0,
             labId: item.lab_id || undefined,
@@ -82,11 +84,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             vendorId: (item as any).vendor_id || undefined,
             quantity: item.quantity || 1,
             familyMemberId: item.family_member_id || undefined,
+            kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
           }));
         setItems(cartItems);
       } else {
         setItems([]);
       }
+
     } catch (err) {
       console.error("Error loading cart:", err);
       setItems([]);
@@ -108,7 +112,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
       const cartItemsToInsert = cartItems.map((item) => ({
         user_id: userId,
-        test_id: null,
+        test_id: item.kind === "test" && isUuid(item.id) ? item.id : null,
+        package_id: item.kind === "package" && isUuid(item.id) ? item.id : null,
         test_name: item.name,
         price: item.price,
         lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
@@ -116,6 +121,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         quantity: item.quantity,
         family_member_id: item.familyMemberId || null,
       } as any));
+
 
       const { data, error } = await supabase
         .from("cart_items")
