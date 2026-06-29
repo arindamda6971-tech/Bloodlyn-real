@@ -67,6 +67,7 @@ const UploadPrescriptionScreen = () => {
   const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scannedTests, setScannedTests] = useState<AppTest[]>([]);
+  const [unavailableTests, setUnavailableTests] = useState<string[]>([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [appTests, setAppTests] = useState<AppTest[]>([]);
 
