@@ -421,49 +421,75 @@ const UploadPrescriptionScreen = () => {
             )}
 
             {hasScanned && !isAnalyzing && (
-              <div className="space-y-4">
-                <h2 className="text-base font-bold text-gray-900 tracking-tight px-1">Tests Found from Catalog</h2>
+              <div className="space-y-5">
+                {/* Available tests */}
+                {scannedTests.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight px-1 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Available in Catalog ({scannedTests.length})
+                    </h2>
+                    {scannedTests.map((t) => (
+                      <div key={t.id} className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 shadow-sm flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                            <Activity className="w-5 h-5 text-emerald-700" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-gray-900 text-sm leading-snug truncate">{t.name}</h3>
+                            <p className="text-xs font-semibold text-emerald-700 mt-0.5">₹{t.price} • Available</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeTest(t.id)}
+                          className="w-9 h-9 rounded-xl bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 flex items-center justify-center transition-all active:scale-95 text-gray-400 shrink-0"
+                          aria-label="Remove test"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                <div className="space-y-3">
-                  {scannedTests.map((t) => (
-                    <div key={t.id} className="p-4 rounded-2xl border border-gray-200 bg-white shadow-sm flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                          <Activity className="w-5 h-5 text-blue-600" />
+                {/* Unavailable tests */}
+                {unavailableTests.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight px-1 flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-rose-500" />
+                      Not Available ({unavailableTests.length})
+                    </h2>
+                    {unavailableTests.map((name) => (
+                      <div key={name} className="p-4 rounded-2xl border border-rose-100 bg-rose-50/40 shadow-sm flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
+                          <XCircle className="w-5 h-5 text-rose-500" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-bold text-gray-900 text-sm leading-snug truncate">{t.name}</h3>
-                          <p className="text-xs font-semibold text-blue-600 mt-0.5">₹{t.price}</p>
+                          <h3 className="font-semibold text-gray-800 text-sm leading-snug truncate">{name}</h3>
+                          <p className="text-xs text-rose-600 mt-0.5">Not offered in our catalog</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
 
-                      <button
-                        onClick={() => removeTest(t.id)}
-                        className="w-9 h-9 rounded-xl bg-gray-50 hover:bg-red-50 hover:text-red-600 border border-gray-100 hover:border-red-200 flex items-center justify-center transition-all active:scale-95 text-gray-400 shrink-0"
-                        aria-label="Remove test"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                {scannedTests.length === 0 && unavailableTests.length === 0 && (
+                  <div className="p-6 text-center rounded-2xl border border-gray-200 text-xs font-semibold text-gray-500 shadow-sm bg-gray-50">
+                    No tests detected. Please try a clearer image.
+                  </div>
+                )}
 
-                  {scannedTests.length === 0 && (
-                    <div className="p-6 text-center rounded-2xl border border-gray-200 text-xs font-semibold text-gray-500 shadow-sm bg-gray-50">
-                      No tests found. Please try scanning a clearer image.
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 sticky bottom-20 z-40">
-                  <Button
-                    className="w-full gap-2.5 h-14 text-base font-bold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 active:scale-98 transition-all"
-                    onClick={handleConfirmSave}
-                    disabled={scannedTests.length === 0}
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Proceed to Cart ({scannedTests.length} Test{scannedTests.length > 1 ? "s" : ""})</span>
-                  </Button>
-                </div>
+                {scannedTests.length > 0 && (
+                  <div className="mt-6 sticky bottom-20 z-40">
+                    <Button
+                      className="w-full gap-2.5 h-14 text-base font-bold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 active:scale-98 transition-all"
+                      onClick={handleConfirmSave}
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Add {scannedTests.length} Available Test{scannedTests.length > 1 ? "s" : ""} to Cart</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
