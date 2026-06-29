@@ -19,6 +19,11 @@ import {
   ZoomIn,
   ZoomOut,
   Wand2,
+  ShieldCheck,
+  Stethoscope,
+  CalendarCheck,
+  Activity,
+  UserCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +57,13 @@ const PROCESSING_STEPS = [
   "Reading handwriting with OCR…",
   "Matching with medical database…",
   "Verifying detected tests…",
+];
+
+const COMMON_SYMPTOMS = [
+  { id: "routine", label: "Routine Annual Checkup", icon: ShieldCheck, tests: ["Complete Blood Count", "Lipid Profile", "Liver Function Test"] },
+  { id: "diabetes", label: "Diabetes & Blood Sugar", icon: Activity, tests: ["Fasting Blood Sugar", "HbA1c (Glycated Hemoglobin)"] },
+  { id: "pain", label: "Persistent Body / Joint Pain", icon: AlertCircle, tests: ["Vitamin D", "Calcium", "Uric Acid"] },
+  { id: "fatigue", label: "General Fatigue & Weakness", icon: Sparkles, tests: ["Thyroid Function Test", "Complete Blood Count", "Vitamin B12"] },
 ];
 
 const newUid = () => `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -113,8 +125,13 @@ const UploadPrescriptionScreen = () => {
   const [editingUid, setEditingUid] = useState<string | null>(null);
   const [manualName, setManualName] = useState("");
   const [zoom, setZoom] = useState(1);
-  const [activeTab, setActiveTab] = useState<"image" | "text">("image");
+  const [activeTab, setActiveTab] = useState<"image" | "text" | "bypass">("image");
   const [pastedText, setPastedText] = useState("");
+
+  // Bypass state
+  const [instantPrescriptionRequested, setInstantPrescriptionRequested] = useState(false);
+  const [provisionalBookingSelected, setProvisionalBookingSelected] = useState(false);
+  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
 
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
@@ -480,12 +497,54 @@ const UploadPrescriptionScreen = () => {
 
   const availableCount = matchedAppTests.filter((m) => m.app && !isInCart(m.app!.id)).length;
 
+  const toggleSymptom = (symptom: string) => {
+    setSelectedSymptoms((prev) =>
+      prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]
+    );
+  };
 
   const handleConfirmSave = () => {
-    if (detected.length === 0) {
+    if (detected.length === 0 && activeTab !== "bypass") {
       toast.error("Add at least one test to confirm.");
       return;
     }
+
+    if (activeTab === "bypass") {
+      let bypassAdded = false;
+      if (instantPrescriptionRequested) {
+        addToCart({ id: "instant-e-prescription", name: "Instant Doctor E-Prescription Approval", price: 149 });
+        toast.success("Instant E-Prescription Request added to cart!");
+        bypassAdded = true;
+      }
+      if (provisionalBookingSelected) {
+        addToCart({ id: "provisional-booking-hold", name: "Provisional Lab Slot Hold (Prescription upon collection)", price: 0 });
+        toast.success("Provisional Slot Hold added to cart!");
+        bypassAdded = true;
+      }
+      if (selectedSymptoms.length > 0) {
+        // Add tests for selected symptoms
+        selectedSymptoms.forEach((sym) => {
+          const found = COMMON_SYMPTOMS.find((s) => s.id === sym);
+          found?.tests.forEach((tName) => {
+            const matchedApp = appTests.find((a) => a.name.toLowerCase() === tName.toLowerCase());
+            if (matchedApp && !isInCart(matchedApp.id)) {
+              addToCart({ id: matchedApp.id, name: matchedApp.name, price: matchedApp.price });
+            } else if (!isInCart(`symptom-${tName}`)) {
+              addToCart({ id: `symptom-${tName}`, name: tName, price: 399 });
+            }
+          });
+        });
+        toast.success("Recommended tests for selected symptoms added to cart!");
+        bypassAdded = true;
+      }
+      if (!bypassAdded) {
+        toast.error("Please select a bypass option or symptom screening to proceed.");
+        return;
+      }
+      navigate("/cart");
+      return;
+    }
+
     let added = 0;
     let missing = 0;
     for (const m of matchedAppTests) {
@@ -532,8 +591,8 @@ const UploadPrescriptionScreen = () => {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-foreground">Prescription Scanner</h1>
-            <p className="text-xs text-muted-foreground">AI + medical dictionary verification</p>
+            <h1 className="text-lg font-bold text-foreground">Prescription Intake & Scan</h1>
+            <p className="text-xs text-muted-foreground">AI Verification + Tele-Approval Bridge</p>
           </div>
         </div>
       </motion.header>
@@ -541,24 +600,149 @@ const UploadPrescriptionScreen = () => {
       <div className="px-4 py-6 space-y-6 pb-32">
         {/* Toggle Mode Tab */}
         {!uploadedImage && (
-          <div className="flex bg-muted p-1 rounded-xl">
+          <div className="flex bg-muted p-1.5 rounded-2xl gap-1 border border-border/50 shadow-inner">
             <button
               onClick={() => setActiveTab("image")}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === "image" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === "image" ? "bg-background shadow-md text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Scan Prescription
+              <Camera className="w-4 h-4 text-primary" /> Scan Image
             </button>
             <button
               onClick={() => setActiveTab("text")}
-              className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
-                activeTab === "text" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === "text" ? "bg-background shadow-md text-foreground ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              Paste Text (Free Fallback)
+              <FileText className="w-4 h-4 text-primary" /> Paste Text
+            </button>
+            <button
+              onClick={() => setActiveTab("bypass")}
+              className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+                activeTab === "bypass" ? "bg-primary text-white shadow-lg shadow-primary/30" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sparkles className="w-4 h-4 animate-pulse" /> No Rx? Bypass
             </button>
           </div>
+        )}
+
+        {/* Bypass Mode (Instant E-Prescription & Provisional Booking) */}
+        {!uploadedImage && activeTab === "bypass" && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <div className="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-slate-700/50 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+              <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="w-5 h-5 text-success" />
+                <span className="text-xs font-black uppercase tracking-widest text-success">100% Legally Compliant</span>
+              </div>
+              <h3 className="text-white text-xl font-black tracking-tight mb-2">Missing a Doctor Prescription?</h3>
+              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-6">
+                Certain lab tests and diagnostic scans require a valid medical requisition. Select one of our seamless tele-bridges below to confirm your slot instantly without upfront paperwork!
+              </p>
+
+              <div className="space-y-4">
+                {/* Instant E-Prescription Option */}
+                <div
+                  onClick={() => setInstantPrescriptionRequested(!instantPrescriptionRequested)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
+                    instantPrescriptionRequested
+                      ? "bg-primary/20 border-primary shadow-lg shadow-primary/10"
+                      : "bg-slate-800/50 border-slate-700 hover:bg-slate-800"
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    instantPrescriptionRequested ? "bg-primary text-white" : "bg-slate-700 text-slate-300"
+                  }`}>
+                    <Stethoscope className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-white text-sm">Instant Doctor E-Prescription</h4>
+                      <span className="text-xs font-black text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">₹149</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      Our on-call licensed digital physician will review your requested tests & sign a digital e-prescription instantly.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Provisional Hold Option */}
+                <div
+                  onClick={() => setProvisionalBookingSelected(!provisionalBookingSelected)}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
+                    provisionalBookingSelected
+                      ? "bg-success/20 border-success shadow-lg shadow-success/10"
+                      : "bg-slate-800/50 border-slate-700 hover:bg-slate-800"
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                    provisionalBookingSelected ? "bg-success text-white" : "bg-slate-700 text-slate-300"
+                  }`}>
+                    <CalendarCheck className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-white text-sm">Provisional Slot Hold</h4>
+                      <span className="text-xs font-black text-success bg-success/10 px-2.5 py-0.5 rounded-full border border-success/20">Free</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                      Lock in your preferred time slot & pricing immediately. Provide your physical prescription directly to the visiting technician upon sample collection.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Standing Orders Clinical Intake Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Or Select Symptoms for Standing Lab Orders:</h3>
+                <span className="text-[11px] text-muted-foreground font-medium">Preventive Waiver</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {COMMON_SYMPTOMS.map((sym) => {
+                  const isSelected = selectedSymptoms.includes(sym.id);
+                  return (
+                    <div
+                      key={sym.id}
+                      onClick={() => toggleSymptom(sym.id)}
+                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                        isSelected ? "bg-primary/10 border-primary shadow-sm" : "bg-card border-border/50 hover:border-border"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                          isSelected ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                        }`}>
+                          <sym.icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-foreground text-sm">{sym.label}</h4>
+                          <p className="text-xs text-muted-foreground mt-0.5">Includes: {sym.tests.join(", ")}</p>
+                        </div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center ${
+                        isSelected ? "bg-primary border-primary text-white" : "border-border text-transparent"
+                      }`}>
+                        <CheckCircle2 className="w-4 h-4" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <Button
+              className="w-full gap-2 h-12 text-base shadow-xl"
+              onClick={handleConfirmSave}
+              disabled={!instantPrescriptionRequested && !provisionalBookingSelected && selectedSymptoms.length === 0}
+            >
+              <CheckCircle2 className="w-5 h-5" />
+              Proceed with Bypass Option
+            </Button>
+          </motion.div>
         )}
 
         {/* Text Mode (100% Free Fallback) */}
