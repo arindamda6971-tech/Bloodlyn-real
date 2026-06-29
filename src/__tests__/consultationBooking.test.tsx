@@ -2,17 +2,17 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@/test-utils';
 import { MemoryRouter } from 'react-router-dom';
-import ConsultationBookingScreen from '@/pages/ConsultationBookingScreen';
+import DoctorConsultScreen from '@/pages/DoctorConsultScreen';
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ supabaseUserId: 'test-user-id' })
 }));
 
-describe('ConsultationBookingScreen', () => {
+describe('ConsultationBookingScreen replacement (DoctorConsultScreen)', () => {
   it('renders correctly without crashing', () => {
     const { container } = render(
       <MemoryRouter>
-        <ConsultationBookingScreen />
+        <DoctorConsultScreen />
       </MemoryRouter>
     );
     expect(container).toBeTruthy();
