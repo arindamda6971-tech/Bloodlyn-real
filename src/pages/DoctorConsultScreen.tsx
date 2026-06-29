@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import {
   Star,
   Clock,
-  Video,
-  Phone,
   Shield,
   Stethoscope,
   Activity,
@@ -14,11 +12,15 @@ import {
   Heart,
   User,
   MapPin,
+  Sparkles,
+  Award,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { toast } from "sonner";
 
 const doctors = [
@@ -26,7 +28,7 @@ const doctors = [
     id: 1,
     name: "Dr. Priya Sharma",
     specialty: "General Physician",
-    experience: "12 years",
+    experience: 12,
     rating: 4.9,
     reviews: 1240,
     available: true,
@@ -34,13 +36,14 @@ const doctors = [
     videoCallFee: 299,
     audioCallFee: 199,
     physicalCallFee: 499,
+    qualification: "MBBS, MD (Medicine)",
     image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face",
   },
   {
     id: 2,
     name: "Dr. Rajesh Kumar",
     specialty: "Internal Medicine",
-    experience: "15 years",
+    experience: 15,
     rating: 4.8,
     reviews: 980,
     available: true,
@@ -48,13 +51,14 @@ const doctors = [
     videoCallFee: 399,
     audioCallFee: 299,
     physicalCallFee: 599,
+    qualification: "MBBS, MD (Internal Medicine)",
     image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face",
   },
   {
     id: 3,
     name: "Dr. Ananya Patel",
     specialty: "Endocrinologist",
-    experience: "10 years",
+    experience: 10,
     rating: 4.9,
     reviews: 756,
     available: false,
@@ -62,24 +66,24 @@ const doctors = [
     videoCallFee: 599,
     audioCallFee: 499,
     physicalCallFee: 799,
+    qualification: "MBBS, DM (Endocrinology)",
     image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop&crop=face",
   },
 ];
 
 const specializations = [
-  { id: "gp", icon: Stethoscope, label: "General Physician", color: "bg-primary/10 text-primary" },
-  { id: "med", icon: User, label: "Internal Medicine", color: "bg-success/10 text-success" },
-  { id: "peds", icon: Activity, label: "Pediatrics", color: "bg-pink-100 text-pink-600" },
-  { id: "ortho", icon: Bone, label: "Orthopaedic", color: "bg-success/10 text-success" },
-  { id: "dental", icon: User, label: "Dental", color: "bg-secondary/10 text-secondary" },
-  { id: "cardio", icon: Heart, label: "Cardiology", color: "bg-destructive/10 text-destructive" },
-  { id: "derm", icon: Activity, label: "Dermatology", color: "bg-warning/10 text-warning" },
-  { id: "neuro", icon: Brain, label: "Neurology", color: "bg-indigo-100 text-indigo-600" },
+  { id: "gp", icon: Stethoscope, label: "General Physician", color: "bg-primary/10 text-primary border-primary/20" },
+  { id: "med", icon: User, label: "Internal Medicine", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
+  { id: "peds", icon: Activity, label: "Pediatrics", color: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20" },
+  { id: "ortho", icon: Bone, label: "Orthopaedic", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
+  { id: "dental", icon: User, label: "Dental", color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
+  { id: "cardio", icon: Heart, label: "Cardiology", color: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" },
+  { id: "derm", icon: Activity, label: "Dermatology", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
+  { id: "neuro", icon: Brain, label: "Neurology", color: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20" },
 ];
 
 const DoctorConsultScreen = () => {
   const navigate = useNavigate();
-  const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
 
   const filteredDoctors = selectedSpecialization
@@ -96,7 +100,6 @@ const DoctorConsultScreen = () => {
       })
     : doctors;
 
-  // Human-friendly label for the currently selected specialization (used in empty state)
   const selectedSpecLabel = selectedSpecialization
     ? specializations.find((s) => s.id === selectedSpecialization)?.label ?? selectedSpecialization
     : null;
@@ -105,25 +108,46 @@ const DoctorConsultScreen = () => {
     <MobileLayout showNav={true}>
       <ScreenHeader title="Book a Doctor" />
 
-      <div className="px-4 pb-32">
+      <div className="px-4 pb-32 pt-1">
+        {/* Premium Title Header */}
+        <PremiumPageHeader
+          title="Advanced Consultation"
+          subtitle="Connect with certified specialists"
+          icon={Stethoscope}
+          accent="from-primary via-primary to-blue-600"
+        />
+
         {/* Hero banner */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+          transition={{ duration: 0.4 }}
+          className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(30,27,75,0.5)] relative overflow-hidden border border-white/10"
         >
-          <h2 className="text-lg font-bold">Get Expert Advice</h2>
-          <p className="text-sm opacity-90 mt-1">
-            Connect with certified doctors to understand your test results better
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-0">
-              <Shield className="w-3 h-3 mr-1" />
-              MBBS Verified
-            </Badge>
-            <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-0">
-              Instant Connect
-            </Badge>
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
+              <Sparkles className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+              <span>Medical Excellence</span>
+            </div>
+            <h2 className="text-xl font-black tracking-tight leading-snug">
+              Get Expert Medical Advice,<br />Targeted to Your Health
+            </h2>
+            <p className="text-xs text-slate-300 mt-2 max-w-[90%] leading-relaxed">
+              Consult verified medical doctors for thorough evaluations, precise diagnostics, and dedicated care.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                <span>MBBS Verified</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+                <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                <span>Physical Appointments</span>
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -131,23 +155,33 @@ const DoctorConsultScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.15 }}
           className="mt-6"
         >
-          <h3 className="font-semibold text-foreground mb-3">Specializations</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {specializations.map((spec) => (
-              <button
-                key={spec.id}
-                onClick={() => setSelectedSpecialization(selectedSpecialization === spec.id ? null : spec.id)}
-                className={`py-3 px-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                  selectedSpecialization === spec.id ? "bg-primary text-primary-foreground" : spec.color
-                }`}
-              >
-                <spec.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium text-center leading-tight">{spec.label}</span>
-              </button>
-            ))}
+          <h3 className="text-sm font-bold text-foreground mb-3 tracking-wide uppercase opacity-90 flex items-center gap-2">
+            <span>Specializations</span>
+            <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary lowercase normal-case">filter</span>
+          </h3>
+          <div className="grid grid-cols-4 gap-2.5">
+            {specializations.map((spec) => {
+              const isSelected = selectedSpecialization === spec.id;
+              return (
+                <button
+                  key={spec.id}
+                  onClick={() => setSelectedSpecialization(isSelected ? null : spec.id)}
+                  className={`py-3.5 px-2 rounded-2xl flex flex-col items-center gap-2.5 border transition-all duration-300 active:scale-95 ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] scale-[1.02]"
+                      : `${spec.color} bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-sm`
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${isSelected ? 'bg-white/20' : 'bg-background/80 shadow-sm'}`}>
+                    <spec.icon className={`w-5 h-5 ${isSelected ? 'text-white' : ''}`} />
+                  </div>
+                  <span className="text-[11px] font-bold text-center leading-tight tracking-tight">{spec.label}</span>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -155,115 +189,125 @@ const DoctorConsultScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6"
+          transition={{ delay: 0.25 }}
+          className="mt-7"
         >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-foreground">Available Doctors</h3>
-            <button className="text-primary text-sm font-medium">View all</button>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground tracking-wide uppercase opacity-90">
+              Available Doctors
+            </h3>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {filteredDoctors.length} {filteredDoctors.length === 1 ? 'Doctor' : 'Doctors'}
+            </span>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {filteredDoctors.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="font-semibold text-foreground">
+              <div className="p-6 rounded-3xl bg-muted/50 text-center border border-border">
+                <p className="font-bold text-foreground">
                   {selectedSpecialization
-                    ? `There are no ${selectedSpecLabel} doctors available right now.`
+                    ? `No ${selectedSpecLabel} doctors available right now.`
                     : "No doctors available right now."}
                 </p>
-                <p className="text-sm text-muted-foreground mt-2">Try another specialization or check back later.</p>
+                <p className="text-xs text-muted-foreground mt-2 font-medium">Try another specialization or check back later.</p>
               </div>
             ) : (
               filteredDoctors.map((doctor, index) => (
                 <motion.div
                   key={doctor.id}
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: -15 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
-                  onClick={() => setSelectedDoctor(doctor.id)}
-                  className={`soft-card cursor-pointer transition-all ${
-                    selectedDoctor === doctor.id ? "ring-2 ring-primary" : ""
-                  }`}
+                  transition={{ delay: 0.2 + index * 0.08 }}
+                  className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
-                  <div className="flex gap-4">
-                    <img
-                      src={doctor.image}
-                      alt={doctor.name}
-                      className="w-16 h-16 rounded-2xl object-cover"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-semibold text-foreground">{doctor.name}</h4>
-                        <Badge variant={doctor.available ? "live" : "secondary"}>
-                          {doctor.available ? "Online" : "Offline"}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{doctor.specialty}</p>
-                      <p className="text-xs text-muted-foreground">{doctor.experience} experience</p>
-                      <div className="flex items-center gap-3 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-warning fill-warning" />
-                          <span className="text-sm font-medium">{doctor.rating}</span>
-                          <span className="text-xs text-muted-foreground">({doctor.reviews})</span>
-                        </div>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {doctor.nextSlot}
-                        </div>
-                      </div>
+                  {/* Doctor Header (Matches ECG UI perfectly, no top-right consult price box) */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-blue-500/20 flex items-center justify-center flex-shrink-0 border border-primary/20 group-hover:scale-105 transition-transform duration-300">
+                      <Stethoscope className="w-7 h-7 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-foreground text-base tracking-tight truncate group-hover:text-primary transition-colors">{doctor.name}</h4>
+                      <p className="text-xs font-semibold text-primary line-clamp-1 mt-0.5">{doctor.specialty}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium mt-1">{doctor.qualification}</p>
                     </div>
                   </div>
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-3">Choose consultation type:</p>
-                    <div className="mb-3">
-                      <Button
-                        variant="hero"
-                        className="w-full"
-                        onClick={() => {
-                          if (!doctor.available) {
-                            toast.error("Doctor is currently offline", {
-                              description: `Next available: ${doctor.nextSlot}`,
-                            });
-                            return;
-                          }
-                          navigate("/consultation-booking", {
-                            state: { type: "video", professional: doctor, professionalType: "doctor" },
-                          });
-                        }}
-                      >
-                        <Video className="w-4 h-4 mr-2" />
-                        Video Call • ₹{doctor.videoCallFee}
-                      </Button>
+
+                  {/* Doctor Details Grid (Matches ECG UI perfectly) */}
+                  <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Award className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">{doctor.experience}y</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">Experience</p>
                     </div>
-                    <div className="mb-3">
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          if (!doctor.available) {
-                            toast.error("Doctor is currently offline", {
-                              description: `Next available: ${doctor.nextSlot}`,
-                            });
-                            return;
-                          }
-                          navigate("/consultation-booking", {
-                            state: { type: "physical", professional: doctor, professionalType: "doctor" },
-                          });
-                        }}
-                      >
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Physical Appointment • ₹{doctor.physicalCallFee}
-                      </Button>
+                    <div className="text-center border-l border-r border-border/60">
+                      <div className="flex items-center justify-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-bold text-foreground">{doctor.rating}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">({doctor.reviews} reviews)</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Clock className="w-4 h-4 text-emerald-500" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Available</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">{doctor.nextSlot}</p>
                     </div>
                   </div>
+
+                  {/* Single Primary Action Button */}
+                  <Button
+                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98]"
+                    onClick={() => {
+                      if (!doctor.available) {
+                        toast.error("Doctor is currently offline", {
+                          description: `Next available: ${doctor.nextSlot}`,
+                        });
+                        return;
+                      }
+                      navigate("/consultation-booking", {
+                        state: { type: "physical", professional: doctor, professionalType: "doctor" },
+                      });
+                    }}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    <span>Book Physical Appointment • ₹{doctor.physicalCallFee}</span>
+                  </Button>
                 </motion.div>
               ))
             )}
           </div>
         </motion.div>
+
+        {/* Info Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="mt-7 p-5 rounded-3xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10 border border-blue-500/20 shadow-sm relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-xl pointer-events-none" />
+          <h4 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm tracking-wide uppercase opacity-90">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            <span>Why Choose Our Doctors?</span>
+          </h4>
+          <ul className="space-y-2.5 text-xs text-foreground/80 font-medium">
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>All doctors are certified and experienced specialists</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>Comprehensive clinical physical appointments</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>Personalized health advice &amp; review of lab test results</span>
+            </li>
+          </ul>
+        </motion.div>
       </div>
-
-
     </MobileLayout>
   );
 };

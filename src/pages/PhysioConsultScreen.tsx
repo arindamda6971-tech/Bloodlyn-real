@@ -10,11 +10,11 @@ import {
   Brain,
   Heart,
   Sparkles,
+  Award,
   CheckCircle2,
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
@@ -26,52 +26,56 @@ const physiotherapists = [
     id: 1,
     name: "Dr. Vikram Singh",
     specialty: "Sports Physiotherapy",
-    experience: "10 years",
+    experience: 10,
     rating: 4.9,
     reviews: 856,
     available: true,
     nextSlot: "Available now",
     videoCallFee: 399,
     audioCallFee: 299,
+    qualification: "MPT (Sports), BPT",
     image: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?w=200&h=200&fit=crop&crop=face",
   },
   {
     id: 2,
     name: "Dr. Meera Gupta",
     specialty: "Orthopedic Rehabilitation",
-    experience: "8 years",
+    experience: 8,
     rating: 4.8,
     reviews: 642,
     available: true,
     nextSlot: "In 30 mins",
     videoCallFee: 349,
     audioCallFee: 249,
+    qualification: "MPT (Ortho), MIAP",
     image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop&crop=face",
   },
   {
     id: 3,
     name: "Dr. Arjun Menon",
     specialty: "Neurological Physiotherapy",
-    experience: "12 years",
+    experience: 12,
     rating: 4.9,
     reviews: 978,
     available: false,
     nextSlot: "Tomorrow 11 AM",
     videoCallFee: 499,
     audioCallFee: 399,
+    qualification: "MPT (Neuro), NABL Cert.",
     image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face",
   },
   {
     id: 4,
     name: "Dr. Kavya Nair",
     specialty: "Cardiopulmonary Physio",
-    experience: "7 years",
+    experience: 7,
     rating: 4.7,
     reviews: 432,
     available: true,
     nextSlot: "In 1 hour",
     videoCallFee: 349,
     audioCallFee: 249,
+    qualification: "MPT (Cardio), BPT",
     image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face",
   },
 ];
@@ -98,8 +102,6 @@ const PhysioConsultScreen = () => {
       })
     : physiotherapists;
 
-  // Unified professional booking handler
-
   const handleProceedToBook = (physio: typeof physiotherapists[0]) => {
     if (!user) {
       toast.error("Please login to book a session");
@@ -107,17 +109,16 @@ const PhysioConsultScreen = () => {
       return;
     }
 
-    // Map to PhysioBookingScreen's expected shape
     const mapped = {
       id: String(physio.id),
       name: physio.name,
       specialty: physio.specialty,
-      experience: physio.experience,
+      experience: `${physio.experience} years`,
       rating: physio.rating,
       reviews_count: physio.reviews,
       fee: physio.videoCallFee ?? physio.audioCallFee ?? 0,
       available: physio.available,
-      qualification: "",
+      qualification: physio.qualification,
       image: physio.image,
     };
 
@@ -128,7 +129,7 @@ const PhysioConsultScreen = () => {
     <MobileLayout showNav={true}>
       <ScreenHeader title="Physiotherapy" />
 
-      <div className="px-4 pb-8 pt-1">
+      <div className="px-4 pb-32 pt-1">
         {/* Premium Title Header */}
         <PremiumPageHeader
           title="Expert Physio Care"
@@ -222,50 +223,58 @@ const PhysioConsultScreen = () => {
           </div>
 
           <div className="space-y-4">
-            {filteredPhysios.map((physio, index) => (
-              <motion.div
-                key={physio.id}
-                initial={{ opacity: 0, x: -15 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.08 }}
-                className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
-              >
-                <div className="flex gap-4">
-                  <div className="relative shrink-0">
-                    <img
-                      src={physio.image}
-                      alt={physio.name}
-                      className="w-16 h-16 rounded-2xl object-cover shadow-inner group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 ${physio.available ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-bold text-foreground text-base tracking-tight truncate group-hover:text-primary transition-colors">
-                        {physio.name}
-                      </h4>
-                      <Badge variant={physio.available ? "live" : "secondary"} className="text-[10px] uppercase font-bold px-2 py-0.5 shadow-sm">
-                        {physio.available ? "Online" : "Offline"}
-                      </Badge>
+            {filteredPhysios.length === 0 ? (
+              <div className="p-6 rounded-3xl bg-muted/50 text-center border border-border">
+                <p className="font-bold text-foreground">No therapists available in this specialization.</p>
+                <p className="text-xs text-muted-foreground mt-2 font-medium">Try another specialization or check back later.</p>
+              </div>
+            ) : (
+              filteredPhysios.map((physio, index) => (
+                <motion.div
+                  key={physio.id}
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + index * 0.08 }}
+                  className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
+                >
+                  {/* Therapist Header (Matches ECG UI perfectly, no top-right consult price box) */}
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-purple-500/20 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:scale-105 transition-transform duration-300">
+                      <Activity className="w-7 h-7 text-blue-600 dark:text-blue-400" />
                     </div>
-                    <p className="text-xs font-semibold text-primary mt-0.5">{physio.specialty}</p>
-                    <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{physio.experience} experience</p>
-                    
-                    <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-border/60">
-                      <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
-                        <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                        <span className="text-xs font-bold text-foreground">{physio.rating}</span>
-                        <span className="text-[10px] text-muted-foreground font-semibold">({physio.reviews})</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
-                        <Clock className="w-3 h-3" />
-                        <span>{physio.nextSlot}</span>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-foreground text-base tracking-tight truncate group-hover:text-primary transition-colors">{physio.name}</h4>
+                      <p className="text-xs font-semibold text-primary line-clamp-1 mt-0.5">{physio.specialty}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium mt-1">{physio.qualification}</p>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-5 pt-4 border-t border-border">
+                  {/* Therapist Details Grid (Matches ECG UI perfectly) */}
+                  <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Award className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">{physio.experience}y</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">Experience</p>
+                    </div>
+                    <div className="text-center border-l border-r border-border/60">
+                      <div className="flex items-center justify-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-bold text-foreground">{physio.rating}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">({physio.reviews} reviews)</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Clock className="w-4 h-4 text-emerald-500" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Available</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">{physio.nextSlot}</p>
+                    </div>
+                  </div>
+
+                  {/* Single Primary Action Button */}
                   <Button 
                     className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98]" 
                     onClick={() => handleProceedToBook(physio)}
@@ -273,9 +282,9 @@ const PhysioConsultScreen = () => {
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     <span>Book Home Visit • ₹{physio.videoCallFee}</span>
                   </Button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))
+            )}
           </div>
         </motion.div>
 
