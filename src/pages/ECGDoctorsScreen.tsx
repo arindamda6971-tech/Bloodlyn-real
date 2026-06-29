@@ -375,10 +375,6 @@ const ECGDoctorsScreen = () => {
                       <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 line-clamp-1 mt-0.5">{doctor.specialization}</p>
                       <p className="text-[11px] text-muted-foreground font-medium mt-1">{doctor.qualification}</p>
                     </div>
-                    <div className="text-right flex-shrink-0 bg-primary/5 px-3 py-1.5 rounded-2xl border border-primary/10">
-                      <p className="text-lg font-black text-primary">₹{doctor.fee}</p>
-                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Consult</p>
-                    </div>
                   </div>
 
                   {/* Doctor Details */}
