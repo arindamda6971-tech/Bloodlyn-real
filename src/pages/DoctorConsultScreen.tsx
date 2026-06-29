@@ -15,6 +15,8 @@ import {
   Sparkles,
   Award,
   CheckCircle2,
+  Video,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -294,33 +296,94 @@ const DoctorConsultScreen = () => {
                     </div>
                   </div>
 
-                  {/* Single Primary Action Button */}
-                  <Button
-                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98]"
-                    onClick={() => {
-                      if (!doctor.available) {
-                        toast.error("Doctor is currently offline", {
-                          description: `Next available: ${doctor.nextSlot}`,
+                  {/* Booking Actions Stack */}
+                  <div className="space-y-2.5">
+                    {/* Video Consultation */}
+                    <Button
+                      className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98] flex items-center justify-center gap-2"
+                      onClick={() => {
+                        if (!doctor.available) {
+                          toast.error("Doctor is currently offline", {
+                            description: `Next available: ${doctor.nextSlot}`,
+                          });
+                          return;
+                        }
+                        const success = addToCart({
+                          id: `doc-video-${doctor.id}`,
+                          name: `Video Call with ${doctor.name}`,
+                          price: doctor.videoCallFee,
+                          labId: "doctor-service",
+                          labName: "HealthSwift Medical Care",
+                          vendorId: "generic-service",
                         });
-                        return;
-                      }
-                      const success = addToCart({
-                        id: `doc-${doctor.id}`,
-                        name: `Physical Appointment with ${doctor.name}`,
-                        price: doctor.physicalCallFee,
-                        labId: "doctor-service",
-                        labName: "HealthSwift Medical Care",
-                        vendorId: "generic-service",
-                      });
-                      if (success) {
-                        toast.success(`Physical Appointment with ${doctor.name} added to cart`);
-                        navigate("/cart");
-                      }
-                    }}
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
-                    <span>Book Physical Appointment • ₹{doctor.physicalCallFee}</span>
-                  </Button>
+                        if (success) {
+                          toast.success(`Video Call with ${doctor.name} added to cart`);
+                          navigate("/cart");
+                        }
+                      }}
+                    >
+                      <Video className="w-4 h-4" />
+                      <span>Book Video Call • ₹{doctor.videoCallFee}</span>
+                    </Button>
+
+                    {/* Audio Consultation */}
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 rounded-2xl border-border/80 hover:bg-primary/5 transition-all duration-300 font-bold text-foreground shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                      onClick={() => {
+                        if (!doctor.available) {
+                          toast.error("Doctor is currently offline", {
+                            description: `Next available: ${doctor.nextSlot}`,
+                          });
+                          return;
+                        }
+                        const success = addToCart({
+                          id: `doc-audio-${doctor.id}`,
+                          name: `Audio Call with ${doctor.name}`,
+                          price: doctor.audioCallFee,
+                          labId: "doctor-service",
+                          labName: "HealthSwift Medical Care",
+                          vendorId: "generic-service",
+                        });
+                        if (success) {
+                          toast.success(`Audio Call with ${doctor.name} added to cart`);
+                          navigate("/cart");
+                        }
+                      }}
+                    >
+                      <Phone className="w-4 h-4 text-primary" />
+                      <span>Book Audio Call • ₹{doctor.audioCallFee}</span>
+                    </Button>
+
+                    {/* Physical Appointment */}
+                    <Button
+                      variant="secondary"
+                      className="w-full h-11 rounded-2xl bg-muted hover:bg-muted/80 transition-all duration-300 font-bold text-foreground shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                      onClick={() => {
+                        if (!doctor.available) {
+                          toast.error("Doctor is currently offline", {
+                            description: `Next available: ${doctor.nextSlot}`,
+                          });
+                          return;
+                        }
+                        const success = addToCart({
+                          id: `doc-${doctor.id}`,
+                          name: `Physical Appointment with ${doctor.name}`,
+                          price: doctor.physicalCallFee,
+                          labId: "doctor-service",
+                          labName: "HealthSwift Medical Care",
+                          vendorId: "generic-service",
+                        });
+                        if (success) {
+                          toast.success(`Physical Appointment with ${doctor.name} added to cart`);
+                          navigate("/cart");
+                        }
+                      }}
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Book Physical Appointment • ₹{doctor.physicalCallFee}</span>
+                    </Button>
+                  </div>
                 </motion.div>
               ))
             )}

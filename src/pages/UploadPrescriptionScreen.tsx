@@ -5,26 +5,19 @@ import {
   ArrowLeft,
   Camera,
   Image as ImageIcon,
-  FileText,
   X,
   Sparkles,
   FlaskConical,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   Plus,
   ShoppingCart,
-  AlertTriangle,
   Pencil,
   Trash2,
   ZoomIn,
   ZoomOut,
   Wand2,
-  ShieldCheck,
-  Stethoscope,
-  CalendarCheck,
-  Activity,
-  UploadCloud,
-  FileUp,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,13 +51,6 @@ const PROCESSING_STEPS = [
   "Engaging deep neural OCR engine…",
   "Cross-referencing with master clinical database…",
   "Locking verified diagnostic panel…",
-];
-
-const COMMON_SYMPTOMS = [
-  { id: "routine", label: "Comprehensive Annual Health Check", icon: ShieldCheck, desc: "Essential full-body baseline evaluation", tests: ["Complete Blood Count", "Lipid Profile", "Liver Function Test"] },
-  { id: "diabetes", label: "Advanced Glycemic & Endocrine Panel", icon: Activity, desc: "Detailed blood sugar and metabolic screening", tests: ["Fasting Blood Sugar", "HbA1c (Glycated Hemoglobin)"] },
-  { id: "pain", label: "Rheumatology & Bone Density Screen", icon: AlertCircle, desc: "Targeted evaluation for joint pain and arthritis", tests: ["Vitamin D", "Calcium", "Uric Acid"] },
-  { id: "fatigue", label: "Chronic Fatigue & Neurological Panel", icon: Sparkles, desc: "Evaluates systemic energy levels and vitamin deficiencies", tests: ["Thyroid Function Test", "Complete Blood Count", "Vitamin B12"] },
 ];
 
 const newUid = () => `t_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -126,13 +112,6 @@ const UploadPrescriptionScreen = () => {
   const [editingUid, setEditingUid] = useState<string | null>(null);
   const [manualName, setManualName] = useState("");
   const [zoom, setZoom] = useState(1);
-  const [activeTab, setActiveTab] = useState<"scan" | "text" | "bypass">("scan");
-  const [pastedText, setPastedText] = useState("");
-
-  // Bypass state
-  const [instantPrescriptionRequested, setInstantPrescriptionRequested] = useState(false);
-  const [provisionalBookingSelected, setProvisionalBookingSelected] = useState(false);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>([]);
 
   const [appTests, setAppTests] = useState<Array<{ id: string; name: string; price: number }>>([]);
 
@@ -215,8 +194,8 @@ const UploadPrescriptionScreen = () => {
       toast.error("File size should be less than 20 MB");
       return;
     }
-    if (!/^image\/(jpeg|jpg|png|webp)$/i.test(file.type)) {
-      toast.error("Only JPG, PNG, or WebP images are accepted");
+    if (!/^image\/(jpeg|jpg|png|webp|pdf)$/i.test(file.type)) {
+      toast.error("Only JPG, PNG, WebP, or PDF files are accepted");
       return;
     }
     try {
@@ -228,28 +207,23 @@ const UploadPrescriptionScreen = () => {
       setAnalysisNotes("");
       setConfidence("");
       setZoom(1);
-      // No persistent upload — keep image in memory only. The base64 cache
-      // feeds the AI directly; nothing is written to the backend.
       toast.success("Prescription securely loaded in memory");
     } catch (err) {
       console.error("Image compression error:", err);
       toast.error("Failed to process image. Please try again.");
     }
-    // Reset the input so the same file can be re-selected
     event.target.value = "";
   };
-
 
   // ---------- Free Fallbacks / Simulation / Demo Mode ----------
   const handleSimulateDemo = async (presetType: "general" | "diabetes" | "thyroid") => {
     setIsAnalyzing(true);
-    setUploadedImage("https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=400"); // placeholder doc prescription image
+    setUploadedImage("https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&q=80&w=400");
     setAnalysisComplete(false);
     setDetected([]);
     setAnalysisNotes("");
     setConfidence("");
 
-    // Simulate pipeline execution
     await new Promise((r) => setTimeout(r, 4500));
 
     let mockResult: AIAnalysisResult = { tests: [], confidence: "high", notes: "" };
@@ -286,53 +260,6 @@ const UploadPrescriptionScreen = () => {
     await ingestAiResult(mockResult);
     setIsAnalyzing(false);
     toast.success(`Scan Complete: Verified ${mockResult.tests.length} diagnostic codes.`);
-  };
-
-  const handleExtractText = async (text: string) => {
-    if (!text.trim()) {
-      toast.error("Please enter medical text or test names first.");
-      return;
-    }
-    setIsAnalyzing(true);
-    // Split by comma, newline, bullet points, or semicolons
-    const segments = text
-      .split(/[,\n;\t•\-\*]/)
-      .map((s) => s.trim())
-      .filter((s) => s.length > 2);
-
-    const next: DetectedTest[] = [];
-    let matchCount = 0;
-
-    for (const segment of segments) {
-      const dict = await matchAsync(segment);
-      if (dict && dict.score >= 0.5) {
-        next.push({
-          uid: newUid(),
-          name: dict.canonical,
-          originalAiName: segment,
-          category: dict.category,
-          dictionaryHit: { canonical: dict.canonical, score: dict.score },
-          source: "ai",
-        });
-        matchCount++;
-      } else {
-        // Fallback for custom entries
-        next.push({
-          uid: newUid(),
-          name: segment,
-          originalAiName: segment,
-          dictionaryHit: null,
-          source: "manual",
-        });
-      }
-    }
-
-    setDetected(next);
-    setAnalysisNotes("Parsed instantly using zero-latency local clinical dictionary.");
-    setConfidence("high");
-    setAnalysisComplete(true);
-    setIsAnalyzing(false);
-    toast.success(`Extracted ${next.length} diagnostic codes locally (100% free)!`);
   };
 
   // ---------- Analyze ----------
@@ -373,7 +300,6 @@ const UploadPrescriptionScreen = () => {
         return;
       }
       await ingestAiResult(result);
-      // Ephemeral by design: ensure no analysis result is ever stored server-side.
       deletePrescription().catch(() => {});
       toast.success(`Verified ${result.tests.length} test${result.tests.length > 1 ? "s" : ""}. Please confirm.`);
 
@@ -427,10 +353,6 @@ const UploadPrescriptionScreen = () => {
   // ---------- Map verified tests → app catalog → cart ----------
   const isInCart = useCallback((id: string) => items.some((i) => i.id === id), [items]);
 
-  // ---------- Fuzzy auto-match scanned test → closest catalog test ----------
-  // Normalises both sides, strips common medical stop-words, then scores
-  // exact > substring > token-overlap > Levenshtein similarity. The best
-  // candidate above 0.55 is selected so noisy OCR still maps to a real test.
   const matchedAppTests = useMemo(() => {
     const STOP = new Set(["test", "serum", "s", "blood", "profile", "panel", "level", "report", "the", "a", "of"]);
     const norm = (s: string) =>
@@ -447,26 +369,22 @@ const UploadPrescriptionScreen = () => {
       const cT = tokens(candidate);
       if (qT.join(" ") === cT.join(" ") && qT.length) return 0.98;
 
-      // Substring (either direction) — strong signal
       if (q.length >= 3 && c.includes(q)) return 0.92;
       if (c.length >= 3 && q.includes(c)) return 0.9;
 
-      // Token overlap (Jaccard) — handles reordered / extra words
       if (qT.length && cT.length) {
         const qs = new Set(qT);
         const cs = new Set(cT);
         let inter = 0;
         qs.forEach((t) => cs.has(t) && inter++);
         const jaccard = inter / (qs.size + cs.size - inter);
-        if (jaccard >= 0.5) return 0.7 + jaccard * 0.2; // 0.7 – 0.9
+        if (jaccard >= 0.5) return 0.7 + jaccard * 0.2;
       }
 
-      // Levenshtein similarity on the normalized strings
       const dist = levenshtein(q, c);
       const maxLen = Math.max(q.length, c.length) || 1;
       const fuzzy = 1 - dist / maxLen;
 
-      // Slight boost if the first significant token matches
       const tokenBoost = qT[0] && cT[0] && qT[0] === cT[0] ? 0.08 : 0;
       return Math.min(1, fuzzy + tokenBoost);
     };
@@ -474,7 +392,6 @@ const UploadPrescriptionScreen = () => {
     const FUZZY_THRESHOLD = 0.55;
 
     return detected.map((d) => {
-      // Build candidate query set: user-edited name + AI's original + dictionary canonical
       const queries = [d.name, d.originalAiName, d.dictionaryHit?.canonical]
         .filter((q): q is string => !!q && q.trim().length > 0);
 
@@ -496,51 +413,9 @@ const UploadPrescriptionScreen = () => {
 
   const availableCount = matchedAppTests.filter((m) => m.app && !isInCart(m.app!.id)).length;
 
-  const toggleSymptom = (symptom: string) => {
-    setSelectedSymptoms((prev) =>
-      prev.includes(symptom) ? prev.filter((s) => s !== symptom) : [...prev, symptom]
-    );
-  };
-
   const handleConfirmSave = () => {
-    if (detected.length === 0 && activeTab !== "bypass") {
+    if (detected.length === 0) {
       toast.error("Please add or verify at least one diagnostic code.");
-      return;
-    }
-
-    if (activeTab === "bypass") {
-      let bypassAdded = false;
-      if (instantPrescriptionRequested) {
-        addToCart({ id: "instant-e-prescription", name: "Instant Doctor E-Prescription Authorization", price: 149 });
-        toast.success("Instant Digital Physician Authorization added to cart!");
-        bypassAdded = true;
-      }
-      if (provisionalBookingSelected) {
-        addToCart({ id: "provisional-booking-hold", name: "Provisional Lab Hold (Provide Rx at sample collection)", price: 0 });
-        toast.success("Provisional Slot Hold added to cart!");
-        bypassAdded = true;
-      }
-      if (selectedSymptoms.length > 0) {
-        // Add tests for selected symptoms
-        selectedSymptoms.forEach((sym) => {
-          const found = COMMON_SYMPTOMS.find((s) => s.id === sym);
-          found?.tests.forEach((tName) => {
-            const matchedApp = appTests.find((a) => a.name.toLowerCase() === tName.toLowerCase());
-            if (matchedApp && !isInCart(matchedApp.id)) {
-              addToCart({ id: matchedApp.id, name: matchedApp.name, price: matchedApp.price });
-            } else if (!isInCart(`symptom-${tName}`)) {
-              addToCart({ id: `symptom-${tName}`, name: tName, price: 399 });
-            }
-          });
-        });
-        toast.success("Clinical standing orders bundled into cart!");
-        bypassAdded = true;
-      }
-      if (!bypassAdded) {
-        toast.error("Please select a tele-bridge waiver or clinical standing order to proceed.");
-        return;
-      }
-      navigate("/cart");
       return;
     }
 
@@ -563,9 +438,9 @@ const UploadPrescriptionScreen = () => {
   if (isPrescriptionLoading) {
     return (
       <MobileLayout showNav={false} showFloatingAdd={false}>
-        <div className="flex items-center justify-center h-screen bg-gradient-to-b from-background to-muted/20">
+        <div className="flex items-center justify-center h-screen bg-white">
           <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}>
-            <Sparkles className="w-10 h-10 text-primary" />
+            <Sparkles className="w-10 h-10 text-blue-600" />
           </motion.div>
         </div>
       </MobileLayout>
@@ -574,435 +449,170 @@ const UploadPrescriptionScreen = () => {
 
   return (
     <MobileLayout showNav={false} showFloatingAdd={false}>
-      {/* Pristine Sticky Header */}
-      <motion.header
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 bg-background/85 backdrop-blur-xl border-b border-border/80 shadow-sm"
+      {/* Clean White Minimalist Header matching reference */}
+      <header
+        className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="flex items-center gap-3.5 px-4 py-3.5">
+        <div className="flex items-center gap-4 px-4 py-4">
           <button
             onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-muted/90 hover:bg-muted border border-border/50 flex items-center justify-center transition-all active:scale-95"
+            className="w-8 h-8 flex items-center justify-center text-gray-800 hover:text-black transition-colors active:scale-95"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h1 className="text-lg font-black text-foreground tracking-tight leading-none mb-1">Diagnostic Intake Portal</h1>
-            <p className="text-xs font-semibold text-primary flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> AI OCR Matrix + Compliant Tele-Bridge
-            </p>
-          </div>
+          <h1 className="text-[19px] font-semibold text-gray-900 tracking-tight leading-none">Upload Prescription</h1>
         </div>
-      </motion.header>
+      </header>
 
-      <main className="px-4 py-6 space-y-6 pb-36 max-w-lg mx-auto">
-        {/* Ultra-Professional 3-Pillar Tab Segmented Control */}
+      <main className="px-4 py-6 space-y-7 pb-36 max-w-lg mx-auto bg-white min-h-screen">
         {!uploadedImage && (
-          <div className="flex bg-muted/80 backdrop-blur-md p-1.5 rounded-2xl gap-1 border border-border/60 shadow-inner">
-            <button
-              onClick={() => setActiveTab("scan")}
-              className={`flex-1 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                activeTab === "scan"
-                  ? "bg-primary text-white shadow-lg shadow-primary/30 scale-[1.02]"
-                  : "text-muted-foreground hover:text-foreground active:scale-98"
-              }`}
-            >
-              <Camera className="w-4 h-4" /> AI Scan
-            </button>
-            <button
-              onClick={() => setActiveTab("text")}
-              className={`flex-1 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                activeTab === "text"
-                  ? "bg-primary text-white shadow-lg shadow-primary/30 scale-[1.02]"
-                  : "text-muted-foreground hover:text-foreground active:scale-98"
-              }`}
-            >
-              <FileText className="w-4 h-4" /> Paste Text
-            </button>
-            <button
-              onClick={() => setActiveTab("bypass")}
-              className={`flex-1 py-3 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                activeTab === "bypass"
-                  ? "bg-primary text-white shadow-lg shadow-primary/30 scale-[1.02]"
-                  : "text-muted-foreground hover:text-foreground active:scale-98"
-              }`}
-            >
-              <Sparkles className="w-4 h-4 animate-pulse" /> Waivers
-            </button>
-          </div>
-        )}
+          <div className="space-y-7">
+            {/* Subheading text matching reference */}
+            <p className="text-[15px] text-gray-800 font-normal leading-snug tracking-tight px-0.5">
+              Please upload the clear image of the valid prescription from your doctor
+            </p>
 
-        {/* Pillar 1: AI Smart Scan (Holographic Viewfinder & Upload) */}
-        {!uploadedImage && activeTab === "scan" && (
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            {/* Holographic scanner frame */}
-            <div className="relative aspect-[4/5] rounded-[32px] overflow-hidden bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-slate-700/60 shadow-2xl flex flex-col items-center justify-center p-6">
-              {/* Corner target brackets */}
-              {[
-                "top-5 left-5 border-t-4 border-l-4 rounded-tl-2xl",
-                "top-5 right-5 border-t-4 border-r-4 rounded-tr-2xl",
-                "bottom-5 left-5 border-b-4 border-l-4 rounded-bl-2xl",
-                "bottom-5 right-5 border-b-4 border-r-4 rounded-br-2xl",
-              ].map((c) => (
-                <div key={c} className={`absolute w-12 h-12 border-primary/90 ${c}`} />
-              ))}
+            {/* Hidden Inputs */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              capture="environment"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
 
-              {/* Laser Sweep Line */}
-              <motion.div
-                className="absolute inset-x-8 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_24px_4px_hsl(var(--primary))]"
-                initial={{ top: "12%" }}
-                animate={{ top: ["12%", "88%", "12%"] }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-              />
-
-              {/* Glowing decorative blur */}
-              <div className="absolute w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-
-              {/* Center Icon & Guide */}
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <motion.div
-                  animate={{ scale: [1, 1.06, 1] }}
-                  transition={{ duration: 2.5, repeat: Infinity }}
-                  className="w-20 h-20 rounded-3xl bg-primary/20 backdrop-blur-md flex items-center justify-center mb-5 border border-primary/30 shadow-inner"
-                >
-                  <UploadCloud className="w-10 h-10 text-primary" />
-                </motion.div>
-                <h3 className="font-black text-white text-xl tracking-tight mb-2">Align Prescription in Frame</h3>
-                <p className="text-xs text-slate-300 font-medium max-w-[260px] leading-relaxed">
-                  Our advanced OCR instantly extracts medical codes, verifies local test availability, and secures sample collection.
-                </p>
-              </div>
-            </div>
-
-            {/* Quick Action CTAs */}
-            <div className="grid grid-cols-2 gap-3.5">
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="environment"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <Button className="gap-2.5 h-14 rounded-2xl text-sm font-black shadow-lg shadow-primary/20 active:scale-98 transition-all" onClick={() => cameraInputRef.current?.click()} disabled={isUploading}>
-                <Camera className="w-5 h-5" /> Launch Camera
-              </Button>
-              <Button variant="outline" className="gap-2.5 h-14 rounded-2xl text-sm font-black border-border/80 shadow-sm active:scale-98 transition-all" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                <ImageIcon className="w-5 h-5" /> Upload Gallery
-              </Button>
-            </div>
-
-            {/* Simulated AI Scan Experience Box */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-background to-primary/5 border border-primary/20 p-5 shadow-sm">
-              <div className="flex items-start gap-4">
-                <div className="w-11 h-11 rounded-2xl bg-primary/20 flex items-center justify-center shrink-0 border border-primary/30 shadow-inner">
-                  <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-extrabold text-foreground text-sm tracking-tight mb-1">Explore Instant AI Simulation</h4>
-                  <p className="text-xs text-muted-foreground font-medium leading-relaxed mb-3">
-                    Don't have a paper prescription handy? Run a high-fidelity diagnostic simulation to instantly preview automated mapping.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button size="sm" variant="secondary" className="h-9 rounded-xl text-xs font-bold px-3.5 shadow-sm" onClick={() => handleSimulateDemo("general")}>
-                      Simulate CBC & LFT
-                    </Button>
-                    <Button size="sm" variant="secondary" className="h-9 rounded-xl text-xs font-bold px-3.5 shadow-sm" onClick={() => handleSimulateDemo("diabetes")}>
-                      Simulate Glycemic Panel
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Premium Instruction Box */}
-            <div className="soft-card p-4 rounded-2xl border border-border/60">
-              <div className="flex items-start gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-warning/15 flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-4 h-4 text-warning" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-foreground text-sm mb-1">AI Scan Best Practices</h4>
-                  <ul className="text-xs text-muted-foreground space-y-1 font-medium leading-relaxed">
-                    <li>• Ensure bright, even ambient lighting</li>
-                    <li>• Keep the document perfectly flat and uncreased</li>
-                    <li>• Avoid hand blur by tapping to focus before shooting</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Pillar 2: Clinical Notes & Free Extraction */}
-        {!uploadedImage && activeTab === "text" && (
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            <div className="soft-card p-5 rounded-3xl border border-border/80 space-y-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-black text-foreground text-base tracking-tight">Paste Clinical Notes</h3>
-                  <p className="text-xs text-muted-foreground font-medium mt-0.5">
-                    Instantly extract test codes from physician summaries or WhatsApp messages.
-                  </p>
-                </div>
-              </div>
-              <textarea
-                value={pastedText}
-                onChange={(e) => setPastedText(e.target.value)}
-                placeholder="Example: Please arrange Complete Blood Count, Liver Function Test, and Lipid Profile for tomorrow morning..."
-                className="w-full h-40 p-4 text-sm font-medium bg-muted/60 rounded-2xl border border-border/80 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none placeholder:text-muted-foreground/60 shadow-inner"
-              />
-              <Button
-                className="w-full gap-2 h-12 rounded-xl font-bold shadow-md shadow-primary/20 active:scale-98 transition-all"
-                onClick={() => handleExtractText(pastedText)}
-                disabled={isAnalyzing || !pastedText.trim()}
+            {/* Twin Action Containers matching reference */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Left Container: Use Gallery */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-[#f0f3ff] hover:bg-[#e6ebff] active:scale-[0.98] cursor-pointer transition-all rounded-2xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm group"
               >
-                <Sparkles className="w-4 h-4" /> Process Clinical Notes Instantly
-              </Button>
-            </div>
-
-            {/* Quick Clinical Presets */}
-            <div className="space-y-2.5">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider px-1">Curated Diagnostic Presets:</h4>
-              <div className="grid grid-cols-1 gap-2.5">
-                {[
-                  { title: "Complete General Health Profile", tests: "Complete Blood Count, Serum Creatinine, Liver Function Test (LFT), Lipid Profile", desc: "Covers standard organ functions & cell counts" },
-                  { title: "Advanced Glycemic & Metabolic Screen", tests: "Fasting Blood Sugar, Post Prandial Blood Sugar, HbA1c Test, Average Glucose", desc: "Comprehensive diabetes monitoring panel" },
-                  { title: "Comprehensive Endocrine & Thyroid Panel", tests: "Thyroid Function Test (TFT), TSH, T3, T4 Profile, Free T3", desc: "Detailed evaluation of thyroid hormone levels" },
-                ].map((preset, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => {
-                      setPastedText(preset.tests);
-                      toast.success(`Loaded ${preset.title} notes`);
-                    }}
-                    className="p-4 rounded-2xl border border-border/60 bg-card hover:border-primary/40 cursor-pointer transition-all active:scale-98 shadow-sm flex items-center justify-between group"
-                  >
-                    <div>
-                      <h5 className="font-extrabold text-foreground text-sm group-hover:text-primary transition-colors">{preset.title}</h5>
-                      <p className="text-xs text-muted-foreground font-medium mt-0.5">{preset.desc}</p>
-                    </div>
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-xl border border-primary/20 group-hover:bg-primary group-hover:text-white transition-all">
-                      Insert →
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Pillar 3: Compliance Waivers & Tele-Bridge */}
-        {!uploadedImage && activeTab === "bypass" && (
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <div className="bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-slate-700/60 rounded-[32px] p-7 shadow-2xl relative overflow-hidden">
-              <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-              <div className="flex items-center gap-2 mb-3">
-                <ShieldCheck className="w-5 h-5 text-success animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-widest text-success">Compliant Tele-Bridge</span>
-              </div>
-              <h3 className="text-white text-2xl font-black tracking-tight mb-2 leading-tight">Missing a Medical Prescription?</h3>
-              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-6 max-w-[320px]">
-                Certain clinical lab tests and diagnostic scans require active physician authorization. Select one of our seamless tele-bridges below to instantly lock in your home collection slot!
-              </p>
-
-              <div className="space-y-4">
-                {/* Instant Digital Physician Sign-off */}
-                <div
-                  onClick={() => setInstantPrescriptionRequested(!instantPrescriptionRequested)}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
-                    instantPrescriptionRequested
-                      ? "bg-primary/25 border-primary shadow-xl shadow-primary/15 scale-[1.02]"
-                      : "bg-slate-800/60 border-slate-700 hover:bg-slate-800 active:scale-98"
-                  }`}
-                >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 border ${
-                    instantPrescriptionRequested ? "bg-primary border-primary text-white shadow-md shadow-primary/30" : "bg-slate-700 border-slate-600 text-slate-300"
-                  }`}>
-                    <Stethoscope className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-black text-white text-sm tracking-tight">Instant Digital Physician Authorization</h4>
-                      <span className="text-xs font-black text-primary bg-primary/15 px-3 py-1 rounded-full border border-primary/30">₹149</span>
-                    </div>
-                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                      Our on-call licensed digital physician will evaluate your requested diagnostic panel and append a verified e-prescription instantly.
-                    </p>
-                  </div>
+                <div className="w-14 h-14 rounded-full bg-[#e0e7ff] flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                  <ImageIcon className="w-6 h-6 text-blue-600" />
                 </div>
+                <span className="text-[15px] font-medium text-gray-900 tracking-tight">Use Gallery</span>
+              </div>
 
-                {/* Provisional "Hold & Verify" Hold */}
-                <div
-                  onClick={() => setProvisionalBookingSelected(!provisionalBookingSelected)}
-                  className={`p-5 rounded-2xl border cursor-pointer transition-all flex items-start gap-4 ${
-                    provisionalBookingSelected
-                      ? "bg-success/20 border-success shadow-xl shadow-success/15 scale-[1.02]"
-                      : "bg-slate-800/60 border-slate-700 hover:bg-slate-800 active:scale-98"
-                  }`}
-                >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 border ${
-                    provisionalBookingSelected ? "bg-success border-success text-white shadow-md shadow-success/30" : "bg-slate-700 border-slate-600 text-slate-300"
-                  }`}>
-                    <CalendarCheck className="w-6 h-6" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="font-black text-white text-sm tracking-tight">Provisional Lab Slot Hold</h4>
-                      <span className="text-xs font-black text-success bg-success/15 px-3 py-1 rounded-full border border-success/30">Free</span>
-                    </div>
-                    <p className="text-xs text-slate-300 font-medium leading-relaxed">
-                      Lock in your preferred collection slot immediately. Simply hand over your physical medical paper to the visiting phlebotomist upon arrival.
-                    </p>
-                  </div>
+              {/* Right Container: Use Camera */}
+              <div
+                onClick={() => cameraInputRef.current?.click()}
+                className="bg-[#f0f3ff] hover:bg-[#e6ebff] active:scale-[0.98] cursor-pointer transition-all rounded-2xl p-6 flex flex-col items-center justify-center gap-4 shadow-sm group"
+              >
+                <div className="w-14 h-14 rounded-full bg-[#e0e7ff] flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform">
+                  <Camera className="w-6 h-6 text-blue-600" />
                 </div>
+                <span className="text-[15px] font-medium text-gray-900 tracking-tight">Use Camera</span>
               </div>
             </div>
 
-            {/* Standing Orders Clinical Intake Section */}
-            <div className="space-y-3.5">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Select Clinical Standing Orders:</h3>
-                <span className="text-[11px] text-primary font-bold">Preventive Intake Waiver</span>
+            {/* Guidelines Box matching reference */}
+            <div className="bg-[#fef9eb] rounded-2xl p-5 border border-amber-100/60 shadow-sm space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0">
+                  i
+                </div>
+                <h3 className="font-bold text-gray-900 text-[15px] tracking-tight">Prescription Upload Guidelines</h3>
               </div>
-              <div className="grid grid-cols-1 gap-3.5">
-                {COMMON_SYMPTOMS.map((sym) => {
-                  const isSelected = selectedSymptoms.includes(sym.id);
-                  return (
-                    <div
-                      key={sym.id}
-                      onClick={() => toggleSymptom(sym.id)}
-                      className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-                        isSelected ? "bg-primary/15 border-primary shadow-md scale-[1.01]" : "bg-card border-border/60 hover:border-border active:scale-98"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
-                          isSelected ? "bg-primary border-primary text-white shadow-md shadow-primary/20" : "bg-muted border-border/80 text-muted-foreground"
-                        }`}>
-                          <sym.icon className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-extrabold text-foreground text-sm tracking-tight">{sym.label}</h4>
-                          <p className="text-xs text-muted-foreground font-medium mt-0.5">{sym.desc}</p>
-                          <p className="text-[11px] text-primary font-bold mt-1">Panel: {sym.tests.join(", ")}</p>
-                        </div>
-                      </div>
-                      <div className={`w-6 h-6 rounded-full border flex items-center justify-center shrink-0 ml-2 transition-all ${
-                        isSelected ? "bg-primary border-primary text-white shadow-sm" : "border-border text-transparent"
-                      }`}>
-                        <CheckCircle2 className="w-4 h-4" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
 
-            <Button
-              className="w-full gap-2 h-14 text-base font-black rounded-2xl shadow-xl shadow-primary/25 active:scale-98 transition-all"
-              onClick={handleConfirmSave}
-              disabled={!instantPrescriptionRequested && !provisionalBookingSelected && selectedSymptoms.length === 0}
-            >
-              <CheckCircle2 className="w-5 h-5" />
-              Secure Diagnostics & Proceed
-            </Button>
-          </motion.div>
+              <ul className="space-y-3 text-[14px] text-gray-700 font-normal pl-1">
+                <li className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-600 shrink-0 mt-2" />
+                  <span>Ensure doctor, patient, date, and medicine info is visible.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-600 shrink-0 mt-2" />
+                  <span>Upload a clear photo or scan so all medicine details are readable.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-600 shrink-0 mt-2" />
+                  <span>Accepted formats: JPG, JPEG, PNG, PDF.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-600 shrink-0 mt-2" />
+                  <span>Maximum file size: 10 MB.</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="w-2 h-2 rounded-full bg-gray-600 shrink-0 mt-2" />
+                  <span>Prescription should be recent (issued within the last year).</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         )}
 
         {/* Uploaded Image Preview & Zoom Layer */}
         {uploadedImage && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-            <div className="relative rounded-[32px] overflow-hidden border border-border/80 bg-muted/40 shadow-2xl">
+            <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 shadow-md">
               <div className="max-h-96 overflow-auto p-2">
                 <img
                   src={uploadedImage}
                   alt="Uploaded prescription"
                   style={{ transform: `scale(${zoom})`, transformOrigin: "top left", transition: "transform 0.2s ease" }}
-                  className="w-full object-contain select-none rounded-2xl"
+                  className="w-full object-contain select-none rounded-xl"
                   draggable={false}
                 />
               </div>
 
               {/* High-end Zoom Controls */}
-              <div className="absolute bottom-4 right-4 flex gap-2.5 z-20">
+              <div className="absolute bottom-4 right-4 flex gap-2 z-20">
                 <button
                   onClick={() => setZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))}
-                  className="w-11 h-11 rounded-2xl bg-background/95 backdrop-blur border border-border shadow-lg flex items-center justify-center transition-all active:scale-95"
+                  className="w-10 h-10 rounded-xl bg-white/95 backdrop-blur border border-gray-200 shadow-md flex items-center justify-center transition-all active:scale-95"
                   aria-label="Zoom out"
                 >
-                  <ZoomOut className="w-5 h-5 text-foreground" />
+                  <ZoomOut className="w-5 h-5 text-gray-800" />
                 </button>
                 <button
                   onClick={() => setZoom((z) => Math.min(3, +(z + 0.25).toFixed(2)))}
-                  className="w-11 h-11 rounded-2xl bg-background/95 backdrop-blur border border-border shadow-lg flex items-center justify-center transition-all active:scale-95"
+                  className="w-10 h-10 rounded-xl bg-white/95 backdrop-blur border border-gray-200 shadow-md flex items-center justify-center transition-all active:scale-95"
                   aria-label="Zoom in"
                 >
-                  <ZoomIn className="w-5 h-5 text-foreground" />
+                  <ZoomIn className="w-5 h-5 text-gray-800" />
                 </button>
               </div>
 
               <button
                 onClick={handleRemoveImage}
-                className="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-destructive/90 hover:bg-destructive shadow-xl flex items-center justify-center z-20 transition-all active:scale-95"
+                className="absolute top-4 right-4 w-10 h-10 rounded-xl bg-red-600 hover:bg-red-700 shadow-md flex items-center justify-center z-20 transition-all active:scale-95"
                 disabled={isUploading}
                 aria-label="Remove image"
               >
-                <X className="w-5 h-5 text-destructive-foreground" />
+                <X className="w-5 h-5 text-white" />
               </button>
 
               {(isUploading || isAnalyzing) && (
-                <div className="absolute inset-0 pointer-events-none z-10">
-                  {/* Corner brackets */}
-                  {[
-                    "top-4 left-4 border-t-4 border-l-4 rounded-tl-xl",
-                    "top-4 right-4 border-t-4 border-r-4 rounded-tr-xl",
-                    "bottom-4 left-4 border-b-4 border-l-4 rounded-bl-xl",
-                    "bottom-4 right-4 border-b-4 border-r-4 rounded-br-xl",
-                  ].map((c) => (
-                    <div key={c} className={`absolute w-10 h-10 border-primary ${c}`} />
-                  ))}
-                  {/* Laser sweep line */}
-                  <motion.div
-                    className="absolute inset-x-6 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_24px_4px_hsl(var(--primary))]"
-                    initial={{ top: "8%" }}
-                    animate={{ top: ["8%", "92%", "8%"] }}
-                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                  />
-                  <div className="absolute inset-x-0 bottom-6 flex justify-center">
-                    <span className="text-xs font-bold text-white bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border border-slate-700/50">
-                      {isAnalyzing ? "Interrogating OCR Matrix…" : "Acquiring Image…"}
-                    </span>
-                  </div>
+                <div className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+                  <span className="text-xs font-bold text-white bg-gray-900/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-gray-700">
+                    {isAnalyzing ? "Analyzing Prescription…" : "Acquiring Image…"}
+                  </span>
                 </div>
               )}
             </div>
 
             {!analysisComplete && !isUploading && (
-              <Button className="w-full gap-2.5 h-14 rounded-2xl text-base font-black shadow-xl shadow-primary/20 active:scale-98 transition-all" onClick={handleAnalyze} disabled={isAnalyzing}>
+              <Button className="w-full gap-2 h-14 rounded-2xl text-base font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 active:scale-98 transition-all" onClick={handleAnalyze} disabled={isAnalyzing}>
                 {isAnalyzing ? (
                   <>
                     <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
                       <Sparkles className="w-5 h-5" />
                     </motion.div>
-                    Analyzing Prescription Matrix…
+                    Analyzing Prescription…
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-5 h-5" /> Execute AI Deep Scan
+                    <Sparkles className="w-5 h-5" /> Execute AI Scan
                   </>
                 )}
               </Button>
@@ -1017,21 +627,21 @@ const UploadPrescriptionScreen = () => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
-              className="soft-card p-5 rounded-3xl border border-border/80 shadow-md"
+              className="p-5 rounded-2xl border border-gray-200 bg-white shadow-sm"
             >
               <div className="flex items-center gap-3.5 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
                   <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}>
-                    <Sparkles className="w-6 h-6 text-primary" />
+                    <Sparkles className="w-6 h-6 text-blue-600" />
                   </motion.div>
                 </div>
                 <div className="flex-1">
-                  <p className="font-extrabold text-foreground text-sm">AI OCR Processing Engine</p>
+                  <p className="font-bold text-gray-900 text-sm">AI OCR Processing Engine</p>
                   <motion.p
                     key={stepIndex}
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-muted-foreground font-medium mt-0.5"
+                    className="text-xs text-gray-500 font-medium mt-0.5"
                   >
                     {PROCESSING_STEPS[stepIndex]}
                   </motion.p>
@@ -1041,7 +651,7 @@ const UploadPrescriptionScreen = () => {
                 {PROCESSING_STEPS.map((s, i) => (
                   <div
                     key={s}
-                    className={`h-2 rounded-full transition-all duration-300 ${i <= stepIndex ? "bg-primary shadow-sm shadow-primary/20" : "bg-muted"}`}
+                    className={`h-2 rounded-full transition-all duration-300 ${i <= stepIndex ? "bg-blue-600 shadow-sm shadow-blue-500/20" : "bg-gray-100"}`}
                   />
                 ))}
               </div>
@@ -1055,15 +665,15 @@ const UploadPrescriptionScreen = () => {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="soft-card p-5 rounded-3xl border border-success/40 bg-success/5 shadow-md"
+              className="p-5 rounded-2xl border border-green-200 bg-green-50/50 shadow-sm"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-success/15 border border-success/30 flex items-center justify-center shrink-0 mt-0.5">
-                  <CheckCircle2 className="w-6 h-6 text-success" />
+                <div className="w-11 h-11 rounded-xl bg-green-100 border border-green-200 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="font-black text-foreground text-base">Verified {detected.length} Diagnostic Code{detected.length === 1 ? "" : "s"}</p>
+                    <p className="font-bold text-gray-900 text-base">Verified {detected.length} Diagnostic Code{detected.length === 1 ? "" : "s"}</p>
                     {confidence && (
                       <Badge
                         variant={confidence === "high" ? "softSuccess" : confidence === "medium" ? "softWarning" : "softDestructive"}
@@ -1073,10 +683,10 @@ const UploadPrescriptionScreen = () => {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+                  <p className="text-xs text-gray-600 font-normal leading-relaxed">
                     Review your mapped clinical codes below. You can edit names or manually append additional tests.
                   </p>
-                  {analysisNotes && <p className="text-[11px] font-bold text-primary mt-2 bg-primary/10 px-3 py-1.5 rounded-xl border border-primary/20">{analysisNotes}</p>}
+                  {analysisNotes && <p className="text-[11px] font-bold text-blue-700 mt-2 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">{analysisNotes}</p>}
                 </div>
               </div>
             </motion.div>
@@ -1087,8 +697,8 @@ const UploadPrescriptionScreen = () => {
         {(analysisComplete || detected.length > 0) && (
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-base font-black text-foreground tracking-tight">Identified Clinical Panel</h2>
-              <Badge variant="ai" className="text-xs font-bold py-1 px-2.5 rounded-full shadow-sm">Review & Finalize</Badge>
+              <h2 className="text-base font-bold text-gray-900 tracking-tight">Identified Clinical Panel</h2>
+              <Badge variant="ai" className="text-xs font-bold py-1 px-2.5 rounded-full shadow-sm bg-blue-50 text-blue-700 border-blue-200">Review & Finalize</Badge>
             </div>
 
             <div className="space-y-3">
@@ -1104,11 +714,11 @@ const UploadPrescriptionScreen = () => {
                 return (
                   <div
                     key={d.uid}
-                    className={`soft-card p-4 rounded-2xl border transition-all shadow-sm ${matchInfo?.app ? "border-border/80 bg-card" : "border-warning/40 bg-warning/5"}`}
+                    className={`p-4 rounded-2xl border transition-all shadow-sm ${matchInfo?.app ? "border-gray-200 bg-white" : "border-amber-200 bg-amber-50/50"}`}
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                        <FlaskConical className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <FlaskConical className="w-5 h-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
                         {editing ? (
@@ -1120,21 +730,21 @@ const UploadPrescriptionScreen = () => {
                             onKeyDown={(e) => {
                               if (e.key === "Enter") setEditingUid(null);
                             }}
-                            className="h-10 text-sm font-bold rounded-xl"
+                            className="h-10 text-sm font-bold rounded-xl border-gray-200"
                           />
                         ) : (
                           <button
                             onClick={() => setEditingUid(d.uid)}
                             className="text-left w-full group"
                           >
-                            <h3 className="font-extrabold text-foreground text-sm leading-snug group-hover:text-primary transition-colors">{d.name}</h3>
+                            <h3 className="font-bold text-gray-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">{d.name}</h3>
                           </button>
                         )}
                         <div className="flex flex-wrap items-center gap-2 mt-2">
                           {d.source === "manual" ? (
-                            <Badge variant="soft" className="text-[10px] font-bold py-0.5 px-2 rounded-lg">Manual Entry</Badge>
+                            <Badge variant="soft" className="text-[10px] font-bold py-0.5 px-2 rounded-lg bg-gray-100 text-gray-700">Manual Entry</Badge>
                           ) : (
-                            <span className="text-[11px] font-medium text-muted-foreground bg-muted px-2 py-0.5 rounded-lg border border-border/50">OCR: "{d.originalAiName}"</span>
+                            <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-lg border border-gray-200">OCR: "{d.originalAiName}"</span>
                           )}
                           {d.dictionaryHit && (
                             <Badge
@@ -1153,27 +763,27 @@ const UploadPrescriptionScreen = () => {
                           )}
                           {matchInfo?.app ? (
                             inCart ? (
-                              <Badge variant="softSuccess" className="text-[10px] font-bold py-0.5 px-2 rounded-lg flex items-center gap-1">
+                              <Badge variant="softSuccess" className="text-[10px] font-bold py-0.5 px-2 rounded-lg flex items-center gap-1 bg-green-100 text-green-800">
                                 <ShoppingCart className="w-3 h-3" /> Secured in Cart
                               </Badge>
                             ) : (
-                              <Badge variant="softSuccess" className="text-[10px] font-bold py-0.5 px-2 rounded-lg">
+                              <Badge variant="softSuccess" className="text-[10px] font-bold py-0.5 px-2 rounded-lg bg-green-100 text-green-800">
                                 Local Cover · ₹{matchInfo.app.price}
                               </Badge>
                             )
                           ) : (
-                            <Badge variant="softWarning" className="text-[10px] font-bold py-0.5 px-2 rounded-lg flex items-center gap-1">
+                            <Badge variant="softWarning" className="text-[10px] font-bold py-0.5 px-2 rounded-lg flex items-center gap-1 bg-amber-100 text-amber-800">
                               <AlertTriangle className="w-3 h-3" /> Outside Local Cover
                             </Badge>
                           )}
                         </div>
 
                         {matchInfo?.app && matchInfo.app.name.toLowerCase() !== d.name.toLowerCase() && (
-                          <p className="mt-2 text-[11px] font-medium text-muted-foreground bg-background/60 p-2 rounded-xl border border-border/40">
+                          <p className="mt-2 text-[11px] font-medium text-gray-500 bg-gray-50 p-2 rounded-xl border border-gray-100">
                             Auto-linked to catalog code:{" "}
-                            <span className="font-bold text-foreground">{matchInfo.app.name}</span>
+                            <span className="font-bold text-gray-900">{matchInfo.app.name}</span>
                             {typeof matchInfo.matchScore === "number" && (
-                              <span className="ml-1 font-extrabold text-primary">
+                              <span className="ml-1 font-bold text-blue-600">
                                 ({Math.round(matchInfo.matchScore * 100)}% confidence)
                               </span>
                             )}
@@ -1183,7 +793,7 @@ const UploadPrescriptionScreen = () => {
                         {suggestion && (
                           <button
                             onClick={() => applyDictionarySuggestion(d.uid)}
-                            className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-extrabold text-primary hover:underline bg-primary/10 px-2.5 py-1 rounded-xl border border-primary/20"
+                            className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:underline bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-100"
                           >
                             <Wand2 className="w-3.5 h-3.5" />
                             Apply Standard Term: <span className="underline">{suggestion.canonical}</span>
@@ -1194,17 +804,17 @@ const UploadPrescriptionScreen = () => {
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           onClick={() => setEditingUid(editing ? null : d.uid)}
-                          className="w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 border border-border/60 flex items-center justify-center transition-all active:scale-95"
+                          className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-200 flex items-center justify-center transition-all active:scale-95"
                           aria-label="Edit"
                         >
-                          <Pencil className="w-4 h-4 text-foreground" />
+                          <Pencil className="w-4 h-4 text-gray-700" />
                         </button>
                         <button
                           onClick={() => removeDetected(d.uid)}
-                          className="w-9 h-9 rounded-xl bg-destructive/15 hover:bg-destructive/25 border border-destructive/30 flex items-center justify-center transition-all active:scale-95"
+                          className="w-9 h-9 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 flex items-center justify-center transition-all active:scale-95"
                           aria-label="Remove"
                         >
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                          <Trash2 className="w-4 h-4 text-red-600" />
                         </button>
                       </div>
                     </div>
@@ -1213,7 +823,7 @@ const UploadPrescriptionScreen = () => {
               })}
 
               {detected.length === 0 && (
-                <div className="soft-card p-6 text-center rounded-3xl border border-border/80 text-xs font-semibold text-muted-foreground shadow-inner">
+                <div className="p-6 text-center rounded-2xl border border-gray-200 text-xs font-semibold text-gray-500 shadow-sm bg-gray-50">
                   No diagnostic codes extracted yet. Use the quick search below to append manually.
                 </div>
               )}
@@ -1229,14 +839,14 @@ const UploadPrescriptionScreen = () => {
                 }}
                 placeholder="Append code manually (e.g. CBC, HbA1c, Lipid Panel)…"
                 list="dict-suggestions"
-                className="h-12 rounded-2xl text-sm font-medium border-border/80 shadow-inner"
+                className="h-12 rounded-2xl text-sm font-medium border-gray-200 bg-white shadow-sm"
               />
               <datalist id="dict-suggestions">
                 {MEDICAL_TEST_DICTIONARY.map((m) => (
                   <option key={m.canonical} value={m.canonical} />
                 ))}
               </datalist>
-              <Button variant="outline" className="gap-1.5 h-12 rounded-2xl font-extrabold border-border/80 shadow-sm px-5 active:scale-95 transition-all" onClick={addManual} disabled={!manualName.trim()}>
+              <Button variant="outline" className="gap-1.5 h-12 rounded-2xl font-bold border-gray-200 shadow-sm px-5 active:scale-95 transition-all hover:bg-gray-50 text-gray-800" onClick={addManual} disabled={!manualName.trim()}>
                 <Plus className="w-4 h-4" /> Append
               </Button>
             </div>
@@ -1244,7 +854,7 @@ const UploadPrescriptionScreen = () => {
             {/* Confirm & Save Floating Footbar */}
             <div className="mt-6 sticky bottom-20 z-40">
               <Button
-                className="w-full gap-2.5 h-14 text-base font-black rounded-2xl shadow-2xl shadow-primary/30 active:scale-98 transition-all"
+                className="w-full gap-2.5 h-14 text-base font-bold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 active:scale-98 transition-all"
                 onClick={handleConfirmSave}
                 disabled={detected.length === 0 || availableCount === 0}
               >
@@ -1252,7 +862,7 @@ const UploadPrescriptionScreen = () => {
                 Confirm & Secure Collection {availableCount > 0 ? `(${availableCount} Code${availableCount > 1 ? "s" : ""})` : ""}
               </Button>
               {detected.length > 0 && availableCount === 0 && (
-                <p className="text-xs text-center font-bold text-destructive mt-2.5 bg-destructive/10 p-2 rounded-xl border border-destructive/20">
+                <p className="text-xs text-center font-bold text-red-600 mt-2.5 bg-red-50 p-2 rounded-xl border border-red-200">
                   None of the verified diagnostic codes are active in your current local service coverage.
                 </p>
               )}
