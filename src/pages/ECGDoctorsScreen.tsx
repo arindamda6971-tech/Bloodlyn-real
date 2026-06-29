@@ -189,8 +189,8 @@ const ECGDoctorsScreen = () => {
   };
 
   const handleConfirmReplace = () => {
-    confirmReplace();
-    toast({ title: "Cart replaced", description: "Cart replaced with new lab items" });
+    confirmReplace(() => navigate("/cart"));
+    toast({ title: "Cart replaced", description: "Cart replaced with new booking" });
   };
 
   if (!lab) {
@@ -285,10 +285,10 @@ const ECGDoctorsScreen = () => {
         <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
           <AlertDialogContent className="max-w-[90%] rounded-3xl border border-border bg-card shadow-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-lg font-bold">Different Lab Selected</AlertDialogTitle>
+              <AlertDialogTitle className="text-lg font-bold">Replace Cart Item?</AlertDialogTitle>
               <AlertDialogDescription className="text-xs leading-relaxed">
-                You have added some tests from <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span>.
-                You can't add tests from another lab at the same time.
+                You already have <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span> in your cart.
+                You can only book one specialized appointment/test at a time. Do you want to replace it with this booking?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex-row gap-3">

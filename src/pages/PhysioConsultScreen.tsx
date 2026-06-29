@@ -21,6 +21,16 @@ import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const physiotherapists = [
   {
@@ -91,7 +101,7 @@ const specializations = [
 const PhysioConsultScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
 
   const filteredPhysios = selectedSpecialization
@@ -124,6 +134,11 @@ const PhysioConsultScreen = () => {
       toast.success(`Home Physiotherapy with ${physio.name} added to cart`);
       navigate("/cart");
     }
+  };
+
+  const handleConfirmReplace = () => {
+    confirmReplace(() => navigate("/cart"));
+    toast.success("Cart replaced with new booking");
   };
 
   return (
@@ -172,6 +187,27 @@ const PhysioConsultScreen = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* Conflict Alert Dialog */}
+        <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
+          <AlertDialogContent className="max-w-[90%] rounded-3xl border border-border bg-card shadow-2xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-lg font-bold">Replace Cart Item?</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs leading-relaxed">
+                You already have <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span> in your cart.
+                You can only book one specialized appointment/test at a time. Do you want to replace it with this booking?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-3">
+              <AlertDialogCancel className="flex-1 mt-0 rounded-2xl h-11 text-xs font-bold" onClick={cancelReplace}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction className="flex-1 rounded-2xl h-11 text-xs font-bold bg-primary hover:bg-primary/90" onClick={handleConfirmReplace}>
+                Replace Cart
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Specializations */}
         <motion.div

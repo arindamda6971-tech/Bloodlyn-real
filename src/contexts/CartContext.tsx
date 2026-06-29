@@ -208,22 +208,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       i.labId === "ecg-service" || i.labId === "physio-service" || i.labId === "doctor-service" ||
       i.name.includes(" with ");
 
-    // If the new item being added is an ECG, Doctor, or Physio service:
-    // "make it such a way at a single time book only a ecg or a doctor or a physio................... dont change any thing on lab"
-    // Automatically replace the entire cart with this single service item so checkout is perfectly seamless.
-    if (isServiceItem(item as any)) {
-      setItems((prev) => {
-        if (prev.some((i) => i.id === item.id)) return prev;
-        const updated = [{ ...item, quantity: 1 }];
-        syncCartToSupabase(updated);
-        return updated;
-      });
-      return true;
-    }
-
-    // If there are items in cart and the existing cart has an ECG, Doctor, or Physio service,
-    // and the user is trying to add a lab test, prevent mixing them.
-    if (items.length > 0 && items.some((i) => isServiceItem(i as any))) {
+    // "but when i will try to booking 2ecg or (1ecg and 1physio ) then show me a alert for replace do it for doctor, ecg, physio dont change any thing on lab"
+    // If the cart already has items, and the user is trying to add an ECG, Doctor, or Physio service,
+    // OR if the cart already has an ECG, Doctor, or Physio service and the user is trying to add anything else:
+    if (items.length > 0 && (isServiceItem(item as any) || items.some((i) => isServiceItem(i as any)))) {
       setPendingItem({ item, existingLabName: items[0].name });
       return false;
     }
@@ -245,12 +233,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
-  const confirmReplace = () => {
+  const confirmReplace = (callback?: () => void) => {
     if (pendingItem) {
       const newItems = [{ ...pendingItem.item, quantity: 1 }];
       setItems(newItems);
       syncCartToSupabase(newItems);
       setPendingItem(null);
+      if (callback) callback();
     }
   };
 
