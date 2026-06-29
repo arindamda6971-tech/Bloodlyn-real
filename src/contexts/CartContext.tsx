@@ -203,6 +203,31 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
+    const isServiceItem = (i: { id: string; labId?: string; name: string }) =>
+      i.id.startsWith("doc-") || i.id.startsWith("physio-") || i.id.startsWith("ecg-") ||
+      i.labId === "ecg-service" || i.labId === "physio-service" || i.labId === "doctor-service" ||
+      i.name.includes(" with ");
+
+    // If the new item being added is an ECG, Doctor, or Physio service:
+    // "make it such a way at a single time book only a ecg or a doctor or a physio................... dont change any thing on lab"
+    // Automatically replace the entire cart with this single service item so checkout is perfectly seamless.
+    if (isServiceItem(item as any)) {
+      setItems((prev) => {
+        if (prev.some((i) => i.id === item.id)) return prev;
+        const updated = [{ ...item, quantity: 1 }];
+        syncCartToSupabase(updated);
+        return updated;
+      });
+      return true;
+    }
+
+    // If there are items in cart and the existing cart has an ECG, Doctor, or Physio service,
+    // and the user is trying to add a lab test, prevent mixing them.
+    if (items.length > 0 && items.some((i) => isServiceItem(i as any))) {
+      setPendingItem({ item, existingLabName: items[0].name });
+      return false;
+    }
+
     // If there are items in cart and the existing cart is tied to a specific lab,
     // prevent adding an item from a different lab (or an item without labId)
     if (items.length > 0 && currentLabId && item.labId !== currentLabId) {
