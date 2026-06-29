@@ -19,7 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
-import { levenshtein } from "@/lib/medical-dictionary";
+import { levenshtein, matchToDictionary } from "@/lib/medical-dictionary";
+import { XCircle } from "lucide-react";
 
 interface AppTest {
   id: string;
