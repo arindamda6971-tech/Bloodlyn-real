@@ -296,11 +296,11 @@ const DoctorConsultScreen = () => {
                     </div>
                   </div>
 
-                  {/* Booking Actions Stack */}
-                  <div className="space-y-2.5">
+                  {/* Booking Actions Single Row Blue Tiles */}
+                  <div className="grid grid-cols-3 gap-2.5 mt-2">
                     {/* Video Consultation */}
-                    <Button
-                      className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98] flex items-center justify-center gap-2"
+                    <div
+                      className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-[#f0f3ff] hover:bg-[#e6ebff] border border-blue-200 text-blue-950 transition-all active:scale-95 cursor-pointer shadow-sm group"
                       onClick={() => {
                         if (!doctor.available) {
                           toast.error("Doctor is currently offline", {
@@ -322,14 +322,16 @@ const DoctorConsultScreen = () => {
                         }
                       }}
                     >
-                      <Video className="w-4 h-4" />
-                      <span>Book Video Call • ₹{doctor.videoCallFee}</span>
-                    </Button>
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center mb-2 shadow-sm group-hover:scale-105 transition-transform">
+                        <Video className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-900 tracking-tight text-center leading-tight">Video Call</span>
+                      <span className="text-[11px] font-extrabold text-blue-600 mt-1 bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-xs">₹{doctor.videoCallFee}</span>
+                    </div>
 
                     {/* Audio Consultation */}
-                    <Button
-                      variant="outline"
-                      className="w-full h-11 rounded-2xl border-border/80 hover:bg-primary/5 transition-all duration-300 font-bold text-foreground shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                    <div
+                      className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-[#f0f3ff] hover:bg-[#e6ebff] border border-blue-200 text-blue-950 transition-all active:scale-95 cursor-pointer shadow-sm group"
                       onClick={() => {
                         if (!doctor.available) {
                           toast.error("Doctor is currently offline", {
@@ -351,14 +353,16 @@ const DoctorConsultScreen = () => {
                         }
                       }}
                     >
-                      <Phone className="w-4 h-4 text-primary" />
-                      <span>Book Audio Call • ₹{doctor.audioCallFee}</span>
-                    </Button>
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center mb-2 shadow-sm group-hover:scale-105 transition-transform">
+                        <Phone className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-900 tracking-tight text-center leading-tight">Audio Call</span>
+                      <span className="text-[11px] font-extrabold text-blue-600 mt-1 bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-xs">₹{doctor.audioCallFee}</span>
+                    </div>
 
                     {/* Physical Appointment */}
-                    <Button
-                      variant="secondary"
-                      className="w-full h-11 rounded-2xl bg-muted hover:bg-muted/80 transition-all duration-300 font-bold text-foreground shadow-sm active:scale-[0.98] flex items-center justify-center gap-2"
+                    <div
+                      className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-[#f0f3ff] hover:bg-[#e6ebff] border border-blue-200 text-blue-950 transition-all active:scale-95 cursor-pointer shadow-sm group"
                       onClick={() => {
                         if (!doctor.available) {
                           toast.error("Doctor is currently offline", {
@@ -380,9 +384,12 @@ const DoctorConsultScreen = () => {
                         }
                       }}
                     >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      <span>Book Physical Appointment • ₹{doctor.physicalCallFee}</span>
-                    </Button>
+                      <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center mb-2 shadow-sm group-hover:scale-105 transition-transform">
+                        <MapPin className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs font-bold text-gray-900 tracking-tight text-center leading-tight">Physical</span>
+                      <span className="text-[11px] font-extrabold text-blue-600 mt-1 bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-xs">₹{doctor.physicalCallFee}</span>
+                    </div>
                   </div>
                 </motion.div>
               ))
