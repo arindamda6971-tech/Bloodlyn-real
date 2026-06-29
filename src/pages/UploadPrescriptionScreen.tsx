@@ -19,7 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePrescriptionStorage } from "@/hooks/usePrescriptionStorage";
 import { useCart } from "@/contexts/CartContext";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
-import { levenshtein } from "@/lib/medical-dictionary";
+import { levenshtein, matchToDictionary } from "@/lib/medical-dictionary";
+import { XCircle } from "lucide-react";
 
 interface AppTest {
   id: string;
@@ -66,6 +67,7 @@ const UploadPrescriptionScreen = () => {
   const [imageBase64Cache, setImageBase64Cache] = useState<string>("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scannedTests, setScannedTests] = useState<AppTest[]>([]);
+  const [unavailableTests, setUnavailableTests] = useState<string[]>([]);
   const [hasScanned, setHasScanned] = useState(false);
   const [appTests, setAppTests] = useState<AppTest[]>([]);
 
@@ -129,60 +131,58 @@ const UploadPrescriptionScreen = () => {
   };
 
   const findMatchingCatalogTests = (testNames: string[]) => {
-    const results: AppTest[] = [];
+    const available: AppTest[] = [];
+    const unavailable: string[] = [];
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    testNames.forEach((query) => {
-      const q = norm(query);
-      if (!q) return;
+    const uniqueQueries = Array.from(new Set(testNames.map((n) => n.trim()).filter(Boolean)));
+
+    uniqueQueries.forEach((query) => {
+      // Expand query via medical dictionary canonical name for better matching
+      const dictMatch = matchToDictionary(query, 0.5);
+      const candidates = [query];
+      if (dictMatch) candidates.push(dictMatch.canonical);
 
       let bestMatch: AppTest | null = null;
       let bestScore = 0;
 
-      for (const t of appTests) {
-        const c = norm(t.name);
-        if (c === q) {
-          bestMatch = t;
-          bestScore = 1;
-          break;
-        }
-        if (c.includes(q) || q.includes(c)) {
-          if (bestScore < 0.8) {
-            bestMatch = t;
-            bestScore = 0.8;
+      for (const cand of candidates) {
+        const q = norm(cand);
+        if (!q) continue;
+        for (const t of appTests) {
+          const c = norm(t.name);
+          if (!c) continue;
+          let score = 0;
+          if (c === q) score = 1;
+          else if (c.includes(q) || q.includes(c)) score = 0.85;
+          else {
+            const dist = levenshtein(q, c);
+            const maxLen = Math.max(q.length, c.length) || 1;
+            score = 1 - dist / maxLen;
           }
-        }
-        // Fuzzy match
-        const dist = levenshtein(q, c);
-        const maxLen = Math.max(q.length, c.length) || 1;
-        const sim = 1 - dist / maxLen;
-        if (sim > bestScore && sim > 0.45) {
-          bestMatch = t;
-          bestScore = sim;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = t;
+          }
         }
       }
 
-      if (bestMatch) {
-        if (!results.some((r) => r.id === bestMatch!.id)) {
-          results.push(bestMatch);
-        }
+      if (bestMatch && bestScore >= 0.7) {
+        if (!available.some((r) => r.id === bestMatch!.id)) available.push(bestMatch);
       } else {
-        // Fallback if not found in catalog
-        results.push({
-          id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          name: query,
-          price: 299,
-        });
+        const display = dictMatch?.canonical || query;
+        if (!unavailable.includes(display)) unavailable.push(display);
       }
     });
 
-    setScannedTests(results);
+    setScannedTests(available);
+    setUnavailableTests(unavailable);
     setHasScanned(true);
   };
 
   const handleSimulateDemo = async () => {
     setIsAnalyzing(true);
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 1500));
     findMatchingCatalogTests(["Complete Blood Count", "Liver Function Test", "Serum Creatinine"]);
     setIsAnalyzing(false);
   };
@@ -198,21 +198,31 @@ const UploadPrescriptionScreen = () => {
         body: { imageBase64: imageBase64Cache },
       });
       if (error) {
-        console.error(error);
-        await handleSimulateDemo();
+        console.error("analyze-prescription error:", error);
+        toast.error("Could not scan prescription. Please try a clearer image.");
+        setIsAnalyzing(false);
         return;
       }
 
-      const result = data as { tests?: Array<{ name: string }> };
+      const result = data as { tests?: Array<{ name: string }>; error?: string };
+      if (result?.error) {
+        toast.error(result.error);
+        setIsAnalyzing(false);
+        return;
+      }
       if (!result?.tests?.length) {
-        await handleSimulateDemo();
+        toast.error("No tests detected in this prescription.");
+        setScannedTests([]);
+        setUnavailableTests([]);
+        setHasScanned(true);
+        setIsAnalyzing(false);
         return;
       }
 
-      findMatchingCatalogTests(result.tests.map((t) => t.name));
+      findMatchingCatalogTests(result.tests.map((t) => t.name).filter(Boolean));
     } catch (err) {
       console.error(err);
-      await handleSimulateDemo();
+      toast.error("Scan failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -222,6 +232,7 @@ const UploadPrescriptionScreen = () => {
     setUploadedImage(null);
     setImageBase64Cache("");
     setScannedTests([]);
+    setUnavailableTests([]);
     setHasScanned(false);
   };
 
@@ -410,49 +421,75 @@ const UploadPrescriptionScreen = () => {
             )}
 
             {hasScanned && !isAnalyzing && (
-              <div className="space-y-4">
-                <h2 className="text-base font-bold text-gray-900 tracking-tight px-1">Tests Found from Catalog</h2>
+              <div className="space-y-5">
+                {/* Available tests */}
+                {scannedTests.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight px-1 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Available in Catalog ({scannedTests.length})
+                    </h2>
+                    {scannedTests.map((t) => (
+                      <div key={t.id} className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/40 shadow-sm flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center shrink-0">
+                            <Activity className="w-5 h-5 text-emerald-700" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-gray-900 text-sm leading-snug truncate">{t.name}</h3>
+                            <p className="text-xs font-semibold text-emerald-700 mt-0.5">₹{t.price} • Available</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeTest(t.id)}
+                          className="w-9 h-9 rounded-xl bg-white hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200 flex items-center justify-center transition-all active:scale-95 text-gray-400 shrink-0"
+                          aria-label="Remove test"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                <div className="space-y-3">
-                  {scannedTests.map((t) => (
-                    <div key={t.id} className="p-4 rounded-2xl border border-gray-200 bg-white shadow-sm flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
-                          <Activity className="w-5 h-5 text-blue-600" />
+                {/* Unavailable tests */}
+                {unavailableTests.length > 0 && (
+                  <div className="space-y-3">
+                    <h2 className="text-base font-bold text-gray-900 tracking-tight px-1 flex items-center gap-2">
+                      <XCircle className="w-4 h-4 text-rose-500" />
+                      Not Available ({unavailableTests.length})
+                    </h2>
+                    {unavailableTests.map((name) => (
+                      <div key={name} className="p-4 rounded-2xl border border-rose-100 bg-rose-50/40 shadow-sm flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center shrink-0">
+                          <XCircle className="w-5 h-5 text-rose-500" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-bold text-gray-900 text-sm leading-snug truncate">{t.name}</h3>
-                          <p className="text-xs font-semibold text-blue-600 mt-0.5">₹{t.price}</p>
+                          <h3 className="font-semibold text-gray-800 text-sm leading-snug truncate">{name}</h3>
+                          <p className="text-xs text-rose-600 mt-0.5">Not offered in our catalog</p>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                )}
 
-                      <button
-                        onClick={() => removeTest(t.id)}
-                        className="w-9 h-9 rounded-xl bg-gray-50 hover:bg-red-50 hover:text-red-600 border border-gray-100 hover:border-red-200 flex items-center justify-center transition-all active:scale-95 text-gray-400 shrink-0"
-                        aria-label="Remove test"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
+                {scannedTests.length === 0 && unavailableTests.length === 0 && (
+                  <div className="p-6 text-center rounded-2xl border border-gray-200 text-xs font-semibold text-gray-500 shadow-sm bg-gray-50">
+                    No tests detected. Please try a clearer image.
+                  </div>
+                )}
 
-                  {scannedTests.length === 0 && (
-                    <div className="p-6 text-center rounded-2xl border border-gray-200 text-xs font-semibold text-gray-500 shadow-sm bg-gray-50">
-                      No tests found. Please try scanning a clearer image.
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-6 sticky bottom-20 z-40">
-                  <Button
-                    className="w-full gap-2.5 h-14 text-base font-bold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 active:scale-98 transition-all"
-                    onClick={handleConfirmSave}
-                    disabled={scannedTests.length === 0}
-                  >
-                    <CheckCircle2 className="w-5 h-5" />
-                    <span>Proceed to Cart ({scannedTests.length} Test{scannedTests.length > 1 ? "s" : ""})</span>
-                  </Button>
-                </div>
+                {scannedTests.length > 0 && (
+                  <div className="mt-6 sticky bottom-20 z-40">
+                    <Button
+                      className="w-full gap-2.5 h-14 text-base font-bold rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 active:scale-98 transition-all"
+                      onClick={handleConfirmSave}
+                    >
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span>Add {scannedTests.length} Available Test{scannedTests.length > 1 ? "s" : ""} to Cart</span>
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </motion.div>
