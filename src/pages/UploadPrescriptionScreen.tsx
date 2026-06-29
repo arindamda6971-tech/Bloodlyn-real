@@ -232,6 +232,7 @@ const UploadPrescriptionScreen = () => {
     setUploadedImage(null);
     setImageBase64Cache("");
     setScannedTests([]);
+    setUnavailableTests([]);
     setHasScanned(false);
   };
 
