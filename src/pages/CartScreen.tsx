@@ -292,33 +292,93 @@ const CartScreen = () => {
       <BookingStepper currentStep={1} />
 
       <div className="px-4 pb-44">
-        <h2 className="text-lg font-bold text-foreground mb-3">
-          {items.reduce((acc, item) => acc + item.quantity, 0)} {items.reduce((acc, item) => acc + item.quantity, 0) === 1 ? "Test" : "Tests"} Added
-        </h2>
+        {(() => {
+          const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
+          const hasService = items.some((item) => item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("ecg-") || item.name.includes(" with "));
+          const itemLabel = hasService ? (totalQty === 1 ? "Service" : "Services") : (totalQty === 1 ? "Test" : "Tests");
+          return (
+            <h2 className="text-lg font-bold text-foreground mb-3">
+              {totalQty} {itemLabel} Added
+            </h2>
+          );
+        })()}
 
         {/* Cart items */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          {items.map((item, index) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="bg-card rounded-2xl border border-border p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm">{item.name}</h3>
-                </div>
-                <button
-                  onClick={() => removeFromCart(item.id)}
-                  className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center ml-3"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+          {items.map((item, index) => {
+            let doctorName = "";
+            let serviceTitle = item.name;
+            if (item.name.includes(" with Dr. ")) {
+              const parts = item.name.split(" with Dr. ");
+              serviceTitle = parts[0].trim();
+              doctorName = "Dr. " + parts[1].trim();
+            } else if (item.name.includes(" with ")) {
+              const parts = item.name.split(" with ");
+              serviceTitle = parts[0].trim();
+              doctorName = parts[1].trim();
+            }
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300"
+              >
+                {doctorName ? (
+                  <>
+                    {/* Upper Tile for Doctor Name */}
+                    <div className="bg-gradient-to-r from-primary/15 via-primary/10 to-transparent px-4 py-2.5 border-b border-border/60 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-[11px] font-bold text-primary">
+                        👨‍⚕️
+                      </div>
+                      <span className="text-xs font-bold text-primary tracking-wide">
+                        {doctorName}
+                      </span>
+                      <span className="text-[10px] bg-primary/20 text-primary font-semibold px-2 py-0.5 rounded-full ml-auto">
+                        Assigned Professional
+                      </span>
+                    </div>
+
+                    {/* Lower Section for Service / Physio Booking */}
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-xs text-muted-foreground font-medium">Service Type</span>
+                        </div>
+                        <h3 className="font-bold text-foreground text-sm tracking-tight">{serviceTitle}</h3>
+                        {item.price > 0 && (
+                          <p className="text-xs font-semibold text-primary mt-1">₹{item.price}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center ml-3 flex-shrink-0 hover:bg-destructive/20 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-4 flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm">{item.name}</h3>
+                      {item.price > 0 && (
+                        <p className="text-xs font-semibold text-primary mt-1">₹{item.price}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center ml-3 flex-shrink-0 hover:bg-destructive/20 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
         </motion.div>
 
         <button
@@ -326,7 +386,9 @@ const CartScreen = () => {
           className="w-full mt-3 py-3 rounded-xl border-2 border-dashed border-primary/30 text-primary text-sm font-medium flex items-center justify-center gap-1.5 hover:border-primary/50 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Add More Tests or Health Checks
+          {items.some((item) => item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("ecg-") || item.name.includes(" with "))
+            ? "Add More Services or Tests"
+            : "Add More Tests or Health Checks"}
         </button>
 
         {/* Patient details */}
