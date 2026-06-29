@@ -14,6 +14,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
+import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
 
 interface LocationState {
@@ -50,7 +51,8 @@ const BookingScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as LocationState | null;
-  const { items: cartItems, subtotal } = useCart();
+  const { items: cartItems, subtotal, validateFamilyMember } = useCart();
+  const { members } = useFamilyMembers();
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState(2);
   const [selectedAddress, setSelectedAddress] = useState<AddressRecord | null>(null);
@@ -73,6 +75,12 @@ const BookingScreen = () => {
   });
 
   const labId = useMemo(() => cartItems[0]?.labId || null, [cartItems]);
+
+  useEffect(() => {
+    if (members) {
+      validateFamilyMember(members.map((m) => m.id));
+    }
+  }, [members, validateFamilyMember]);
 
   useEffect(() => {
     const validateDistance = async () => {

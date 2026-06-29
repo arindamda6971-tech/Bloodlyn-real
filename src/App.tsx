@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -115,11 +115,8 @@ const PackageDetailScreen = lazy(() => safeImport(() => import("./pages/PackageD
 const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen")));
 const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
-const PhysioBookingScreen = lazy(() => safeImport(() => import("./pages/PhysioBookingScreen")));
 const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
-const ECGBookingScreen = lazy(() => safeImport(() => import("./pages/ECGBookingScreen")));
 const ConsultationCallScreen = lazy(() => safeImport(() => import("./pages/ConsultationCallScreen")));
-const ConsultationBookingScreen = lazy(() => safeImport(() => import("./pages/ConsultationBookingScreen")));
 const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
 const TrackingScreen = lazy(() => safeImport(() => import("./pages/TrackingScreen")));
 const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMembersScreen")));
@@ -230,11 +227,11 @@ const AnimatedRoutes = () => {
           <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
           <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
-          <Route path="/physio-booking" element={<ProtectedRoute><PhysioBookingScreen /></ProtectedRoute>} />
+          <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
           <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
-          <Route path="/ecg-booking" element={<ProtectedRoute><ECGBookingScreen /></ProtectedRoute>} />
+          <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
           <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
-          <Route path="/consultation-booking" element={<ProtectedRoute><ConsultationBookingScreen /></ProtectedRoute>} />
+          <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
           <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
           <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
           <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
@@ -298,7 +295,7 @@ const App = () => {
                         <ScrollToTop />
                         <RoutePrefetcher />
                         <Suspense fallback={<RouteFallback />}>
-<AnimatedRoutes />
+                          <AnimatedRoutes />
                         </Suspense>
                         <InstallPrompt />
                       </BrowserRouter>

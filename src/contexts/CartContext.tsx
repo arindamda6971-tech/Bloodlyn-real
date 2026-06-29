@@ -37,9 +37,10 @@ interface CartContextType {
   currentLabId: string | null;
   currentLabName: string | null;
   pendingItem: PendingItem | null;
-  confirmReplace: () => void;
+  confirmReplace: (callback?: () => void) => void;
   cancelReplace: () => void;
   isLoading: boolean;
+  validateFamilyMember: (activeMemberIds: string[]) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -306,6 +307,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }, 50);
   };
 
+  const validateFamilyMember = useCallback((activeMemberIds: string[]) => {
+    setItems((prev) => {
+      let changed = false;
+      const updated = prev.map((item) => {
+        if (item.familyMemberId && !activeMemberIds.includes(item.familyMemberId)) {
+          changed = true;
+          return { ...item, familyMemberId: undefined };
+        }
+        return item;
+      });
+      if (changed) {
+        syncCartToSupabase(updated);
+        return updated;
+      }
+      return prev;
+    });
+  }, [syncCartToSupabase]);
+
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -328,6 +347,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         confirmReplace,
         cancelReplace,
         isLoading,
+        validateFamilyMember,
       }}
     >
       {children}
@@ -356,6 +376,7 @@ export const useCart = () => {
       confirmReplace: () => {},
       cancelReplace: () => {},
       isLoading: false,
+      validateFamilyMember: () => {},
     } as CartContextType;
   }
   return context;
