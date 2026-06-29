@@ -470,6 +470,38 @@ const HomeScreen = () => {
         {/* Health Packages (real-time, vendor-driven) */}
         <HealthPackagesSection />
 
+        {/* Prescription Call-Assistance Banner (Second Last Section) */}
+        <section className="px-4 mt-8 mb-4 transform-gpu">
+          <div
+            onClick={() => navigate('/upload-prescription')}
+            className="w-full relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-slate-700/50 rounded-3xl p-6 shadow-xl cursor-pointer group active:scale-[0.98] transition-all flex items-center justify-between"
+          >
+            {/* Background glowing accent */}
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 flex-1 pr-4">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-success">Instant Call Assistance</p>
+              </div>
+              <h3 className="text-white text-xl font-black tracking-tight leading-tight mb-1">
+                Have a Prescription?
+              </h3>
+              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-4 max-w-[260px]">
+                Upload it now & our medical experts will call you back with exact pricing and slot details.
+              </p>
+              <span className="inline-flex items-center gap-2 bg-primary text-white text-xs font-black px-5 py-2.5 rounded-2xl shadow-lg shadow-primary/30 group-hover:opacity-90 transition-opacity">
+                <FileUp className="w-4 h-4" /> Upload & Get a Call →
+              </span>
+            </div>
+
+            {/* Right side floating icon */}
+            <div className="relative z-10 w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform">
+              <Phone className="w-10 h-10 text-primary animate-bounce" />
+            </div>
+          </div>
+        </section>
+
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 transform-gpu">
           <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform">
