@@ -131,60 +131,58 @@ const UploadPrescriptionScreen = () => {
   };
 
   const findMatchingCatalogTests = (testNames: string[]) => {
-    const results: AppTest[] = [];
+    const available: AppTest[] = [];
+    const unavailable: string[] = [];
     const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    testNames.forEach((query) => {
-      const q = norm(query);
-      if (!q) return;
+    const uniqueQueries = Array.from(new Set(testNames.map((n) => n.trim()).filter(Boolean)));
+
+    uniqueQueries.forEach((query) => {
+      // Expand query via medical dictionary canonical name for better matching
+      const dictMatch = matchToDictionary(query, 0.5);
+      const candidates = [query];
+      if (dictMatch) candidates.push(dictMatch.canonical);
 
       let bestMatch: AppTest | null = null;
       let bestScore = 0;
 
-      for (const t of appTests) {
-        const c = norm(t.name);
-        if (c === q) {
-          bestMatch = t;
-          bestScore = 1;
-          break;
-        }
-        if (c.includes(q) || q.includes(c)) {
-          if (bestScore < 0.8) {
-            bestMatch = t;
-            bestScore = 0.8;
+      for (const cand of candidates) {
+        const q = norm(cand);
+        if (!q) continue;
+        for (const t of appTests) {
+          const c = norm(t.name);
+          if (!c) continue;
+          let score = 0;
+          if (c === q) score = 1;
+          else if (c.includes(q) || q.includes(c)) score = 0.85;
+          else {
+            const dist = levenshtein(q, c);
+            const maxLen = Math.max(q.length, c.length) || 1;
+            score = 1 - dist / maxLen;
           }
-        }
-        // Fuzzy match
-        const dist = levenshtein(q, c);
-        const maxLen = Math.max(q.length, c.length) || 1;
-        const sim = 1 - dist / maxLen;
-        if (sim > bestScore && sim > 0.45) {
-          bestMatch = t;
-          bestScore = sim;
+          if (score > bestScore) {
+            bestScore = score;
+            bestMatch = t;
+          }
         }
       }
 
-      if (bestMatch) {
-        if (!results.some((r) => r.id === bestMatch!.id)) {
-          results.push(bestMatch);
-        }
+      if (bestMatch && bestScore >= 0.7) {
+        if (!available.some((r) => r.id === bestMatch!.id)) available.push(bestMatch);
       } else {
-        // Fallback if not found in catalog
-        results.push({
-          id: `custom-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          name: query,
-          price: 299,
-        });
+        const display = dictMatch?.canonical || query;
+        if (!unavailable.includes(display)) unavailable.push(display);
       }
     });
 
-    setScannedTests(results);
+    setScannedTests(available);
+    setUnavailableTests(unavailable);
     setHasScanned(true);
   };
 
   const handleSimulateDemo = async () => {
     setIsAnalyzing(true);
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 1500));
     findMatchingCatalogTests(["Complete Blood Count", "Liver Function Test", "Serum Creatinine"]);
     setIsAnalyzing(false);
   };
@@ -200,21 +198,31 @@ const UploadPrescriptionScreen = () => {
         body: { imageBase64: imageBase64Cache },
       });
       if (error) {
-        console.error(error);
-        await handleSimulateDemo();
+        console.error("analyze-prescription error:", error);
+        toast.error("Could not scan prescription. Please try a clearer image.");
+        setIsAnalyzing(false);
         return;
       }
 
-      const result = data as { tests?: Array<{ name: string }> };
+      const result = data as { tests?: Array<{ name: string }>; error?: string };
+      if (result?.error) {
+        toast.error(result.error);
+        setIsAnalyzing(false);
+        return;
+      }
       if (!result?.tests?.length) {
-        await handleSimulateDemo();
+        toast.error("No tests detected in this prescription.");
+        setScannedTests([]);
+        setUnavailableTests([]);
+        setHasScanned(true);
+        setIsAnalyzing(false);
         return;
       }
 
-      findMatchingCatalogTests(result.tests.map((t) => t.name));
+      findMatchingCatalogTests(result.tests.map((t) => t.name).filter(Boolean));
     } catch (err) {
       console.error(err);
-      await handleSimulateDemo();
+      toast.error("Scan failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
