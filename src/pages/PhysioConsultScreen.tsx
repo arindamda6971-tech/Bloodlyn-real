@@ -4,10 +4,7 @@ import { motion } from "framer-motion";
 import {
   Star,
   Clock,
-  Video,
-  Phone,
   Shield,
-  ChevronRight,
   Activity,
   Bone,
   Brain,
@@ -97,16 +94,7 @@ const PhysioConsultScreen = () => {
       })
     : physiotherapists;
 
-  const handleBookPhysio = (physio: typeof physiotherapists[0], type: "video" | "audio") => {
-    // Navigate to the unified consultation booking screen (same as doctor booking)
-    navigate("/consultation-booking", {
-      state: {
-        type,
-        professional: physio,
-        professionalType: "physiotherapist",
-      },
-    });
-  };
+  // Unified professional booking handler
 
   const handleProceedToBook = (physio: typeof physiotherapists[0]) => {
     if (!user) {
@@ -233,17 +221,6 @@ const PhysioConsultScreen = () => {
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-xs text-muted-foreground mb-3">Choose consultation type:</p>
-                  <div className="mb-3">
-                    <Button
-                      variant="hero"
-                      className="w-full"
-                      onClick={() => handleBookPhysio(physio, "video")}
-                    >
-                      <Video className="w-4 h-4 mr-2" />
-                      Video Call • ₹{physio.videoCallFee}
-                    </Button>
-                  </div>
                   <div>
                     <Button className="w-full" variant="hero" onClick={() => handleProceedToBook(physio)}>
                       Book Home Visit • ₹{physio.videoCallFee}
