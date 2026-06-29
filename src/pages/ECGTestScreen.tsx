@@ -19,6 +19,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/contexts/CartContext";
 
 interface Doctor {
   id: string;
@@ -95,6 +96,7 @@ const ECGTestScreen = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,8 +116,22 @@ const ECGTestScreen = () => {
       return;
     }
     
-    // Navigate to booking screen with doctor details
-    navigate("/ecg-booking", { state: { doctor } });
+    const success = addToCart({
+      id: `ecg-${doctor.id}`,
+      name: `12-Lead ECG Test with ${doctor.name}`,
+      price: doctor.fee,
+      labId: "ecg-service",
+      labName: "HealthSwift Cardiac Care",
+      vendorId: "generic-service",
+    });
+
+    if (success) {
+      toast({
+        title: "Added to Cart",
+        description: `12-Lead ECG Test with ${doctor.name} added to cart`,
+      });
+      navigate("/cart");
+    }
   };
 
   return (

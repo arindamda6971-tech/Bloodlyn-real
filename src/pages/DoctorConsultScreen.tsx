@@ -22,6 +22,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 const doctors = [
   {
@@ -84,6 +85,7 @@ const specializations = [
 
 const DoctorConsultScreen = () => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
 
   const filteredDoctors = selectedSpecialization
@@ -219,7 +221,7 @@ const DoctorConsultScreen = () => {
                   transition={{ delay: 0.2 + index * 0.08 }}
                   className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
-                  {/* Doctor Header (Matches ECG UI perfectly, no top-right consult price box) */}
+                  {/* Doctor Header */}
                   <div className="flex items-start gap-4 mb-4">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-blue-500/20 flex items-center justify-center flex-shrink-0 border border-primary/20 group-hover:scale-105 transition-transform duration-300">
                       <Stethoscope className="w-7 h-7 text-primary" />
@@ -231,7 +233,7 @@ const DoctorConsultScreen = () => {
                     </div>
                   </div>
 
-                  {/* Doctor Details Grid (Matches ECG UI perfectly) */}
+                  {/* Doctor Details Grid */}
                   <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1">
@@ -266,9 +268,18 @@ const DoctorConsultScreen = () => {
                         });
                         return;
                       }
-                      navigate("/consultation-booking", {
-                        state: { type: "physical", professional: doctor, professionalType: "doctor" },
+                      const success = addToCart({
+                        id: `doc-${doctor.id}`,
+                        name: `Physical Appointment with ${doctor.name}`,
+                        price: doctor.physicalCallFee,
+                        labId: "doctor-service",
+                        labName: "HealthSwift Medical Care",
+                        vendorId: "generic-service",
                       });
+                      if (success) {
+                        toast.success(`Physical Appointment with ${doctor.name} added to cart`);
+                        navigate("/cart");
+                      }
                     }}
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />

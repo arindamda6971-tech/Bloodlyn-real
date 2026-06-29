@@ -176,6 +176,7 @@ const ECGDoctorsScreen = () => {
       price: doctor.fee,
       labId: lab.id,
       labName: lab.name,
+      vendorId: (lab as any).vendor_id || "generic-service",
     });
 
     if (success) {

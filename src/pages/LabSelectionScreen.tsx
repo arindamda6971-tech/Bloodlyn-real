@@ -104,6 +104,15 @@ const LabSelectionScreen = () => {
       setLabSlotsByDay({});
       return;
     }
+    if (selectedLabVendorId === "generic-service") {
+      const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
+      const map: Record<number, { is_open: boolean; slots: string[] }> = {};
+      for (let i = 0; i <= 6; i++) {
+        map[i] = { is_open: true, slots: defaultSlots };
+      }
+      setLabSlotsByDay(map);
+      return;
+    }
     let cancelled = false;
     setSlotsLoading(true);
     supabase.functions

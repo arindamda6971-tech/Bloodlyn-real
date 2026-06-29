@@ -20,6 +20,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 const physiotherapists = [
   {
@@ -90,6 +91,7 @@ const specializations = [
 const PhysioConsultScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToCart } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
 
   const filteredPhysios = selectedSpecialization
@@ -109,20 +111,19 @@ const PhysioConsultScreen = () => {
       return;
     }
 
-    const mapped = {
-      id: String(physio.id),
-      name: physio.name,
-      specialty: physio.specialty,
-      experience: `${physio.experience} years`,
-      rating: physio.rating,
-      reviews_count: physio.reviews,
-      fee: physio.videoCallFee ?? physio.audioCallFee ?? 0,
-      available: physio.available,
-      qualification: physio.qualification,
-      image: physio.image,
-    };
+    const success = addToCart({
+      id: `physio-${physio.id}`,
+      name: `Home Physiotherapy with ${physio.name}`,
+      price: physio.videoCallFee ?? physio.audioCallFee ?? 399,
+      labId: "physio-service",
+      labName: "HealthSwift Rehab Care",
+      vendorId: "generic-service",
+    });
 
-    navigate("/physio-booking", { state: { physio: mapped } });
+    if (success) {
+      toast.success(`Home Physiotherapy with ${physio.name} added to cart`);
+      navigate("/cart");
+    }
   };
 
   return (
@@ -237,7 +238,7 @@ const PhysioConsultScreen = () => {
                   transition={{ delay: 0.2 + index * 0.08 }}
                   className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
-                  {/* Therapist Header (Matches ECG UI perfectly, no top-right consult price box) */}
+                  {/* Therapist Header */}
                   <div className="flex items-start gap-4 mb-4">
                     <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-purple-500/20 flex items-center justify-center flex-shrink-0 border border-blue-500/20 group-hover:scale-105 transition-transform duration-300">
                       <Activity className="w-7 h-7 text-blue-600 dark:text-blue-400" />
@@ -249,7 +250,7 @@ const PhysioConsultScreen = () => {
                     </div>
                   </div>
 
-                  {/* Therapist Details Grid (Matches ECG UI perfectly) */}
+                  {/* Therapist Details Grid */}
                   <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1">
