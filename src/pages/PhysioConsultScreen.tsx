@@ -9,11 +9,15 @@ import {
   Bone,
   Brain,
   Heart,
+  Sparkles,
+  CheckCircle2,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -73,10 +77,10 @@ const physiotherapists = [
 ];
 
 const specializations = [
-  { id: "sports", icon: Activity, label: "Sports Injury", color: "bg-primary/10 text-primary" },
-  { id: "ortho", icon: Bone, label: "Orthopedic", color: "bg-success/10 text-success" },
-  { id: "neuro", icon: Brain, label: "Neurological", color: "bg-warning/10 text-warning" },
-  { id: "cardio", icon: Heart, label: "Cardiopulmonary", color: "bg-destructive/10 text-destructive" },
+  { id: "sports", icon: Activity, label: "Sports Injury", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+  { id: "ortho", icon: Bone, label: "Orthopedic", color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
+  { id: "neuro", icon: Brain, label: "Neurological", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20" },
+  { id: "cardio", icon: Heart, label: "Cardiopulmonary", color: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" },
 ];
 
 const PhysioConsultScreen = () => {
@@ -122,27 +126,48 @@ const PhysioConsultScreen = () => {
 
   return (
     <MobileLayout showNav={true}>
-      <ScreenHeader title="Book a Physiotherapist" />
+      <ScreenHeader title="Physiotherapy" />
 
-      <div className="px-4 pb-8">
+      <div className="px-4 pb-8 pt-1">
+        {/* Premium Title Header */}
+        <PremiumPageHeader
+          title="Expert Physio Care"
+          subtitle="Certified therapists at your doorstep"
+          icon={Activity}
+          accent="from-blue-600 via-indigo-600 to-purple-600"
+        />
+
         {/* Hero banner */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground"
+          transition={{ duration: 0.4 }}
+          className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(30,27,75,0.5)] relative overflow-hidden border border-white/10"
         >
-          <h2 className="text-lg font-bold">Expert Physiotherapy Care</h2>
-          <p className="text-sm opacity-90 mt-1">
-            Connect with certified physiotherapists for pain relief, rehabilitation & recovery
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <Badge variant="secondary" className="bg-secondary-foreground/20 text-secondary-foreground border-0">
-              <Shield className="w-3 h-3 mr-1" />
-              Certified Experts
-            </Badge>
-            <Badge variant="secondary" className="bg-secondary-foreground/20 text-secondary-foreground border-0">
-              Home Visits Available
-            </Badge>
+          <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
+          
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
+              <Sparkles className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
+              <span>Premium Rehabilitation</span>
+            </div>
+            <h2 className="text-xl font-black tracking-tight leading-snug">
+              Pain Relief &amp; Mobility,<br />Delivered at Home
+            </h2>
+            <p className="text-xs text-slate-300 mt-2 max-w-[90%] leading-relaxed">
+              Experience one-on-one tailored physical therapy with NABL &amp; IAP certified specialists.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+                <Shield className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Verified Experts</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+                <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                <span>Home Visits</span>
+              </div>
+            </div>
           </div>
         </motion.div>
 
@@ -150,25 +175,33 @@ const PhysioConsultScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.15 }}
           className="mt-6"
         >
-          <h3 className="font-semibold text-foreground mb-3">Specializations</h3>
-          <div className="grid grid-cols-4 gap-2">
-            {specializations.map((spec) => (
-              <button
-                key={spec.id}
-                onClick={() => setSelectedSpecialization(selectedSpecialization === spec.id ? null : spec.id)}
-                className={`py-3 px-2 rounded-xl flex flex-col items-center gap-2 transition-all ${
-                  selectedSpecialization === spec.id
-                    ? "bg-primary text-primary-foreground"
-                    : spec.color
-                }`}
-              >
-                <spec.icon className="w-5 h-5" />
-                <span className="text-[10px] font-medium text-center leading-tight">{spec.label}</span>
-              </button>
-            ))}
+          <h3 className="text-sm font-bold text-foreground mb-3 tracking-wide uppercase opacity-90 flex items-center gap-2">
+            <span>Specializations</span>
+            <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary lowercase normal-case">filter</span>
+          </h3>
+          <div className="grid grid-cols-4 gap-2.5">
+            {specializations.map((spec) => {
+              const isSelected = selectedSpecialization === spec.id;
+              return (
+                <button
+                  key={spec.id}
+                  onClick={() => setSelectedSpecialization(isSelected ? null : spec.id)}
+                  className={`py-3.5 px-2 rounded-2xl flex flex-col items-center gap-2.5 border transition-all duration-300 active:scale-95 ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] scale-[1.02]"
+                      : `${spec.color} bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-sm`
+                  }`}
+                >
+                  <div className={`p-2 rounded-xl ${isSelected ? 'bg-white/20' : 'bg-background/80 shadow-sm'}`}>
+                    <spec.icon className={`w-5 h-5 ${isSelected ? 'text-white' : ''}`} />
+                  </div>
+                  <span className="text-[11px] font-bold text-center leading-tight tracking-tight">{spec.label}</span>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -176,56 +209,70 @@ const PhysioConsultScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6"
+          transition={{ delay: 0.25 }}
+          className="mt-7"
         >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-foreground">Available Physiotherapists</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground tracking-wide uppercase opacity-90">
+              Available Therapists
+            </h3>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {filteredPhysios.length} {filteredPhysios.length === 1 ? 'Specialist' : 'Specialists'}
+            </span>
           </div>
-          <div className="space-y-3">
+
+          <div className="space-y-4">
             {filteredPhysios.map((physio, index) => (
               <motion.div
                 key={physio.id}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.1 }}
-                className="soft-card"
+                transition={{ delay: 0.2 + index * 0.08 }}
+                className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
               >
                 <div className="flex gap-4">
-                  <img
-                    src={physio.image}
-                    alt={physio.name}
-                    className="w-16 h-16 rounded-2xl object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-foreground">{physio.name}</h4>
-                      <Badge variant={physio.available ? "live" : "secondary"}>
+                  <div className="relative shrink-0">
+                    <img
+                      src={physio.image}
+                      alt={physio.name}
+                      className="w-16 h-16 rounded-2xl object-cover shadow-inner group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 ${physio.available ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-bold text-foreground text-base tracking-tight truncate group-hover:text-primary transition-colors">
+                        {physio.name}
+                      </h4>
+                      <Badge variant={physio.available ? "live" : "secondary"} className="text-[10px] uppercase font-bold px-2 py-0.5 shadow-sm">
                         {physio.available ? "Online" : "Offline"}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{physio.specialty}</p>
-                    <p className="text-xs text-muted-foreground">{physio.experience} experience</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-warning fill-warning" />
-                        <span className="text-sm font-medium">{physio.rating}</span>
-                        <span className="text-xs text-muted-foreground">({physio.reviews})</span>
+                    <p className="text-xs font-semibold text-primary mt-0.5">{physio.specialty}</p>
+                    <p className="text-[11px] text-muted-foreground font-medium mt-0.5">{physio.experience} experience</p>
+                    
+                    <div className="flex items-center gap-3 mt-2.5 pt-2.5 border-t border-border/60">
+                      <div className="flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        <Star className="w-3.5 h-3.5 text-warning fill-warning" />
+                        <span className="text-xs font-bold text-foreground">{physio.rating}</span>
+                        <span className="text-[10px] text-muted-foreground font-semibold">({physio.reviews})</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-lg border border-emerald-500/20">
                         <Clock className="w-3 h-3" />
-                        {physio.nextSlot}
+                        <span>{physio.nextSlot}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div>
-                    <Button className="w-full" variant="hero" onClick={() => handleProceedToBook(physio)}>
-                      Book Home Visit • ₹{physio.videoCallFee}
-                    </Button>
-                  </div>
+
+                <div className="mt-5 pt-4 border-t border-border">
+                  <Button 
+                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98]" 
+                    onClick={() => handleProceedToBook(physio)}
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    <span>Book Home Visit • ₹{physio.videoCallFee}</span>
+                  </Button>
                 </div>
               </motion.div>
             ))}
@@ -236,16 +283,27 @@ const PhysioConsultScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mt-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800"
+          transition={{ delay: 0.35 }}
+          className="mt-7 p-5 rounded-3xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-purple-500/10 border border-blue-500/20 shadow-sm relative overflow-hidden"
         >
-          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            💡 Quick Tips
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-xl pointer-events-none" />
+          <h4 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm tracking-wide uppercase opacity-90">
+            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+            <span>Why Choose Our Therapists?</span>
           </h4>
-          <ul className="space-y-1 text-sm text-foreground">
-            <li>• All physiotherapists are certified and experienced</li>
-            <li>• 30-minute consultation sessions</li>
-            <li>• Get personalized exercise plans</li>
+          <ul className="space-y-2.5 text-xs text-foreground/80 font-medium">
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>All physiotherapists are IAP &amp; NABL certified specialists</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>Comprehensive 45-minute home physical therapy sessions</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+              <span>Personalized exercise plans &amp; live recovery tracking</span>
+            </li>
           </ul>
         </motion.div>
       </div>

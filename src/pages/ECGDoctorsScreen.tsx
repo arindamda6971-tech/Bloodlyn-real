@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   Heart,
   MapPin,
   Clock,
@@ -11,12 +10,15 @@ import {
   ShoppingCart,
   Stethoscope,
   Award,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCart } from "@/contexts/CartContext";
@@ -130,7 +132,6 @@ const ECGDoctorsScreen = () => {
   const [lab, setLab] = useState<DiagnosticCenter | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
 
   const fetchLab = useCallback(async () => {
     try {
@@ -214,7 +215,7 @@ const ECGDoctorsScreen = () => {
           }
         />
         <div className="flex items-center justify-center h-[60vh]">
-          <p className="text-muted-foreground">Unable to load center details</p>
+          <p className="text-muted-foreground font-medium">Unable to load center details</p>
         </div>
       </MobileLayout>
     );
@@ -242,26 +243,37 @@ const ECGDoctorsScreen = () => {
         }
       />
 
-      <div className="px-4 pb-8">
+      <div className="px-4 pb-8 pt-1">
+        {/* Premium Title Header */}
+        <PremiumPageHeader
+          title="Select a Cardiologist"
+          subtitle={`Expert doctors from ${lab.name}`}
+          icon={Heart}
+          accent="from-rose-600 via-pink-600 to-purple-600"
+        />
+
         {/* Center Info Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 p-4 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20"
+          className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/10 to-transparent border border-primary/20 backdrop-blur-md shadow-sm"
         >
-          <div className="flex items-start gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <Heart className="w-6 h-6 text-primary" />
+          <div className="flex items-start gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-inner">
+              <Heart className="w-7 h-7 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground text-sm">{lab.name}</h3>
-              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{lab.address}</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge variant="outline" className="text-xs">
+              <h3 className="font-bold text-foreground text-base tracking-tight">{lab.name}</h3>
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-1 font-medium leading-relaxed">{lab.address}</p>
+              <div className="flex items-center gap-2.5 mt-3">
+                <Badge variant="outline" className="text-xs py-1 px-2.5 bg-background/80 shadow-sm border-primary/20 font-bold">
                   ⭐ {lab.rating}
                 </Badge>
                 {lab.is_verified && (
-                  <Shield className="w-3.5 h-3.5 text-primary" />
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Verified Lab</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -270,19 +282,19 @@ const ECGDoctorsScreen = () => {
 
         {/* Lab Conflict Alert Dialog */}
         <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
-          <AlertDialogContent className="max-w-[90%] rounded-2xl">
+          <AlertDialogContent className="max-w-[90%] rounded-3xl border border-border bg-card shadow-2xl">
             <AlertDialogHeader>
-              <AlertDialogTitle>Different Lab Selected</AlertDialogTitle>
-              <AlertDialogDescription>
-                You have added some tests from <span className="font-semibold text-foreground">{pendingItem?.existingLabName}</span>.
+              <AlertDialogTitle className="text-lg font-bold">Different Lab Selected</AlertDialogTitle>
+              <AlertDialogDescription className="text-xs leading-relaxed">
+                You have added some tests from <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span>.
                 You can't add tests from another lab at the same time.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="flex-row gap-2">
-              <AlertDialogCancel className="flex-1 mt-0" onClick={cancelReplace}>
+            <AlertDialogFooter className="flex-row gap-3">
+              <AlertDialogCancel className="flex-1 mt-0 rounded-2xl h-11 text-xs font-bold" onClick={cancelReplace}>
                 Cancel
               </AlertDialogCancel>
-              <AlertDialogAction className="flex-1" onClick={handleConfirmReplace}>
+              <AlertDialogAction className="flex-1 rounded-2xl h-11 text-xs font-bold bg-primary hover:bg-primary/90" onClick={handleConfirmReplace}>
                 Replace Cart
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -291,26 +303,26 @@ const ECGDoctorsScreen = () => {
 
         {/* ECG Test Info */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mt-4 p-4 rounded-2xl bg-destructive/5 border border-destructive/20"
+          className="mt-5 p-5 rounded-3xl bg-gradient-to-br from-rose-500/15 via-rose-500/5 to-transparent border border-rose-500/20 shadow-sm"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <Heart className="w-5 h-5 text-destructive" />
-            <h4 className="font-semibold text-foreground">12-Lead ECG Test</h4>
+          <div className="flex items-center gap-2.5 mb-3">
+            <Heart className="w-5 h-5 text-rose-500 dark:text-rose-400 animate-pulse" />
+            <h4 className="font-bold text-foreground text-sm tracking-wide uppercase opacity-90">12-Lead ECG Test</h4>
           </div>
-          <p className="text-sm text-muted-foreground mb-3">
-            Select a cardiologist to perform your ECG test. Each doctor offers specialized expertise.
+          <p className="text-xs text-muted-foreground mb-4 font-medium leading-relaxed">
+            Select a cardiologist to perform your ECG test. Each doctor offers specialized expertise and certified evaluation.
           </p>
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span>15 mins</span>
+          <div className="flex items-center gap-4 text-xs font-bold">
+            <div className="flex items-center gap-1.5 bg-background/80 px-3 py-1.5 rounded-xl border border-border shadow-sm">
+              <Clock className="w-4 h-4 text-primary" />
+              <span>15 mins duration</span>
             </div>
-            <div className="flex items-center gap-1">
-              <Badge variant="secondary" className="text-xs">₹{lab.ecg_price}</Badge>
-            </div>
+            <Badge variant="secondary" className="text-xs py-1.5 px-3 rounded-xl bg-primary/10 text-primary border border-primary/20 font-black">
+              ₹{lab.ecg_price}
+            </Badge>
           </div>
         </motion.div>
 
@@ -319,83 +331,88 @@ const ECGDoctorsScreen = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="mt-6"
+          className="mt-7"
         >
-          <h3 className="font-semibold text-foreground mb-4">Available Doctors</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground tracking-wide uppercase opacity-90">
+              Available Doctors
+            </h3>
+            <span className="text-xs font-semibold text-muted-foreground">
+              {doctors.length} {doctors.length === 1 ? 'Specialist' : 'Specialists'}
+            </span>
+          </div>
 
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="p-4 rounded-xl bg-card border border-border">
+                <div key={i} className="p-5 rounded-3xl bg-card border border-border">
                   <div className="space-y-2">
                     <Skeleton className="h-5 w-3/4" />
                     <Skeleton className="h-4 w-1/2" />
                     <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-10 w-full mt-3" />
+                    <Skeleton className="h-11 w-full mt-4" />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {doctors.map((doctor, index) => (
                 <motion.div
                   key={doctor.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className="p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all"
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2 + index * 0.08 }}
+                  className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
                   {/* Doctor Header */}
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Stethoscope className="w-6 h-6 text-primary" />
+                  <div className="flex items-start gap-4 mb-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/20 via-primary/10 to-purple-500/20 flex items-center justify-center flex-shrink-0 border border-rose-500/20 group-hover:scale-105 transition-transform duration-300">
+                      <Stethoscope className="w-7 h-7 text-rose-500 dark:text-rose-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-foreground text-sm">{doctor.name}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-1">{doctor.specialization}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{doctor.qualification}</p>
+                      <h4 className="font-bold text-foreground text-base tracking-tight truncate group-hover:text-primary transition-colors">{doctor.name}</h4>
+                      <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 line-clamp-1 mt-0.5">{doctor.specialization}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium mt-1">{doctor.qualification}</p>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-primary">₹{doctor.fee}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Consultation</p>
+                    <div className="text-right flex-shrink-0 bg-primary/5 px-3 py-1.5 rounded-2xl border border-primary/10">
+                      <p className="text-lg font-black text-primary">₹{doctor.fee}</p>
+                      <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mt-0.5">Consult</p>
                     </div>
                   </div>
 
                   {/* Doctor Details */}
-                  <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-border/50">
+                  <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Award className="w-3.5 h-3.5 text-primary" />
-                        <span className="text-sm font-semibold text-foreground">{doctor.experience}y</span>
+                        <Award className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-bold text-foreground">{doctor.experience}y</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">Experience</p>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">Experience</p>
                     </div>
-                    <div className="text-center border-l border-r border-border/50">
+                    <div className="text-center border-l border-r border-border/60">
                       <div className="flex items-center justify-center gap-1">
-                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                        <span className="text-sm font-semibold text-foreground">{doctor.rating}</span>
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                        <span className="text-sm font-bold text-foreground">{doctor.rating}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">({doctor.reviews_count})</p>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">({doctor.reviews_count} reviews)</p>
                     </div>
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-green-500" />
-                        <span className="text-xs font-semibold text-foreground">Available</span>
+                        <Clock className="w-4 h-4 text-emerald-500" />
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Available</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{doctor.availability}</p>
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">{doctor.availability}</p>
                     </div>
                   </div>
 
-
-
                   {/* Book Button */}
                   <Button
-                    className="w-full mt-3 h-10 bg-primary hover:bg-primary/90"
+                    className="w-full h-11 rounded-2xl bg-gradient-to-r from-primary via-blue-600 to-primary bg-[length:200%_auto] hover:bg-[position:right_center] transition-all duration-500 font-bold text-white shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.6)] active:scale-[0.98]"
                     onClick={() => handleBookDoctor(doctor)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
-                    Book Now - ₹{doctor.fee}
+                    <span>Book Now - ₹{doctor.fee}</span>
                   </Button>
                 </motion.div>
               ))}
@@ -407,16 +424,27 @@ const ECGDoctorsScreen = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mt-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800"
+          transition={{ delay: 0.35 }}
+          className="mt-7 p-5 rounded-3xl bg-gradient-to-br from-rose-500/10 via-blue-500/5 to-indigo-500/10 border border-rose-500/20 shadow-sm relative overflow-hidden"
         >
-          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
-            💡 Quick Tips
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-xl pointer-events-none" />
+          <h4 className="font-bold text-foreground mb-3 flex items-center gap-2 text-sm tracking-wide uppercase opacity-90">
+            <Sparkles className="w-4 h-4 text-rose-500 animate-pulse" />
+            <span>Diagnostic Assurances</span>
           </h4>
-          <ul className="space-y-1 text-sm text-foreground">
-            <li>• All doctors are NABL certified and experienced cardiologists</li>
-            <li>• Fees are inclusive of test and consultation</li>
-            <li>• Reports will be available within 2 hours</li>
+          <ul className="space-y-2.5 text-xs text-foreground/80 font-medium">
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>All doctors are NABL certified and experienced cardiologists</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>Fees are inclusive of complete 12-lead testing and doctor consultation</span>
+            </li>
+            <li className="flex items-center gap-2.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+              <span>Expert digital reports and review available within 2 hours</span>
+            </li>
           </ul>
         </motion.div>
       </div>
