@@ -127,15 +127,21 @@ const PaymentScreen = () => {
       navigate("/cart");
       return;
     }
-    const labId = paymentState?.selectedLabId || cartItems[0]?.labId;
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const rawLabId = paymentState?.selectedLabId || cartItems[0]?.labId;
+    // Service pseudo-labs (doctor-service, ecg-service, physio-service) are not real diagnostic centers.
+    const labId = rawLabId && UUID_RE.test(rawLabId) ? rawLabId : null;
     const labName = paymentState?.selectedLabName || cartItems[0]?.labName || null;
+    const isServiceOnlyOrder = cartItems.every((i) =>
+      i.id.startsWith("doc-") || i.id.startsWith("physio-") || i.id.startsWith("ecg-")
+    );
 
     try {
       setIsSubmittingOrder(true);
       setVerifyingServiceability(true);
 
       let resolvedVendorId = paymentState?.cartItems?.[0]?.vendorId || null;
-      if (labId) {
+      if (labId && !isServiceOnlyOrder) {
         const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
           supabase
             .from("diagnostic_centers")
@@ -236,9 +242,9 @@ const PaymentScreen = () => {
               familyMemberId: item.familyMemberId || null,
               packageId: derivedPackageId,
               category: item.category || undefined,
-              labId: item.labId || labId || null,
+              labId: (item.labId && UUID_RE.test(item.labId)) ? item.labId : (labId || null),
               labName: item.labName || labName,
-              vendorId: item.vendorId || resolvedVendorId,
+              vendorId: (item.vendorId && UUID_RE.test(item.vendorId)) ? item.vendorId : resolvedVendorId,
             };
           }),
 

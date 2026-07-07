@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     // ---------------- Zod validation ----------------
     // Items use one of: a UUID id (real test/package/product), OR a synthetic
     // prefixed id (ecg-, ai-, dc-, reorder-) for special flows.
-    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare)-/i;
+    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
     const UUID = z.string().uuid();
     // Composite IDs like `{uuid}-{labSlug}` (used by PackageDetailScreen) start with a UUID.
     const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     }
 
     const regularItemIds = cartItems
-      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-"))
+      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-") && !i.id.startsWith("doc-") && !i.id.startsWith("physio-"))
       .map((i) => i.id);
 
     const priceMap: Record<string, number> = {};
@@ -336,9 +336,9 @@ Deno.serve(async (req) => {
         const validCategory = AI_TEST_PRICES[category] !== undefined ? category : "Other";
         const aiPrice = AI_TEST_PRICES[validCategory];
         serverSubtotal += aiPrice * item.quantity;
-      } else if (item.id.startsWith("dc-")) {
-        // DC item without price found in database - use client price but log warning
-        console.warn(`DC item ${item.id} (${item.name}) not found in pricing, using client price: ${item.price}`);
+      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-")) {
+        // Service / DC item without server pricing: trust client price (validated by Zod max=100k)
+        console.warn(`Service/DC item ${item.id} (${item.name}) using client price: ${item.price}`);
         priceMap[item.id] = item.price;
         serverSubtotal += item.price * item.quantity;
       } else if (item.id.startsWith("ecg-") && priceMap[item.id] === undefined) {
@@ -529,7 +529,7 @@ Deno.serve(async (req) => {
 
     // Create order items with server-validated prices
     const orderItems = cartItems.map((item) => {
-      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-");
+      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-");
       const isPackageItem = knownPackageIds.has(item.id);
       const mappedProductTestId = productTestIdMap[item.id];
 
