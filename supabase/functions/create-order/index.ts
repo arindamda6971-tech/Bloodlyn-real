@@ -606,6 +606,66 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Doctor-consultation webhook — mirror booking to Partner project.
+    // Detects cart items whose id matches doc-video-{doctorId}, doc-audio-{doctorId},
+    // or doc-{doctorId}. Fire-and-forget; never blocks the order response.
+    try {
+      const doctorItem = cartItems.find((i) =>
+        /^doc-(video-|audio-)?[0-9a-zA-Z_-]+/.test(i.id)
+      );
+      const doctorWebhookSecret = Deno.env.get("DOCTOR_APPOINTMENT_WEBHOOK_SECRET");
+
+      if (doctorItem && doctorWebhookSecret) {
+        const raw = doctorItem.id.replace(/^doc-/, "");
+        let mode: "video" | "audio" | "in_clinic" = "in_clinic";
+        let doctorIdRaw = raw;
+        if (raw.startsWith("video-")) { mode = "video"; doctorIdRaw = raw.slice(6); }
+        else if (raw.startsWith("audio-")) { mode = "audio"; doctorIdRaw = raw.slice(6); }
+
+        const scheduledAt = scheduledDate
+          ? `${scheduledDate}T${(scheduledTimeSlot || "10:00").replace(/[^0-9:]/g, "").slice(0, 5) || "10:00"}:00`
+          : null;
+
+        // Fetch patient email for the webhook
+        let patientEmail: string | null = null;
+        try {
+          const { data: profile } = await adminClient
+            .from("profiles")
+            .select("email")
+            .eq("id", userId)
+            .maybeSingle();
+          patientEmail = profile?.email ?? null;
+        } catch (_) { /* non-fatal */ }
+
+        const payload = {
+          external_booking_id: orderData.id,
+          doctor_id: doctorIdRaw,
+          patient_user_id: userId,
+          patient_name: patientName ?? null,
+          patient_phone: patientPhone ?? null,
+          patient_email: patientEmail,
+          patient_age: patientAge ?? null,
+          patient_gender: patientGender ?? null,
+          scheduled_at: scheduledAt,
+          mode,
+          fee: serverTotal,
+          symptoms: specialInstructions,
+        };
+
+        fetch("https://titjcfklrmytppvsoavv.supabase.co/functions/v1/doctor-appointment-webhook", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-webhook-secret": doctorWebhookSecret,
+          },
+          body: JSON.stringify(payload),
+        }).catch((e) => console.error("Doctor appointment webhook error (non-blocking):", e));
+      }
+    } catch (e) {
+      console.error("Doctor webhook dispatch error (non-blocking):", e);
+    }
+
+
     const responsePayload = {
       orderId: orderData.id,
       orderNumber: orderData.order_number,
