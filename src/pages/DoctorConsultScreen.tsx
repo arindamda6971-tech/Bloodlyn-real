@@ -38,9 +38,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const doctors = [
+type Doctor = {
+  id: string | number;
+  name: string;
+  specialty: string;
+  experience: number;
+  rating: number;
+  reviews: number;
+  available: boolean;
+  nextSlot: string;
+  videoCallFee: number;
+  audioCallFee: number;
+  physicalCallFee: number;
+  qualification: string;
+  image?: string;
+};
+
+const FALLBACK_DOCTORS: Doctor[] = [
   {
-    id: 1,
+    id: "fallback-1",
     name: "Dr. Priya Sharma",
     specialty: "General Physician",
     experience: 12,
@@ -52,10 +68,9 @@ const doctors = [
     audioCallFee: 199,
     physicalCallFee: 499,
     qualification: "MBBS, MD (Medicine)",
-    image: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face",
   },
   {
-    id: 2,
+    id: "fallback-2",
     name: "Dr. Rajesh Kumar",
     specialty: "Internal Medicine",
     experience: 15,
@@ -67,24 +82,9 @@ const doctors = [
     audioCallFee: 299,
     physicalCallFee: 599,
     qualification: "MBBS, MD (Internal Medicine)",
-    image: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=200&h=200&fit=crop&crop=face",
-  },
-  {
-    id: 3,
-    name: "Dr. Ananya Patel",
-    specialty: "Endocrinologist",
-    experience: 10,
-    rating: 4.9,
-    reviews: 756,
-    available: false,
-    nextSlot: "Tomorrow 10 AM",
-    videoCallFee: 599,
-    audioCallFee: 499,
-    physicalCallFee: 799,
-    qualification: "MBBS, DM (Endocrinology)",
-    image: "https://images.unsplash.com/photo-1594824476967-48c8b964273f?w=200&h=200&fit=crop&crop=face",
   },
 ];
+
 
 const specializations = [
   { id: "gp", icon: Stethoscope, label: "General Physician", color: "bg-primary/10 text-primary border-primary/20" },
