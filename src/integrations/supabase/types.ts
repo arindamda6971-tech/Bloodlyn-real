@@ -209,6 +209,39 @@ export type Database = {
         }
         Relationships: []
       }
+      doctor_messages: {
+        Row: {
+          appointment_id: string | null
+          attachment_url: string | null
+          content: string | null
+          created_at: string
+          doctor_id: string | null
+          id: string
+          patient_user_id: string | null
+          sender: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          attachment_url?: string | null
+          content?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          id?: string
+          patient_user_id?: string | null
+          sender?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          attachment_url?: string | null
+          content?: string | null
+          created_at?: string
+          doctor_id?: string | null
+          id?: string
+          patient_user_id?: string | null
+          sender?: string | null
+        }
+        Relationships: []
+      }
       family_members: {
         Row: {
           age: string
@@ -473,6 +506,51 @@ export type Database = {
           rating?: number | null
           reviews_count?: number | null
           verification_id?: string | null
+        }
+        Relationships: []
+      }
+      prescriptions: {
+        Row: {
+          advice: string | null
+          appointment_id: string | null
+          attachment_url: string | null
+          created_at: string
+          diagnosis: string | null
+          doctor_id: string | null
+          id: string
+          medicines: string | null
+          patient_name: string | null
+          patient_phone: string | null
+          patient_user_id: string | null
+          source: string | null
+        }
+        Insert: {
+          advice?: string | null
+          appointment_id?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_id?: string | null
+          id?: string
+          medicines?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          patient_user_id?: string | null
+          source?: string | null
+        }
+        Update: {
+          advice?: string | null
+          appointment_id?: string | null
+          attachment_url?: string | null
+          created_at?: string
+          diagnosis?: string | null
+          doctor_id?: string | null
+          id?: string
+          medicines?: string | null
+          patient_name?: string | null
+          patient_phone?: string | null
+          patient_user_id?: string | null
+          source?: string | null
         }
         Relationships: []
       }
