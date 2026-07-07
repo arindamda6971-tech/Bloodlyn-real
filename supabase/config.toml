@@ -32,5 +32,10 @@ verify_jwt = false
 verify_jwt = false
 # Public read-only helper that returns a short patient-friendly description for a test name
 
+[functions.doctor-directory]
+verify_jwt = false
+# Public read-only proxy to Partner project's doctor-directory endpoint
+
+
 
 
