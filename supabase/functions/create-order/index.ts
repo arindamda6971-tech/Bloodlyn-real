@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     }
 
     const regularItemIds = cartItems
-      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-"))
+      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-") && !i.id.startsWith("doc-") && !i.id.startsWith("physio-"))
       .map((i) => i.id);
 
     const priceMap: Record<string, number> = {};
