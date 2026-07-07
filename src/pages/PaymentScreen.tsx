@@ -242,9 +242,9 @@ const PaymentScreen = () => {
               familyMemberId: item.familyMemberId || null,
               packageId: derivedPackageId,
               category: item.category || undefined,
-              labId: item.labId || labId || null,
+              labId: (item.labId && UUID_RE.test(item.labId)) ? item.labId : (labId || null),
               labName: item.labName || labName,
-              vendorId: item.vendorId || resolvedVendorId,
+              vendorId: (item.vendorId && UUID_RE.test(item.vendorId)) ? item.vendorId : resolvedVendorId,
             };
           }),
 
