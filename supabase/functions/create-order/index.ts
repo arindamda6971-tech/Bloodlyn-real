@@ -336,9 +336,9 @@ Deno.serve(async (req) => {
         const validCategory = AI_TEST_PRICES[category] !== undefined ? category : "Other";
         const aiPrice = AI_TEST_PRICES[validCategory];
         serverSubtotal += aiPrice * item.quantity;
-      } else if (item.id.startsWith("dc-")) {
-        // DC item without price found in database - use client price but log warning
-        console.warn(`DC item ${item.id} (${item.name}) not found in pricing, using client price: ${item.price}`);
+      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-")) {
+        // Service / DC item without server pricing: trust client price (validated by Zod max=100k)
+        console.warn(`Service/DC item ${item.id} (${item.name}) using client price: ${item.price}`);
         priceMap[item.id] = item.price;
         serverSubtotal += item.price * item.quantity;
       } else if (item.id.startsWith("ecg-") && priceMap[item.id] === undefined) {
