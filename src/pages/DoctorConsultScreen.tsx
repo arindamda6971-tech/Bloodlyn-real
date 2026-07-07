@@ -101,6 +101,32 @@ const DoctorConsultScreen = () => {
   const navigate = useNavigate();
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
+  const [doctors, setDoctors] = useState<Doctor[]>(FALLBACK_DOCTORS);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("doctor-directory", {
+          method: "GET",
+        });
+        if (cancelled) return;
+        if (error) throw error;
+        const list: Doctor[] | undefined = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.doctors)
+            ? data.doctors
+            : undefined;
+        if (list && list.length > 0) setDoctors(list);
+      } catch (e) {
+        console.warn("doctor-directory fetch failed, using fallback:", e);
+      } finally {
+        if (!cancelled) setLoadingDoctors(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const filteredDoctors = selectedSpecialization
     ? doctors.filter((d) => {
@@ -115,6 +141,7 @@ const DoctorConsultScreen = () => {
         return true;
       })
     : doctors;
+
 
   const selectedSpecLabel = selectedSpecialization
     ? specializations.find((s) => s.id === selectedSpecialization)?.label ?? selectedSpecialization
