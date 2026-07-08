@@ -118,6 +118,40 @@ const PaymentScreen = () => {
     return "Unable to place your order. Please try again.";
   };
 
+  const isDoctorServiceItem = (item: { id?: string; name?: string; labId?: string | null }) => {
+    const id = String(item.id ?? "").toLowerCase();
+    const name = String(item.name ?? "").toLowerCase();
+    return (
+      id.startsWith("doc-") ||
+      item.labId === "doctor-service" ||
+      /^video call with /.test(name) ||
+      /^audio call with /.test(name) ||
+      /^physical appointment with /.test(name)
+    );
+  };
+
+  const getDoctorServicePrefix = (item: { id?: string; name?: string; labId?: string | null }) => {
+    const id = String(item.id ?? "").toLowerCase();
+    const name = String(item.name ?? "").toLowerCase();
+    if (id.startsWith("doc-video-") || /^video call with /.test(name)) return "doc-video";
+    if (id.startsWith("doc-audio-") || /^audio call with /.test(name)) return "doc-audio";
+    if (id.startsWith("doc-") || /^physical appointment with /.test(name) || item.labId === "doctor-service") return "doc";
+    return null;
+  };
+
+  const isServiceItem = (item: { id?: string; name?: string; labId?: string | null }) => {
+    const id = String(item.id ?? "").toLowerCase();
+    const name = String(item.name ?? "").toLowerCase();
+    return (
+      isDoctorServiceItem(item) ||
+      id.startsWith("physio-") ||
+      id.startsWith("ecg-") ||
+      item.labId === "physio-service" ||
+      item.labId === "ecg-service" ||
+      name.includes(" with ")
+    );
+  };
+
   const handlePayment = async () => {
     if (isSubmittingOrder) return;
 
@@ -132,15 +166,14 @@ const PaymentScreen = () => {
     // Service pseudo-labs (doctor-service, ecg-service, physio-service) are not real diagnostic centers.
     const labId = rawLabId && UUID_RE.test(rawLabId) ? rawLabId : null;
     const labName = paymentState?.selectedLabName || cartItems[0]?.labName || null;
-    const isServiceOnlyOrder = cartItems.every((i) =>
-      i.id.startsWith("doc-") || i.id.startsWith("physio-") || i.id.startsWith("ecg-")
-    );
+    const isServiceOnlyOrder = cartItems.every(isServiceItem);
 
     try {
       setIsSubmittingOrder(true);
       setVerifyingServiceability(true);
 
-      let resolvedVendorId = paymentState?.cartItems?.[0]?.vendorId || null;
+      const rawVendorId = paymentState?.cartItems?.[0]?.vendorId || paymentState?.labVendorId || null;
+      let resolvedVendorId = rawVendorId && UUID_RE.test(rawVendorId) ? rawVendorId : null;
       if (labId && !isServiceOnlyOrder) {
         const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
           supabase
@@ -217,12 +250,17 @@ const PaymentScreen = () => {
       // Accepts: UUID, UUID-prefixed (uuid-suffix), or known synthetic prefixes.
       // Anything else gets a `dc-` prefix so the function treats it as an unresolved
       // lab item and uses the client-supplied price as a safe fallback.
-      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare)-/i;
+      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
       const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
-      const normalizeItemId = (raw: unknown): string => {
+      const normalizeItemId = (raw: unknown, item?: { name?: string; labId?: string | null }): string => {
         const id = String(raw ?? "").trim();
-        if (!id) return `dc-${crypto.randomUUID()}`;
         if (SYNTHETIC_PREFIX.test(id) || UUID_PREFIXED.test(id)) return id;
+        const doctorPrefix = getDoctorServicePrefix({ id, name: item?.name, labId: item?.labId });
+        if (doctorPrefix) {
+          const safeDoctorId = (id || crypto.randomUUID()).replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 90);
+          return `${doctorPrefix}-${safeDoctorId}`;
+        }
+        if (!id) return `dc-${crypto.randomUUID()}`;
         // Replace anything non-id-safe and prefix with dc-
         const safe = id.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 100);
         return `dc-${safe}`;
@@ -235,7 +273,7 @@ const PaymentScreen = () => {
             const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
             const derivedPackageId = item.packageId || (item.kind === "package" && isUuid ? item.id : null);
             return {
-              id: normalizeItemId(item.id),
+              id: normalizeItemId(item.id, item),
               name: item.name,
               price: Number(item.price) || 0,
               quantity: Number(item.quantity) || 1,
