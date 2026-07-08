@@ -35,6 +35,7 @@ interface PaymentState {
   subtotal: number;
   selectedLabName?: string;
   selectedLabId?: string;
+  labVendorId?: string | null;
   patientName?: string;
   patientAge?: number | string | null;
   patientGender?: string | null;
@@ -254,12 +255,13 @@ const PaymentScreen = () => {
       const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
       const normalizeItemId = (raw: unknown, item?: { name?: string; labId?: string | null }): string => {
         const id = String(raw ?? "").trim();
-        if (SYNTHETIC_PREFIX.test(id) || UUID_PREFIXED.test(id)) return id;
         const doctorPrefix = getDoctorServicePrefix({ id, name: item?.name, labId: item?.labId });
         if (doctorPrefix) {
-          const safeDoctorId = (id || crypto.randomUUID()).replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 90);
+          const rawDoctorId = id.replace(/^doc-(video-|audio-)?/i, "") || crypto.randomUUID();
+          const safeDoctorId = rawDoctorId.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 90);
           return `${doctorPrefix}-${safeDoctorId}`;
         }
+        if (SYNTHETIC_PREFIX.test(id) || UUID_PREFIXED.test(id)) return id;
         if (!id) return `dc-${crypto.randomUUID()}`;
         // Replace anything non-id-safe and prefix with dc-
         const safe = id.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 100);
