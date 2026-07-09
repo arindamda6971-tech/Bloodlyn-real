@@ -14,6 +14,7 @@ import {
   Filter,
   ArrowRight,
   User,
+  Video,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -223,10 +224,24 @@ const BookingsScreen = () => {
               <span className="text-lg font-black text-foreground">₹{order.total}</span>
             </div>
 
-            <button className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-primary hover:text-white">
-              {order.status === "completed" ? "VIEW REPORT" : "TRACK STATUS"}
-              <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
-            </button>
+            <div className="flex items-center gap-2">
+              {order.order_number?.startsWith("DOC") && !["completed", "cancelled"].includes(order.status || "") && (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/call/${order.id}?mode=video`);
+                  }}
+                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-blue-600 shadow-lg shadow-blue-500/20"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  JOIN NOW
+                </button>
+              )}
+              <button className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-primary hover:text-white">
+                {order.status === "completed" ? "VIEW REPORT" : "TRACK STATUS"}
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
