@@ -60,10 +60,18 @@ export default function EmbeddedCallScreen() {
         const chan = supabase.channel(roomName);
         channel.current = chan;
 
+        const iceQueue: RTCIceCandidate[] = [];
+
         chan.on('broadcast', { event: 'webrtc-offer' }, async (payload) => {
           if (payload.payload.offer) {
             setCallStatus("Answering call...");
             await pc.setRemoteDescription(new RTCSessionDescription(payload.payload.offer));
+            
+            while(iceQueue.length > 0) {
+              const candidate = iceQueue.shift();
+              if (candidate) await pc.addIceCandidate(candidate).catch(e => console.error(e));
+            }
+
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
             
@@ -78,7 +86,12 @@ export default function EmbeddedCallScreen() {
         chan.on('broadcast', { event: 'webrtc-ice' }, async (payload) => {
           if (payload.payload.candidate) {
             try {
-              await pc.addIceCandidate(new RTCIceCandidate(payload.payload.candidate));
+              const candidate = new RTCIceCandidate(payload.payload.candidate);
+              if (pc.remoteDescription) {
+                await pc.addIceCandidate(candidate);
+              } else {
+                iceQueue.push(candidate);
+              }
             } catch (e) {
               console.error("Error adding ice candidate", e);
             }
@@ -94,6 +107,15 @@ export default function EmbeddedCallScreen() {
             });
           }
         };
+
+        chan.on('broadcast', { event: 'doctor-ready' }, () => {
+          // If doctor just connected, let them know we are already here
+          chan.send({
+            type: 'broadcast',
+            event: 'patient-ready',
+            payload: {}
+          });
+        });
 
         chan.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
