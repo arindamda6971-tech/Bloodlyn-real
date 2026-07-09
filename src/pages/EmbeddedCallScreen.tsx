@@ -41,7 +41,7 @@ export default function EmbeddedCallScreen() {
   return (
     <div className="w-full h-[100dvh] bg-black fixed inset-0 z-50">
       <JitsiMeeting
-        domain="meet.ffmuc.net"
+        domain="alpha.jitsi.net"
         roomName={roomName}
         configOverwrite={{
           startWithAudioMuted: false,
