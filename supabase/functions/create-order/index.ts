@@ -626,8 +626,20 @@ Deno.serve(async (req) => {
         if (raw.startsWith("video-")) { mode = "video"; doctorIdRaw = raw.slice(6); }
         else if (raw.startsWith("audio-")) { mode = "audio"; doctorIdRaw = raw.slice(6); }
 
+        let formattedTime = "10:00";
+        if (scheduledTimeSlot) {
+          const match = scheduledTimeSlot.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (match) {
+            let hour = parseInt(match[1], 10);
+            const minute = match[2];
+            const ampm = match[3].toUpperCase();
+            if (ampm === "PM" && hour < 12) hour += 12;
+            if (ampm === "AM" && hour === 12) hour = 0;
+            formattedTime = `${hour.toString().padStart(2, "0")}:${minute}`;
+          }
+        }
         const scheduledAt = scheduledDate
-          ? `${scheduledDate}T${(scheduledTimeSlot || "10:00").replace(/[^0-9:]/g, "").slice(0, 5) || "10:00"}:00`
+          ? `${scheduledDate}T${formattedTime}:00+05:30`
           : null;
 
         // Fetch patient email for the webhook
