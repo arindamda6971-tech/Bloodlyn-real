@@ -24,6 +24,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
+import { IncomingCallListener } from "@/components/IncomingCallListener";
 
 // Critical path — eagerly loaded (shown before auth)
 import SplashScreen from "./pages/SplashScreen";
@@ -117,6 +118,7 @@ const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen"
 const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
 const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
 const ConsultationCallScreen = lazy(() => safeImport(() => import("./pages/ConsultationCallScreen")));
+const EmbeddedCallScreen = lazy(() => safeImport(() => import("./pages/EmbeddedCallScreen")));
 const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
 const TrackingScreen = lazy(() => safeImport(() => import("./pages/TrackingScreen")));
 const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMembersScreen")));
@@ -232,6 +234,7 @@ const AnimatedRoutes = () => {
           <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
           <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
           <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
+          <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />
           <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
           <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
           <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
@@ -290,6 +293,7 @@ const App = () => {
                     <OfflineBanner />
                     <PerformanceMonitor />
                       <BrowserRouter>
+                        <IncomingCallListener />
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />

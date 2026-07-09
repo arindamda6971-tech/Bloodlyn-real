@@ -17,6 +17,7 @@ import {
   User,
   XCircle,
   CreditCard,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -162,6 +163,18 @@ const TrackingScreen = () => {
   if (!patientName) {
     patientName = "Self";
   }
+
+  const testNameLower = order.test_name?.toLowerCase() || "";
+  const labNameLower = order.lab_name?.toLowerCase() || "";
+
+  const isDoctorConsultation = 
+    testNameLower.includes("consult") || 
+    testNameLower.includes("doctor") || 
+    testNameLower.includes("call") || 
+    labNameLower.includes("dr.") || 
+    labNameLower.includes("doctor");
+
+  const isOnlineCall = testNameLower.includes("video") || testNameLower.includes("audio") || testNameLower.includes("call");
 
   return (
     <MobileLayout showNav={false}>
@@ -401,7 +414,7 @@ const TrackingScreen = () => {
                               onClick={() => window.open(order.report_url!, "_blank")}
                             >
                               <Eye className="w-3.5 h-3.5 mr-1" />
-                              View Report
+                              View {isDoctorConsultation ? "Prescription" : "Report"}
                             </Button>
                             <Button
                               variant="outline"
@@ -464,7 +477,7 @@ const TrackingScreen = () => {
                             onClick={() => navigate("/reports")}
                           >
                             <FileText className="w-3.5 h-3.5 mr-1" />
-                            View Reports
+                            View {isDoctorConsultation ? "Prescriptions" : "Reports"}
                           </Button>
                         )}
                       </motion.div>
@@ -483,6 +496,16 @@ const TrackingScreen = () => {
           transition={{ delay: 0.3 }}
           className="mt-6 space-y-3"
         >
+          {isOnlineCall && !isCancelled && completedIndex < 4 && (
+            <Button
+              className="w-full h-12 rounded-2xl gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => navigate(`/call/${order.id}`)}
+            >
+              <Video className="w-5 h-5" />
+              Join Video / Audio Call
+            </Button>
+          )}
+
           {!isCancelled && completedIndex < 1 && (
             <Button
               variant="outline"
