@@ -215,14 +215,14 @@
     overscroll-behavior-y: contain; /* Stop nested-scroll bleed */
     position: relative;
     /* Native Momentum & Weighted Scroll */
-    scroll-snap-type: y proximity;
     scroll-behavior: auto;
+    scroll-snap-type: none; /* Removed proximity as it can feel stuck */
   }
 
+  /* Professional "Slow-Momentum" Profile */
   .overflow-y-auto, .overflow-auto, [data-scroll-area] {
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    /* High refresh rate physics */
     scroll-behavior: auto;
   }
   .overflow-x-auto {

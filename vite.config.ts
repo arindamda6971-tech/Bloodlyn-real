@@ -21,7 +21,7 @@ function fontPreloadPlugin(): Plugin {
       const preloadTags = fontFiles
         .map(
           (f) =>
-            `<link rel="preload" as="font" type="font/woff2" crossorigin="anonymous" href="/${f}" />`
+            `<link rel="preload" as="font" type="font/woff2" crossorigin="anonymous" href="./${f}" />`
         )
         .join("\n    ");
       // Insert preload tags right before </head>
@@ -32,6 +32,7 @@ function fontPreloadPlugin(): Plugin {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: './',
   server: {
     host: "::",
     port: 8080,

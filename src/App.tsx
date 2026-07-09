@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, useNavigate, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -26,84 +26,43 @@ import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 
-// Critical path — eagerly loaded (shown before auth)
+// Core screens — eagerly loaded for instant navigation (no chunk-load delay)
 import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
+import HomeScreen from "./pages/HomeScreen";
+import CategoriesScreen from "./pages/CategoriesScreen";
+import ProfileScreen from "./pages/ProfileScreen";
+import BookingsScreen from "./pages/BookingsScreen";
 
-// Stale-chunk recovery helper — when a hashed chunk 404s after a redeploy,
-// clear caches/SW once and hard-reload so the new index.html (with fresh hashes) loads.
-const RELOAD_KEY = "__chunk_reload_at";
-const safeImport = <T,>(factory: () => Promise<T>): Promise<T> =>
-  factory().catch(async (err) => {
-    const msg = String(err?.message || err);
-    const isChunkError =
-      msg.includes("Failed to fetch dynamically imported module") ||
-      msg.includes("Importing a module script failed") ||
-      msg.includes("error loading dynamically imported module");
-    if (!isChunkError) throw err;
-
-    // Prevent infinite reload loops — only reload once per minute
-    const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
-    if (Date.now() - last < 60_000) throw err;
-    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
-
-    // Hard reload bypassing cache without destroying all caches
-    window.location.replace(window.location.pathname + window.location.search);
-    // Return a never-resolving promise so React's Suspense doesn't try to render
-    return new Promise<T>(() => {});
+// All other screens — lazily loaded with auto-reload fallback
+const safeImport = <T,>(importFn: () => Promise<T>): Promise<T> => {
+  return importFn().catch((error) => {
+    console.error("Critical: Failed to load module. Auto-reloading...", error);
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+    throw error;
   });
+};
 
 const CapacitorInitializer = () => {
   useEffect(() => {
-    const initCapacitor = async () => {
-      try {
-        const { Capacitor } = await import("@capacitor/core");
-        if (!Capacitor.isNativePlatform()) return;
-        
-        const { StatusBar, Style } = await import("@capacitor/status-bar");
-        const { SplashScreen } = await import("@capacitor/splash-screen");
-
-        // Set Status Bar to light mode (dark text) and white background
-        await StatusBar.setStyle({ style: Style.Light }).catch(() => {});
-        await StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
-        
-        /*
-        // Register for push notifications — DISABLED for now to prevent crash without google-services.json
-        */
-
-        // Hide splash screen smoothly after React has mounted and layout is done
-        setTimeout(() => {
-          SplashScreen.hide({
-            fadeOutDuration: 500
-          }).catch(() => {});
-        }, 1500);
-      } catch (err) {
-        console.error("Capacitor Init Error:", err);
-      }
-    };
-    
-    initCapacitor();
+    // Initializer logic can go here if needed
   }, []);
-  
   return null;
 };
 
-// All other screens — lazily loaded with auto-reload fallback
 const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
 const InstallScreen = lazy(() => safeImport(() => import("./pages/InstallScreen")));
-const HomeScreen = lazy(() => safeImport(() => import("./pages/HomeScreen")));
-const CategoriesScreen = lazy(() => safeImport(() => import("./pages/CategoriesScreen")));
 const CategoryTestsScreen = lazy(() => safeImport(() => import("./pages/CategoryTestsScreen")));
 const TestDetailScreen = lazy(() => safeImport(() => import("./pages/TestDetailScreen")));
 const TestSelectionScreen = lazy(() => safeImport(() => import("./pages/TestSelectionScreen")));
 const CartScreen = lazy(() => safeImport(() => import("./pages/CartScreen")));
 const LabSelectionScreen = lazy(() => safeImport(() => import("./pages/LabSelectionScreen")));
 const PaymentScreen = lazy(() => safeImport(() => import("./pages/PaymentScreen")));
-const BookingsScreen = lazy(() => safeImport(() => import("./pages/BookingsScreen")));
 const ReportsScreen = lazy(() => safeImport(() => import("./pages/ReportsScreen")));
 const ReportDetailScreen = lazy(() => safeImport(() => import("./pages/ReportDetailScreen")));
-const ProfileScreen = lazy(() => safeImport(() => import("./pages/ProfileScreen")));
 const EditProfileScreen = lazy(() => safeImport(() => import("./pages/EditProfileScreen")));
 const NotificationsScreen = lazy(() => safeImport(() => import("./pages/NotificationsScreen")));
 const SubscriptionScreen = lazy(() => safeImport(() => import("./pages/SubscriptionScreen")));
@@ -163,33 +122,27 @@ const SwipeBackWrapper = ({ children }: { children: ReactNode }) => {
 };
 
 const AnimatedRoutes = () => {
+  const location = useLocation();
+
   return (
-    <SwipeBackWrapper>
-      {/*
-        SmoothRoutes defers the location swap with useTransition so the
-        previous page stays mounted on screen until the next lazy chunk
-        + data is ready — eliminating the blank Suspense flash on back nav.
-      */}
-      <SmoothRoutes>
-        {(deferredLocation) => (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={deferredLocation.pathname}
-              initial={{ opacity: 0, x: 12 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -12 }}
-              transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.2 }}
-              style={{
-                width: "100%",
-                position: "relative",
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                minHeight: "100dvh",
-                willChange: "opacity, transform",
-              }}
-            >
-              <Routes location={deferredLocation}>
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -12 }}
+        transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.2 }}
+        style={{
+          width: "100%",
+          position: "relative",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "100dvh",
+          willChange: "opacity, transform",
+        }}
+      >
+        <Routes location={location}>
           {/* Public Routes */}
           <Route path="/" element={<SplashScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -242,12 +195,9 @@ const AnimatedRoutes = () => {
           <Route path="/unauthorized" element={<UnauthorizedScreen />} />
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </SmoothRoutes>
-    </SwipeBackWrapper>
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
