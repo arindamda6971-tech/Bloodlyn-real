@@ -408,7 +408,11 @@ Deno.serve(async (req) => {
     let orderVendorId = vendorId || null;
     const firstLabId = labId || cartItems[0]?.labId;
     
-    if (!orderVendorId && firstLabId) {
+    // Only query diagnostic_centers if firstLabId is a valid UUID
+    // "doctor-service", "physio-service" etc will cause a Postgres UUID casting error otherwise
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    
+    if (!orderVendorId && firstLabId && UUID_REGEX.test(firstLabId)) {
       const { data: centerData } = await adminClient
         .from("diagnostic_centers")
         .select("vendor_id")
