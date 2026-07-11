@@ -165,7 +165,7 @@ export default function EmbeddedCallScreen() {
 
   const handleHangup = async () => {
     if (id) {
-      await supabase.from("orders").update({ call_status: "ended" }).eq("id", id);
+      await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", id);
     }
     navigate(`/tracking/${id}`);
   };

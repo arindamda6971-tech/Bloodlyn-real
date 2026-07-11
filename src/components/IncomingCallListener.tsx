@@ -52,7 +52,7 @@ export function IncomingCallListener() {
     const callId = incomingCall.id;
     
     // Update status to in-progress
-    await supabase.from("orders").update({ call_status: "in-progress" }).eq("id", callId);
+    await supabase.from("orders").update({ call_status: "in-progress" } as any).eq("id", callId);
     
     setIncomingCall(null);
     navigate(`/call/${callId}?mode=${mode}`);
@@ -61,7 +61,7 @@ export function IncomingCallListener() {
   const handleDecline = async () => {
     if (!incomingCall) return;
     
-    await supabase.from("orders").update({ call_status: "ended" }).eq("id", incomingCall.id);
+    await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", incomingCall.id);
     setIncomingCall(null);
   };
 
