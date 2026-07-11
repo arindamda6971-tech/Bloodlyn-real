@@ -52,7 +52,7 @@ export function IncomingCallListener() {
     const callId = incomingCall.id;
     
     // Update status to in-progress
-    await supabase.from("orders").update({ call_status: "in-progress" }).eq("id", callId);
+    await supabase.from("orders").update({ call_status: "in-progress" } as any).eq("id", callId);
     
     setIncomingCall(null);
     navigate(`/call/${callId}?mode=${mode}`);
