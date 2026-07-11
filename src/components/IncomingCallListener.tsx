@@ -61,7 +61,7 @@ export function IncomingCallListener() {
   const handleDecline = async () => {
     if (!incomingCall) return;
     
-    await supabase.from("orders").update({ call_status: "ended" }).eq("id", incomingCall.id);
+    await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", incomingCall.id);
     setIncomingCall(null);
   };
 
