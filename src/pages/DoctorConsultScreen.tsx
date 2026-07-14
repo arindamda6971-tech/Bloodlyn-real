@@ -104,29 +104,41 @@ const DoctorConsultScreen = () => {
   const [doctors, setDoctors] = useState<Doctor[]>(FALLBACK_DOCTORS);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
 
+  const fetchDoctors = async (signal?: { cancelled: boolean }) => {
+    try {
+      const { data, error } = await supabase.functions.invoke("doctor-directory", {
+        method: "GET",
+      });
+      if (signal?.cancelled) return;
+      if (error) throw error;
+      const list: Doctor[] | undefined = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.doctors)
+          ? data.doctors
+          : undefined;
+      // If upstream returns an empty (but valid) list, trust it — a deleted/
+      // suspended doctor should disappear immediately, not fall back to cache.
+      if (list) setDoctors(list);
+    } catch (e) {
+      console.warn("doctor-directory fetch failed, using fallback:", e);
+    } finally {
+      if (!signal?.cancelled) setLoadingDoctors(false);
+    }
+  };
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("doctor-directory", {
-          method: "GET",
-        });
-        if (cancelled) return;
-        if (error) throw error;
-        const list: Doctor[] | undefined = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.doctors)
-            ? data.doctors
-            : undefined;
-        if (list && list.length > 0) setDoctors(list);
-      } catch (e) {
-        console.warn("doctor-directory fetch failed, using fallback:", e);
-      } finally {
-        if (!cancelled) setLoadingDoctors(false);
-      }
-    })();
-    return () => { cancelled = true; };
+    const signal = { cancelled: false };
+    fetchDoctors(signal);
+    // Refetch when the tab regains focus so admin deletions propagate fast.
+    const onFocus = () => fetchDoctors();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      signal.cancelled = true;
+      window.removeEventListener("focus", onFocus);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
   const filteredDoctors = selectedSpecialization
     ? doctors.filter((d) => {

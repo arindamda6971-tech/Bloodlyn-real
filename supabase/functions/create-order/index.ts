@@ -472,7 +472,57 @@ Deno.serve(async (req) => {
       console.warn("Duplicate-order probe failed (non-fatal):", dedupErr);
     }
 
+    // Doctor visibility gate — before we ever create an order for a doctor
+    // consultation, re-verify against the partner's approved+active directory.
+    // Prevents booking against a doctor that admin has just deleted / suspended
+    // even if the client had a stale list cached.
+    try {
+      const doctorItem = cartItems.find((i) =>
+        /^doc-(video-|audio-)?[0-9a-zA-Z_-]+/.test(i.id)
+      );
+      if (doctorItem) {
+        const raw = doctorItem.id.replace(/^doc-/, "");
+        let doctorIdRaw = raw;
+        if (raw.startsWith("video-")) doctorIdRaw = raw.slice(6);
+        else if (raw.startsWith("audio-")) doctorIdRaw = raw.slice(6);
+
+        const partnerSecret = Deno.env.get("DOCTOR_APPOINTMENT_WEBHOOK_SECRET");
+        if (partnerSecret) {
+          const dirRes = await fetch(
+            `https://titjcfklrmytppvsoavv.supabase.co/functions/v1/doctor-directory?status=approved&is_active=true&vendor_type=doctor&doctor_id=${encodeURIComponent(doctorIdRaw)}`,
+            { headers: { "x-webhook-secret": partnerSecret } },
+          );
+          if (dirRes.ok) {
+            const body = await dirRes.json().catch(() => null);
+            const list = Array.isArray(body)
+              ? body
+              : Array.isArray(body?.doctors) ? body.doctors : [];
+            const match = list.find((d: any) =>
+              String(d.id ?? d.doctor_id ?? d.user_id) === String(doctorIdRaw),
+            );
+            const status = String(match?.verification_status ?? match?.status ?? "").toLowerCase();
+            const active = match?.is_active !== false && match?.active !== false;
+            const approved = match && (status === "approved" || status === "verified" || status === "");
+            if (!match || !approved || !active) {
+              return new Response(
+                JSON.stringify({
+                  error: "This doctor is no longer available for booking.",
+                  code: "DOCTOR_UNAVAILABLE",
+                }),
+                { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+              );
+            }
+          }
+          // If the directory call itself fails (network/upstream down), fall through
+          // rather than blocking every booking — partner webhook will still re-check.
+        }
+      }
+    } catch (verifyErr) {
+      console.error("Doctor pre-booking verification error (non-fatal):", verifyErr);
+    }
+
     // Create order using service role (bypasses RLS for insert).
+
     // The `client_idempotency_key` column has a partial UNIQUE index on
     // (user_id, client_idempotency_key) — if the same checkout retries
     // (double-tap, StrictMode, network retry), Postgres rejects the
