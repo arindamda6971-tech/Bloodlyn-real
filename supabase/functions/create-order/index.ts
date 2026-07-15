@@ -524,7 +524,6 @@ Deno.serve(async (req) => {
               { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
             );
           }
-          }
           // If the directory call itself fails (network/upstream down), fall through
           // rather than blocking every booking — partner webhook will still re-check.
         }
