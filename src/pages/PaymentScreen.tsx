@@ -46,7 +46,7 @@ interface PaymentState {
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subtotal: cartSubtotal, clearCart } = useCart();
+  const { subtotal: cartSubtotal, clearCart, items: cartItemsState, removeFromCart } = useCart();
   const paymentState = location.state as PaymentState | undefined;
   const { pincode: userPincode } = useUserPincode();
 
@@ -328,8 +328,46 @@ const PaymentScreen = () => {
           selectedLabId: paymentState?.selectedLabId || labId,
         },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Order placement failed:", error);
+
+      // Detect vendor_not_approved from the edge function response body.
+      let unavailableCode: string | null = null;
+      let unavailableDoctorId: string | null = null;
+      try {
+        const resp: Response | undefined = error?.context?.response;
+        if (resp && typeof resp.clone === "function") {
+          const body = await resp.clone().json().catch(() => null);
+          const code = String(body?.code ?? "").toLowerCase();
+          if (code === "vendor_not_approved" || code === "doctor_unavailable") {
+            unavailableCode = code;
+            unavailableDoctorId = body?.doctor_id ?? null;
+          }
+        }
+      } catch { /* ignore parse errors */ }
+
+      if (unavailableCode) {
+        // Drop any doctor consult items from cart so the user can't retry.
+        try {
+          (cartItemsState || []).forEach((it) => {
+            const id = String(it.id ?? "").toLowerCase();
+            const labId = String(it.labId ?? "");
+            if (id.startsWith("doc-") || labId === "doctor-service") {
+              if (!unavailableDoctorId || id.includes(String(unavailableDoctorId).toLowerCase())) {
+                removeFromCart(it.id);
+              }
+            }
+          });
+        } catch { /* ignore */ }
+
+        toast.error("This doctor is no longer available", {
+          description: "The directory has been refreshed. Please pick another doctor.",
+        });
+        // Force a fresh directory fetch on the consult screen (no retry here).
+        navigate("/doctor-consult", { replace: true });
+        return;
+      }
+
       toast.error(mapOrderError(error));
     } finally {
       setVerifyingServiceability(false);

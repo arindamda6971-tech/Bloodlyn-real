@@ -106,11 +106,33 @@ const DoctorConsultScreen = () => {
 
   const fetchDoctors = async (signal?: { cancelled: boolean }) => {
     try {
-      const { data, error } = await supabase.functions.invoke("doctor-directory", {
-        method: "GET",
-      });
+      // Cache-bust so a suspended doctor can never linger in any layer.
+      const { data, error } = await supabase.functions.invoke(
+        `doctor-directory?_ts=${Date.now()}`,
+        { method: "GET" },
+      );
       if (signal?.cancelled) return;
-      if (error) throw error;
+
+      if (error) {
+        // If partner returned 403 vendor_not_approved for a single-doctor lookup,
+        // just refresh with an empty list rather than showing stale cache.
+        try {
+          const resp: Response | undefined = (error as any)?.context?.response;
+          if (resp) {
+            const body = await resp.clone().json().catch(() => null);
+            const code = String(body?.code ?? "").toLowerCase();
+            if (code === "vendor_not_approved") {
+              const removedId = body?.doctor_id ? String(body.doctor_id) : null;
+              setDoctors((prev) =>
+                removedId ? prev.filter((d) => String(d.id) !== removedId) : [],
+              );
+              return;
+            }
+          }
+        } catch { /* ignore parse errors */ }
+        throw error;
+      }
+
       const list: Doctor[] | undefined = Array.isArray(data)
         ? data
         : Array.isArray(data?.doctors)
