@@ -46,7 +46,7 @@ interface PaymentState {
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subtotal: cartSubtotal, clearCart } = useCart();
+  const { subtotal: cartSubtotal, clearCart, items: cartItemsState, removeFromCart } = useCart();
   const paymentState = location.state as PaymentState | undefined;
   const { pincode: userPincode } = useUserPincode();
 
