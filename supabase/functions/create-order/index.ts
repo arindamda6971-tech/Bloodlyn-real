@@ -507,11 +507,23 @@ Deno.serve(async (req) => {
               return new Response(
                 JSON.stringify({
                   error: "This doctor is no longer available for booking.",
-                  code: "DOCTOR_UNAVAILABLE",
+                  code: "vendor_not_approved",
+                  doctor_id: doctorIdRaw,
                 }),
                 { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
               );
             }
+          } else if (dirRes.status === 403) {
+            // Partner explicitly rejected — surface uniformly to the client.
+            return new Response(
+              JSON.stringify({
+                error: "This doctor is no longer available for booking.",
+                code: "vendor_not_approved",
+                doctor_id: doctorIdRaw,
+              }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+          }
           }
           // If the directory call itself fails (network/upstream down), fall through
           // rather than blocking every booking — partner webhook will still re-check.
