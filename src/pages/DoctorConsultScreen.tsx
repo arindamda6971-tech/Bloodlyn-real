@@ -99,7 +99,7 @@ const specializations = [
 
 const DoctorConsultScreen = () => {
   const navigate = useNavigate();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items: cartItems, removeFromCart } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>(FALLBACK_DOCTORS);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
