@@ -99,7 +99,7 @@ const specializations = [
 
 const DoctorConsultScreen = () => {
   const navigate = useNavigate();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items: cartItems, removeFromCart } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const [doctors, setDoctors] = useState<Doctor[]>(FALLBACK_DOCTORS);
   const [loadingDoctors, setLoadingDoctors] = useState(true);
@@ -154,9 +154,42 @@ const DoctorConsultScreen = () => {
     // Refetch when the tab regains focus so admin deletions propagate fast.
     const onFocus = () => fetchDoctors();
     window.addEventListener("focus", onFocus);
+
+    // Realtime: partner project broadcasts availability changes on
+    // channel `doctor_availability` with payload { doctor_id, is_available }.
+    // On is_available=false we drop the doctor from every cached list and
+    // cancel any open booking flow (cart items) for that doctor_id.
+    const channel = supabase
+      .channel("doctor_availability")
+      .on("broadcast", { event: "availability" }, (msg) => {
+        const payload: any = (msg as any)?.payload ?? {};
+        const doctorId = payload?.doctor_id != null ? String(payload.doctor_id) : null;
+        const isAvailable = payload?.is_available;
+        const approved = payload?.status ? String(payload.status).toLowerCase() === "approved" : true;
+        const active = payload?.is_active !== false;
+        if (!doctorId) return;
+
+        if (isAvailable === false || !approved || !active) {
+          // 1) Remove from local cached list
+          setDoctors((prev) => prev.filter((d) => String(d.id) !== doctorId));
+          // 2) Cancel any open booking flow: drop matching cart items
+          cartItems.forEach((it) => {
+            if (typeof it.id === "string" && it.id.includes(doctorId)) {
+              removeFromCart(it.id);
+            }
+          });
+          toast.info("A doctor is no longer available and was removed.");
+        } else {
+          // Availability came back or status changed to approved+active — refresh
+          fetchDoctors();
+        }
+      })
+      .subscribe();
+
     return () => {
       signal.cancelled = true;
       window.removeEventListener("focus", onFocus);
+      supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
