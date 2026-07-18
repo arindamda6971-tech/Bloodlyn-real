@@ -245,6 +245,7 @@ const App = () => {
                     <PerformanceMonitor />
                       <BrowserRouter>
                         <IncomingCallListener />
+                        <DoctorAvailabilityListener />
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />
