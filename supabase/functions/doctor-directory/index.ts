@@ -67,6 +67,14 @@ Deno.serve(async (req) => {
     forwarded.set("is_active", "true");
     forwarded.set("vendor_type", "doctor");
 
+    // Admin "Force-refresh directory" sends `x-cache-bust: 1` — forward it and
+    // append a nonce so any intermediary/CDN cache is bypassed end-to-end.
+    const cacheBust =
+      req.headers.get("x-cache-bust") || req.headers.get("X-Cache-Bust");
+    if (cacheBust) {
+      forwarded.set("_cb", `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+    }
+
     const target = `${PARTNER_URL}?${forwarded.toString()}`;
 
     const upstream = await fetch(target, {
@@ -74,6 +82,7 @@ Deno.serve(async (req) => {
       headers: {
         "x-webhook-secret": secret,
         "Content-Type": "application/json",
+        ...(cacheBust ? { "x-cache-bust": String(cacheBust), "Cache-Control": "no-cache" } : {}),
       },
     });
 
