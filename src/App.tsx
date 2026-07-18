@@ -25,6 +25,7 @@ import PerformanceMonitor from "@/components/PerformanceMonitor";
 import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
+import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
 
 // Core screens — eagerly loaded for instant navigation (no chunk-load delay)
 import SplashScreen from "./pages/SplashScreen";
@@ -244,6 +245,7 @@ const App = () => {
                     <PerformanceMonitor />
                       <BrowserRouter>
                         <IncomingCallListener />
+                        <DoctorAvailabilityListener />
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />
