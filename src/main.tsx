@@ -3,69 +3,55 @@ import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
 
-// Force update service worker and clear old caches on load
-async function updateServiceWorker() {
+// One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
+// per browser. Guarded by localStorage so the workbox precache and font caches
+// aren't wiped on every launch (which would break offline/PWA behavior).
+const CACHE_MIGRATION_KEY = "bl_cache_migration_v1";
+
+async function runOneTimeCacheMigration() {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(CACHE_MIGRATION_KEY)) return;
+  } catch {
+    return;
+  }
+
   if ('serviceWorker' in navigator) {
     try {
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const registration of registrations) {
         await registration.update();
       }
-      // Clear all caches to remove any old Firebase code
       if ('caches' in window) {
         const cacheNames = await caches.keys();
-        await Promise.all(
-          cacheNames.map(cacheName => caches.delete(cacheName))
+        // Only purge legacy caches; leave workbox precache/font caches intact.
+        const legacy = cacheNames.filter((n) =>
+          /firebase|old|legacy/i.test(n)
         );
+        await Promise.all(legacy.map((n) => caches.delete(n)));
       }
     } catch (error) {
-      console.log('Service worker update:', error);
+      console.log('Service worker migration:', error);
     }
+  }
+
+  try {
+    localStorage.setItem(CACHE_MIGRATION_KEY, "1");
+  } catch {
+    /* ignore */
   }
 }
 
 // Memory optimization for Android devices
 function setupMemoryManagement() {
   if (typeof window !== "undefined") {
-    // Listen for low memory events from native platform
     CapacitorApp.addListener('appRestoredResult', (data) => {
       console.log('Restored state after being killed by OS:', data);
     });
   }
 }
 
-// Remove any debug controls injected at runtime (e.g. "Hide debug" button)
-// This operates at the DOM level so we don't change UI component files.
-function removeDebugControls() {
-	const matchesDebugText = (text: string | null | undefined) => {
-		if (!text) return false;
-		const t = text.trim().toLowerCase();
-		return t === "hide debug" || t === "hide-debug" || t === "debug";
-	};
-
-	const cleanup = () => {
-		document.querySelectorAll("button, a, div, span").forEach((el) => {
-			if (matchesDebugText(el.textContent)) {
-				el.remove();
-			}
-		});
-	};
-
-	// Initial pass
-	if (typeof document !== "undefined") {
-		cleanup();
-
-		// Observe future additions and remove if they appear
-		const mo = new MutationObserver(() => cleanup());
-		mo.observe(document.body, { childList: true, subtree: true });
-	}
-}
-
-// Update service worker first
-updateServiceWorker();
+runOneTimeCacheMigration();
 setupMemoryManagement();
 
 createRoot(document.getElementById("root")!).render(<App />);
-
-// Run after initial render to catch any debug UI inserted by dev helpers
-setTimeout(removeDebugControls, 50);
