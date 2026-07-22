@@ -18,8 +18,8 @@ const CapacitorBackButton = () => {
       if (isMainPage) {
         App.exitApp();
       } else {
-        // Use browser history to go back naturally
-        window.history.back();
+        // Use React Router history to go back deterministically
+        navigate(-1);
       }
     };
 

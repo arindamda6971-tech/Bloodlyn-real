@@ -90,51 +90,17 @@ const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsS
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
 
-const SwipeBackWrapper = ({ children }: { children: ReactNode }) => {
-  const navigate = useNavigate();
-  const edgeStartRef = { current: false } as { current: boolean };
-
-  const handleDragStart = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
-    edgeStartRef.current = info.point.x <= 30;
-  };
-  const handleDragEnd = (_: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) => {
-    if (!edgeStartRef.current) return;
-    if (info.offset.x > 80 || info.velocity.x > 200) navigate(-1);
-  };
-
-  return (
-    <motion.div
-      drag="x"
-      dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0}
-      dragDirectionLock
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      style={{
-        width: "100%",
-        position: "relative",
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100dvh",
-      }}
-    >
-      {children}
-    </motion.div>
-  );
-};
-
 const AnimatedRoutes = () => {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0, x: 12 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -12 }}
-        transition={{ type: "tween", ease: [0.32, 0.72, 0, 1], duration: 0.2 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15, ease: "easeInOut" }}
         style={{
           width: "100%",
           position: "relative",
@@ -142,7 +108,6 @@ const AnimatedRoutes = () => {
           display: "flex",
           flexDirection: "column",
           minHeight: "100dvh",
-          willChange: "opacity, transform",
         }}
       >
         <Routes location={location}>

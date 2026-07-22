@@ -309,7 +309,8 @@ const HomeScreen = () => {
                           onMouseDown={(e) => e.preventDefault()}
                           onClick={() => {
                             setSearchQuery("");
-                            navigate(`/test/${test.id}`);
+                            setShowSearchResults(false);
+                            navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
                           }}
                           className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center"
                         >

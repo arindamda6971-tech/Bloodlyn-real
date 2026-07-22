@@ -179,22 +179,23 @@ const CategoriesScreen = () => {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className="soft-card flex items-center gap-3"
+                  onClick={() => navigate(`/test/${test.id}`, { state: { bridgeTest: test } })}
+                  className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
                 >
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Beaker className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm">{test.test_name}</h3>
-                    <p className="text-xs text-muted-foreground">{test.category}</p>
+                    <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{test.test_name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                     {alreadyInCart ? (
                       <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/cart")}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => handleAddToCart(test)}>
+                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); handleAddToCart(test); }}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     )}

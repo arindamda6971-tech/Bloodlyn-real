@@ -41,6 +41,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { useBridgeTests } from "@/hooks/useBridgeTests";
+
 interface UnifiedTest {
   id: string;
   name: string;
@@ -68,15 +70,16 @@ const TestDetailScreen = () => {
   const { id } = useParams<{ id: string }>();
   const { addToCart, itemCount, items, subtotal, pendingItem, confirmReplace, cancelReplace } = useCart();
   const { pincode } = useUserPincode();
+  const { data: bridgeData } = useBridgeTests();
 
   const bridgeTest = (location.state as any)?.bridgeTest;
   const [test, setTest] = useState<UnifiedTest | null>(() => {
     if (bridgeTest) {
       return {
         id: bridgeTest.id,
-        name: bridgeTest.test_name,
+        name: bridgeTest.test_name || bridgeTest.name,
         price: bridgeTest.price > 0 ? bridgeTest.price : bridgeTest.collection_fee || 0,
-        reportTime: bridgeTest.report_delivery_time,
+        reportTime: bridgeTest.report_delivery_time || bridgeTest.reportTime,
         prerequisites: bridgeTest.prerequisites,
         category: bridgeTest.category,
       };
@@ -94,9 +97,7 @@ const TestDetailScreen = () => {
     (async () => {
       try {
         const { data } = await supabase.from("tests").select("*").eq("id", id).maybeSingle();
-        if (!data) {
-          setError("Test not found");
-        } else {
+        if (data) {
           setTest({
             id: data.id,
             name: data.name,
@@ -109,14 +110,34 @@ const TestDetailScreen = () => {
             description: data.description,
             prerequisites: data.preparation_instructions,
           });
+          return;
         }
+
+        if (bridgeData?.tests?.length) {
+          const match = bridgeData.tests.find(
+            (t) => t.id === id || (t.slug && t.slug === id) || t.test_name.toLowerCase() === id.toLowerCase()
+          );
+          if (match) {
+            setTest({
+              id: match.id,
+              name: match.test_name,
+              price: match.price > 0 ? match.price : match.collection_fee || 0,
+              reportTime: match.report_delivery_time,
+              prerequisites: match.prerequisites,
+              category: match.category,
+            });
+            return;
+          }
+        }
+
+        setError("Test not found");
       } catch {
         setError("Something went wrong");
       } finally {
         setLoading(false);
       }
     })();
-  }, [id, test]);
+  }, [id, test, bridgeData]);
 
   // AI-fetched short description (replaces hardcoded sentence)
   const [aiDescription, setAiDescription] = useState<string>("");
