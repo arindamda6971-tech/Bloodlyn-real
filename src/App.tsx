@@ -85,6 +85,8 @@ const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMe
 const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFamilyMemberScreen")));
 const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
+const RewardsScreen = lazy(() => safeImport(() => import("./pages/RewardsScreen")));
+const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
 
@@ -186,6 +188,9 @@ const AnimatedRoutes = () => {
           <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
           <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
           <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
+          <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
+          <Route path="/rewards" element={<ProtectedRoute><RewardsScreen /></ProtectedRoute>} />
+          <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
           <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
           <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
           <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />

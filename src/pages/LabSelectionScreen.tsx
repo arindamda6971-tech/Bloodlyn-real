@@ -119,17 +119,20 @@ const LabSelectionScreen = () => {
       .invoke("lab-slots", { body: { lab_user_id: selectedLabVendorId } })
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (error) {
-          console.error("lab-slots fetch failed:", error);
-          setLabSlotsByDay({});
+        const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
+        const defaultMap: Record<number, { is_open: boolean; slots: string[] }> = {};
+        for (let i = 0; i <= 6; i++) defaultMap[i] = { is_open: true, slots: defaultSlots };
+
+        if (error || !data?.rows || data.rows.length === 0) {
+          console.warn("lab-slots using default slot mapping:", error);
+          setLabSlotsByDay(defaultMap);
         } else {
-          const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> =
-            data?.rows ?? [];
+          const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> = data.rows;
           const map: Record<number, { is_open: boolean; slots: string[] }> = {};
           rows.forEach((r) => {
             map[r.day_of_week] = {
               is_open: !!r.is_open,
-              slots: Array.isArray(r.slots) ? r.slots : [],
+              slots: Array.isArray(r.slots) && r.slots.length > 0 ? r.slots : defaultSlots,
             };
           });
           setLabSlotsByDay(map);
@@ -138,7 +141,10 @@ const LabSelectionScreen = () => {
       .catch((err) => {
         if (!cancelled) {
           console.error("lab-slots invoke error:", err);
-          setLabSlotsByDay({});
+          const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
+          const defaultMap: Record<number, { is_open: boolean; slots: string[] }> = {};
+          for (let i = 0; i <= 6; i++) defaultMap[i] = { is_open: true, slots: defaultSlots };
+          setLabSlotsByDay(defaultMap);
         }
       })
       .finally(() => {

@@ -162,6 +162,30 @@ const ECGTestScreen = () => {
           accent="from-rose-600 via-pink-600 to-purple-600"
         />
 
+        {/* Locality Service Availability Notice */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex items-start gap-3 shadow-sm"
+        >
+          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
+            <MapPin className="w-5 h-5" />
+          </div>
+          <div className="flex-1 text-left">
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                Service Availability Notice
+              </h3>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                Locality Status
+              </span>
+            </div>
+            <p className="text-xs font-medium leading-relaxed opacity-95">
+              At-home ECG diagnostic service is currently unavailable in your selected locality. We are actively expanding certified technician coverage and will launch in your neighborhood soon.
+            </p>
+          </div>
+        </motion.div>
+
         {/* Hero banner */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}

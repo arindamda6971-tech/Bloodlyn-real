@@ -98,13 +98,13 @@ const UploadPrescriptionScreen = () => {
     if (prescription && !isPrescriptionLoading) {
       deletePrescription().catch(() => {});
     }
-  }, [prescription, isPrescriptionLoading]);
+  }, [prescription, isPrescriptionLoading, deletePrescription]);
 
   useEffect(() => {
     return () => {
       deletePrescription().catch(() => {});
     };
-  }, []);
+  }, [deletePrescription]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
