@@ -147,19 +147,22 @@ const CategoriesScreen = () => {
 
   return (
     <MobileLayout>
+      {/* Top Header - Scrolls away naturally */}
+      <div className="px-5 pt-3 pb-1">
+        <PremiumPageHeader
+          title="Explore Tests"
+          subtitle="Curated diagnostics · NABL certified labs"
+          icon={Beaker}
+          accent="from-sky-500 via-primary to-indigo-600"
+        />
+      </div>
+
+      {/* Sticky Search Input Bar - Pins at top-0 */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests..."
         accent="from-sky-500 via-primary to-indigo-600"
-        header={
-          <PremiumPageHeader flush
-            title="Explore Tests"
-            subtitle="Curated diagnostics · NABL certified labs"
-            icon={Beaker}
-            accent="from-sky-500 via-primary to-indigo-600"
-          />
-        }
       />
 
 
