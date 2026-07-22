@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MapPin, ChevronDown, Bell, Phone, Wallet, Zap, Sparkles, User, Crosshair, Check } from "lucide-react";
+import { MapPin, ChevronDown, Bell, Phone, Coins, Zap, Sparkles, User, Crosshair, Check, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -30,108 +30,116 @@ export const ZomatoStyleHeader = ({
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   return (
-    <div className="flex flex-col gap-3 pb-0.5">
-      {/* Top Bar: Location Selector + Action Icon Buttons */}
-      <div className="flex items-center justify-between gap-3">
-        {/* Left: Ultra-Professional Zomato/Swiggy Style Location Selector */}
-        <button
-          type="button"
-          onClick={() => setShowLocationModal(true)}
-          className="flex items-center gap-3 min-w-0 text-left group p-1.5 -ml-1.5 rounded-2xl active:scale-[0.98] transition-all hover:bg-accent/40"
-        >
-          <div className="relative shrink-0">
-            {/* Ambient Glow Aura */}
-            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-rose-500 via-primary to-indigo-600 opacity-40 blur-md group-hover:opacity-70 transition-opacity" />
-            
-            {/* Medallion Icon */}
-            <div className="relative w-10.5 h-10.5 rounded-2xl bg-gradient-to-br from-rose-500 via-primary to-indigo-600 shadow-[0_6px_20px_-4px_rgba(225,29,72,0.4)] flex items-center justify-center text-white ring-2 ring-white/60 dark:ring-white/10">
-              <MapPin className="w-5 h-5 fill-white/20 text-white" />
-            </div>
+    <div className="flex flex-col gap-3 pb-1">
+      {/* Top Header Card Container */}
+      <div className="relative rounded-3xl bg-gradient-to-b from-card/90 via-card/80 to-card/60 backdrop-blur-2xl border border-border/50 p-3.5 shadow-[0_10px_35px_-10px_rgba(0,0,0,0.06)] overflow-hidden">
+        {/* Subtle Ambient Radial Glow Backdrops */}
+        <div className="pointer-events-none absolute -top-12 -left-12 w-44 h-44 rounded-full bg-gradient-to-br from-primary/15 via-rose-500/10 to-transparent blur-3xl" />
+        <div className="pointer-events-none absolute -top-12 -right-12 w-44 h-44 rounded-full bg-gradient-to-bl from-indigo-500/15 via-sky-500/10 to-transparent blur-3xl" />
 
-            {/* Pulsing Live Status Indicator */}
-            <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-500 ring-2 ring-background flex items-center justify-center shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-            </span>
-          </div>
+        <div className="relative flex items-center justify-between gap-3">
+          {/* Left: Ultra-Futuristic Location Selector */}
+          <button
+            type="button"
+            onClick={() => setShowLocationModal(true)}
+            className="flex items-center gap-3 min-w-0 text-left group p-1 -ml-1 rounded-2xl active:scale-[0.98] transition-all hover:bg-accent/40"
+          >
+            <div className="relative shrink-0">
+              {/* Multi-layered 3D Glowing Location Orb */}
+              <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-rose-500 via-primary to-indigo-600 opacity-50 blur-md group-hover:opacity-85 transition-opacity" />
+              
+              <div className="relative w-11 h-11 rounded-2xl bg-gradient-to-br from-rose-500 via-primary to-indigo-600 shadow-[0_8px_24px_-4px_rgba(225,29,72,0.45)] flex items-center justify-center text-white ring-2 ring-white/70 dark:ring-white/15">
+                <MapPin className="w-5.5 h-5.5 fill-white/25 text-white drop-shadow-md" />
+              </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[14px] font-black tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
-                {currentAddress.split("•")[0]?.trim() || "Delivery Location"}
+              {/* Pulsing Live Online Radar Dot */}
+              <span className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-emerald-500 ring-2 ring-card flex items-center justify-center shadow-md">
+                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-primary shrink-0 transition-transform group-hover:translate-y-0.5" />
             </div>
-            <p className="text-[11.5px] font-semibold text-muted-foreground/90 truncate leading-tight mt-0.5">
-              {currentAddress.split("•")[1]?.trim() || "Select your location"}
-            </p>
-          </div>
-        </button>
 
-        {/* Right: Quick Action Glassmorphic Icon Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          {onOpenCall && (
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[14.5px] font-black tracking-tight text-foreground group-hover:text-primary transition-colors truncate">
+                  {currentAddress.split("•")[0]?.trim() || "Delivery Location"}
+                </span>
+                <ChevronDown className="w-4 h-4 text-primary shrink-0 transition-transform group-hover:translate-y-0.5" />
+              </div>
+              <p className="text-[11.5px] font-bold text-muted-foreground/90 truncate leading-tight mt-0.5">
+                {currentAddress.split("•")[1]?.trim() || "Select your location"}
+              </p>
+            </div>
+          </button>
+
+          {/* Right: Floating Glass Capsule Action Center */}
+          <div className="flex items-center gap-2 bg-muted/40 p-1.5 rounded-2xl border border-border/40 shrink-0">
+            {onOpenCall && (
+              <button
+                type="button"
+                onClick={onOpenCall}
+                className="w-9.5 h-9.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 flex items-center justify-center active:scale-90 transition-all text-sky-500"
+                title="Doctor Consultation Call"
+              >
+                <Phone className="w-4.5 h-4.5 fill-sky-500/20" />
+              </button>
+            )}
+
+            {/* 3D Rotating Gold Coin Rewards Button */}
             <button
               type="button"
-              onClick={onOpenCall}
-              className="w-10 h-10 rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-90 hover:scale-105 hover:border-sky-500/40 hover:shadow-sky-500/10 transition-all text-foreground"
-              title="Doctor Consultation Call"
+              onClick={() => navigate("/rewards")}
+              className="relative w-9.5 h-9.5 rounded-xl bg-gradient-to-br from-amber-400/20 via-yellow-500/15 to-amber-600/20 hover:from-amber-400/30 hover:to-yellow-500/30 border border-amber-400/40 shadow-[0_0_14px_rgba(245,158,11,0.25)] flex items-center justify-center active:scale-90 transition-all text-amber-500 overflow-hidden group"
+              title="HealthSwift Rewards Coins"
             >
-              <Phone className="w-4.5 h-4.5 text-sky-500" />
+              <motion.div
+                animate={{ rotateY: [0, 360] }}
+                transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
+                className="flex items-center justify-center text-amber-500 drop-shadow-[0_2px_4px_rgba(217,119,6,0.5)]"
+                style={{ transformStyle: "preserve-3d" }}
+              >
+                <Coins className="w-5 h-5 text-amber-400 fill-amber-400/30" />
+              </motion.div>
             </button>
-          )}
 
-          <button
-            type="button"
-            onClick={() => navigate("/rewards")}
-            className="w-10 h-10 rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-90 hover:scale-105 hover:border-amber-500/40 hover:shadow-amber-500/10 transition-all text-foreground"
-            title="Rewards & Wallet"
-          >
-            <Wallet className="w-4.5 h-4.5 text-amber-500" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/notifications")}
-            className="w-10 h-10 rounded-2xl bg-card/90 backdrop-blur-md border border-border/50 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.06)] flex items-center justify-center relative active:scale-90 hover:scale-105 hover:border-primary/40 transition-all text-foreground"
-            title="Notifications"
-          >
-            <Bell className="w-4.5 h-4.5 text-foreground" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-gradient-to-r from-rose-500 to-red-600 rounded-full flex items-center justify-center text-[10px] font-black text-white ring-2 ring-background shadow-md">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/profile")}
-            className="p-[1.5px] rounded-2xl bg-gradient-to-br from-primary via-indigo-500 to-sky-400 shadow-[0_4px_14px_-4px_rgba(59,130,246,0.3)] active:scale-90 hover:scale-105 transition-all shrink-0"
-            title="User Profile"
-          >
-            <div className="w-9.5 h-9.5 rounded-[14px] bg-card flex items-center justify-center">
-              <User className="w-4.5 h-4.5 text-primary" />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Sub-header Banner: Live Express Status & Active Bookings Glass Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pt-0.5 pb-0.5">
-        <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 px-3 py-1.2 rounded-full text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
-          <Zap className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" />
-          <span className="text-[11.5px] font-extrabold tracking-tight">Express 15-min Home Sample Collection</span>
-        </div>
-
-        {activeBookingsCount > 0 && (
-          <div className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 via-indigo-500/10 to-primary/15 border border-primary/30 px-3 py-1.2 rounded-full text-primary shrink-0 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="text-[11.5px] font-black">{activeBookingsCount} Active Bookings</span>
+            {/* Notifications Button */}
+            <button
+              type="button"
+              onClick={() => navigate("/notifications")}
+              className="w-9.5 h-9.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 flex items-center justify-center relative active:scale-90 transition-all text-rose-500"
+              title="Notifications"
+            >
+              <Bell className="w-4.5 h-4.5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[17px] h-[17px] px-1 bg-gradient-to-r from-rose-500 to-red-600 rounded-full flex items-center justify-center text-[9.5px] font-black text-white ring-2 ring-card shadow-md animate-pulse">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Live Service Status Bar inside header card */}
+        <div className="mt-3 pt-2.5 border-t border-border/30 flex items-center justify-between gap-2 overflow-x-auto hide-scrollbar">
+          <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full text-emerald-600 dark:text-emerald-400 shrink-0 shadow-sm">
+            <Zap className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500 animate-pulse" />
+            <span className="text-[11px] font-black tracking-tight">Express 15-min Home Sample Collection</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-gradient-to-r from-primary/15 via-indigo-500/10 to-primary/15 border border-primary/30 px-3 py-1 rounded-full text-primary shrink-0 shadow-sm">
+            <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+            <span className="text-[11px] font-black">NABL Certified Labs</span>
+          </div>
+
+          {activeBookingsCount > 0 && (
+            <div className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-500/15 via-purple-500/10 to-indigo-500/15 border border-indigo-500/30 px-3 py-1 rounded-full text-indigo-600 dark:text-indigo-400 shrink-0 shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="text-[11px] font-black">{activeBookingsCount} Active Bookings</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Ultra-Professional Location Picker Modal */}
+      {/* Location Picker Bottom Sheet Modal */}
       <AnimatePresence>
         {showLocationModal && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-md p-0 sm:p-4">
