@@ -57,12 +57,6 @@ const StickySearch = ({
     const el = shellRef.current;
     if (!el) return;
 
-    const mql =
-      typeof window !== "undefined" && typeof window.matchMedia === "function"
-        ? window.matchMedia("(prefers-reduced-motion: reduce)")
-        : null;
-    const reducedMotion = mql?.matches || false;
-
     let parent: HTMLElement | null = el.parentElement;
     while (parent) {
       const style = window.getComputedStyle(parent);
@@ -72,95 +66,35 @@ const StickySearch = ({
     }
     const scroller: HTMLElement | Window = parent || window;
 
-    let raf = 0;
     let ticking = false;
     let hasShadow = false;
-    let hidden = false;
-    let lastY =
-      scroller === window
-        ? window.scrollY
-        : (scroller as HTMLElement).scrollTop;
-    let accumulatedDelta = 0;
-    const HIDE_AFTER = 80; // start hiding only after scrolling past this
-    const THRESHOLD = 20; // pixels of continuous scroll needed to trigger
 
-    const apply = () => {
+    const applyScroll = () => {
       ticking = false;
-      const y =
-        scroller === window
-          ? window.scrollY
-          : (scroller as HTMLElement).scrollTop;
-      const node = shellRef.current;
-      if (!node) return;
+      const y = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+      const shellNode = shellRef.current;
 
-      // Handle overscroll (rubber-banding on iOS)
-      if (y < 0) {
-        if (hidden) {
-          hidden = false;
-          node.style.transform = "translate3d(0, 0, 0)";
-        }
-        accumulatedDelta = 0;
-        lastY = y;
-        return;
-      }
+      if (!shellNode) return;
 
-      // Shadow (hysteresis)
+      // Add dynamic glassmorphic shadow hysteresis when scrolled down past header
       const nextShadow = hasShadow ? y > THRESHOLD_OFF : y > THRESHOLD_ON;
       if (nextShadow !== hasShadow) {
         hasShadow = nextShadow;
-        if (nextShadow) node.classList.add(SHADOW_CLASS);
-        else node.classList.remove(SHADOW_CLASS);
-      }
-
-      // True hysteresis: accumulate scroll distance in the same direction
-      const diff = y - lastY;
-      lastY = y;
-
-      if ((diff > 0 && accumulatedDelta > 0) || (diff < 0 && accumulatedDelta < 0)) {
-        accumulatedDelta += diff;
-      } else {
-        accumulatedDelta = diff; // Direction reversed, reset accumulation
-      }
-
-      if (Math.abs(accumulatedDelta) > THRESHOLD) {
-        let nextHidden = hidden;
-        if (accumulatedDelta > 0 && y > HIDE_AFTER) {
-          nextHidden = true; // Scrolled down significantly
-        } else if (accumulatedDelta < 0) {
-          nextHidden = false; // Scrolled up significantly
-        }
-
-        if (nextHidden !== hidden) {
-          hidden = nextHidden;
-          node.style.transform = hidden
-            ? `translate3d(0, -${node.offsetHeight}px, 0)`
-            : "translate3d(0, 0, 0)";
-        }
-      }
-      if (y <= 0) {
-        if (hidden) {
-          hidden = false;
-          node.style.transform = "translate3d(0, 0, 0)";
-        }
-        accumulatedDelta = 0;
+        if (nextShadow) shellNode.classList.add(SHADOW_CLASS);
+        else shellNode.classList.remove(SHADOW_CLASS);
       }
     };
+
     const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      raf = requestAnimationFrame(apply);
-    };
-    const node = shellRef.current;
-    if (node) {
-      if (!reducedMotion) {
-        node.style.transition = "transform 250ms cubic-bezier(0.22, 1, 0.36, 1)";
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(applyScroll);
       }
-      node.style.willChange = "transform";
-    }
+    };
+
     scroller.addEventListener("scroll", onScroll as EventListener, { passive: true });
-    apply();
+    applyScroll();
     return () => {
-      cancelAnimationFrame(raf);
       scroller.removeEventListener("scroll", onScroll as EventListener);
     };
   }, []);
@@ -168,7 +102,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40 motion-safe:transition-shadow shadow-none overflow-hidden ${className}`}
+      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-2xl border-b border-border/40 motion-safe:transition-shadow shadow-sm ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       data-testid="sticky-search-shell"
     >

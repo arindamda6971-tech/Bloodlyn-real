@@ -42,6 +42,7 @@ import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import StickySearch from "@/components/ui/StickySearch";
+import { ZomatoStyleHeader } from "@/components/layout/ZomatoStyleHeader";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import {
   AlertDialog,
@@ -228,72 +229,22 @@ const HomeScreen = () => {
       {StaticBackground}
 
       <MobileLayout>
-        {/* Simplified Header for Performance */}
+        {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
+        <div className="px-5 pt-3 pb-1">
+          <ZomatoStyleHeader
+            unreadCount={unreadCount}
+            onOpenCall={() => setShowCallSheet(true)}
+            greeting={greeting}
+            activeBookingsCount={8}
+          />
+        </div>
+
+        {/* Sticky Search Input Bar - Pins at top-0 */}
         <StickySearch
           value={searchQuery}
           onChange={(v) => { setSearchQuery(v); setShowSearchResults(true); }}
           onFocus={() => setShowSearchResults(true)}
           placeholder="Search health tests..."
-          footer={
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1 pt-1">
-              {trendingTests.map((test) => (
-                <button
-                  key={test}
-                  onClick={() => {
-                    setSearchQuery(test);
-                    setShowSearchResults(true);
-                  }}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 text-[11px] font-bold text-foreground/70 active:scale-95 transition-transform flex items-center gap-1.5"
-                >
-                  <TrendingUp className="w-3 h-3 text-primary" />
-                  {test}
-                </button>
-              ))}
-            </div>
-          }
-          header={
-            <div className="flex items-center justify-between mb-2.5 mt-1.5">
-              <div className="min-w-0 pt-1">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <motion.div
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-1 bg-success/10 px-2 py-0.5 rounded-full border border-success/20"
-                  >
-                    <Zap className="w-3 h-3 text-success fill-success" />
-                    <span className="text-[10px] font-black text-success tracking-tight">8 active bookings</span>
-                  </motion.div>
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-0.5">{greeting}</p>
-                <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">Welcome back 👋</h1>
-              </div>
-              <div className="flex items-center gap-2.5">
-                <button
-                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-90 transition-transform"
-                  onClick={() => setShowCallSheet(true)}
-                >
-                  <Phone className="w-5 h-5 text-foreground" />
-                </button>
-                <button
-                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center active:scale-90 transition-transform"
-                  onClick={() => navigate("/rewards")}
-                >
-                  <Wallet className="w-5 h-5 text-foreground" />
-                </button>
-                <button
-                  className="w-11 h-11 rounded-xl bg-card border border-border/50 shadow-sm flex items-center justify-center relative active:scale-90 transition-transform"
-                  onClick={() => navigate("/notifications")}
-                >
-                  <Bell className="w-5 h-5 text-foreground" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center text-[10px] font-black text-primary-foreground ring-2 ring-background">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          }
           results={
             showSearchResults && searchQuery.trim() ? (
               <div className="bg-card border border-border/50 shadow-2xl shadow-black/5 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
@@ -343,6 +294,23 @@ const HomeScreen = () => {
             ) : null
           }
         />
+
+        {/* Trending Search Suggestion Chips - Scrolls away and hides behind sticky search bar */}
+        <div className="px-5 pt-2 pb-1 overflow-x-auto hide-scrollbar flex gap-2">
+          {trendingTests.map((test) => (
+            <button
+              key={test}
+              onClick={() => {
+                setSearchQuery(test);
+                setShowSearchResults(true);
+              }}
+              className="flex-shrink-0 px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 text-[11px] font-bold text-foreground/70 active:scale-95 transition-transform flex items-center gap-1.5"
+            >
+              <TrendingUp className="w-3 h-3 text-primary" />
+              {test}
+            </button>
+          ))}
+        </div>
 
         <LocationChip />
 
