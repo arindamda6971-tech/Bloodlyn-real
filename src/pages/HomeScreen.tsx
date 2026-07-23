@@ -437,55 +437,53 @@ const HomeScreen = () => {
           </section>
         )}
 
-        {/* Instant BP Check Banner */}
+        {/* Home BP Check Banner */}
         <section className="px-4 mt-8 transform-gpu">
           <div
             onClick={() => navigate('/bp-check')}
-            className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all flex items-center justify-between"
+            className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
           >
             {/* Background glowing accent */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -left-10 -top-10 w-40 h-40 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -left-10 -top-10 w-40 h-40 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10 flex-1 pr-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center shadow-md shadow-rose-500/20">
-                  <HeartPulse className="w-4 h-4 text-white animate-pulse" />
+            <div className="relative z-10">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
+                    <HeartPulse className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-foreground text-[16px] font-black tracking-tight leading-tight max-w-[160px]">
+                    Home Blood Pressure Check
+                  </h3>
                 </div>
-                <h3 className="text-foreground text-[17px] font-black tracking-tight leading-tight">
-                  Instant BP Check
-                </h3>
+                <span className="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shrink-0">
+                  Home Visit
+                </span>
               </div>
-              <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed mb-4 max-w-[240px]">
-                Check if your blood pressure reading is within a healthy range and know what to do next.
+              
+              <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed mb-4 pr-2">
+                Book a trained healthcare professional to visit your home and measure your blood pressure accurately.
               </p>
-              <span className="inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[11px] font-black px-4 py-2 rounded-2xl shadow-md shadow-pink-500/20 group-hover:opacity-90 transition-opacity">
-                Check Now →
-              </span>
-            </div>
-            
-            {/* Right side floating abstract shape / graphic */}
-            <div className="relative z-10 shrink-0 pointer-events-none opacity-90 group-hover:scale-105 transition-transform duration-500">
-               <div className="w-20 h-24 rounded-2xl bg-gradient-to-b from-rose-100 to-pink-50 flex flex-col justify-center items-center gap-1.5 shadow-inner border border-white/60">
-                 <div className="flex items-end gap-1 h-8">
-                    <motion.div
-                      animate={{ height: ["40%", "80%", "30%", "100%", "50%"] }}
-                      transition={{ duration: 1.5, repeat: Infinity, repeatType: "mirror", ease: "easeInOut" }}
-                      className="w-1.5 bg-rose-400 rounded-full"
-                    />
-                    <motion.div
-                      animate={{ height: ["70%", "30%", "90%", "40%", "80%"] }}
-                      transition={{ duration: 1.2, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.2 }}
-                      className="w-1.5 bg-pink-500 rounded-full"
-                    />
-                    <motion.div
-                      animate={{ height: ["50%", "100%", "20%", "70%", "40%"] }}
-                      transition={{ duration: 1.4, repeat: Infinity, repeatType: "mirror", ease: "easeInOut", delay: 0.4 }}
-                      className="w-1.5 bg-rose-600 rounded-full"
-                    />
-                 </div>
-                 <div className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1">SYS / DIA</div>
-               </div>
+              
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-5">
+                <div className="flex items-center gap-1">
+                  <Check className="w-3 h-3 text-success" />
+                  <span className="text-[10px] font-bold text-foreground/80">Home Visit</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Check className="w-3 h-3 text-success" />
+                  <span className="text-[10px] font-bold text-foreground/80">Certified Staff</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Check className="w-3 h-3 text-success" />
+                  <span className="text-[10px] font-bold text-foreground/80">Digital BP Monitor</span>
+                </div>
+              </div>
+
+              <button className="w-full bg-gradient-to-r from-red-500 to-blue-600 text-white text-[13px] font-black py-3.5 rounded-2xl shadow-lg shadow-blue-500/20 group-hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
+                Book Now →
+              </button>
             </div>
           </div>
         </section>
