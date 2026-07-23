@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -13,6 +13,7 @@ import {
   Award,
   CheckCircle2,
   MapPin,
+  MapPinOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -103,6 +104,7 @@ const PhysioConsultScreen = () => {
   const { user } = useAuth();
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
+  const isServiceAvailable = false;
 
   const filteredPhysios = selectedSpecialization
     ? physiotherapists.filter((p) => {
@@ -154,31 +156,34 @@ const PhysioConsultScreen = () => {
           accent="from-blue-600 via-indigo-600 to-purple-600"
         />
 
-        {/* Locality Service Availability Notice */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-3 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex items-start gap-3 shadow-sm"
-        >
-          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5">
-            <MapPin className="w-5 h-5" />
-          </div>
-          <div className="flex-1 text-left">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                Service Availability Notice
-              </h3>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                Locality Status
-              </span>
+        {!isServiceAvailable ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="flex-1 flex flex-col items-center justify-center py-20 px-6 text-center"
+          >
+            <div className="relative mb-8 group">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors duration-500" />
+              <div className="relative w-28 h-28 rounded-[2.5rem] bg-card border border-border/50 shadow-2xl flex items-center justify-center rotate-3 hover:-rotate-3 transition-transform duration-500">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-[2.5rem]" />
+                <MapPinOff className="w-12 h-12 text-primary" strokeWidth={1.5} />
+              </div>
             </div>
-            <p className="text-xs font-medium leading-relaxed opacity-95">
-              In-home physiotherapy home visits are currently not supported in your location. You may continue exploring available specialist profiles or consult online via video session.
+            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mb-3">
+              Location Not Covered
+            </h2>
+            <p className="text-[15px] text-muted-foreground leading-relaxed mb-10 max-w-[300px] mx-auto">
+              We are actively expanding our network of certified physiotherapists. This service will be available in your area soon.
             </p>
-          </div>
-        </motion.div>
-
-        {/* Hero banner */}
+            <div className="flex flex-col w-full gap-3 max-w-[280px]">
+              <Button onClick={() => navigate(-1)} className="h-14 rounded-2xl font-bold text-[15px] shadow-lg shadow-primary/25">
+                Explore Other Services
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <>
+            {/* Hero banner */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -376,6 +381,8 @@ const PhysioConsultScreen = () => {
             </li>
           </ul>
         </motion.div>
+          </>
+        )}
       </div>
     </MobileLayout>
   );

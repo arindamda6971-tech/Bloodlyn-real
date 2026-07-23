@@ -350,14 +350,14 @@ const HomeScreen = () => {
               <button
                 key={action.label}
                 onClick={() => navigate(action.path)}
-                className="bg-card border border-border/50 rounded-3xl p-4 text-left flex items-center gap-3 active:scale-[0.97] transition-transform shadow-sm"
+                className="bg-card/85 backdrop-blur-xl border border-border/50 rounded-3xl p-4 text-left flex items-center gap-3.5 active:scale-[0.97] transition-all shadow-[0_6px_20px_-8px_rgba(0,0,0,0.05)] hover:shadow-md group"
               >
-                <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0`}>
-                  <action.icon className="w-6 h-6" />
+                <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform`}>
+                  <action.icon className="w-5.5 h-5.5" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[13px] font-bold text-foreground leading-tight">{action.label}</span>
-                  <span className="text-[10px] font-medium text-muted-foreground mt-0.5">{action.subtext}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[13.5px] font-black text-foreground tracking-tight leading-tight truncate">{action.label}</span>
+                  <span className="text-[10.5px] font-semibold text-muted-foreground/80 mt-0.5 truncate">{action.subtext}</span>
                 </div>
               </button>
             ))}

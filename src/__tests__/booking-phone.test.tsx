@@ -22,7 +22,7 @@ describe('Unified Booking screens — Cart workflow verification', () => {
     );
 
     expect(await screen.findByText(/Advanced ECG Diagnostics/i)).toBeInTheDocument();
-    expect(screen.getByText(/Available Cardiologists/i)).toBeInTheDocument();
+    expect(screen.getByText(/Location Not Covered/i)).toBeInTheDocument();
   });
 
   it('PhysioConsultScreen renders premium header and therapist list', async () => {
@@ -35,7 +35,7 @@ describe('Unified Booking screens — Cart workflow verification', () => {
     );
 
     expect(await screen.findByText(/Expert Physio Care/i)).toBeInTheDocument();
-    expect(screen.getByText(/Available Therapists/i)).toBeInTheDocument();
+    expect(screen.getByText(/Location Not Covered/i)).toBeInTheDocument();
   });
 
   it('DoctorConsultScreen renders advanced consultation header and doctor list', async () => {
@@ -47,7 +47,7 @@ describe('Unified Booking screens — Cart workflow verification', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText(/Advanced Consultation/i)).toBeInTheDocument();
-    expect(screen.getByText(/Available Doctors/i)).toBeInTheDocument();
+    expect(await screen.findByText(/How would you like to consult a doctor/i)).toBeInTheDocument();
+    expect(screen.getByText(/Visit a Clinic/i)).toBeInTheDocument();
   });
 });

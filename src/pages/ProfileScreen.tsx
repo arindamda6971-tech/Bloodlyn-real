@@ -117,7 +117,7 @@ const ProfileScreen = () => {
       {StaticBackground}
 
       <div
-        className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl border-b border-border/40"
+        className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       >
         <div className="px-5 pt-3 pb-3">
