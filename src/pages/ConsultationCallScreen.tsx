@@ -197,18 +197,19 @@ const ConsultationCallScreen = () => {
 
       {/* Call Controls */}
       <motion.div
-        initial={{ y: 100 }}
-        animate={{ y: 0 }}
-        className="bg-card/95 backdrop-blur-xl border-t border-border px-4 py-6 safe-area-bottom"
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
       >
         {/* Call status text */}
         <AnimatePresence mode="wait">
           {callStatus !== "connected" && callStatus !== "ended" && (
             <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center text-muted-foreground mb-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-center text-white/80 font-medium mb-4 drop-shadow-md"
             >
               {callStatus === "connecting" && "Establishing secure connection..."}
               {callStatus === "ringing" && `Calling ${professional.name}...`}
@@ -217,68 +218,58 @@ const ConsultationCallScreen = () => {
         </AnimatePresence>
 
         {/* Control buttons */}
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center gap-4 bg-black/60 backdrop-blur-2xl px-6 py-4 rounded-[2rem] border border-white/10 shadow-2xl">
           {/* Mute */}
-          <Button
-            variant={isMuted ? "destructive" : "secondary"}
-            size="icon"
-            className="w-14 h-14 rounded-full"
+          <button
             onClick={() => {
               setIsMuted(!isMuted);
               toast.info(isMuted ? "Microphone unmuted" : "Microphone muted");
             }}
+            className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isMuted ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
           >
             {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-          </Button>
+          </button>
 
           {/* Video toggle (only for video calls) */}
           {isVideoCall && (
-            <Button
-              variant={isVideoOff ? "destructive" : "secondary"}
-              size="icon"
-              className="w-14 h-14 rounded-full"
+            <button
               onClick={() => {
                 setIsVideoOff(!isVideoOff);
                 toast.info(isVideoOff ? "Camera on" : "Camera off");
               }}
+              className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isVideoOff ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
             >
               {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
-            </Button>
+            </button>
           )}
 
           {/* End call */}
-          <Button
-            variant="destructive"
-            size="icon"
-            className="w-16 h-16 rounded-full"
+          <button
             onClick={handleEndCall}
             disabled={callStatus === "ended"}
+            className="flex items-center justify-center w-16 h-16 rounded-[1.25rem] bg-red-500 text-white hover:bg-red-600 transition-all duration-300 shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0"
           >
             <PhoneOff className="w-7 h-7" />
-          </Button>
+          </button>
 
           {/* Speaker */}
-          <Button
-            variant={isSpeakerOn ? "secondary" : "outline"}
-            size="icon"
-            className="w-14 h-14 rounded-full"
+          <button
             onClick={() => {
               setIsSpeakerOn(!isSpeakerOn);
               toast.info(isSpeakerOn ? "Speaker off" : "Speaker on");
             }}
+            className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${!isSpeakerOn ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
           >
             <Volume2 className="w-6 h-6" />
-          </Button>
+          </button>
 
           {/* More options */}
-          <Button
-            variant="secondary"
-            size="icon"
-            className="w-14 h-14 rounded-full"
+          <button
             onClick={() => toast.info("More options coming soon")}
+            className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 bg-white/10 text-white hover:bg-white/20"
           >
             <MoreVertical className="w-6 h-6" />
-          </Button>
+          </button>
         </div>
 
         {/* Fee info */}
