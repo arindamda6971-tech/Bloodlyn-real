@@ -77,6 +77,7 @@ const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/Upl
 const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen")));
 const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
 const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
+const BPCheckScreen = lazy(() => safeImport(() => import("./pages/BPCheckScreen")));
 const ConsultationCallScreen = lazy(() => safeImport(() => import("./pages/ConsultationCallScreen")));
 const EmbeddedCallScreen = lazy(() => safeImport(() => import("./pages/EmbeddedCallScreen")));
 const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
@@ -153,6 +154,7 @@ const AnimatedRoutes = () => {
           <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
           <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
           <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
+          <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
           <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
           <Route path="/rewards" element={<ProtectedRoute><RewardsScreen /></ProtectedRoute>} />
           <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
