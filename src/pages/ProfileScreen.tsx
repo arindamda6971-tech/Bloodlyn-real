@@ -114,10 +114,8 @@ const ProfileScreen = () => {
 
   return (
     <MobileLayout className="bg-background">
-      {StaticBackground}
-
       <div
-        className="sticky top-0 z-40 bg-background/90 backdrop-blur-xl"
+        className="sticky top-0 z-40 bg-background"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       >
         <div className="px-5 pt-3 pb-3">
@@ -125,7 +123,6 @@ const ProfileScreen = () => {
             title="My Profile"
             subtitle="Account · preferences · rewards"
             icon={User}
-            accent="from-amber-500 via-orange-500 to-primary"
           />
         </div>
       </div>
@@ -134,7 +131,7 @@ const ProfileScreen = () => {
         {/* Profile Hero */}
         <div className="mt-6 flex flex-col items-center text-center">
           <div className="relative">
-            <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-gradient-to-tr from-primary to-success/40 shadow-xl overflow-hidden">
+            <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-muted border border-border shadow-sm overflow-hidden">
               <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card">
                 {profileImageUrl || user?.user_metadata?.avatar_url ? (
                   <img
