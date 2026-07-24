@@ -28,20 +28,20 @@ const PremiumPageHeader = ({
 }: PremiumPageHeaderProps) => {
   return (
     <div
-      className={`relative ${flush ? "-mx-5 -mt-3 -mb-1 pb-2" : "rounded-2xl mb-2 bg-card border-none shadow-none"}`}
+      className={`relative ${flush ? "-mx-5 -mt-2 mb-0 pb-1" : "py-1 mb-1 bg-transparent border-none shadow-none"}`}
     >
-      <div className={`relative flex items-center gap-3 ${flush ? "px-5 pt-4 pb-2" : "px-4 py-4"}`}>
-        <div className="shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
-          <Icon className="w-5 h-5 text-primary" />
+      <div className="relative flex items-center gap-2.5 px-1 py-1">
+        <div className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10">
+          <Icon className="w-4 h-4 text-primary" />
         </div>
 
         {/* Title block */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl leading-none font-bold text-foreground truncate">
+          <h1 className="text-base font-bold text-foreground truncate leading-tight">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-1 text-sm font-medium text-muted-foreground truncate">
+            <p className="text-xs font-medium text-muted-foreground truncate leading-tight mt-0.5">
               {subtitle}
             </p>
           )}
