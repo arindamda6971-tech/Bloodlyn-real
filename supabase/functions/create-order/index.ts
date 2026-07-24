@@ -240,6 +240,41 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Server-side pricing for BP Home Check items (bp-{labId})
+    const bpItems = cartItems.filter((i) => i.id.startsWith("bp-"));
+    if (bpItems.length > 0) {
+      const bpLabIds = [
+        ...new Set(
+          bpItems
+            .map((i) => {
+              const rest = i.id.replace(/^bp-/, "");
+              // rest may be `{uuid}` or `{uuid}-suffix`
+              const parts = rest.split("-");
+              return parts.length >= 5 ? parts.slice(0, 5).join("-") : null;
+            })
+            .filter(Boolean),
+        ),
+      ] as string[];
+
+      if (bpLabIds.length > 0) {
+        const { data: bpCenters } = await adminClient
+          .from("diagnostic_centers")
+          .select("id, home_bp_price, offers_home_bp")
+          .in("id", bpLabIds);
+
+        if (bpCenters) {
+          for (const c of bpCenters) {
+            if (c.offers_home_bp !== true) continue;
+            for (const item of bpItems) {
+              if (item.id.includes(c.id) && c.home_bp_price != null) {
+                priceMap[item.id] = Number(c.home_bp_price);
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Server-side pricing for diagnostic center tests (dc-{labId}-{index})
     const dcItems = cartItems.filter((i) => i.id.startsWith("dc-"));
     if (dcItems.length > 0) {
