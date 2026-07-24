@@ -630,7 +630,7 @@ Deno.serve(async (req) => {
 
     // Create order items with server-validated prices
     const orderItems = cartItems.map((item) => {
-      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-");
+      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-");
       const isPackageItem = knownPackageIds.has(item.id);
       const mappedProductTestId = productTestIdMap[item.id];
 
