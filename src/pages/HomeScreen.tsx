@@ -304,9 +304,9 @@ const HomeScreen = () => {
                 setSearchQuery(test);
                 setShowSearchResults(true);
               }}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full bg-muted/60 border border-border/40 text-[11px] font-bold text-foreground/70 active:scale-95 transition-transform flex items-center gap-1.5"
+              className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-card border border-border/60 text-[11.5px] font-extrabold text-foreground/80 active:scale-95 transition-all flex items-center gap-1.5 shadow-2xs hover:border-primary/40"
             >
-              <TrendingUp className="w-3 h-3 text-primary" />
+              <TrendingUp className="w-3.5 h-3.5 text-primary" />
               {test}
             </button>
           ))}

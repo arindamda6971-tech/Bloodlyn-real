@@ -106,14 +106,14 @@ const LocationChip = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="mx-4 mt-2 mb-1 flex items-center gap-2 bg-primary/10 hover:bg-primary/15 active:scale-[0.99] transition-all text-primary rounded-full pl-3 pr-2 py-1.5 text-xs font-semibold w-fit"
+        className="mx-4 mt-2.5 mb-1 flex items-center gap-2 bg-sky-500/10 hover:bg-sky-500/15 active:scale-[0.98] transition-all text-sky-700 dark:text-sky-300 border border-sky-500/20 rounded-full pl-3 pr-2.5 py-1 text-xs font-bold w-fit shadow-2xs"
         aria-label="Change delivery pincode"
       >
-        <MapPin className="w-3.5 h-3.5" />
+        <MapPin className="w-3.5 h-3.5 text-sky-500" />
         <span>Delivering to: PIN {pincode || "—"}</span>
-        <span className="text-primary/70">·</span>
+        <span className="text-sky-500/50">·</span>
         <span className="underline">Change</span>
-        <ChevronRight className="w-3.5 h-3.5" />
+        <ChevronRight className="w-3.5 h-3.5 text-sky-500" />
       </button>
 
       <AnimatePresence>
