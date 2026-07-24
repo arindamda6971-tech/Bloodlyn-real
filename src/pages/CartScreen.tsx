@@ -410,15 +410,15 @@ const CartScreen = () => {
             </button>
           </div>
 
-          {/* Quick Horizontal Patient Selector Chips */}
+          {/* Quick Patient Selector Chips */}
           <div className="mb-4 pt-1">
-            <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setSelectedMemberId("self")}
-                className={`px-4 py-2 rounded-full text-xs font-extrabold border shrink-0 transition-all active:scale-95 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
                   selectedMemberId === "self"
-                    ? "bg-primary text-white border-primary shadow-xs ring-1 ring-primary/30"
+                    ? "bg-primary text-white border-primary shadow-xs"
                     : "bg-muted/60 hover:bg-muted text-foreground border-border/60"
                 }`}
               >
@@ -429,9 +429,9 @@ const CartScreen = () => {
                   key={m.id}
                   type="button"
                   onClick={() => setSelectedMemberId(m.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-extrabold border shrink-0 transition-all active:scale-95 ${
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
                     selectedMemberId === m.id
-                      ? "bg-primary text-white border-primary shadow-xs ring-1 ring-primary/30"
+                      ? "bg-primary text-white border-primary shadow-xs"
                       : "bg-muted/60 hover:bg-muted text-foreground border-border/60"
                   }`}
                 >
