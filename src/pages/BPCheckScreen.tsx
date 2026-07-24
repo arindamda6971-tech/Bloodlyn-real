@@ -653,6 +653,7 @@ const BPCheckScreen = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </div>
     </MobileLayout>
   );
