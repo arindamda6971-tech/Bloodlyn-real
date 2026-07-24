@@ -795,6 +795,7 @@ const LabDetailScreen = () => {
                       )}
                     </button>
                   </div>
+                </motion.div>
               );
             })}
 

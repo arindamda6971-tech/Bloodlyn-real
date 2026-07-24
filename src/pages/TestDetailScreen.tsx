@@ -115,7 +115,7 @@ const TestDetailScreen = () => {
 
         if (bridgeData?.tests?.length) {
           const match = bridgeData.tests.find(
-            (t) => t.id === id || (t.slug && t.slug === id) || t.test_name.toLowerCase() === id.toLowerCase()
+            (t) => t.id === id || ((t as any).slug && (t as any).slug === id) || t.test_name.toLowerCase() === id.toLowerCase()
           );
           if (match) {
             setTest({
