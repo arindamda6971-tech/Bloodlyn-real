@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     // ---------------- Zod validation ----------------
     // Items use one of: a UUID id (real test/package/product), OR a synthetic
     // prefixed id (ecg-, ai-, dc-, reorder-) for special flows.
-    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
+    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio|bp)-/i;
     const UUID = z.string().uuid();
     // Composite IDs like `{uuid}-{labSlug}` (used by PackageDetailScreen) start with a UUID.
     const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
@@ -157,7 +157,7 @@ Deno.serve(async (req) => {
     }
 
     const regularItemIds = cartItems
-      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-") && !i.id.startsWith("doc-") && !i.id.startsWith("physio-"))
+      .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-") && !i.id.startsWith("doc-") && !i.id.startsWith("physio-") && !i.id.startsWith("bp-"))
       .map((i) => i.id);
 
     const priceMap: Record<string, number> = {};
@@ -233,6 +233,41 @@ Deno.serve(async (req) => {
                 if (item.id.includes(c.id)) {
                   priceMap[item.id] = Number(c.ecg_price);
                 }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Server-side pricing for BP Home Check items (bp-{labId})
+    const bpItems = cartItems.filter((i) => i.id.startsWith("bp-"));
+    if (bpItems.length > 0) {
+      const bpLabIds = [
+        ...new Set(
+          bpItems
+            .map((i) => {
+              const rest = i.id.replace(/^bp-/, "");
+              // rest may be `{uuid}` or `{uuid}-suffix`
+              const parts = rest.split("-");
+              return parts.length >= 5 ? parts.slice(0, 5).join("-") : null;
+            })
+            .filter(Boolean),
+        ),
+      ] as string[];
+
+      if (bpLabIds.length > 0) {
+        const { data: bpCenters } = await adminClient
+          .from("diagnostic_centers")
+          .select("id, home_bp_price, offers_home_bp")
+          .in("id", bpLabIds);
+
+        if (bpCenters) {
+          for (const c of bpCenters) {
+            if (c.offers_home_bp !== true) continue;
+            for (const item of bpItems) {
+              if (item.id.includes(c.id) && c.home_bp_price != null) {
+                priceMap[item.id] = Number(c.home_bp_price);
               }
             }
           }
@@ -336,8 +371,9 @@ Deno.serve(async (req) => {
         const validCategory = AI_TEST_PRICES[category] !== undefined ? category : "Other";
         const aiPrice = AI_TEST_PRICES[validCategory];
         serverSubtotal += aiPrice * item.quantity;
-      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-")) {
+      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-")) {
         // Service / DC item without server pricing: trust client price (validated by Zod max=100k)
+        // For bp- items we prefer the lab's server-side home_bp_price when a lab is attached.
         console.warn(`Service/DC item ${item.id} (${item.name}) using client price: ${item.price}`);
         priceMap[item.id] = item.price;
         serverSubtotal += item.price * item.quantity;
@@ -594,7 +630,7 @@ Deno.serve(async (req) => {
 
     // Create order items with server-validated prices
     const orderItems = cartItems.map((item) => {
-      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-");
+      const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-");
       const isPackageItem = knownPackageIds.has(item.id);
       const mappedProductTestId = productTestIdMap[item.id];
 
