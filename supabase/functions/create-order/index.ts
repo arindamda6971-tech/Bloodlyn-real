@@ -336,8 +336,9 @@ Deno.serve(async (req) => {
         const validCategory = AI_TEST_PRICES[category] !== undefined ? category : "Other";
         const aiPrice = AI_TEST_PRICES[validCategory];
         serverSubtotal += aiPrice * item.quantity;
-      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-")) {
+      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-")) {
         // Service / DC item without server pricing: trust client price (validated by Zod max=100k)
+        // For bp- items we prefer the lab's server-side home_bp_price when a lab is attached.
         console.warn(`Service/DC item ${item.id} (${item.name}) using client price: ${item.price}`);
         priceMap[item.id] = item.price;
         serverSubtotal += item.price * item.quantity;
