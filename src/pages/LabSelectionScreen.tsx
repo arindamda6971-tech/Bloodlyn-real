@@ -483,7 +483,7 @@ const LabSelectionScreen = () => {
 
         {/* Time Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
-          <h2 className="text-base font-bold text-foreground mb-3">Select Time</h2>
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">SELECT TIME SLOT</h2>
 
           {!selectedLabId ? (
             <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
@@ -497,43 +497,47 @@ const LabSelectionScreen = () => {
               <p className="text-sm font-medium text-foreground">Lab is closed on this day</p>
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
-          ) : allSlotItems.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No time slots configured for this day.</p>
           ) : (
-            (["Morning", "Afternoon", "Evening"] as const).map((bucket) => {
-              const items = groupedSlots[bucket];
-              if (items.length === 0) return null;
-              const emoji =
-                bucket === "Morning" ? "☀️" :
-                bucket === "Afternoon" ? "🌤️" :
-                bucket === "Evening" ? "🌆" : "🌙";
-              return (
-                <div key={bucket} className="mb-4 last:mb-0">
-                  <p className="text-xs text-muted-foreground mb-2 font-medium">{emoji} {bucket}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {items.map((slot) => {
-                      const isAvailable = getSlotAvailability(slot);
-                      return (
-                        <button
-                          key={slot.id}
-                          onClick={() => isAvailable && setSelectedTime(slot.id)}
-                          disabled={!isAvailable}
-                          className={`py-2.5 px-3 rounded-xl text-center text-sm transition-all ${
-                            !isAvailable
-                              ? "bg-muted/50 text-muted-foreground opacity-40 line-through"
-                              : selectedTime === slot.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-card border border-border text-foreground"
-                          }`}
-                        >
-                          {slot.time}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })
+            <div className="space-y-3">
+              {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
+                const now = new Date();
+                const currentHour = now.getHours();
+                const isAvailable = selectedDate !== 0 || (
+                  slot.includes("Morning") ? currentHour < 12 :
+                  slot.includes("Afternoon") ? currentHour < 16 :
+                  currentHour < 20
+                );
+                const isSelected = selectedTime === slot;
+                return (
+                  <button
+                    key={slot}
+                    onClick={() => isAvailable && setSelectedTime(slot)}
+                    disabled={!isAvailable}
+                    className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
+                      !isAvailable
+                        ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
+                        : isSelected 
+                        ? "bg-primary/5 border-primary shadow-sm" 
+                        : "bg-card border-slate-200/80 hover:border-primary/40 shadow-xs"
+                    }`}
+                  >
+                    <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
+                      <Clock className={`w-5 h-5 ${!isAvailable ? "text-foreground/30" : isSelected ? "text-white" : "text-slate-600"}`} strokeWidth={2} />
+                    </div>
+                    <div className="flex flex-col items-start flex-1 text-left">
+                      <span className={`text-[15px] font-bold ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
+                        {slot}
+                      </span>
+                      {!isAvailable && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                          Passed
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </motion.div>
       </div>

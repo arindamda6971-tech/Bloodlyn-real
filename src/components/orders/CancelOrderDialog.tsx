@@ -25,12 +25,9 @@ interface CancelOrderDialogProps {
 }
 
 const DEFAULT_SLOTS = [
-  "6:00 AM - 8:00 AM",
-  "8:00 AM - 10:00 AM",
-  "10:00 AM - 12:00 PM",
-  "12:00 PM - 2:00 PM",
-  "2:00 PM - 4:00 PM",
-  "4:00 PM - 6:00 PM",
+  "Morning (8 AM - 12 PM)",
+  "Afternoon (12 PM - 4 PM)",
+  "Evening (4 PM - 8 PM)"
 ];
 
 const REASONS: { key: Reason; title: string; subtitle: string; icon: any; tone: string }[] = [

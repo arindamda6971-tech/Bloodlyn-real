@@ -106,15 +106,7 @@ const StickySearch = ({
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       data-testid="sticky-search-shell"
     >
-      {/* Seamless unified premium background elements across both header and search bar */}
-      {accent && (
-        <>
-          <div className={`absolute inset-0 bg-gradient-to-br ${accent} opacity-[0.08] pointer-events-none`} />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.18),transparent_60%)] pointer-events-none" />
-          <div className="pointer-events-none absolute -top-8 -right-6 w-36 h-36 rounded-full bg-gradient-to-br from-primary/30 to-transparent blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-8 w-40 h-40 rounded-full bg-gradient-to-tr from-blue-500/20 to-transparent blur-2xl" />
-        </>
-      )}
+      {/* Clean normal search shell without color gradients */}
 
       {header && (
         <div
@@ -137,7 +129,7 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className={`w-full h-12 rounded-2xl bg-muted/40 border border-border/40 pl-11 ${rightSlot ? 'pr-16' : 'pr-11'} text-[15px] font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all text-foreground placeholder:text-muted-foreground/50`}
+            className={`w-full h-12 rounded-2xl bg-muted/60 border-none pl-11 ${rightSlot ? 'pr-16' : 'pr-11'} text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50 shadow-none`}
           />
           {value && (
             <button

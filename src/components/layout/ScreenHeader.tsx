@@ -37,38 +37,38 @@ const ScreenHeader = ({
       initial={{ y: -15, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className={`sticky top-0 z-50 px-5 py-4 transition-colors duration-300 ${
+      className={`sticky top-0 z-50 px-4 py-4 transition-colors duration-300 ${
         transparent
           ? "bg-transparent"
-          : "bg-background/80 backdrop-blur-2xl saturate-150 shadow-[0_4px_20px_-8px_rgba(0,0,0,0.05)]"
+          : "bg-background border-none shadow-none"
       }`}
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
-        height: "calc(env(safe-area-inset-top, 0px) + 72px)",
+        height: "calc(env(safe-area-inset-top, 0px) + 64px)",
         display: "flex",
         alignItems: "center"
       }}
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-3.5 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           {showBack && (
             <button
               onClick={handleBack}
-              className="w-10.5 h-10.5 rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-90 hover:scale-[1.04] hover:bg-accent/60 transition-all shrink-0 group"
+              className="w-10 h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors shrink-0"
               aria-label="Go back"
             >
-              <ArrowLeft className="w-[20px] h-[20px] text-foreground group-hover:-translate-x-0.5 transition-transform" />
+              <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
           )}
-          <h1 className="text-[20px] sm:text-[22px] font-black text-foreground tracking-tight truncate leading-none pt-0.5">
+          <h1 className="text-xl font-bold text-foreground truncate pt-0.5">
             {title}
           </h1>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {rightAction}
           {showMenu && (
-            <button className="w-10.5 h-10.5 rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_4px_14px_-4px_rgba(0,0,0,0.06)] flex items-center justify-center active:scale-90 hover:scale-[1.04] hover:bg-accent/60 transition-all">
-              <MoreVertical className="w-[20px] h-[20px] text-foreground" />
+            <button className="w-10 h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors">
+              <MoreVertical className="w-5 h-5 text-foreground" />
             </button>
           )}
         </div>

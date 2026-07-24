@@ -72,10 +72,36 @@ const BPCheckScreen = () => {
   };
 
   const handlePayment = () => {
-    // Mock payment/booking
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const newBooking = {
+      id: `bp-${Date.now()}`,
+      booking_code: `#HS-BP-${randomNum}`,
+      patient_name: patient.name || "Patient",
+      patient_age: patient.age || 40,
+      patient_gender: patient.gender || "Male",
+      patient_phone: patient.mobile || "+91 98765 43210",
+      visit_address: selectedAddress?.fullAddress || "42 Medical Lane, Bandra West",
+      visit_date: appointment.date || "Today, 24 Jul",
+      time_slot: appointment.timeSlot || "Morning (8 AM - 12 PM)",
+      status: "pending",
+      amount: 299,
+      payment_status: "paid",
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      const existing = localStorage.getItem("healthswift_bp_bookings");
+      const list = existing ? JSON.parse(existing) : [];
+      list.unshift(newBooking);
+      localStorage.setItem("healthswift_bp_bookings", JSON.stringify(list));
+      window.dispatchEvent(new Event("storage"));
+    } catch (e) {
+      console.error("Error saving BP booking:", e);
+    }
+
     setTimeout(() => {
       setStep("SUCCESS");
-    }, 1500);
+    }, 1200);
   };
 
   return (
@@ -263,7 +289,7 @@ const BPCheckScreen = () => {
                 </button>
               </div>
 
-              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3 px-1">Select Time Slot</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">SELECT TIME SLOT</p>
               <div className="space-y-3">
                 {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
                   const isSelected = appointment.timeSlot === slot;
@@ -271,16 +297,20 @@ const BPCheckScreen = () => {
                     <div
                       key={slot}
                       onClick={() => setAppointment({ ...appointment, timeSlot: slot })}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
+                      className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
                         isSelected 
-                          ? "bg-blue-50 border-blue-200" 
-                          : "bg-card border-border/50"
+                          ? "bg-primary/5 border-primary shadow-sm" 
+                          : "bg-card border-slate-200/80 hover:border-primary/40 shadow-xs"
                       }`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSelected ? "bg-blue-600" : "bg-muted"}`}>
-                        <Clock className={`w-5 h-5 ${isSelected ? "text-white" : "text-foreground/50"}`} />
+                      <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
+                        <Clock className={`w-5 h-5 ${isSelected ? "text-white" : "text-slate-600"}`} strokeWidth={2} />
                       </div>
-                      <span className={`text-sm font-bold ${isSelected ? "text-blue-900" : "text-foreground"}`}>{slot}</span>
+                      <div className="flex flex-col items-start flex-1 text-left">
+                        <span className={`text-[15px] font-bold ${isSelected ? "text-primary" : "text-slate-800"}`}>
+                          {slot}
+                        </span>
+                      </div>
                     </div>
                   );
                 })}
