@@ -291,7 +291,7 @@ const CartScreen = () => {
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-48">
+      <div className="px-4 pb-64">
         {(() => {
           const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
           const hasService = items.some((item) => item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("ecg-") || item.name.includes(" with "));
@@ -564,9 +564,20 @@ const CartScreen = () => {
                         </div>
                         <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
                       </div>
-                      {isSelected && (
-                        <Check className="w-4.5 h-4.5 text-primary shrink-0 mt-1" />
-                      )}
+                      <div className="flex flex-col items-end justify-between shrink-0 gap-1.5 self-stretch">
+                        {isSelected && (
+                          <Check className="w-4.5 h-4.5 text-primary" />
+                        )}
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/saved-addresses");
+                          }}
+                          className="text-[11px] font-black text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-0.5 rounded-md"
+                        >
+                          Change
+                        </span>
+                      </div>
                     </div>
                   </button>
                 );
