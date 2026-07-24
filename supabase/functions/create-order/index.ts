@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     // ---------------- Zod validation ----------------
     // Items use one of: a UUID id (real test/package/product), OR a synthetic
     // prefixed id (ecg-, ai-, dc-, reorder-) for special flows.
-    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
+    const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio|bp)-/i;
     const UUID = z.string().uuid();
     // Composite IDs like `{uuid}-{labSlug}` (used by PackageDetailScreen) start with a UUID.
     const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
