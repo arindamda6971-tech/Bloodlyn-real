@@ -292,7 +292,15 @@ const BPCheckScreen = () => {
       )}
 
       <div className="flex-1 overflow-x-hidden relative min-h-[calc(100vh-100px)]">
+        {bootLoading && (
+          <div className="flex flex-col items-center justify-center py-24">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+            <p className="text-xs text-muted-foreground font-semibold">Loading your details…</p>
+          </div>
+        )}
+        {!bootLoading && (
         <AnimatePresence mode="wait">
+
           {step === "ADDRESS" && (
             <motion.div key="address" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-4">Where should we visit?</h2>
