@@ -43,22 +43,42 @@ interface CartContextType {
   validateFamilyMember: (activeMemberIds: string[]) => void;
 }
 
+const LOCAL_STORAGE_KEY = "healthswift_cart_items";
+
+const getLocalCart = (): CartItem[] => {
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const setLocalCart = (cartItems: CartItem[]) => {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cartItems));
+  } catch {
+    // Ignore storage write failures
+  }
+};
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(getLocalCart);
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const isInitialized = useRef(false);
   const isSyncing = useRef(false);
   const pendingSyncItems = useRef<CartItem[] | null>(null);
 
-  // Load cart from Supabase
+  // Load cart from Supabase or fallback to localStorage
   const loadCartFromSupabase = useCallback(async () => {
     if (!user) {
-      // For non-logged-in users, start with empty cart (no sessionStorage restore)
-      setItems([]);
+      // For non-logged-in users, keep existing localStorage items
+      const local = getLocalCart();
+      setItems(local);
       setIsLoading(false);
       isInitialized.current = true;
       return;
@@ -72,7 +92,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error loading cart:", error);
-        setItems([]);
       } else if (data && data.length > 0) {
         const cartItems: CartItem[] = data
           .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
@@ -88,13 +107,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
           }));
         setItems(cartItems);
+        setLocalCart(cartItems);
       } else {
-        setItems([]);
+        // If DB has no items, check if local cart has items and sync them to DB
+        const local = getLocalCart();
+        if (local.length > 0) {
+          setItems(local);
+          syncItemsToSupabase(local, user.id);
+        }
       }
-
     } catch (err) {
       console.error("Error loading cart:", err);
-      setItems([]);
     } finally {
       setIsLoading(false);
       isInitialized.current = true;
@@ -228,6 +251,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       // Defensive guard inside setter as well (handles race conditions)
       if (prev.some((i) => i.id === item.id)) return prev;
       const updated = [...prev, { ...item, quantity: 1 }];
+      setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
@@ -238,6 +262,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (pendingItem) {
       const newItems = [{ ...pendingItem.item, quantity: 1 }];
       setItems(newItems);
+      setLocalCart(newItems);
       syncCartToSupabase(newItems);
       setPendingItem(null);
       if (callback) callback();
@@ -251,6 +276,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const removeFromCart = (id: string) => {
     setItems((prev) => {
       const updated = prev.filter((item) => item.id !== id);
+      setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
@@ -263,6 +289,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           ? { ...item, quantity: Math.max(1, item.quantity + delta) }
           : item
       );
+      setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
@@ -275,6 +302,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           ? { ...item, familyMemberId }
           : item
       );
+      setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
@@ -287,6 +315,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         labId,
         labName,
       }));
+      setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
@@ -294,6 +323,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = () => {
     setItems([]);
+    setLocalCart([]);
     syncCartToSupabase([]);
   };
 
@@ -301,6 +331,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     triggerHaptic('light');
     const updated = newItems.map((item) => ({ ...item, quantity: 1 }));
     setItems(updated);
+    setLocalCart(updated);
     // wait for next tick to bypass any isSyncing locks from previous clearCart if any
     setTimeout(() => {
       syncCartToSupabase(updated);
