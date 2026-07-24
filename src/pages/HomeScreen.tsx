@@ -312,8 +312,6 @@ const HomeScreen = () => {
           ))}
         </div>
 
-        <LocationChip />
-
         {/* Health Tip of the Day */}
         <section className="px-4 mt-4">
           <motion.div

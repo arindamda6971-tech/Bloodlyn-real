@@ -1,14 +1,27 @@
-import React, { useState } from "react";
-import { MapPin, ChevronDown, Bell, Phone, Coins, Zap, Sparkles, User, Crosshair, Check, ShieldCheck } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { MapPin, ChevronDown, Bell, Phone, Coins, Zap, Sparkles, User, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface ZomatoStyleHeaderProps {
   unreadCount?: number;
   onOpenCall?: () => void;
   greeting?: string;
   activeBookingsCount?: number;
+}
+
+export interface AddressItem {
+  id: string;
+  type: string;
+  address_line1: string;
+  city?: string;
+  state?: string;
+  pincode: string;
+  is_default?: boolean;
 }
 
 export const ZomatoStyleHeader = ({
@@ -19,13 +32,73 @@ export const ZomatoStyleHeader = ({
 }: ZomatoStyleHeaderProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [currentAddress, setCurrentAddress] = useState("Home • 42 Medical Lane, Bandra West");
-  const [savedAddresses] = useState([
-    { id: "1", title: "Home", addr: "42 Medical Lane, Bandra West, Mumbai 400050", active: true },
-    { id: "2", title: "Office", addr: "12 Tech Park, BKC, Mumbai 400051", active: false },
-    { id: "3", title: "Parents House", addr: "88 Care Street, Dadar, Mumbai 400014", active: false },
+  const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([
+    { id: "1", type: "Home", address_line1: "42 Medical Lane, Bandra West", city: "Mumbai", pincode: "400050", is_default: true },
+    { id: "2", type: "Office", address_line1: "12 Tech Park, BKC", city: "Mumbai", pincode: "400051", is_default: false },
+    { id: "3", type: "Parents House", address_line1: "88 Care Street, Dadar", city: "Mumbai", pincode: "400014", is_default: false },
   ]);
+  const [switching, setSwitching] = useState<string | null>(null);
+
+  // Load user's real saved addresses from Supabase
+  const loadAddresses = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from("addresses")
+        .select("id, type, address_line1, city, state, pincode, is_default")
+        .eq("user_id", user.id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (data && data.length > 0) {
+        setSavedAddresses(data);
+        const defaultAddr = data.find((a) => a.is_default) || data[0];
+        const title = defaultAddr.type || "Home";
+        const line = `${defaultAddr.address_line1}${defaultAddr.city ? `, ${defaultAddr.city}` : ''}`;
+        setCurrentAddress(`${title} • ${line}`);
+      }
+    } catch (e) {
+      console.error("Failed to fetch user addresses:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadAddresses();
+  }, [user]);
+
+  const handleSelectAddress = async (loc: AddressItem) => {
+    if (!user) {
+      const title = loc.type || "Home";
+      const line = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''}`;
+      setCurrentAddress(`${title} • ${line}`);
+      setShowLocationModal(false);
+      return;
+    }
+
+    setSwitching(loc.id);
+    try {
+      // Set all user addresses to is_default = false
+      await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
+      // Set chosen address to is_default = true
+      await supabase.from("addresses").update({ is_default: true }).eq("id", loc.id);
+
+      const title = loc.type || "Home";
+      const line = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''}`;
+      setCurrentAddress(`${title} • ${line}`);
+
+      // Invalidate queries so tests/labs refresh for new pincode
+      queryClient.invalidateQueries();
+      toast.success(`Location set to ${title} (${loc.pincode})`);
+      setShowLocationModal(false);
+    } catch (e) {
+      toast.error("Failed to update default location");
+    } finally {
+      setSwitching(null);
+    }
+  };
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
@@ -149,35 +222,36 @@ export const ZomatoStyleHeader = ({
                 </button>
               </div>
 
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-2.5 pt-1 max-h-[50vh] overflow-y-auto pr-1">
                 {savedAddresses.map((loc) => {
-                  const isCurrent = currentAddress.startsWith(loc.title);
+                  const title = loc.type || "Home";
+                  const addrLine = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''} (${loc.pincode})`;
+                  const isCurrent = currentAddress.startsWith(title) || loc.is_default;
+                  const isBusy = switching === loc.id;
                   return (
                     <button
                       key={loc.id}
                       type="button"
-                      onClick={() => {
-                        setCurrentAddress(`${loc.title} • ${loc.addr}`);
-                        setShowLocationModal(false);
-                      }}
-                      className={`w-full text-left p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                      disabled={isBusy}
+                      onClick={() => handleSelectAddress(loc)}
+                      className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
                         isCurrent
-                          ? "border-primary bg-primary/10 shadow-md shadow-primary/5 ring-1 ring-primary/30"
+                          ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/30"
                           : "border-border/60 hover:bg-accent/40"
                       }`}
                     >
-                      <div className="flex items-start gap-3.5 min-w-0">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                          isCurrent ? "bg-primary text-white shadow-sm" : "bg-muted text-muted-foreground"
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                          isCurrent ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
                         }`}>
-                          <MapPin className="w-4.5 h-4.5" />
+                          {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-foreground">{loc.title}</h4>
-                          <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{loc.addr}</p>
+                          <h4 className="text-sm font-bold text-foreground">{title}</h4>
+                          <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{addrLine}</p>
                         </div>
                       </div>
-                      {isCurrent && <Check className="w-5 h-5 text-primary shrink-0 mt-2" />}
+                      {isCurrent && <Check className="w-4.5 h-4.5 text-primary shrink-0 mt-2" />}
                     </button>
                   );
                 })}
