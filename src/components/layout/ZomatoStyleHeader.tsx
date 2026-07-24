@@ -109,7 +109,7 @@ export const ZomatoStyleHeader = ({
         {/* Left: Clean Premium Location Selector */}
         <button
           type="button"
-          onClick={() => setShowLocationModal(true)}
+          onClick={() => navigate("/saved-addresses")}
           className="flex items-center gap-2.5 min-w-0 text-left group active:scale-[0.98] transition-all bg-card/60 hover:bg-card border border-border/40 px-3 py-1.5 rounded-2xl shadow-2xs"
         >
           <div className="w-8.5 h-8.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-2xs">
