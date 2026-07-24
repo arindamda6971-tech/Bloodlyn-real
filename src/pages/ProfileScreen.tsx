@@ -273,6 +273,8 @@ const ProfileScreen = () => {
               </div>
               <span className="flex-1 text-left font-bold text-foreground tracking-tight">{item.label}</span>
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+          ))}
         </div>
 
         {/* App Preferences */}
