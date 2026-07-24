@@ -246,9 +246,11 @@ const BPCheckScreen = () => {
   };
 
   const stepIndex = useMemo(() => {
-    const order: FlowStep[] = ["ADDRESS", "AVAILABILITY", "LAB", "APPOINTMENT", "DETAILS", "SUMMARY"];
-    return order.indexOf(step);
+    const order: FlowStep[] = ["LAB", "APPOINTMENT", "DETAILS", "SUMMARY"];
+    const i = order.indexOf(step);
+    return i < 0 ? 0 : i;
   }, [step]);
+  const totalSteps = 4;
 
   return (
     <MobileLayout showNav={false}>
