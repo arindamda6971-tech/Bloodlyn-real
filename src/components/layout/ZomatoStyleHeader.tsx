@@ -54,7 +54,7 @@ export const ZomatoStyleHeader = ({
         .order("created_at", { ascending: false });
 
       if (data && data.length > 0) {
-        setSavedAddresses(data.map((a) => ({ ...a, type: a.type ?? "Home" })));
+        setSavedAddresses(data.map((a) => ({ ...a, type: a.type ?? "Home", is_default: a.is_default ?? false })));
         const defaultAddr = data.find((a) => a.is_default) || data[0];
         const title = defaultAddr.type || "Home";
         const line = `${defaultAddr.address_line1}${defaultAddr.city ? `, ${defaultAddr.city}` : ''}`;
