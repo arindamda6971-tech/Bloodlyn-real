@@ -284,7 +284,7 @@ const BPCheckScreen = () => {
               <motion.div
                 className="bg-blue-600 h-full rounded-full"
                 initial={{ width: "16%" }}
-                animate={{ width: `${((stepIndex + 1) / 6) * 100}%` }}
+                animate={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
               />
             </div>
           </div>
