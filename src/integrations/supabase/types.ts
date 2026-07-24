@@ -129,6 +129,7 @@ export type Database = {
           ecg_available: boolean | null
           ecg_price: number | null
           email: string | null
+          home_bp_price: number
           home_collection_available: boolean | null
           id: string
           is_active: boolean | null
@@ -137,6 +138,8 @@ export type Database = {
           logo_url: string | null
           longitude: number | null
           name: string
+          offers_home_bp: boolean
+          offers_home_ecg: boolean
           opening_time: string | null
           phone: string | null
           pincode: string
@@ -158,6 +161,7 @@ export type Database = {
           ecg_available?: boolean | null
           ecg_price?: number | null
           email?: string | null
+          home_bp_price?: number
           home_collection_available?: boolean | null
           id?: string
           is_active?: boolean | null
@@ -166,6 +170,8 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           name: string
+          offers_home_bp?: boolean
+          offers_home_ecg?: boolean
           opening_time?: string | null
           phone?: string | null
           pincode: string
@@ -187,6 +193,7 @@ export type Database = {
           ecg_available?: boolean | null
           ecg_price?: number | null
           email?: string | null
+          home_bp_price?: number
           home_collection_available?: boolean | null
           id?: string
           is_active?: boolean | null
@@ -195,6 +202,8 @@ export type Database = {
           logo_url?: string | null
           longitude?: number | null
           name?: string
+          offers_home_bp?: boolean
+          offers_home_ecg?: boolean
           opening_time?: string | null
           phone?: string | null
           pincode?: string
