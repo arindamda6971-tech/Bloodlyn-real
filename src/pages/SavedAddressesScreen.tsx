@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Edit2, Trash2, Loader, Star, Plus } from "lucide-react";
+import { MapPin, Edit2, Trash2, Loader, Star, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -281,6 +282,8 @@ const SavedAddressesScreen = () => {
     }
   };
 
+  const queryClient = useQueryClient();
+
   const handleSetDefault = async (id: string) => {
     if (!supabaseUserId) return;
 
@@ -298,6 +301,8 @@ const SavedAddressesScreen = () => {
 
       if (error) throw error;
       await fetchAddresses();
+      queryClient.invalidateQueries();
+      toast.success("Default location updated!");
     } catch (err) {
       console.error("Set default error:", err);
       toast.error("Failed to set default address");
@@ -440,15 +445,29 @@ const SavedAddressesScreen = () => {
             ) : (
               <div className="space-y-3">
                 {addresses.map((address) => (
-                  <div key={address.id} className="soft-card p-4">
+                  <div
+                    key={address.id}
+                    onClick={() => !address.is_default && handleSetDefault(address.id)}
+                    className={`soft-card p-4 transition-all cursor-pointer ${
+                      address.is_default
+                        ? "border-primary/80 bg-primary/5 ring-1 ring-primary/30 shadow-sm"
+                        : "hover:border-primary/40 hover:bg-accent/30"
+                    }`}
+                  >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <MapPin className="w-5 h-5 text-primary" />
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        address.is_default ? "bg-primary text-white shadow-xs" : "bg-primary/10 text-primary"
+                      }`}>
+                        <MapPin className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <p className="font-semibold text-foreground capitalize">{address.type || "Home"}</p>
-                          {address.is_default && <Badge variant="soft" className="text-xs">Default</Badge>}
+                          {address.is_default && (
+                            <Badge variant="soft" className="text-xs bg-primary/20 text-primary font-bold flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Default
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           {address.address_line1}
@@ -459,16 +478,16 @@ const SavedAddressesScreen = () => {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/60" onClick={(e) => e.stopPropagation()}>
                       {!address.is_default && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-xs flex-1"
+                          className="text-xs flex-1 text-primary hover:text-primary hover:bg-primary/10 font-bold"
                           onClick={() => handleSetDefault(address.id)}
                         >
                           <Star className="w-3 h-3 mr-1" />
-                          Set Default
+                          Set as Default
                         </Button>
                       )}
                       <Button variant="ghost" size="sm" className="text-xs" onClick={() => startEdit(address)}>
