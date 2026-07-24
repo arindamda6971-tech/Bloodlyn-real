@@ -31,22 +31,24 @@ const FALLBACKS: LabBannerTheme[] = [
   { from: "#052e2b", via: "#0d9488", to: "#5eead4", accent: "#99f6e4" },
 ];
 
-export function getLabBannerTheme(labName: string): LabBannerTheme {
-  if (THEMES[labName]) return THEMES[labName];
+export function getLabBannerTheme(labName?: string): LabBannerTheme {
+  const safeName = typeof labName === "string" && labName ? labName : "Lab";
+  if (THEMES[safeName]) return THEMES[safeName];
   // deterministic by name
   let hash = 0;
-  for (let i = 0; i < labName.length; i++) hash = (hash * 31 + labName.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < safeName.length; i++) hash = (hash * 31 + safeName.charCodeAt(i)) >>> 0;
   return FALLBACKS[hash % FALLBACKS.length];
 }
 
 interface LabBannerProps {
-  labName: string;
+  labName?: string;
   className?: string;
 }
 
-const LabBanner = memo(({ labName, className = "" }: LabBannerProps) => {
-  const t = getLabBannerTheme(labName);
-  const id = `lab-bg-${labName.replace(/\W+/g, "")}`;
+const LabBanner = memo(({ labName = "Lab", className = "" }: LabBannerProps) => {
+  const safeName = typeof labName === "string" && labName ? labName : "Lab";
+  const t = getLabBannerTheme(safeName);
+  const id = `lab-bg-${safeName.replace(/\W+/g, "")}`;
 
   return (
     <svg
