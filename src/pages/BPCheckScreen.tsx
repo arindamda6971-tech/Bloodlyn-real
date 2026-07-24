@@ -60,6 +60,7 @@ const BPCheckScreen = () => {
   const { user } = useAuth();
 
   const [step, setStep] = useState<FlowStep>("ADDRESS");
+  const [bootLoading, setBootLoading] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [pincode, setPincode] = useState("");
@@ -71,26 +72,59 @@ const BPCheckScreen = () => {
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
-  // Load user's saved addresses
+  // Boot: load default address + profile, auto-skip to LAB when we have an address
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setBootLoading(false); return; }
+    let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("addresses")
-        .select("id, type, address_line, city, state, pincode")
-        .eq("user_id", user.id)
-        .order("is_default", { ascending: false });
-      if (data && data.length > 0) {
-        setSavedAddresses(
-          data.map((a: any) => ({
-            id: a.id,
-            type: a.type || "Home",
-            fullAddress: [a.address_line, a.city, a.state, a.pincode].filter(Boolean).join(", "),
-            pincode: a.pincode || "",
-          }))
-        );
+      const [{ data: addrData }, { data: profData }] = await Promise.all([
+        supabase
+          .from("addresses")
+          .select("id, type, address_line, city, state, pincode, is_default, created_at")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("full_name, phone, gender, date_of_birth")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+
+      const addrs: Address[] = (addrData || []).map((a: any) => ({
+        id: a.id,
+        type: a.type || "Home",
+        fullAddress: [a.address_line, a.city, a.state, a.pincode].filter(Boolean).join(", "),
+        pincode: a.pincode || "",
+      }));
+      setSavedAddresses(addrs);
+
+      // Prefill patient from profile
+      if (profData) {
+        const dob = profData.date_of_birth ? new Date(profData.date_of_birth) : null;
+        const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+        setPatient((p) => ({
+          ...p,
+          name: p.name || profData.full_name || "",
+          gender: p.gender || (profData.gender ? profData.gender.charAt(0).toUpperCase() + profData.gender.slice(1) : ""),
+          mobile: p.mobile || (profData.phone || "").replace(/\D/g, "").slice(-10),
+          age: p.age || (age && age > 0 ? String(age) : ""),
+        }));
       }
+
+      // Auto-select default address + jump to LAB
+      const def = addrs[0];
+      if (def && def.pincode && /^\d{6}$/.test(def.pincode)) {
+        setSelectedAddress(def);
+        setPincode(def.pincode);
+        setStep("LAB");
+      } else {
+        setStep("ADDRESS");
+      }
+      setBootLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [user]);
 
   // Fetch labs whenever we enter the LAB step
@@ -124,8 +158,8 @@ const BPCheckScreen = () => {
   const handleBack = () => {
     switch (step) {
       case "ADDRESS": navigate(-1); break;
-      case "AVAILABILITY": setStep("ADDRESS"); break;
-      case "LAB": setStep("AVAILABILITY"); break;
+      case "AVAILABILITY": setStep(selectedAddress ? "LAB" : "ADDRESS"); break;
+      case "LAB": navigate(-1); break;
       case "APPOINTMENT": setStep("LAB"); break;
       case "DETAILS": setStep("APPOINTMENT"); break;
       case "SUMMARY": setStep("DETAILS"); break;
@@ -135,7 +169,6 @@ const BPCheckScreen = () => {
 
   const checkAvailability = async () => {
     if (pincode.length < 6) return;
-    // Move to LAB step; that step fetches labs offering BP for this pincode
     setStep("LAB");
   };
 
