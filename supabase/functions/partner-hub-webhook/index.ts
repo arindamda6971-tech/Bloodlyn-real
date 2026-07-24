@@ -38,6 +38,18 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authenticate: this endpoint is only called by the DB trigger
+  // `notify_partner_hub_on_order` which sends the service role key.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const expected = `Bearer ${serviceKey}`;
+  if (!serviceKey || authHeader.length !== expected.length || authHeader !== expected) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  }
+
   try {
     const payload: OrderWebhookPayload = await req.json();
     
