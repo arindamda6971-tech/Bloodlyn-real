@@ -378,9 +378,27 @@ const BPCheckScreen = () => {
           {step === "LAB" && (
             <motion.div key="lab" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-1">Pick a lab</h2>
-              <p className="text-xs text-muted-foreground font-medium mb-5">
+              <p className="text-xs text-muted-foreground font-medium mb-3">
                 Only labs offering Home BP Check for pincode <span className="font-bold text-foreground">{pincode}</span>
               </p>
+
+              {selectedAddress && (
+                <div className="mb-5 bg-blue-50/60 border border-blue-100 rounded-2xl p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-blue-700/80">Visit at</p>
+                    <p className="text-xs font-bold text-foreground leading-snug truncate">{selectedAddress.fullAddress}</p>
+                  </div>
+                  <button
+                    onClick={() => setStep("ADDRESS")}
+                    className="text-[11px] font-black text-blue-600 uppercase tracking-wider px-2 py-1 rounded-lg active:bg-blue-100 shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
 
               {labsLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
