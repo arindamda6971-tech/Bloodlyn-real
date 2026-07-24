@@ -33,8 +33,6 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 const menuItems = [
-  { icon: MapPin, label: "Saved Addresses", path: "/saved-addresses" },
-  { icon: Users, label: "Family Members", path: "/family-members" },
   { icon: Crown, label: "Subscription Plans", path: "/subscription" },
   { icon: HelpCircle, label: "Help & Support", path: "/support" },
   { icon: FileText, label: "Terms & Conditions", path: "/terms" },
