@@ -85,7 +85,7 @@ const LocationStep = ({ updateOfflineState, onNext }: any) => {
             onChange={(e) => { setPincode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
             placeholder="Enter Pincode Manually" 
             className="h-14 rounded-2xl pl-4 border-border/60 font-medium"
-            keyboardType="number-pad"
+            inputMode="numeric"
           />
         </div>
         <Button onClick={handlePincodeSubmit} className="h-14 px-6 rounded-2xl font-bold bg-foreground text-background hover:bg-foreground/90">
