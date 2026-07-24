@@ -127,12 +127,15 @@ const ProfileScreen = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-12 relative z-10 overflow-hidden">
-        {/* Profile Hero */}
-        <div className="mt-6 flex flex-col items-center text-center">
-          <div className="relative">
-            <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-muted border border-border shadow-sm overflow-hidden">
-              <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card">
+      <div className="px-4 pb-16 relative z-10">
+        {/* Profile Hero Header */}
+        <div className="mt-4 p-6 rounded-[2.2rem] bg-card border border-border/60 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
+          {/* Top subtle glow bar */}
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-emerald-500" />
+          
+          <div className="relative mt-2">
+            <div className="w-24 h-24 rounded-[2rem] p-1 bg-gradient-to-br from-primary/30 to-indigo-500/20 border border-primary/20 shadow-md overflow-hidden">
+              <div className="w-full h-full rounded-[1.8rem] overflow-hidden bg-muted">
                 {profileImageUrl || user?.user_metadata?.avatar_url ? (
                   <img
                     src={profileImageUrl || user?.user_metadata?.avatar_url}
@@ -140,92 +143,93 @@ const ProfileScreen = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <User className="w-12 h-12 text-primary/40" />
+                  <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                    <User className="w-10 h-10 text-primary" />
                   </div>
                 )}
               </div>
             </div>
             <button
               onClick={() => navigate("/edit-profile")}
-              className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border-4 border-background active:scale-90 transition-transform"
+              className="absolute -bottom-1 -right-1 w-8.5 h-8.5 rounded-xl bg-primary text-white flex items-center justify-center shadow-md border-2 border-card active:scale-90 transition-transform"
+              title="Edit Profile"
             >
-              <Pencil className="w-5 h-5" />
+              <Pencil className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="mt-4">
-            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{displayName}</h2>
-            <p className="text-sm text-muted-foreground font-medium">{contactInfo}</p>
+          <div className="mt-3.5">
+            <h2 className="text-xl font-black text-foreground tracking-tight">{displayName}</h2>
+            <p className="text-xs text-muted-foreground font-semibold mt-0.5">{contactInfo}</p>
 
             <div className="flex items-center justify-center mt-3">
               {isActive ? (
-                <div className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#8A6424] text-white flex items-center gap-2 shadow-md">
+                <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-600 text-white flex items-center gap-1.5 shadow-xs">
                   <Crown className="w-3.5 h-3.5 fill-white" />
-                  <span className="font-black tracking-[0.05em] text-[11px] uppercase">Gold Member</span>
+                  <span className="font-extrabold tracking-wider text-[10px] uppercase">Gold Member</span>
                 </div>
               ) : (
-                <div className="px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center gap-2">
+                <div className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center gap-1.5">
                   <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span className="font-bold tracking-tight text-[11px] uppercase">Plus Member</span>
+                  <span className="font-extrabold tracking-wider text-[10px] uppercase">Plus Member</span>
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mt-8">
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-2 gap-3 mt-4">
           <button
-            className="p-4 rounded-3xl bg-card border border-border/50 flex flex-col items-center justify-center text-center active:scale-95 transition-transform"
+            className="p-4 rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center text-center active:scale-[0.98] transition-transform shadow-2xs hover:border-primary/40"
             onClick={() => navigate("/saved-addresses")}
           >
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-              <MapPin className="w-6 h-6 text-primary" />
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center mb-2">
+              <MapPin className="w-5 h-5" />
             </div>
-            <span className="text-xl font-black text-foreground">{addressCount}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Addresses</span>
+            <span className="text-lg font-black text-foreground">{addressCount}</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mt-0.5">Saved Addresses</span>
           </button>
 
           <button
-            className="p-4 rounded-3xl bg-card border border-border/50 flex flex-col items-center justify-center text-center active:scale-95 transition-transform"
+            className="p-4 rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center text-center active:scale-[0.98] transition-transform shadow-2xs hover:border-emerald-500/40"
             onClick={() => navigate("/family-members")}
           >
-            <div className="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center mb-2">
-              <Users className="w-6 h-6 text-success" />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2">
+              <Users className="w-5 h-5" />
             </div>
-            <span className="text-xl font-black text-foreground">{familyMembers.length}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Family</span>
+            <span className="text-lg font-black text-foreground">{familyMembers.length}</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground mt-0.5">Family Members</span>
           </button>
         </div>
 
-        {/* Wallet */}
-        <div className="mt-6">
-          <div className="relative overflow-hidden rounded-[2.5rem] p-6 bg-[#0f172a] text-white shadow-2xl">
+        {/* Executive Wallet Card */}
+        <div className="mt-4">
+          <div className="relative overflow-hidden rounded-[2.2rem] p-5 bg-slate-950 dark:bg-slate-900 text-white shadow-xl border border-slate-800">
             <div className="relative flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Balance</span>
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-slate-400">Health Wallet</span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-4xl font-black tabular-nums">₹{walletBalance.toFixed(0)}</span>
-                  <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold">CREDITS</Badge>
+                  <span className="text-3xl font-black tabular-nums tracking-tight">₹{walletBalance.toFixed(0)}</span>
+                  <Badge className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-extrabold px-2 py-0.5">CREDITS</Badge>
                 </div>
               </div>
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shadow-inner">
-                <Wallet className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner">
+                <Wallet className="w-6 h-6 text-white" />
               </div>
             </div>
 
             <button
               onClick={() => setShowHistory(!showHistory)}
-              className="mt-6 w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all rounded-2xl px-4 py-3 border border-white/5"
+              className="mt-4 w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all rounded-xl px-3.5 py-2.5 border border-white/10"
             >
-              <span className="text-sm font-bold tracking-tight">Account Activity</span>
-              <ChevronRight className={`w-5 h-5 transition-transform duration-300 ${showHistory ? "rotate-90" : ""}`} />
+              <span className="text-xs font-bold tracking-tight text-slate-200">Account Activity</span>
+              <ChevronRight className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${showHistory ? "rotate-90" : ""}`} />
             </button>
           </div>
         </div>
 
-        {/* History */}
+        {/* History Expandable Panel */}
         <AnimatePresence>
           {showHistory && (
             <motion.div
@@ -234,80 +238,104 @@ const ProfileScreen = () => {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mt-4 p-4 rounded-[2rem] bg-card border border-border/50">
+              <div className="mt-3 p-4 rounded-3xl bg-card border border-border/60 shadow-2xs">
                 <ul className="space-y-3">
                   {walletTxns.map((t) => (
-                    <li key={t.id} className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === "credit" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                        {t.type === "credit" ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
+                    <li key={t.id} className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${t.type === "credit" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"}`}>
+                        {t.type === "credit" ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground truncate">{t.description || "Transaction"}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
+                        <p className="text-xs font-bold text-foreground truncate">{t.description || "Transaction"}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
                       </div>
-                      <p className={`text-sm font-black ${t.type === "credit" ? "text-success" : "text-destructive"}`}>
+                      <p className={`text-xs font-black ${t.type === "credit" ? "text-emerald-600" : "text-rose-600"}`}>
                         {t.type === "credit" ? "+" : "−"}₹{Number(t.amount).toFixed(0)}
                       </p>
                     </li>
                   ))}
-                  {walletTxns.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">No recent activity</p>}
+                  {walletTxns.length === 0 && <p className="text-center text-xs text-muted-foreground py-3">No recent activity</p>}
                 </ul>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Menu */}
-        <div className="mt-8 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.path)}
-              className="w-full flex items-center gap-4 p-4 rounded-3xl bg-card border border-border/50 active:bg-muted transition-colors"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center">
-                <item.icon className="w-5 h-5 text-foreground" />
-              </div>
-              <span className="flex-1 text-left font-bold text-foreground tracking-tight">{item.label}</span>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </button>
-          ))}
-        </div>
+        {/* Grouped Account Menu */}
+        <div className="mt-6 space-y-3">
+          <p className="px-2 text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70">
+            Account & Support
+          </p>
 
-        {/* Toggles */}
-        <div className="mt-4 p-6 rounded-[2.5rem] bg-card border border-border/50 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-2xl bg-secondary/10 flex items-center justify-center">
-                <Moon className="w-5 h-5 text-secondary" />
-              </div>
-              <span className="font-bold text-foreground tracking-tight">Dark Aesthetic</span>
-            </div>
-            <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-primary" />
-              </div>
-              <span className="font-bold text-foreground tracking-tight">Smart Alerts</span>
-            </div>
-            <Switch checked={smartAlertsEnabled} onCheckedChange={setSmartAlertsEnabled} />
+          <div className="space-y-2">
+            {[
+              { icon: MapPin, label: "Saved Addresses", path: "/saved-addresses", color: "bg-sky-500/10 text-sky-600" },
+              { icon: Users, label: "Family Members", path: "/family-members", color: "bg-emerald-500/10 text-emerald-600" },
+              { icon: Crown, label: "Subscription Plans", path: "/subscription", color: "bg-amber-500/10 text-amber-600" },
+              { icon: HelpCircle, label: "Help & Support", path: "/support", color: "bg-purple-500/10 text-purple-600" },
+              { icon: FileText, label: "Terms & Conditions", path: "/terms", color: "bg-slate-500/10 text-slate-600" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => navigate(item.path)}
+                className="w-full flex items-center gap-3.5 p-3.5 rounded-2xl bg-card border border-border/60 hover:bg-accent/40 active:scale-[0.99] transition-all shadow-2xs group"
+              >
+                <div className={`w-10 h-10 rounded-xl ${item.color} flex items-center justify-center shrink-0`}>
+                  <item.icon className="w-4.5 h-4.5" />
+                </div>
+                <span className="flex-1 text-left text-xs font-bold text-foreground tracking-tight">{item.label}</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground/60 group-hover:text-primary transition-colors" />
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Sign Out */}
-        <div className="mt-10 flex flex-col items-center gap-6">
+        {/* App Preferences */}
+        <div className="mt-6 space-y-3">
+          <p className="px-2 text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70">
+            Preferences & Settings
+          </p>
+
+          <div className="p-4 rounded-3xl bg-card border border-border/60 space-y-4 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9.5 h-9.5 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Moon className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Dark Aesthetic</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Switch to dark mode interface</p>
+                </div>
+              </div>
+              <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-border/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9.5 h-9.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Bell className="w-4.5 h-4.5" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">Smart Alerts</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Receive test status & booking updates</p>
+                </div>
+              </div>
+              <Switch checked={smartAlertsEnabled} onCheckedChange={setSmartAlertsEnabled} />
+            </div>
+          </div>
+        </div>
+
+        {/* Sign Out & Version */}
+        <div className="mt-8 flex flex-col items-center gap-4">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-10 py-4 rounded-2xl bg-destructive/5 text-destructive border border-destructive/10 active:scale-95 transition-all"
+            className="w-full py-3.5 rounded-2xl bg-rose-500/10 text-rose-600 border border-rose-500/20 font-extrabold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-rose-500/15"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="font-bold">Sign Out</span>
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out Account</span>
           </button>
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground/30">
-             BloodLyn Premium v2.2.0
+          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
+            BloodLyn Professional v2.2.0
           </p>
         </div>
       </div>
