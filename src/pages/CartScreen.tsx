@@ -395,8 +395,8 @@ const CartScreen = () => {
             : "Add More Tests or Health Checks"}
         </button>
 
-        {/* Patient Details Section */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6 bg-card rounded-3xl border border-border/60 p-4.5 shadow-2xs">
+        {/* Patient Details Section - Clean without card tile background */}
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-extrabold text-foreground text-sm tracking-tight">Patient Details</h3>
