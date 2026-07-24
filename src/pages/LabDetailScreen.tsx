@@ -519,11 +519,15 @@ const LabDetailScreen = () => {
   };
 
   // Get visual theme for lab
-  const brandData = labBrandData[lab.name];
-  const fallbackTheme = fallbackThemes[Math.abs(lab.name.charCodeAt(0) % fallbackThemes.length)];
+  const labName = lab?.name || "Diagnostic Center";
+  const brandData = labBrandData[labName];
+  const charCode = labName.length > 0 ? labName.charCodeAt(0) : 76;
+  const fallbackTheme = fallbackThemes[Math.abs(charCode % fallbackThemes.length)];
   const bannerGradient = brandData?.bannerGradient || fallbackTheme.gradient;
   const tagline = brandData?.tagline || fallbackTheme.tagline;
   const logoUrl = brandData?.logo || (labFromDb?.logo_url) || null;
+  const accreditedText = Array.isArray(lab.accredited) ? lab.accredited.join(" & ") : "NABL";
+  const reviewsCountText = typeof lab.reviews === "number" ? lab.reviews.toLocaleString() : "1,000";
 
   return (
     <MobileLayout showNav={false}>
@@ -539,7 +543,7 @@ const LabDetailScreen = () => {
             style={{ minHeight: '200px' }}
           >
             {/* SVG banner — no image fetch */}
-            <LabBanner labName={lab.name} />
+            <LabBanner labName={labName} />
             {/* Dark Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
 
@@ -557,7 +561,7 @@ const LabDetailScreen = () => {
                 </motion.div>
                 <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full">
                   <BadgeCheck className="w-3.5 h-3.5 text-green-300" />
-                  <span className="text-[10px] font-medium text-white/90">{lab.accredited.join(" & ")} Certified</span>
+                  <span className="text-[10px] font-medium text-white/90">{accreditedText} Certified</span>
                 </div>
               </div>
               
@@ -569,7 +573,7 @@ const LabDetailScreen = () => {
                     {logoUrl ? (
                       <img 
                         src={logoUrl} 
-                        alt={lab.name} 
+                        alt={labName} 
                         className="w-16 h-16 object-contain p-1"
                         loading="lazy"
                         decoding="async"
@@ -590,19 +594,19 @@ const LabDetailScreen = () => {
                 {/* Lab Info */}
                 <div className="flex-1 min-w-0">
                   <h1 className="font-bold text-white text-lg leading-tight line-clamp-1 drop-shadow-md">
-                    {lab.name}
+                    {labName}
                   </h1>
                   <p className="text-white/80 text-xs font-medium mt-0.5 italic">"{tagline}"</p>
                   
                   <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
                       <Star className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                      <span className="text-xs font-bold text-white">{lab.rating}</span>
-                      <span className="text-[10px] text-white/80">({lab.reviews.toLocaleString()})</span>
+                      <span className="text-xs font-bold text-white">{lab.rating || 4.5}</span>
+                      <span className="text-[10px] text-white/80">({reviewsCountText})</span>
                     </div>
                     <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
                       <Beaker className="w-3.5 h-3.5 text-white" />
-                      <span className="text-xs font-medium text-white">{lab.tests.length}+ Tests</span>
+                      <span className="text-xs font-medium text-white">{labTests.length}+ Tests</span>
                     </div>
                   </div>
                 </div>
