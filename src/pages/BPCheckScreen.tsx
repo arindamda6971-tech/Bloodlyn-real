@@ -60,6 +60,7 @@ const BPCheckScreen = () => {
   const { user } = useAuth();
 
   const [step, setStep] = useState<FlowStep>("ADDRESS");
+  const [bootLoading, setBootLoading] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [pincode, setPincode] = useState("");
@@ -71,26 +72,59 @@ const BPCheckScreen = () => {
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
-  // Load user's saved addresses
+  // Boot: load default address + profile, auto-skip to LAB when we have an address
   useEffect(() => {
-    if (!user) return;
+    if (!user) { setBootLoading(false); return; }
+    let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("addresses")
-        .select("id, type, address_line, city, state, pincode")
-        .eq("user_id", user.id)
-        .order("is_default", { ascending: false });
-      if (data && data.length > 0) {
-        setSavedAddresses(
-          data.map((a: any) => ({
-            id: a.id,
-            type: a.type || "Home",
-            fullAddress: [a.address_line, a.city, a.state, a.pincode].filter(Boolean).join(", "),
-            pincode: a.pincode || "",
-          }))
-        );
+      const [{ data: addrData }, { data: profData }] = await Promise.all([
+        supabase
+          .from("addresses")
+          .select("id, type, address_line, city, state, pincode, is_default, created_at")
+          .eq("user_id", user.id)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("full_name, phone, gender, date_of_birth")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+      if (cancelled) return;
+
+      const addrs: Address[] = (addrData || []).map((a: any) => ({
+        id: a.id,
+        type: a.type || "Home",
+        fullAddress: [a.address_line, a.city, a.state, a.pincode].filter(Boolean).join(", "),
+        pincode: a.pincode || "",
+      }));
+      setSavedAddresses(addrs);
+
+      // Prefill patient from profile
+      if (profData) {
+        const dob = profData.date_of_birth ? new Date(profData.date_of_birth) : null;
+        const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+        setPatient((p) => ({
+          ...p,
+          name: p.name || profData.full_name || "",
+          gender: p.gender || (profData.gender ? profData.gender.charAt(0).toUpperCase() + profData.gender.slice(1) : ""),
+          mobile: p.mobile || (profData.phone || "").replace(/\D/g, "").slice(-10),
+          age: p.age || (age && age > 0 ? String(age) : ""),
+        }));
       }
+
+      // Auto-select default address + jump to LAB
+      const def = addrs[0];
+      if (def && def.pincode && /^\d{6}$/.test(def.pincode)) {
+        setSelectedAddress(def);
+        setPincode(def.pincode);
+        setStep("LAB");
+      } else {
+        setStep("ADDRESS");
+      }
+      setBootLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [user]);
 
   // Fetch labs whenever we enter the LAB step
@@ -124,8 +158,8 @@ const BPCheckScreen = () => {
   const handleBack = () => {
     switch (step) {
       case "ADDRESS": navigate(-1); break;
-      case "AVAILABILITY": setStep("ADDRESS"); break;
-      case "LAB": setStep("AVAILABILITY"); break;
+      case "AVAILABILITY": setStep(selectedAddress ? "LAB" : "ADDRESS"); break;
+      case "LAB": navigate(-1); break;
       case "APPOINTMENT": setStep("LAB"); break;
       case "DETAILS": setStep("APPOINTMENT"); break;
       case "SUMMARY": setStep("DETAILS"); break;
@@ -135,7 +169,6 @@ const BPCheckScreen = () => {
 
   const checkAvailability = async () => {
     if (pincode.length < 6) return;
-    // Move to LAB step; that step fetches labs offering BP for this pincode
     setStep("LAB");
   };
 
@@ -213,9 +246,11 @@ const BPCheckScreen = () => {
   };
 
   const stepIndex = useMemo(() => {
-    const order: FlowStep[] = ["ADDRESS", "AVAILABILITY", "LAB", "APPOINTMENT", "DETAILS", "SUMMARY"];
-    return order.indexOf(step);
+    const order: FlowStep[] = ["LAB", "APPOINTMENT", "DETAILS", "SUMMARY"];
+    const i = order.indexOf(step);
+    return i < 0 ? 0 : i;
   }, [step]);
+  const totalSteps = 4;
 
   return (
     <MobileLayout showNav={false}>
@@ -249,7 +284,7 @@ const BPCheckScreen = () => {
               <motion.div
                 className="bg-blue-600 h-full rounded-full"
                 initial={{ width: "16%" }}
-                animate={{ width: `${((stepIndex + 1) / 6) * 100}%` }}
+                animate={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
               />
             </div>
           </div>
@@ -257,7 +292,15 @@ const BPCheckScreen = () => {
       )}
 
       <div className="flex-1 overflow-x-hidden relative min-h-[calc(100vh-100px)]">
+        {bootLoading && (
+          <div className="flex flex-col items-center justify-center py-24">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+            <p className="text-xs text-muted-foreground font-semibold">Loading your details…</p>
+          </div>
+        )}
+        {!bootLoading && (
         <AnimatePresence mode="wait">
+
           {step === "ADDRESS" && (
             <motion.div key="address" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-4">Where should we visit?</h2>
@@ -335,9 +378,27 @@ const BPCheckScreen = () => {
           {step === "LAB" && (
             <motion.div key="lab" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-1">Pick a lab</h2>
-              <p className="text-xs text-muted-foreground font-medium mb-5">
+              <p className="text-xs text-muted-foreground font-medium mb-3">
                 Only labs offering Home BP Check for pincode <span className="font-bold text-foreground">{pincode}</span>
               </p>
+
+              {selectedAddress && (
+                <div className="mb-5 bg-blue-50/60 border border-blue-100 rounded-2xl p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-blue-700/80">Visit at</p>
+                    <p className="text-xs font-bold text-foreground leading-snug truncate">{selectedAddress.fullAddress}</p>
+                  </div>
+                  <button
+                    onClick={() => setStep("ADDRESS")}
+                    className="text-[11px] font-black text-blue-600 uppercase tracking-wider px-2 py-1 rounded-lg active:bg-blue-100 shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
 
               {labsLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
@@ -610,6 +671,7 @@ const BPCheckScreen = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </div>
     </MobileLayout>
   );
