@@ -597,7 +597,7 @@ const CartScreen = () => {
             onClick={handleCheckout}
             disabled={isCheckingOut}
           >
-            {isCheckingOut ? "Please wait…" : "Select Lab Slot"}
+            {isCheckingOut ? "Please wait…" : "Checkout"}
           </Button>
         </div>
       </motion.div>
