@@ -33,34 +33,31 @@ import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
-  { key: "confirmed", label: "Booking Confirmed", icon: CheckCircle },
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
-  { key: "assigned", label: "Collection Partner Assigned", icon: User },
   { key: "in_progress", label: "Sample Collected", icon: FlaskConical },
-  { key: "completed", label: "Report Arrived", icon: FileText },
+  { key: "completed", label: "Report Ready", icon: FileText },
 ];
 
 function getCompletedIndex(status: string | null): number {
   switch (status) {
     case "pending":
+      return -1;
     case "confirmed":
-      return 0;
     case "accepted":
-      return 1;
     case "processing":
     case "assigned":
     case "out_for_collection":
-      return 2;
+      return 0;
     case "sample_collected":
     case "in_progress":
     case "collection_complete":
     case "sample_received":
-      return 3;
     case "lab_processing":
+      return 1;
     case "report_ready":
     case "report_delivered":
     case "completed":
-      return 4;
+      return 2;
     default:
       return -1;
   }
@@ -332,12 +329,12 @@ const TrackingScreen = () => {
             </div>
           ) : (
             <div className="flex items-center gap-3 py-2">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                <User className="w-6 h-6 text-muted-foreground" />
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FlaskConical className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Not yet assigned</p>
-                <p className="text-xs text-muted-foreground mt-0.5">The lab will assign a collection partner soon</p>
+                <p className="text-sm font-semibold text-foreground">Direct Lab Collection</p>
+                <p className="text-xs text-muted-foreground mt-0.5">A lab professional will collect your sample directly</p>
               </div>
             </div>
           )}

@@ -8,9 +8,7 @@ interface OrderStatusTimelineProps {
 }
 
 const steps = [
-  { key: "confirmed", label: "Booked" },
   { key: "accepted", label: "Accepted" },
-  { key: "assigned", label: "Assigned" },
   { key: "in_progress", label: "Collected" },
   { key: "completed", label: "Report" },
 ];
@@ -81,21 +79,20 @@ const OrderStatusTimeline = ({ status, className, isBp }: OrderStatusTimelinePro
       case "confirmed":
         return 0;
       case "accepted":
-        return 1;
       case "processing":
       case "assigned":
       case "out_for_collection":
-        return 2;
+        return 1;
       case "sample_collected":
       case "in_progress":
       case "collection_complete":
       case "sample_received":
-        return 3;
       case "lab_processing":
+        return 2;
       case "report_ready":
       case "report_delivered":
       case "completed":
-        return 4;
+        return 3;
       default:
         return -1;
     }
