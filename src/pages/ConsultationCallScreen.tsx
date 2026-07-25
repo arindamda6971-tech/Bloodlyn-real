@@ -10,6 +10,7 @@ import {
   PhoneOff,
   Volume2,
   RotateCcw,
+  SwitchCamera,
   MessageCircle,
   MoreVertical,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const ConsultationCallScreen = () => {
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
 
   // Redirect if no state
@@ -187,8 +189,9 @@ const ConsultationCallScreen = () => {
                 <VideoOff className="w-8 h-8 text-muted-foreground" />
               </div>
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <span className="text-xs text-muted-foreground">Your camera</span>
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex flex-col items-center justify-center relative">
+                <span className="text-xs text-muted-foreground font-medium">{facingMode === "user" ? "Front Cam" : "Back Cam"}</span>
+                <span className="text-[9px] text-muted-foreground/70">Active</span>
               </div>
             )}
           </motion.div>
@@ -232,15 +235,30 @@ const ConsultationCallScreen = () => {
 
           {/* Video toggle (only for video calls) */}
           {isVideoCall && (
-            <button
-              onClick={() => {
-                setIsVideoOff(!isVideoOff);
-                toast.info(isVideoOff ? "Camera on" : "Camera off");
-              }}
-              className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isVideoOff ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
-            >
-              {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setIsVideoOff(!isVideoOff);
+                  toast.info(isVideoOff ? "Camera on" : "Camera off");
+                }}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 ${isVideoOff ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                title="Toggle Video"
+              >
+                {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+              </button>
+
+              <button
+                onClick={() => {
+                  const nextMode = facingMode === "user" ? "environment" : "user";
+                  setFacingMode(nextMode);
+                  toast.success(`Switched to ${nextMode === "user" ? "front" : "back"} camera (conference unaffected)`);
+                }}
+                className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl transition-all duration-300 bg-white/10 text-white hover:bg-white/20"
+                title="Switch Camera"
+              >
+                <SwitchCamera className="w-6 h-6" />
+              </button>
+            </>
           )}
 
           {/* End call */}

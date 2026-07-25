@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
+import { PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff, SwitchCamera } from "lucide-react";
 
 export default function EmbeddedCallScreen() {
   const { id } = useParams();
@@ -18,6 +18,7 @@ export default function EmbeddedCallScreen() {
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(mode === 'audio');
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [callStatus, setCallStatus] = useState("Connecting to doctor...");
 
   useEffect(() => {
@@ -117,6 +118,31 @@ export default function EmbeddedCallScreen() {
           });
         });
 
+        chan.on('broadcast', { event: 'webrtc-hangup' }, () => {
+          setCallStatus("Doctor ended the call");
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          if (localVideoRef.current) localVideoRef.current.srcObject = null;
+          localStream.current?.getTracks().forEach(t => t.stop());
+          peerConnection.current?.close();
+          setTimeout(() => {
+            navigate(`/tracking/${id}`);
+          }, 1500);
+        });
+
+        pc.onconnectionstatechange = () => {
+          if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+            setCallStatus("Call disconnected");
+            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          }
+        };
+
+        pc.oniceconnectionstatechange = () => {
+          if (pc.iceConnectionState === 'disconnected' || pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'closed') {
+            setCallStatus("Call disconnected");
+            if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          }
+        };
+
         chan.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             // Signal to doctor that patient is ready to receive offer
@@ -163,9 +189,80 @@ export default function EmbeddedCallScreen() {
     }
   };
 
+  const switchCamera = async () => {
+    if (mode === 'audio') return;
+    try {
+      const nextFacingMode = facingMode === 'user' ? 'environment' : 'user';
+      let newStream: MediaStream;
+      try {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: nextFacingMode } },
+          audio: false
+        });
+      } catch (err) {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        if (videoDevices.length > 1) {
+          const currentTrack = localStream.current?.getVideoTracks()[0];
+          const currentDeviceId = currentTrack?.getSettings().deviceId;
+          const nextDevice = videoDevices.find(d => d.deviceId !== currentDeviceId) || videoDevices[0];
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: nextDevice.deviceId } },
+            audio: false
+          });
+        } else {
+          setCallStatus("Only 1 camera detected on this device");
+          return;
+        }
+      }
+
+      const newVideoTrack = newStream.getVideoTracks()[0];
+      if (!newVideoTrack) return;
+
+      newVideoTrack.enabled = !isVideoOff;
+
+      if (peerConnection.current) {
+        const sender = peerConnection.current.getSenders().find(s => s.track?.kind === 'video' || (s.track === null && s.dtmf === null));
+        if (sender) {
+          await sender.replaceTrack(newVideoTrack);
+        }
+      }
+
+      const oldVideoTrack = localStream.current?.getVideoTracks()[0];
+      if (oldVideoTrack) {
+        oldVideoTrack.stop();
+        localStream.current?.removeTrack(oldVideoTrack);
+      }
+
+      localStream.current?.addTrack(newVideoTrack);
+      if (localVideoRef.current && localStream.current) {
+        localVideoRef.current.srcObject = localStream.current;
+      }
+
+      setFacingMode(nextFacingMode);
+      setCallStatus(`Switched to ${nextFacingMode === 'user' ? 'front' : 'back'} camera`);
+    } catch (err) {
+      console.error("Failed to switch camera:", err);
+      setCallStatus("Failed to switch camera");
+    }
+  };
+
   const handleHangup = async () => {
+    setCallStatus("Ending call...");
+    if (channel.current) {
+      channel.current.send({
+        type: 'broadcast',
+        event: 'webrtc-hangup',
+        payload: {}
+      });
+    }
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    localStream.current?.getTracks().forEach(t => t.stop());
+    peerConnection.current?.close();
+
     if (id) {
-      await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", id);
+      await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", id).catch(() => {});
     }
     navigate(`/tracking/${id}`);
   };
@@ -180,6 +277,9 @@ export default function EmbeddedCallScreen() {
       />
 
       <div className="absolute top-20 right-4 w-32 h-48 sm:w-48 sm:h-64 bg-gray-900 rounded-2xl overflow-hidden shadow-2xl border border-gray-800 z-10">
+        <div className="absolute top-2 left-2 z-20 px-1.5 py-0.5 rounded bg-black/70 text-[10px] text-white/90 font-bold tracking-wider uppercase">
+          {facingMode === 'user' ? 'Front' : 'Back'}
+        </div>
         <video
           ref={localVideoRef}
           autoPlay
@@ -222,6 +322,16 @@ export default function EmbeddedCallScreen() {
         >
           {isVideoOff ? <VideoOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <VideoIcon className="w-5 h-5 sm:w-6 sm:h-6" />}
         </button>
+
+        {mode !== 'audio' && (
+          <button 
+            onClick={switchCamera}
+            className="p-3 sm:p-4 rounded-full transition-colors bg-gray-800 text-white hover:bg-gray-700 shadow-lg"
+            title="Switch Camera"
+          >
+            <SwitchCamera className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        )}
       </div>
     </div>
   );
