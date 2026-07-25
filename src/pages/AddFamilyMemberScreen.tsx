@@ -15,6 +15,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import { RELATIONSHIPS, type FamilyMember, useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
 import { triggerHaptic } from "@/utils/haptics";
+import { sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 
 interface LocationState {
   editMember?: FamilyMember | null;
@@ -110,7 +111,7 @@ const AddFamilyMemberScreen = () => {
               <Input
                 placeholder="Age"
                 value={age}
-                onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => setAge(sanitizeAge(e.target.value))}
                 maxLength={3}
                 className="bg-muted border-0 rounded-xl"
               />
@@ -139,7 +140,7 @@ const AddFamilyMemberScreen = () => {
               <Input
                 placeholder="10-digit number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => setPhone(sanitizePhone(e.target.value))}
                 maxLength={10}
                 className="bg-muted border-0 rounded-xl flex-1"
               />

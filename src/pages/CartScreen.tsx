@@ -18,6 +18,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BookingStepper from "@/components/BookingStepper";
 import { useCart } from "@/contexts/CartContext";
+import { sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
@@ -460,7 +461,7 @@ const CartScreen = () => {
                   id="patient_age"
                   placeholder="Age"
                   value={patientAge}
-                  onChange={(e) => setPatientAge(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) => setPatientAge(sanitizeAge(e.target.value))}
                   className={`bg-muted/60 border-0 rounded-2xl h-11 text-xs font-medium ${validationBorder(/^\d{1,3}$/.test(patientAge) && Number(patientAge) > 0 && Number(patientAge) <= 120)}`}
                   maxLength={3}
                 />
@@ -488,7 +489,7 @@ const CartScreen = () => {
                   id="patient_phone"
                   placeholder="10-digit number"
                   value={patientPhone}
-                  onChange={(e) => setPatientPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                  onChange={(e) => setPatientPhone(sanitizePhone(e.target.value))}
                   className={`bg-muted/60 border-0 rounded-2xl h-11 flex-1 text-xs font-medium ${validationBorder(/^\d{10}$/.test(patientPhone))}`}
                   maxLength={10}
                   inputMode="numeric"

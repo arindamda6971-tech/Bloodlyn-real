@@ -18,6 +18,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizePincode } from "@/utils/inputSanitizers";
 import { useAuth } from "@/hooks/useAuth";
 import { triggerHaptic } from "@/utils/haptics";
 import type { Tables } from "@/integrations/supabase/types";
@@ -385,8 +386,10 @@ const SavedAddressesScreen = () => {
               <Label htmlFor="pincode">Pincode *</Label>
               <Input
                 id="pincode"
+                type="text"
+                inputMode="numeric"
                 value={formData.pincode}
-                onChange={(e) => setFormData(prev => ({ ...prev, pincode: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, pincode: sanitizePincode(e.target.value) }))}
                 placeholder="6-digit pincode"
                 className="bg-muted border-0"
                 maxLength={6}

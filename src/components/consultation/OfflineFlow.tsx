@@ -6,6 +6,7 @@ import { MapPin, Search, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DoctorCard } from "./DoctorCard";
 import { Input } from "@/components/ui/input";
+import { sanitizePincode } from "@/utils/inputSanitizers";
 
 interface OfflineFlowProps {
   state: ConsultationFlowState;
@@ -81,11 +82,13 @@ const LocationStep = ({ updateOfflineState, onNext }: any) => {
       <div className="relative flex items-center gap-2">
         <div className="flex-1 relative">
           <Input 
+            type="text"
             value={pincode} 
-            onChange={(e) => { setPincode(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+            onChange={(e) => { setPincode(sanitizePincode(e.target.value)); setError(""); }}
             placeholder="Enter Pincode Manually" 
             className="h-14 rounded-2xl pl-4 border-border/60 font-medium"
             inputMode="numeric"
+            maxLength={6}
           />
         </div>
         <Button onClick={handlePincodeSubmit} className="h-14 px-6 rounded-2xl font-bold bg-foreground text-background hover:bg-foreground/90">

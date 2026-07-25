@@ -11,6 +11,7 @@ import { z } from "zod";
 import { getAuthErrorMessage, checkRateLimit, recordAuthAttempt, resetRateLimit } from "@/utils/errorMessages";
 import { supabase } from "@/integrations/supabase/client";
 import { useSEO } from "@/hooks/useSEO";
+import { sanitizeInternationalPhone } from "@/utils/inputSanitizers";
 
 const emailSchema = z.string().trim().email("Please enter a valid email");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
@@ -283,9 +284,10 @@ const LoginScreen = () => {
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="tel"
+                maxLength={15}
                 placeholder="+91 9876543210"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={(e) => setPhoneNumber(sanitizeInternationalPhone(e.target.value))}
                 disabled={otpSent}
                 className="pl-12 h-14 rounded-xl bg-muted border-0 text-base"
               />

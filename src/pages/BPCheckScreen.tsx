@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { toast } from "sonner";
+import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 
 type FlowStep =
   | "ADDRESS"
@@ -439,10 +440,12 @@ const BPCheckScreen = () => {
               </p>
               <div className="w-full max-w-sm space-y-4">
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
                   placeholder="Enter 6-digit pincode"
                   value={pincode}
-                  onChange={(e) => setPincode(e.target.value)}
+                  onChange={(e) => setPincode(sanitizePincode(e.target.value))}
                   className="h-14 text-center text-lg font-bold tracking-widest bg-muted/50 rounded-2xl"
                 />
                 <button
@@ -615,7 +618,7 @@ const BPCheckScreen = () => {
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Age</label>
-                    <Input type="number" placeholder="e.g. 45" value={patient.age} onChange={(e) => setPatient({ ...patient, age: e.target.value })} className="h-14 bg-card rounded-2xl" />
+                    <Input type="text" inputMode="numeric" maxLength={3} placeholder="e.g. 45" value={patient.age} onChange={(e) => setPatient({ ...patient, age: sanitizeAge(e.target.value) })} className="h-14 bg-card rounded-2xl" />
                   </div>
                   <div className="flex-[2]">
                     <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Gender</label>
@@ -628,7 +631,7 @@ const BPCheckScreen = () => {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Mobile Number</label>
-                  <Input type="tel" inputMode="numeric" placeholder="10-digit mobile" value={patient.mobile} onChange={(e) => setPatient({ ...patient, mobile: e.target.value.replace(/\D/g, "").slice(0, 10) })} className="h-14 bg-card rounded-2xl" />
+                  <Input type="tel" inputMode="numeric" maxLength={10} placeholder="10-digit mobile" value={patient.mobile} onChange={(e) => setPatient({ ...patient, mobile: sanitizePhone(e.target.value) })} className="h-14 bg-card rounded-2xl" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Optional Notes</label>

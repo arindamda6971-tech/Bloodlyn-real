@@ -6,6 +6,7 @@ import { Search, ChevronRight, Video, Phone, MessageSquare, ShieldCheck, CheckCi
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DoctorCard } from "./DoctorCard";
+import { sanitizeWeight, sanitizeHeight, sanitizeBloodPressure, sanitizeBloodSugar } from "@/utils/inputSanitizers";
 
 interface OnlineFlowProps {
   state: ConsultationFlowState;
@@ -137,7 +138,12 @@ const BasicHealthInfoStep = ({ state, updateOnlineState, onNext }: any) => {
   const [info, setInfo] = useState(state.basicInfo);
 
   const handleChange = (field: string, value: string) => {
-    const newInfo = { ...info, [field]: value };
+    let cleanVal = value;
+    if (field === "weight") cleanVal = sanitizeWeight(value);
+    if (field === "height") cleanVal = sanitizeHeight(value);
+    if (field === "bloodPressure") cleanVal = sanitizeBloodPressure(value);
+    if (field === "bloodSugar") cleanVal = sanitizeBloodSugar(value);
+    const newInfo = { ...info, [field]: cleanVal };
     setInfo(newInfo);
     updateOnlineState({ basicInfo: newInfo });
   };
@@ -152,19 +158,19 @@ const BasicHealthInfoStep = ({ state, updateOnlineState, onNext }: any) => {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground">Weight (kg)</label>
-          <Input type="number" placeholder="e.g. 70" value={info.weight} onChange={e => handleChange("weight", e.target.value)} className="rounded-xl h-11" />
+          <Input type="text" inputMode="decimal" maxLength={5} placeholder="e.g. 70" value={info.weight} onChange={e => handleChange("weight", e.target.value)} className="rounded-xl h-11" />
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground">Height (cm)</label>
-          <Input type="number" placeholder="e.g. 175" value={info.height} onChange={e => handleChange("height", e.target.value)} className="rounded-xl h-11" />
+          <Input type="text" inputMode="decimal" maxLength={5} placeholder="e.g. 175" value={info.height} onChange={e => handleChange("height", e.target.value)} className="rounded-xl h-11" />
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground">Blood Pressure</label>
-          <Input placeholder="120/80" value={info.bloodPressure} onChange={e => handleChange("bloodPressure", e.target.value)} className="rounded-xl h-11" />
+          <Input type="text" maxLength={7} placeholder="120/80" value={info.bloodPressure} onChange={e => handleChange("bloodPressure", e.target.value)} className="rounded-xl h-11" />
         </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground">Blood Sugar</label>
-          <Input placeholder="e.g. 100" value={info.bloodSugar} onChange={e => handleChange("bloodSugar", e.target.value)} className="rounded-xl h-11" />
+          <Input type="text" inputMode="numeric" maxLength={3} placeholder="e.g. 100" value={info.bloodSugar} onChange={e => handleChange("bloodSugar", e.target.value)} className="rounded-xl h-11" />
         </div>
       </div>
 

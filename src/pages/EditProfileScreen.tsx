@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { sanitizePhone } from "@/utils/inputSanitizers";
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
@@ -135,8 +136,9 @@ const EditProfileScreen = () => {
               <Input
                 type="tel"
                 maxLength={10}
+                inputMode="numeric"
                 value={profile.phone}
-                onChange={(e) => setProfile({ ...profile, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                onChange={(e) => setProfile({ ...profile, phone: sanitizePhone(e.target.value) })}
                 placeholder="00000 00000"
                 className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />

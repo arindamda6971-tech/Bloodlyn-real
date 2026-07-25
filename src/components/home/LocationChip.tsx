@@ -8,6 +8,7 @@ import { useUserPincode } from "@/hooks/useUserPincode";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { sanitizePincode } from "@/utils/inputSanitizers";
 
 /**
  * Small "Delivering to: PIN xxxxxx — Change" chip.
@@ -152,7 +153,7 @@ const LocationChip = () => {
                 maxLength={6}
                 placeholder="6-digit PIN code"
                 value={newPin}
-                onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(e) => setNewPin(sanitizePincode(e.target.value))}
                 className="text-center tracking-widest mb-4"
                 autoFocus
               />

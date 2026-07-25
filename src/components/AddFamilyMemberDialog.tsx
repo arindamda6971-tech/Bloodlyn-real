@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { RELATIONSHIPS, type FamilyMember } from "@/hooks/useFamilyMembers";
 import { toast } from "sonner";
+import { sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 
 interface Props {
   open: boolean;
@@ -140,7 +141,7 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
               <Input
                 placeholder="Age"
                 value={age}
-                onChange={(e) => setAge(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => setAge(sanitizeAge(e.target.value))}
                 maxLength={3}
                 className="bg-muted border-0 rounded-xl"
               />
@@ -170,7 +171,7 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
               <Input
                 placeholder="10-digit number"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => setPhone(sanitizePhone(e.target.value))}
                 maxLength={10}
                 className="bg-muted border-0 rounded-xl flex-1"
               />

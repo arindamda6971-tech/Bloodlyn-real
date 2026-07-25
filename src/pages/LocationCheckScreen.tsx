@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
+import { sanitizePincode } from "@/utils/inputSanitizers";
 
 interface ServiceableArea {
   pincode: string;
@@ -408,7 +409,7 @@ const LocationCheckScreen = () => {
                   maxLength={6}
                   placeholder="6-digit PIN code"
                   value={pincode}
-                  onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) => setPincode(sanitizePincode(e.target.value))}
                   className="mt-2 text-center tracking-[0.4em] text-base h-12 rounded-2xl"
                   autoFocus
                 />
