@@ -77,10 +77,10 @@ const BPCheckScreen = () => {
     if (!user) { setBootLoading(false); return; }
     let cancelled = false;
     (async () => {
-      const [{ data: addrData }, { data: profData }] = await Promise.all([
+      const [{ data: addrData, error: addrErr }, { data: profData }] = await Promise.all([
         supabase
           .from("addresses")
-          .select("id, type, address_line, city, state, pincode, is_default, created_at")
+          .select("*")
           .eq("user_id", user.id)
           .order("is_default", { ascending: false })
           .order("created_at", { ascending: false }),
@@ -92,10 +92,23 @@ const BPCheckScreen = () => {
       ]);
       if (cancelled) return;
 
-      const addrs: Address[] = (addrData || []).map((a: any) => ({
-        id: a.id,
+      let rawAddrs = addrData || [];
+      if (addrErr || rawAddrs.length === 0) {
+        try {
+          const fallback = localStorage.getItem("addresses_fallback") || localStorage.getItem("user_addresses");
+          if (fallback) {
+            const parsed = JSON.parse(fallback);
+            if (Array.isArray(parsed)) rawAddrs = parsed;
+          }
+        } catch (e) {
+          console.error("Failed to parse local addresses", e);
+        }
+      }
+
+      const addrs: Address[] = rawAddrs.map((a: any) => ({
+        id: a.id || String(Math.random()),
         type: a.type || "Home",
-        fullAddress: [a.address_line, a.city, a.state, a.pincode].filter(Boolean).join(", "),
+        fullAddress: [a.address_line1 || a.address_line, a.address_line2, a.city, a.state, a.pincode].filter(Boolean).join(", "),
         pincode: a.pincode || "",
       }));
       setSavedAddresses(addrs);
@@ -169,6 +182,13 @@ const BPCheckScreen = () => {
 
   const checkAvailability = async () => {
     if (pincode.length < 6) return;
+    if (selectedAddress?.id === "manual") {
+      setSelectedAddress({
+        ...selectedAddress,
+        fullAddress: `Home BP Visit — Pincode: ${pincode}`,
+        pincode: pincode,
+      });
+    }
     setStep("LAB");
   };
 
@@ -193,53 +213,98 @@ const BPCheckScreen = () => {
     }
     setPlacing(true);
     try {
+      const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const safeLabId = (selectedLab.id && UUID_RE.test(selectedLab.id)) ? selectedLab.id : null;
+      const safeVendorId = (selectedLab.vendor_id && UUID_RE.test(selectedLab.vendor_id)) ? selectedLab.vendor_id : null;
+
+      let validAddressId = (selectedAddress?.id && UUID_RE.test(selectedAddress.id)) ? selectedAddress.id : null;
+      if (!validAddressId && user) {
+        const visitPincode = pincode || selectedAddress?.pincode || "000000";
+        const visitAddressLine = selectedAddress?.fullAddress && selectedAddress.fullAddress !== "Manual Visit Location"
+          ? selectedAddress.fullAddress
+          : `Home BP Visit Location (Pincode: ${visitPincode})`;
+
+        try {
+          const { data: newAddr } = await supabase
+            .from("addresses")
+            .insert({
+              user_id: user.id,
+              type: "Home Visit",
+              address_line1: visitAddressLine,
+              city: "City",
+              state: "State",
+              pincode: visitPincode,
+              is_default: false,
+            })
+            .select()
+            .single();
+          if (newAddr?.id) {
+            validAddressId = newAddr.id;
+            setSelectedAddress({
+              id: newAddr.id,
+              type: newAddr.type || "Home Visit",
+              fullAddress: newAddr.address_line1,
+              pincode: newAddr.pincode,
+            });
+          }
+        } catch (addrErr) {
+          console.warn("Could not create fallback address record:", addrErr);
+        }
+      }
+
       const cartItems = [{
         id: `bp-${selectedLab.id}`,
         name: `Home BP Check — ${selectedLab.name}`,
         price,
         quantity: 1,
-        labId: selectedLab.id,
+        labId: safeLabId || selectedLab.id,
         labName: selectedLab.name,
-        vendorId: selectedLab.vendor_id || undefined,
+        vendorId: safeVendorId || undefined,
         category: "BP Check",
       }];
+
+      const cleanPhone = patient.mobile.replace(/\D/g, "").slice(-10);
+      const validPhone = /^\d{10}$/.test(cleanPhone) ? cleanPhone : null;
+      const parsedAge = parseInt(String(patient.age), 10);
+      const validAge = !isNaN(parsedAge) && parsedAge >= 0 && parsedAge <= 120 ? parsedAge : null;
 
       const { data, error } = await supabase.functions.invoke("create-order", {
         body: {
           cartItems,
-          addressId: selectedAddress?.id ?? null,
-          scheduledDate: appointment.date,
-          scheduledTimeSlot: appointment.timeSlot,
+          addressId: validAddressId,
+          scheduledDate: appointment.date || new Date().toISOString().split("T")[0],
+          scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
           subtotal: price,
           discount: 0,
           total: price,
           paymentMethod: "online",
           couponCode: null,
-          patientName: patient.name,
-          patientAge: patient.age ? Number(patient.age) : null,
-          patientGender: patient.gender,
-          patientPhone: patient.mobile.replace(/\D/g, "").slice(-10),
-          labId: selectedLab.id,
+          patientName: patient.name || "Patient",
+          patientAge: validAge,
+          patientGender: patient.gender || "Other",
+          patientPhone: validPhone,
+          labId: safeLabId || selectedLab.id,
           labName: selectedLab.name,
-          vendorId: selectedLab.vendor_id || null,
+          vendorId: safeVendorId || null,
         },
         headers: {
-          "Idempotency-Key": `bp-${user.id}-${selectedLab.id}-${appointment.date}-${appointment.timeSlot}`,
+          "Idempotency-Key": `bp-${user.id}-${selectedLab.id}-${Date.now()}`,
         },
       });
 
-      if (error || !data?.orderId) {
+      if (error || !data?.orderId || data?.error) {
         console.error("BP order error:", error, data);
-        toast.error("Couldn't place your booking. Please try again.");
+        const errMsg = data?.error || error?.message || "Couldn't place your booking. Please try again.";
+        toast.error(errMsg);
         setPlacing(false);
         return;
       }
 
       setOrderNumber(data.orderNumber || data.orderId);
       setStep("SUCCESS");
-    } catch (e) {
+    } catch (e: any) {
       console.error("BP booking exception:", e);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(e?.message || "Something went wrong. Please try again.");
     } finally {
       setPlacing(false);
     }
@@ -309,13 +374,29 @@ const BPCheckScreen = () => {
                 <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 text-center">
                   <MapPin className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                   <p className="text-sm font-bold text-blue-900 mb-1">No saved addresses</p>
-                  <p className="text-xs text-blue-700/70 mb-4">Add an address to book a home visit.</p>
-                  <button
-                    onClick={() => navigate("/saved-addresses")}
-                    className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs"
-                  >
-                    Add New Address
-                  </button>
+                  <p className="text-xs text-blue-700/70 mb-4">Add an address or enter your visit pincode manually.</p>
+                  <div className="flex flex-col sm:flex-row gap-2.5 justify-center">
+                    <button
+                      onClick={() => navigate("/saved-addresses")}
+                      className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Add New Address
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedAddress({
+                          id: "manual",
+                          type: "Home Visit",
+                          fullAddress: "Manual Visit Location",
+                          pincode: "",
+                        });
+                        setStep("AVAILABILITY");
+                      }}
+                      className="bg-white border border-blue-200 text-blue-600 px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-blue-50 transition-colors"
+                    >
+                      Enter Pincode Manually
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
