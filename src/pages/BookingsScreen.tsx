@@ -127,10 +127,11 @@ const BookingsScreen = () => {
   };
 
   const renderOrderCard = (order: Order, index: number) => {
+    const isBp = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.order_number || "");
     const BookingIcon = getBookingIcon(order.order_number);
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
-    const showTimeline = !["completed", "report_ready", "report_delivered", "cancelled"].includes(order.status || "");
+    const showTimeline = isBp ? (order.status !== "cancelled") : !["completed", "report_ready", "report_delivered", "cancelled"].includes(order.status || "");
     let patientName = order.patient_name || (order as any).family_members?.full_name;
     if (!patientName && (order as any).special_instructions) {
       const match = (order as any).special_instructions.match(/Patient:\s*([^(|]+)/);
@@ -155,14 +156,27 @@ const BookingsScreen = () => {
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-[2rem] blur opacity-0 group-active:opacity-100 transition duration-500" />
 
-        <div className="relative bg-card border border-border/50 rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all duration-200 overflow-hidden">
+        <div className={`relative border rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all duration-200 overflow-hidden ${
+          isBp 
+            ? "bg-gradient-to-br from-blue-500/[0.08] via-indigo-500/[0.04] to-card border-blue-500/40 shadow-blue-500/5" 
+            : "bg-card border-border/50"
+        }`}>
           {/* Top Row: Icon & Status */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10">
-                <BookingIcon className="w-5 h-5 text-primary" />
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
+                isBp 
+                  ? "bg-gradient-to-tr from-blue-600 to-indigo-600 border-blue-500/30 text-white shadow-lg shadow-blue-500/20" 
+                  : "bg-primary/5 border-primary/10 text-primary"
+              }`}>
+                {isBp ? <Heart className="w-5 h-5 fill-white/20 animate-pulse" /> : <BookingIcon className="w-5 h-5" />}
               </div>
               <div>
+                {isBp && (
+                  <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase px-2 py-0.5 mb-1 inline-flex items-center gap-1">
+                    🫀 Home BP Check
+                  </Badge>
+                )}
                 <h3 className="font-bold text-foreground text-[15px] leading-tight">
                   {formatTestsLabel(order.test_name, bookingType)}
                 </h3>
@@ -210,10 +224,10 @@ const BookingsScreen = () => {
             </div>
           </div>
 
-          {/* Visual Timeline (only for active orders) */}
+          {/* Visual Timeline */}
           {showTimeline && (
             <div className="mt-5 mb-8">
-              <OrderStatusTimeline status={order.status} />
+              <OrderStatusTimeline status={order.status} isBp={isBp} />
             </div>
           )}
 
@@ -237,8 +251,12 @@ const BookingsScreen = () => {
                   JOIN NOW
                 </button>
               )}
-              <button className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-primary hover:text-white">
-                {order.status === "completed" ? "VIEW REPORT" : "TRACK STATUS"}
+              <button className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-colors ${
+                isBp
+                  ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white"
+                  : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+              }`}>
+                {order.status === "completed" ? (isBp ? "VIEW STATUS" : "VIEW REPORT") : "TRACK STATUS"}
                 <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
               </button>
             </div>

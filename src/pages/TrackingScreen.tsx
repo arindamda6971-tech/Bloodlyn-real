@@ -149,7 +149,16 @@ const TrackingScreen = () => {
     );
   }
 
-  const completedIndex = getCompletedIndex(order.status);
+  const isBpOrder = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.order_number || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(testNames.join(" ") || "");
+
+  const activeWorkflowSteps = isBpOrder ? [
+    { key: "confirmed", label: "Ordered", icon: CheckCircle },
+    { key: "completed", label: "Checked", icon: CheckCircle },
+  ] : workflowSteps;
+
+  const completedIndex = isBpOrder
+    ? (["completed", "report_ready", "report_delivered", "checked"].includes(order.status?.toLowerCase() || "") ? 1 : 0)
+    : getCompletedIndex(order.status);
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
 
@@ -346,10 +355,10 @@ const TrackingScreen = () => {
               </div>
             ) : (
               <div className="relative pl-1">
-                {workflowSteps.map((step, index) => {
+                {activeWorkflowSteps.map((step, index) => {
                   const isCompleted = index <= completedIndex;
                   const isCurrent = index === completedIndex;
-                  const isLast = index === workflowSteps.length - 1;
+                  const isLast = index === activeWorkflowSteps.length - 1;
                   const StepIcon = step.icon;
 
                   return (
