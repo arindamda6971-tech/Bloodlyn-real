@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, ChevronDown, Bell, Phone, Coins, Zap, Sparkles, User, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, Bell, Phone, Coins, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
