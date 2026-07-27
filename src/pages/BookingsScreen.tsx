@@ -268,22 +268,21 @@ const BookingsScreen = () => {
 
   return (
     <MobileLayout>
-      {/* Top Header - Scrolls away naturally */}
-      <div className="px-5 pt-3 pb-1">
-        <PremiumPageHeader
-          title="My Orders"
-          subtitle="Track bookings · live status updates"
-          icon={Package}
-          accent="from-emerald-500 via-teal-500 to-primary"
-        />
-      </div>
-
-      {/* Sticky Search Input Bar - Pins at top-0 */}
+      {/* Unified sticky header + search shell (rounded bottom corners) */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests, orders, labs..."
         accent="from-emerald-500 via-teal-500 to-primary"
+        header={
+          <PremiumPageHeader
+            title="My Orders"
+            subtitle="Track bookings · live status updates"
+            icon={Package}
+            accent="from-emerald-500 via-teal-500 to-primary"
+            flush
+          />
+        }
       />
 
       {/* Status Filters - Scrolls away and hides behind sticky search bar */}
