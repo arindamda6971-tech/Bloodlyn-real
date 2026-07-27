@@ -262,7 +262,11 @@ export default function EmbeddedCallScreen() {
     peerConnection.current?.close();
 
     if (id) {
-      await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", id).catch(() => {});
+      try {
+        await supabase.from("orders").update({ call_status: "ended" } as any).eq("id", id);
+      } catch {
+        /* ignore */
+      }
     }
     navigate(`/tracking/${id}`);
   };

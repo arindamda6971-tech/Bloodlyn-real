@@ -18,6 +18,7 @@ import {
   ArrowUpRight,
   History,
   Zap,
+  Shield,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -36,6 +37,7 @@ const menuItems = [
   { icon: Crown, label: "Subscription Plans", path: "/subscription" },
   { icon: HelpCircle, label: "Help & Support", path: "/support" },
   { icon: FileText, label: "Terms & Conditions", path: "/terms" },
+            { icon: Shield, label: "Privacy Policy", path: "/privacy" },
 ];
 
 const ProfileScreen = () => {
@@ -260,6 +262,7 @@ const ProfileScreen = () => {
             { icon: Crown, label: "Subscription Plans", path: "/subscription" },
             { icon: HelpCircle, label: "Help & Support", path: "/support" },
             { icon: FileText, label: "Terms & Conditions", path: "/terms" },
+            { icon: Shield, label: "Privacy Policy", path: "/privacy" },
           ].map((item) => (
             <button
               key={item.label}

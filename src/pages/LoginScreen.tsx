@@ -464,8 +464,8 @@ const LoginScreen = () => {
       >
         <p className="text-sm text-muted-foreground">
           By continuing, you agree to our{" "}
-          <button className="text-primary font-medium">Terms</button> and{" "}
-          <button className="text-primary font-medium">Privacy Policy</button>
+          <button type="button" onClick={() => navigate("/terms")} className="text-primary font-medium underline underline-offset-2">Terms of Service</button> and{" "}
+          <button type="button" onClick={() => navigate("/privacy")} className="text-primary font-medium underline underline-offset-2">Privacy Policy</button>
         </p>
       </motion.div>
     </div>
