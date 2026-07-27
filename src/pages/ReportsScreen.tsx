@@ -169,22 +169,21 @@ const ReportsScreen = () => {
 
   return (
     <MobileLayout>
-      {/* Top Header - Scrolls away naturally */}
-      <div className="px-5 pt-3 pb-1">
-        <PremiumPageHeader
-          title="My Reports"
-          subtitle="AI insights · secure & shareable"
-          icon={FileText}
-          accent="from-violet-500 via-fuchsia-500 to-primary"
-        />
-      </div>
-
-      {/* Sticky Search Input Bar - Pins at top-0 */}
+      {/* Unified sticky header + search shell (rounded bottom corners) */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search reports by test, lab, patient..."
         accent="from-violet-500 via-fuchsia-500 to-primary"
+        header={
+          <PremiumPageHeader
+            title="My Reports"
+            subtitle="AI insights · secure & shareable"
+            icon={FileText}
+            accent="from-violet-500 via-fuchsia-500 to-primary"
+            flush
+          />
+        }
       />
 
       <div className="px-4 pb-6 mt-2">

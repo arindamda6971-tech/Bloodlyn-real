@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, ChevronDown, Bell, Phone, Coins, Zap, Sparkles, User, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, Bell, Phone, Coins, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,6 +102,26 @@ export const ZomatoStyleHeader = ({
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
+  const addressTitle = currentAddress.split("•")[0]?.trim() || "Delivery Location";
+  // De-duplicate repeated fragments (e.g. "PIN 721424, PIN 721424") coming from
+  // partially filled address rows so the subtitle always reads cleanly.
+  const addressLine = (() => {
+    const raw = currentAddress.split("•")[1]?.trim();
+    if (!raw) return "Select your location";
+    const parts = raw
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const seen = new Set<string>();
+    const unique = parts.filter((p) => {
+      const k = p.toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return unique.join(", ");
+  })();
+
   return (
     <div className="flex flex-col gap-2.5 pb-1">
       {/* Top Header Row: Location Selector + Action Buttons */}
@@ -110,91 +130,76 @@ export const ZomatoStyleHeader = ({
         <button
           type="button"
           onClick={() => navigate("/saved-addresses")}
-          className="flex items-center gap-2.5 min-w-0 text-left group active:scale-[0.98] transition-all bg-card/60 hover:bg-card border border-border/40 px-3 py-1.5 rounded-2xl shadow-2xs"
+          className="flex items-center gap-2.5 min-w-0 flex-1 text-left group active:scale-[0.98] transition-all rounded-2xl py-1"
         >
-          <div className="w-8.5 h-8.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <MapPin className="w-4.5 h-4.5" />
           </div>
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
-              <span className="text-[13.5px] font-extrabold text-foreground truncate">
-                {currentAddress.split("•")[0]?.trim() || "Delivery Location"}
+              <span className="text-[13.5px] font-bold text-foreground truncate tracking-tight">
+                {addressTitle}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
             </div>
-            <p className="text-[11px] font-semibold text-muted-foreground truncate leading-tight">
-              {currentAddress.split("•")[1]?.trim() || "Select your location"}
+            <p className="text-[11.5px] font-medium text-muted-foreground truncate leading-tight mt-0.5">
+              {addressLine}
             </p>
           </div>
         </button>
 
         {/* Right: Clean Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {onOpenCall && (
             <button
               type="button"
               onClick={onOpenCall}
-              className="w-9 h-9 rounded-2xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 flex items-center justify-center active:scale-90 transition-transform shadow-2xs hover:bg-sky-500/20"
-              title="Doctor Consultation Call"
+              className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center active:scale-90 transition-all hover:bg-muted"
+              aria-label="Contact support"
+              title="Contact support"
             >
-              <Phone className="w-4 h-4" />
+              <Phone className="w-[18px] h-[18px]" />
             </button>
           )}
 
-          {/* 3D Rotating Gold Coin Rewards Button */}
           <button
             type="button"
             onClick={() => navigate("/rewards")}
-            className="w-9 h-9 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center active:scale-90 transition-transform overflow-hidden shadow-2xs hover:bg-amber-500/20"
-            title="HealthSwift Rewards Coins"
+            className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center active:scale-90 transition-all hover:bg-muted"
+            aria-label="Rewards"
+            title="Rewards"
           >
-            <motion.div
-              animate={{ rotateY: [0, 360] }}
-              transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
-              className="flex items-center justify-center"
-              style={{ transformStyle: "preserve-3d" }}
-            >
-              <Coins className="w-4.5 h-4.5 text-amber-500 fill-amber-400/40" />
-            </motion.div>
+            <Coins className="w-[18px] h-[18px]" />
           </button>
 
           {/* Notifications Button */}
           <button
             type="button"
             onClick={() => navigate("/notifications")}
-            className="w-9 h-9 rounded-2xl bg-card border border-border/60 text-foreground flex items-center justify-center relative active:scale-90 transition-transform shadow-2xs hover:border-primary/40"
+            className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:bg-muted"
+            aria-label="Notifications"
             title="Notifications"
           >
-            <Bell className="w-4 h-4" />
+            <Bell className="w-[18px] h-[18px]" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-background animate-pulse" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
             )}
           </button>
         </div>
       </div>
 
-      {/* Live Service Status Bar */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pt-0.5">
-        <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-700 dark:text-emerald-300 shrink-0 text-[11px] font-bold shadow-2xs">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <span>Express 15-min Collection</span>
-        </div>
-
-        <div className="flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full text-blue-700 dark:text-blue-300 shrink-0 text-[11px] font-bold shadow-2xs">
-          <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
-          <span>NABL Certified Labs</span>
-        </div>
-
-        {activeBookingsCount > 0 && (
-          <div className="flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/20 px-3 py-1 rounded-full text-purple-700 dark:text-purple-300 shrink-0 text-[11px] font-bold shadow-2xs">
-            <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-            <span>{activeBookingsCount} Active Bookings</span>
-          </div>
-        )}
+      {/* Trust line — quiet, single row, never clipped */}
+      <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground min-w-0">
+        <span className="flex items-center gap-1.5 shrink-0 text-emerald-600 dark:text-emerald-400">
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          15-min collection
+        </span>
+        <span className="w-px h-3 bg-border shrink-0" />
+        <span className="flex items-center gap-1.5 shrink-0">
+          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
+          NABL certified labs
+        </span>
       </div>
 
       {/* Location Picker Bottom Sheet Modal */}

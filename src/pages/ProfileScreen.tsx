@@ -115,7 +115,7 @@ const ProfileScreen = () => {
   return (
     <MobileLayout className="bg-background">
       <div
-        className="sticky top-0 z-40 bg-background"
+        className="sticky top-0 z-40 bg-background/95 backdrop-blur-2xl rounded-b-2xl overflow-hidden"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       >
         <div className="px-5 pt-3 pb-3">
