@@ -102,7 +102,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-2xl motion-safe:transition-shadow shadow-none ${className}`}
+      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-2xl rounded-b-2xl overflow-hidden motion-safe:transition-shadow shadow-none ${className}`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px))" }}
       data-testid="sticky-search-shell"
     >

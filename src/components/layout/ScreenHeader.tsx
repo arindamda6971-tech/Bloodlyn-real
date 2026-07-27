@@ -40,7 +40,7 @@ const ScreenHeader = ({
       className={`sticky top-0 z-50 px-4 py-4 transition-colors duration-300 ${
         transparent
           ? "bg-transparent"
-          : "bg-background border-none shadow-none"
+          : "bg-background border-none shadow-none rounded-b-2xl"
       }`}
       style={{
         paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",

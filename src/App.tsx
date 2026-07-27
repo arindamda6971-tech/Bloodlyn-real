@@ -86,6 +86,7 @@ const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMe
 const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFamilyMemberScreen")));
 const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
+const PrivacyPolicyScreen = lazy(() => safeImport(() => import("./pages/PrivacyPolicyScreen")));
 const RewardsScreen = lazy(() => safeImport(() => import("./pages/RewardsScreen")));
 const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
@@ -164,7 +165,8 @@ const AnimatedRoutes = () => {
           <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
           <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
           <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-          <Route path="/terms" element={<ProtectedRoute><TermsScreen /></ProtectedRoute>} />
+          <Route path="/terms" element={<TermsScreen />} />
+          <Route path="/privacy" element={<PrivacyPolicyScreen />} />
           <Route path="/unauthorized" element={<UnauthorizedScreen />} />
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
