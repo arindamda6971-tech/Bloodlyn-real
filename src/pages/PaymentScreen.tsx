@@ -598,6 +598,14 @@ const PaymentScreen = () => {
               <span className="text-muted-foreground">MRP Total</span>
               <span className="text-foreground">₹ {stateSubtotal}.0/-</span>
             </div>
+            {bpAddonActive && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Home BP Check</span>
+                <span className="text-foreground">
+                  {(bpAddonPrice || 0) > 0 ? `₹ ${bpAddonPrice}.0/-` : "FREE"}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
               <span className="text-success font-medium">FREE</span>
