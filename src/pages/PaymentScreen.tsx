@@ -524,6 +524,41 @@ const PaymentScreen = () => {
           )}
         </motion.div>
 
+        {/* Home BP Check add-on — only when the selected lab offers it */}
+        {bpAddonPrice !== null && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            onClick={() => setBpAddonSelected((v) => !v)}
+            aria-pressed={bpAddonSelected}
+            className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
+              bpAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <HeartPulse className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">Add Home BP Check</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  Blood pressure measured at home during the same visit
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-foreground">
+                  {bpAddonPrice > 0 ? `₹ ${bpAddonPrice}` : "FREE"}
+                </p>
+                <p className={`text-xs font-semibold ${bpAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
+                  {bpAddonSelected ? "Added" : "Add"}
+                </p>
+              </div>
+            </div>
+          </motion.button>
+        )}
+
         {/* Offers & Benefits */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-4">
           <h3 className="text-base font-bold text-foreground mb-3">Offers & Benefits</h3>
