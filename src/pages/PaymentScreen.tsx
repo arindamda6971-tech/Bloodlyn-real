@@ -309,6 +309,33 @@ const PaymentScreen = () => {
       if (fnError) throw fnError;
       if (fnData?.error) throw new Error(fnData.error);
 
+      // Insert appointment into Supabase appointments table for doctor services
+      for (const item of cartItems) {
+        if (isDoctorServiceItem(item)) {
+          const rawDocId = (item.doctorId || item.vendorId || item.id || "").replace(/^doc-(video-|audio-)?/i, "");
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawDocId);
+          if (isUuid) {
+            const typePrefix = getDoctorServicePrefix(item);
+            const mode = typePrefix === "doc-video" ? "video" : typePrefix === "doc-audio" ? "audio" : "in_clinic";
+            const apptPayload = {
+              doctor_id: rawDocId,
+              patient_name: item.patientName || paymentState?.patientName || "Patient",
+              patient_phone: paymentState?.patientPhone || (user?.phone || ""),
+              patient_age: paymentState?.patientAge ? Number(paymentState.patientAge) : 30,
+              patient_gender: paymentState?.patientGender || "Male",
+              scheduled_at: paymentState?.scheduledDate ? new Date(paymentState.scheduledDate).toISOString() : new Date().toISOString(),
+              mode,
+              symptoms: item.symptoms || "Doctor Consultation",
+              fee: Number(item.price) || 0,
+              status: "pending",
+              source: "main_app",
+              external_booking_id: fnData?.orderId || fnData?.id || null,
+            };
+            await supabase.from("appointments").insert(apptPayload as any).catch(e => console.warn("Failed to insert appointment row:", e));
+          }
+        }
+      }
+
       clearCart();
 
       navigate("/order-success", {

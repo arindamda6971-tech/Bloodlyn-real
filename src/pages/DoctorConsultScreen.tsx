@@ -248,9 +248,14 @@ const DoctorConsultScreen = () => {
       name: `${typeLabel} with ${doctor.name} (${patientName})`,
       price: fee,
       labId: "doctor-service",
-      labName: "HealthSwift Medical Care",
-      vendorId: "generic-service",
-    });
+      labName: doctor.hospitalName || "HealthSwift Medical Care",
+      vendorId: String(doctor.id),
+      doctorId: String(doctor.id),
+      doctorName: doctor.name,
+      consultationType: type,
+      patientName: patientName,
+      symptoms: `${state.healthConcern || "Consultation"}${state.onlineState.basicInfo.bloodPressure ? ` | BP: ${state.onlineState.basicInfo.bloodPressure}` : ""}${state.onlineState.basicInfo.bloodSugar ? ` | Sugar: ${state.onlineState.basicInfo.bloodSugar}` : ""}${state.onlineState.basicInfo.medications ? ` | Note: ${state.onlineState.basicInfo.medications}` : ""}`,
+    } as any);
     
     if (success) {
       toast.success(`${typeLabel} for ${patientName} added to cart`);
