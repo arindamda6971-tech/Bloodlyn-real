@@ -346,7 +346,7 @@ const PaymentScreen = () => {
           addressId: paymentState?.addressId || null,
           scheduledDate: paymentState?.scheduledDate || null,
           scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
-          subtotal: stateSubtotal,
+          subtotal: effectiveSubtotal,
           discount,
           total,
           paymentMethod: selectedPaymentMethod.id,
