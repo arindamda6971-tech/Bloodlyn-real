@@ -16,6 +16,11 @@ interface OfflineFlowProps {
   updateOfflineState: (updates: Partial<ConsultationFlowState["offlineState"]>) => void;
   doctors: Doctor[];
   onBook: (doctor: Doctor, type: "video" | "audio" | "physical") => void;
+  familyMembers?: any[];
+  selectedMemberId?: string | null;
+  setSelectedMemberId?: (id: string | null) => void;
+  selfProfile?: any;
+  onOpenAddDialog?: () => void;
 }
 
 const HEALTH_CONCERNS = [
