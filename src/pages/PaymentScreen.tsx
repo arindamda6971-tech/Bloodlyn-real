@@ -402,6 +402,8 @@ const PaymentScreen = () => {
         replace: true,
         state: {
           ...paymentState,
+          cartItems,
+          subtotal: effectiveSubtotal,
           couponApplied,
           discount,
           total,
