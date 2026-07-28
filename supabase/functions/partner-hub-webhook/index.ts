@@ -172,6 +172,11 @@ Deno.serve(async (req) => {
       order_details: {
         lab_name: order.lab_name,
         test_name: order.test_name,
+        order_type: orderType,
+        has_bp_addon: hasBpAddon,
+        bp_addon_items: hasBpAddon ? bpItems : [],
+        test_items: testItems,
+
         total: order.total,
         subtotal: order.subtotal,
         discount: order.discount,
