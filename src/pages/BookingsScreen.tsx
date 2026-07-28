@@ -127,7 +127,13 @@ const BookingsScreen = () => {
   };
 
   const renderOrderCard = (order: Order, index: number) => {
-    const isBp = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.order_number || "");
+    const BP_RE = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
+    const bpParts = (order.test_name || "").split(",").map((s) => s.trim()).filter(Boolean);
+    // Only a pure BP booking counts as a BP order; a BP add-on on a lab order stays a lab order.
+    const isBp = bpParts.length > 0
+      ? bpParts.every((p) => BP_RE.test(p))
+      : BP_RE.test(order.order_number || "");
+
     const BookingIcon = getBookingIcon(order.order_number);
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
