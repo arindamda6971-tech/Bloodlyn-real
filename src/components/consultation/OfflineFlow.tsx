@@ -56,7 +56,7 @@ const LocationStep = ({ updateOfflineState, onNext }: any) => {
   const { user } = useAuth();
   const [pincode, setPincode] = useState("");
   const [error, setError] = useState("");
-  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; type?: string; pincode: string; address_line1?: string; is_default?: boolean }>>([]);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; type?: string | null; pincode: string; address_line1?: string | null; is_default?: boolean | null }>>([]);
 
   useEffect(() => {
     if (!user) return;
