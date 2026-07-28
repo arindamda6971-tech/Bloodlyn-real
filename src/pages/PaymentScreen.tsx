@@ -306,7 +306,7 @@ const PaymentScreen = () => {
       // Accepts: UUID, UUID-prefixed (uuid-suffix), or known synthetic prefixes.
       // Anything else gets a `dc-` prefix so the function treats it as an unresolved
       // lab item and uses the client-supplied price as a safe fallback.
-      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
+      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio|bp)-/i;
       const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
       const normalizeItemId = (raw: unknown, item?: { name?: string; labId?: string | null }): string => {
         const id = String(raw ?? "").trim();
