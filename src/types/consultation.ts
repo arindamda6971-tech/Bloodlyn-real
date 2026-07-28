@@ -18,6 +18,10 @@ export interface Doctor {
   distance?: number;
   gender?: "Male" | "Female" | "Any";
   languages?: string[];
+  clinicAddress?: string;
+  pincode?: string;
+  service_pincodes?: string[];
+  treated_symptoms?: string[];
 }
 
 export type DoctorSpecialty =

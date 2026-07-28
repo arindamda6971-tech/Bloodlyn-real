@@ -36,7 +36,7 @@ export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "
       </div>
 
       {/* Doctor Details Grid */}
-      <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-4">
+      <div className="grid grid-cols-3 gap-2 py-3.5 bg-muted/30 rounded-2xl border border-border/60 mb-3">
         <div className="text-center">
           <div className="flex items-center justify-center gap-1">
             <Award className="w-4 h-4 text-primary" />
@@ -61,6 +61,22 @@ export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "
           </p>
         </div>
       </div>
+
+      {/* Treated Symptoms Tags */}
+      {doctor.treated_symptoms && doctor.treated_symptoms.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {doctor.treated_symptoms.slice(0, 4).map((sym, idx) => (
+            <span key={idx} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+              {sym}
+            </span>
+          ))}
+          {doctor.treated_symptoms.length > 4 && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">
+              +{doctor.treated_symptoms.length - 4} more
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Booking Actions */}
       <div className={`grid gap-2.5 ${allowedTypes.length === 3 ? "grid-cols-3" : allowedTypes.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>

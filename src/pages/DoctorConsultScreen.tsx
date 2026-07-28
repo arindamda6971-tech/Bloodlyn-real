@@ -191,6 +191,7 @@ const DoctorConsultScreen = () => {
             clinicAddress: p.clinic_address || "Clinic Address",
             pincode: p.pincode || (p.clinic_address ? (p.clinic_address.match(/\b\d{6}\b/)?.[0] || "") : ""),
             service_pincodes: Array.isArray(p.service_pincodes) ? p.service_pincodes : (p.pincode ? [p.pincode] : []),
+            treated_symptoms: Array.isArray(p.treated_symptoms) ? p.treated_symptoms : (typeof p.treated_symptoms === 'string' ? p.treated_symptoms.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
             gender: p.gender || "Any",
             languages: ["English", "Hindi"],
           }));
