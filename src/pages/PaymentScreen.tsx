@@ -87,8 +87,45 @@ const PaymentScreen = () => {
     }
   }, [location]);
 
+  // ---- Home BP Check add-on -------------------------------------------------
+  const UUID_MATCH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const orderLabId = (() => {
+    const raw = paymentState?.selectedLabId || paymentState?.cartItems?.[0]?.labId || "";
+    return UUID_MATCH.test(raw) ? raw : null;
+  })();
+  const alreadyHasBpItem = (paymentState?.cartItems || []).some((i) => String(i.id).startsWith("bp-"));
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!orderLabId || alreadyHasBpItem) {
+      setBpAddonPrice(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("diagnostic_centers")
+        .select("offers_home_bp, home_bp_price")
+        .eq("id", orderLabId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.offers_home_bp === true) {
+        setBpAddonPrice(Number(data.home_bp_price) || 0);
+      } else {
+        setBpAddonPrice(null);
+        setBpAddonSelected(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderLabId, alreadyHasBpItem]);
+
+  const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
+  const effectiveSubtotal = stateSubtotal + (bpAddonActive ? (bpAddonPrice || 0) : 0);
+
   const discount = couponApplied ? 100 : 0;
-  const total = stateSubtotal - discount;
+  const total = effectiveSubtotal - discount;
+
 
   const applyCoupon = () => {
     if (couponCode.toUpperCase() === "HEALTH100") setCouponApplied(true);
