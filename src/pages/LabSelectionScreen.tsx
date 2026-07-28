@@ -272,16 +272,28 @@ const LabSelectionScreen = () => {
     if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
-  // Reset slot selection when date or lab changes — slot list is per (lab, day)
+  // Auto switch to Tomorrow if Today has no remaining slots on mount
+  useEffect(() => {
+    const currentHour = new Date().getHours();
+    if (currentHour >= 20 && selectedDate === 0) {
+      setSelectedDate(1);
+    }
+  }, []);
+
+  // Reset slot selection when date or lab changes if selected slot is not available
   useEffect(() => {
     setSelectedTime((prev) => {
       if (prev === null) return null;
-      const stillAvailable = allSlotItems.find((s) => s.id === prev);
-      if (!stillAvailable) return null;
-      return getSlotAvailability(stillAvailable) ? prev : null;
+      const now = new Date();
+      const currentHour = now.getHours();
+      const isAvailable = selectedDate !== 0 || (
+        prev.includes("Morning") ? currentHour < 12 :
+        prev.includes("Afternoon") ? currentHour < 16 :
+        currentHour < 20
+      );
+      return isAvailable ? prev : null;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedLabVendorId, allSlotItems]);
+  }, [selectedDate, selectedLabVendorId]);
 
   if (items.length === 0) {
     return (

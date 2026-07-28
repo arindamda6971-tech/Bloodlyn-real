@@ -4,15 +4,66 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, HeartPulse, MapPin, Calendar, Clock, User, CheckCircle2,
   ChevronRight, AlertTriangle, Search, CreditCard, Building2, Star, Loader2,
+  Users, Plus, Heart, CheckCircle, Home, Package, Sparkles, Phone, Beaker, Receipt,
+  Tag, ChevronDown, ChevronUp, Wallet, Banknote,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
+import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
+import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
+
+const confettiColors = [
+  "hsl(var(--primary))",
+  "hsl(var(--success))",
+  "hsl(201 88% 62%)",
+  "hsl(142 71% 45%)",
+  "hsl(48 96% 53%)",
+  "hsl(280 65% 60%)",
+];
+
+const ConfettiPiece = ({ index }: { index: number }) => {
+  const randomX = Math.random() * 100;
+  const randomDelay = Math.random() * 0.8;
+  const randomDuration = 1.5 + Math.random() * 1.5;
+  const randomRotation = Math.random() * 720 - 360;
+  const color = confettiColors[index % confettiColors.length];
+  const size = 6 + Math.random() * 8;
+  const isCircle = Math.random() > 0.5;
+
+  return (
+    <motion.div
+      className="absolute top-0 pointer-events-none"
+      style={{
+        left: `${randomX}%`,
+        width: size,
+        height: isCircle ? size : size * 2.5,
+        borderRadius: isCircle ? "50%" : "2px",
+        backgroundColor: color,
+      }}
+      initial={{ y: -20, opacity: 1, rotate: 0, scale: 0 }}
+      animate={{
+        y: ["0%", "800%"],
+        opacity: [1, 1, 0.8, 0],
+        rotate: randomRotation,
+        scale: [0, 1.2, 1, 0.6],
+        x: [0, (Math.random() - 0.5) * 120],
+      }}
+      transition={{
+        duration: randomDuration,
+        delay: 0.3 + randomDelay,
+        ease: "easeOut",
+      }}
+    />
+  );
+};
 
 type FlowStep =
   | "ADDRESS"
@@ -20,6 +71,7 @@ type FlowStep =
   | "LAB"
   | "APPOINTMENT"
   | "DETAILS"
+  | "PAYMENT"
   | "SUMMARY"
   | "SUCCESS";
 
@@ -56,6 +108,15 @@ interface BpLab {
   is_active: boolean;
 }
 
+const isBpSlotAvailable = (slot: string, date: string): boolean => {
+  if (date !== "Today") return true;
+  const hour = new Date().getHours();
+  if (slot.includes("Morning")) return hour < 12;
+  if (slot.includes("Afternoon")) return hour < 16;
+  if (slot.includes("Evening")) return hour < 20;
+  return true;
+};
+
 const BPCheckScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -72,6 +133,49 @@ const BPCheckScreen = () => {
   const [patient, setPatient] = useState<PatientDetails>({ name: "", age: "", gender: "", mobile: "", notes: "" });
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [appointmentOpen, setAppointmentOpen] = useState(true);
+  const [orderOpen, setOrderOpen] = useState(true);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+
+  useEffect(() => {
+    const checkMethod = () => {
+      const stored = sessionStorage.getItem("bloodlyn-selected-payment");
+      if (stored) {
+        try {
+          setSelectedPaymentMethod(JSON.parse(stored));
+          sessionStorage.removeItem("bloodlyn-selected-payment");
+        } catch (e) {
+          console.error("Failed to parse payment method", e);
+        }
+      }
+    };
+    checkMethod();
+    window.addEventListener("focus", checkMethod);
+    return () => window.removeEventListener("focus", checkMethod);
+  }, []);
+
+  const { members: familyMembers, addMember } = useFamilyMembers();
+  const [selectedMemberId, setSelectedMemberId] = useState<string | "self">("self");
+  const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false);
+  const [selfProfile, setSelfProfile] = useState<{ name: string; age: string; gender: string; mobile: string } | null>(null);
+
+  const handleAddFamilyMember = async (memberData: Omit<FamilyMember, "id">) => {
+    const newMember = await addMember(memberData);
+    if (newMember) {
+      setSelectedMemberId(newMember.id);
+      setPatient((p) => ({
+        ...p,
+        name: newMember.fullName,
+        age: newMember.age,
+        gender: newMember.gender,
+        mobile: newMember.phone || p.mobile,
+      }));
+    }
+  };
 
   // Boot: load default address + profile, auto-skip to LAB when we have an address
   useEffect(() => {
@@ -118,12 +222,19 @@ const BPCheckScreen = () => {
       if (profData) {
         const dob = profData.date_of_birth ? new Date(profData.date_of_birth) : null;
         const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
+        const profName = profData.full_name || "";
+        const profGender = profData.gender ? profData.gender.charAt(0).toUpperCase() + profData.gender.slice(1) : "";
+        const profPhone = (profData.phone || "").replace(/\D/g, "").slice(-10);
+        const profAgeStr = age && age > 0 ? String(age) : "";
+
+        setSelfProfile({ name: profName, age: profAgeStr, gender: profGender, mobile: profPhone });
+
         setPatient((p) => ({
           ...p,
-          name: p.name || profData.full_name || "",
-          gender: p.gender || (profData.gender ? profData.gender.charAt(0).toUpperCase() + profData.gender.slice(1) : ""),
-          mobile: p.mobile || (profData.phone || "").replace(/\D/g, "").slice(-10),
-          age: p.age || (age && age > 0 ? String(age) : ""),
+          name: p.name || profName,
+          gender: p.gender || profGender,
+          mobile: p.mobile || profPhone,
+          age: p.age || profAgeStr,
         }));
       }
 
@@ -147,12 +258,27 @@ const BPCheckScreen = () => {
     let cancelled = false;
     setLabsLoading(true);
     (async () => {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("diagnostic_centers")
         .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
         .eq("offers_home_bp", true)
         .eq("is_active", true)
         .order("rating", { ascending: false });
+
+      // Fallback: If no centers explicitly have offers_home_bp = true, fetch all active diagnostic centers
+      if (!error && (!data || data.length === 0)) {
+        const { data: fallbackData } = await supabase
+          .from("diagnostic_centers")
+          .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
+          .eq("is_active", true)
+          .order("rating", { ascending: false });
+        if (fallbackData) {
+          data = fallbackData.map((l: any) => ({
+            ...l,
+            home_bp_price: l.home_bp_price ?? 299,
+          }));
+        }
+      }
 
       if (cancelled) return;
       if (error) {
@@ -173,9 +299,10 @@ const BPCheckScreen = () => {
     switch (step) {
       case "ADDRESS": navigate(-1); break;
       case "AVAILABILITY": setStep(selectedAddress ? "LAB" : "ADDRESS"); break;
-      case "LAB": navigate(-1); break;
+      case "LAB": setStep("ADDRESS"); break;
       case "APPOINTMENT": setStep("LAB"); break;
       case "DETAILS": setStep("APPOINTMENT"); break;
+      case "PAYMENT": setStep("DETAILS"); break;
       case "SUMMARY": setStep("DETAILS"); break;
       case "SUCCESS": navigate("/"); break;
     }
@@ -193,13 +320,27 @@ const BPCheckScreen = () => {
     setStep("LAB");
   };
 
-  const progressToSummary = () => {
-    if (patient.name && patient.age && patient.gender && patient.mobile) {
-      setStep("SUMMARY");
+  const progressToPayment = () => {
+    if (patient.name && patient.age && patient.gender && patient.mobile.length === 10) {
+      setStep("PAYMENT");
+    } else {
+      toast.error("Please fill in all required patient details correctly");
     }
   };
 
-  const price = selectedLab?.home_bp_price ?? 299;
+  const rawPrice = selectedLab?.home_bp_price ?? 299;
+  const discount = couponApplied ? 100 : 0;
+  const price = Math.max(0, rawPrice - discount);
+
+  const applyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (code === "HEALTH100" || code === "BP100") {
+      setCouponApplied(true);
+      toast.success("Coupon applied! ₹100 off");
+    } else {
+      toast.error("Invalid coupon code. Try HEALTH100");
+    }
+  };
 
   const handlePayment = async () => {
     if (!user) {
@@ -256,7 +397,7 @@ const BPCheckScreen = () => {
       const cartItems = [{
         id: `bp-${selectedLab.id}`,
         name: `Home BP Check — ${selectedLab.name}`,
-        price,
+        price: rawPrice,
         quantity: 1,
         labId: safeLabId || selectedLab.id,
         labName: selectedLab.name,
@@ -275,11 +416,11 @@ const BPCheckScreen = () => {
           addressId: validAddressId,
           scheduledDate: appointment.date || new Date().toISOString().split("T")[0],
           scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
-          subtotal: price,
-          discount: 0,
+          subtotal: rawPrice,
+          discount,
           total: price,
-          paymentMethod: "online",
-          couponCode: null,
+          paymentMethod: selectedPaymentMethod.id,
+          couponCode: couponApplied ? "HEALTH100" : null,
           patientName: patient.name || "Patient",
           patientAge: validAge,
           patientGender: patient.gender || "Other",
@@ -302,6 +443,7 @@ const BPCheckScreen = () => {
       }
 
       setOrderNumber(data.orderNumber || data.orderId);
+      setShowConfetti(true);
       setStep("SUCCESS");
     } catch (e: any) {
       console.error("BP booking exception:", e);
@@ -312,7 +454,7 @@ const BPCheckScreen = () => {
   };
 
   const stepIndex = useMemo(() => {
-    const order: FlowStep[] = ["LAB", "APPOINTMENT", "DETAILS", "SUMMARY"];
+    const order: FlowStep[] = ["LAB", "APPOINTMENT", "DETAILS", "PAYMENT"];
     const i = order.indexOf(step);
     return i < 0 ? 0 : i;
   }, [step]);
@@ -577,19 +719,46 @@ const BPCheckScreen = () => {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Select Time Slot</p>
               <div className="space-y-3">
                 {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
-                  const isSelected = appointment.timeSlot === slot;
+                  const isAvailable = isBpSlotAvailable(slot, appointment.date);
+                  const isSelected = appointment.timeSlot === slot && isAvailable;
                   return (
                     <button
                       key={slot}
-                      onClick={() => setAppointment({ ...appointment, timeSlot: slot })}
-                      className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 text-left ${
-                        isSelected ? "bg-primary/5 border-primary shadow-sm" : "bg-card border-slate-200/80"
+                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot })}
+                      disabled={!isAvailable}
+                      className={`w-full p-4 rounded-2xl border transition-all flex items-center gap-4 text-left ${
+                        !isAvailable
+                          ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
+                          : isSelected
+                          ? "bg-primary/5 border-primary shadow-sm"
+                          : "bg-card border-slate-200/80 hover:border-primary/40 shadow-xs cursor-pointer"
                       }`}
                     >
-                      <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${isSelected ? "bg-primary text-white" : "bg-slate-100 text-slate-600"}`}>
+                      <div
+                        className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                          !isAvailable
+                            ? "bg-muted/50 text-foreground/30"
+                            : isSelected
+                            ? "bg-primary text-white"
+                            : "bg-slate-100/90 text-slate-600"
+                        }`}
+                      >
                         <Clock className="w-5 h-5" />
                       </div>
-                      <span className={`text-[15px] font-bold ${isSelected ? "text-primary" : "text-slate-800"}`}>{slot}</span>
+                      <div className="flex flex-col items-start flex-1 text-left">
+                        <span
+                          className={`text-[15px] font-bold ${
+                            !isAvailable ? "text-foreground/50 line-through" : isSelected ? "text-primary" : "text-slate-800"
+                          }`}
+                        >
+                          {slot}
+                        </span>
+                        {!isAvailable && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                            Passed
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -598,7 +767,7 @@ const BPCheckScreen = () => {
               <div className="mt-10">
                 <button
                   onClick={() => setStep("DETAILS")}
-                  disabled={!appointment.timeSlot}
+                  disabled={!appointment.timeSlot || !isBpSlotAvailable(appointment.timeSlot, appointment.date)}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
                   Continue to Patient Details
@@ -609,7 +778,80 @@ const BPCheckScreen = () => {
 
           {step === "DETAILS" && (
             <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
-              <h2 className="text-xl font-black mb-6">Patient Information</h2>
+              <h2 className="text-xl font-black mb-4">Patient Information</h2>
+
+              {/* Family Member Selection */}
+              <div className="mb-6 bg-muted/30 border border-border/40 rounded-2xl p-3.5">
+                <div className="flex items-center justify-between mb-3 px-0.5">
+                  <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-blue-600" /> Who is this BP check for?
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddFamilyDialog(true)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 bg-blue-50 active:bg-blue-100 px-2.5 py-1 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Member
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {/* Self Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMemberId("self");
+                      if (selfProfile) {
+                        setPatient((p) => ({
+                          ...p,
+                          name: selfProfile.name,
+                          age: selfProfile.age,
+                          gender: selfProfile.gender,
+                          mobile: selfProfile.mobile,
+                        }));
+                      }
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+                      selectedMemberId === "self"
+                        ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20"
+                        : "bg-card border-border/50 text-foreground hover:border-blue-300"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Self {selfProfile?.name ? `(${selfProfile.name})` : ""}</span>
+                  </button>
+
+                  {/* Family Members List */}
+                  {familyMembers.map((m) => {
+                    const isSelected = selectedMemberId === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedMemberId(m.id);
+                          setPatient((p) => ({
+                            ...p,
+                            name: m.fullName,
+                            age: m.age,
+                            gender: m.gender,
+                            mobile: m.phone || p.mobile,
+                          }));
+                        }}
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-blue-600 text-white border-blue-600 shadow-sm shadow-blue-600/20"
+                            : "bg-card border-border/50 text-foreground hover:border-blue-300"
+                        }`}
+                      >
+                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                        <span>{m.relationship === "Other" ? m.customRelationship || "Relative" : m.relationship} ({m.fullName})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="space-y-5">
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Full Name</label>
@@ -640,12 +882,154 @@ const BPCheckScreen = () => {
               </div>
               <div className="mt-8">
                 <button
-                  onClick={progressToSummary}
+                  onClick={progressToPayment}
                   disabled={!patient.name || !patient.age || !patient.gender || patient.mobile.length !== 10}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
-                  Review Booking
+                  Proceed to Check Out
                 </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === "PAYMENT" && (
+            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 pb-36">
+              <h2 className="text-xl font-black mb-4">Check Out</h2>
+
+              {/* Appointment Details */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
+                  <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" /> Appointment Details
+                  </h3>
+                  {appointmentOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+                {appointmentOpen && (
+                  <div className="mt-3 pt-3 border-t border-border/40 space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-foreground font-semibold">
+                      <Building2 className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{selectedLab?.name ?? "Partner Diagnostic Lab"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Clock className="w-3.5 h-3.5 text-blue-600" />
+                      <span>{appointment.date} • {appointment.timeSlot}</span>
+                    </div>
+                    {selectedAddress && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{selectedAddress.fullAddress}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Order & Patient Details */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
+                  <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <User className="w-4 h-4 text-blue-600" /> Order & Patient Details
+                  </h3>
+                  {orderOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+                {orderOpen && (
+                  <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-foreground">{patient.name}</span>
+                      <span className="text-muted-foreground font-medium">{patient.age} yrs • {patient.gender} • +91 {patient.mobile}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-2 border-t border-border/30">
+                      <span className="font-medium text-foreground">Home BP Check — {selectedLab?.name}</span>
+                      <span className="font-bold text-foreground">₹{rawPrice}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Offers & Benefits */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-blue-600" /> Offers & Benefits
+                </h3>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Apply Coupon (e.g. HEALTH100)"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    disabled={couponApplied}
+                    className="h-11 bg-muted/50 rounded-xl text-xs font-semibold uppercase tracking-wider"
+                  />
+                  <Button
+                    onClick={applyCoupon}
+                    disabled={couponApplied || !couponCode.trim()}
+                    className="h-11 px-4 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {couponApplied ? "Applied" : "Apply"}
+                  </Button>
+                </div>
+                {couponApplied && (
+                  <Badge variant="softSuccess" className="mt-2.5 text-[11px] font-bold">
+                    HEALTH100 applied — ₹100 off
+                  </Badge>
+                )}
+              </div>
+
+              {/* Bill Summary */}
+              <div className="bg-card border border-border/50 rounded-3xl p-5 shadow-sm space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">Bill Summary</h3>
+                <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+                  <span>MRP Total</span>
+                  <span className="text-foreground">₹{rawPrice}.00</span>
+                </div>
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Home Visit Fee</span>
+                  <span className="text-emerald-600 font-bold">FREE</span>
+                </div>
+                {couponApplied && (
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-muted-foreground">Coupon Discount</span>
+                    <span className="text-emerald-600 font-bold">- ₹{discount}.00</span>
+                  </div>
+                )}
+                <div className="pt-3 border-t border-border/40 flex justify-between items-center">
+                  <span className="text-sm font-black text-foreground">Payable Amount</span>
+                  <span className="text-lg font-black text-blue-600">₹{price}.00</span>
+                </div>
+              </div>
+
+              {/* Bottom Payment Bar */}
+              <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border/50 px-4 py-3 z-40 shadow-2xl">
+                <div className="flex items-center gap-3">
+                  {/* Payment Method Selector button */}
+                  <button
+                    onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total: price } })}
+                    className="flex items-center gap-2 text-left shrink-0 active:scale-95 transition-transform"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground">Pay Using</span>
+                      <span className="block text-xs font-bold text-foreground flex items-center gap-0.5">
+                        {selectedPaymentMethod.name} <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Place Order Button */}
+                  <Button
+                    onClick={handlePayment}
+                    disabled={placing}
+                    className="flex-1 h-13 rounded-2xl text-sm font-black bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {placing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4" />
+                    )}
+                    <span>{placing ? "Placing Order…" : `Place Order • ₹${price}`}</span>
+                  </Button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -712,51 +1096,203 @@ const BPCheckScreen = () => {
           )}
 
           {step === "SUCCESS" && (
-            <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 h-[100dvh] flex flex-col bg-blue-600 text-white relative overflow-hidden">
-              <div className="absolute top-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-              <div className="absolute bottom-40 right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-              <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-2xl mb-6">
-                  <CheckCircle2 className="w-12 h-12 text-blue-600" />
-                </div>
-                <h1 className="text-3xl font-black tracking-tight text-center mb-2">Booking Confirmed!</h1>
-                <p className="text-blue-100 font-medium text-center mb-10 max-w-[280px]">
-                  {selectedLab?.name} will visit you {appointment.date.toLowerCase()}.
-                </p>
-                <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full border border-white/20">
-                  <div className="flex justify-between items-center mb-4 pb-4 border-b border-white/20">
-                    <span className="text-xs font-bold text-blue-200 uppercase tracking-widest">Booking ID</span>
-                    <span className="font-black text-sm">{orderNumber ?? "—"}</span>
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative flex flex-col items-center justify-center min-h-[85vh] px-4 py-6 text-center overflow-hidden"
+            >
+              {/* Confetti */}
+              <AnimatePresence>
+                {showConfetti && (
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
+                    {Array.from({ length: 40 }).map((_, i) => (
+                      <ConfettiPiece key={i} index={i} />
+                    ))}
                   </div>
-                  <div className="flex items-start gap-4 mb-4">
-                    <Clock className="w-5 h-5 text-blue-200 mt-0.5" />
-                    <div>
-                      <span className="block text-xs font-bold text-blue-200 uppercase tracking-widest mb-0.5">Expected Arrival</span>
-                      <span className="block font-black">{appointment.date}, {appointment.timeSlot}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4">
-                    <Building2 className="w-5 h-5 text-blue-200 mt-0.5" />
-                    <div>
-                      <span className="block text-xs font-bold text-blue-200 uppercase tracking-widest mb-0.5">Assigned Lab</span>
-                      <span className="block font-black text-sm">{selectedLab?.name}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full space-y-3 mt-10">
-                  <button onClick={() => navigate("/bookings")} className="w-full bg-white text-blue-600 py-4 rounded-2xl font-black text-[13px] shadow-xl active:scale-[0.98] transition-transform">
-                    View My Bookings
-                  </button>
-                  <button onClick={() => navigate("/")} className="w-full bg-white/10 text-white py-3.5 rounded-2xl font-bold text-[13px] border border-white/20 active:scale-[0.98] transition-transform">
-                    Back to Home
-                  </button>
-                </div>
+                )}
+              </AnimatePresence>
+
+              {/* Radiating rings behind checkmark */}
+              <div className="relative mb-6">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute inset-0 rounded-full border border-primary/20"
+                    initial={{ scale: 0.8, opacity: 0.6 }}
+                    animate={{ scale: 2 + i * 0.8, opacity: 0 }}
+                    transition={{
+                      duration: 2,
+                      delay: 0.5 + i * 0.3,
+                      repeat: Infinity,
+                      ease: "easeOut",
+                    }}
+                    style={{ width: 96, height: 96, top: 0, left: 0 }}
+                  />
+                ))}
+
+                {/* Glow */}
+                <motion.div
+                  className="absolute -inset-4 rounded-full bg-primary/10 blur-xl"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: [0, 0.6, 0.3], scale: [0.5, 1.2, 1] }}
+                  transition={{ duration: 1.2, delay: 0.2 }}
+                />
+
+                {/* Checkmark circle */}
+                <motion.div
+                  className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg mx-auto"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
+                  style={{ boxShadow: "0 8px 40px -8px hsl(var(--primary) / 0.5)" }}
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+                  >
+                    <CheckCircle className="w-12 h-12 text-white" strokeWidth={2.5} />
+                  </motion.div>
+                </motion.div>
               </div>
+
+              {/* Title & Subtitle */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="mb-2"
+              >
+                <h1 className="text-2xl font-black text-foreground">Booking Confirmed!</h1>
+              </motion.div>
+
+              <motion.p
+                className="text-muted-foreground text-xs font-medium max-w-xs mb-6"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+              >
+                {selectedLab?.name ?? "Our partner lab"} will visit you for Home BP Check {appointment.date.toLowerCase()}.
+              </motion.p>
+
+              {/* Booking details card */}
+              <motion.div
+                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-5 mb-6 text-left shadow-sm space-y-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                {/* Booking ID */}
+                <div className="flex items-center gap-3 pb-3 border-b border-border/40">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Package className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1 flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking ID</p>
+                      <p className="text-sm font-black text-foreground truncate">{orderNumber ?? "HS20260728-BP"}</p>
+                    </div>
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+                      Confirmed
+                    </span>
+                  </div>
+                </div>
+
+                {/* Expected Arrival */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Expected Arrival</p>
+                    <p className="text-xs font-bold text-foreground">{appointment.date}, {appointment.timeSlot}</p>
+                  </div>
+                </div>
+
+                {/* Patient info */}
+                {patient.name && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <User className="w-4 h-4 text-slate-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Patient</p>
+                      <p className="text-xs font-bold text-foreground truncate">{patient.name} ({patient.age} yrs • {patient.gender})</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Assigned Lab */}
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <Building2 className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Assigned Lab</p>
+                    <p className="text-xs font-bold text-foreground truncate">{selectedLab?.name ?? "Partner Diagnostic Center"}</p>
+                  </div>
+                </div>
+
+                {/* Visit Address */}
+                {selectedAddress && (
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-slate-700" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Visit Address</p>
+                      <p className="text-xs font-medium text-foreground truncate">{selectedAddress.fullAddress}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bill Amount */}
+                <div className="flex items-center justify-between pt-3 border-t border-border/40">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-muted-foreground">Amount Paid</span>
+                  </div>
+                  <span className="text-base font-black text-blue-600">₹{price}</span>
+                </div>
+              </motion.div>
+
+              {/* Actions */}
+              <motion.div
+                className="w-full max-w-sm space-y-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <Button
+                  className="w-full h-12 rounded-2xl text-sm font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20"
+                  onClick={() => navigate("/bookings")}
+                >
+                  <Package className="w-4 h-4" />
+                  View My Bookings
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full h-12 rounded-2xl text-sm font-bold gap-2 border-border/60 text-foreground"
+                  onClick={() => navigate("/")}
+                >
+                  <Home className="w-4 h-4" />
+                  Back to Home
+                </Button>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
         )}
       </div>
+
+      <AddFamilyMemberDialog
+        open={showAddFamilyDialog}
+        onOpenChange={setShowAddFamilyDialog}
+        onAdd={handleAddFamilyMember}
+        existingMembers={familyMembers}
+      />
     </MobileLayout>
   );
 };
