@@ -18,7 +18,7 @@ interface OfflineFlowProps {
   onBook: (doctor: Doctor, type: "video" | "audio" | "physical") => void;
   familyMembers?: any[];
   selectedMemberId?: string | null;
-  setSelectedMemberId?: (id: string | null) => void;
+  setSelectedMemberId?: (id: any) => void;
   selfProfile?: any;
   onOpenAddDialog?: () => void;
 }
