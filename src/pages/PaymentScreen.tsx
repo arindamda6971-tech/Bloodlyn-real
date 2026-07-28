@@ -196,7 +196,22 @@ const PaymentScreen = () => {
   const handlePayment = async () => {
     if (isSubmittingOrder) return;
 
-    const cartItems = paymentState?.cartItems || [];
+    const baseItems = paymentState?.cartItems || [];
+    const cartItems = bpAddonActive && orderLabId
+      ? [
+          ...baseItems,
+          {
+            id: `bp-${orderLabId}`,
+            name: "Home BP Check (Add-on)",
+            price: bpAddonPrice || 0,
+            quantity: 1,
+            labId: orderLabId,
+            labName: paymentState?.selectedLabName || baseItems[0]?.labName,
+            vendorId: paymentState?.labVendorId || baseItems[0]?.vendorId,
+            familyMemberId: baseItems[0]?.familyMemberId,
+          },
+        ]
+      : baseItems;
     if (cartItems.length === 0) {
       toast.error("Your cart is empty. Please add tests before placing an order.");
       navigate("/cart");
