@@ -163,8 +163,6 @@ const BasicHealthInfoStep = ({
 
   const handleChange = (field: string, value: string) => {
     let cleanVal = value;
-    if (field === "weight") cleanVal = sanitizeWeight(value);
-    if (field === "height") cleanVal = sanitizeHeight(value);
     if (field === "bloodPressure") cleanVal = sanitizeBloodPressure(value);
     if (field === "bloodSugar") cleanVal = sanitizeBloodSugar(value);
     const newInfo = { ...info, [field]: cleanVal };
@@ -175,8 +173,8 @@ const BasicHealthInfoStep = ({
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-6">
       <div>
-        <h2 className="text-xl font-black text-foreground tracking-tight">Share your health details</h2>
-        <p className="text-xs text-muted-foreground mt-1 font-semibold text-emerald-600">All fields are optional.</p>
+        <h2 className="text-xl font-black text-foreground tracking-tight">Patient & Health Details</h2>
+        <p className="text-xs text-muted-foreground mt-1 font-semibold text-emerald-600">Select patient and share optional health details.</p>
       </div>
 
       {/* Family Member System Selector */}
@@ -233,28 +231,21 @@ const BasicHealthInfoStep = ({
         </div>
       </div>
 
+      {/* Patient Vitals & Health Notes */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-muted-foreground">Weight (kg)</label>
-          <Input type="text" inputMode="decimal" maxLength={5} placeholder="e.g. 70" value={info.weight} onChange={e => handleChange("weight", e.target.value)} className="rounded-xl h-11" />
-        </div>
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-muted-foreground">Height (cm)</label>
-          <Input type="text" inputMode="decimal" maxLength={5} placeholder="e.g. 175" value={info.height} onChange={e => handleChange("height", e.target.value)} className="rounded-xl h-11" />
-        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-muted-foreground">Blood Pressure</label>
           <Input type="text" maxLength={7} placeholder="120/80" value={info.bloodPressure} onChange={e => handleChange("bloodPressure", e.target.value)} className="rounded-xl h-11" />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs font-bold text-muted-foreground">Blood Sugar</label>
+          <label className="text-xs font-bold text-muted-foreground">Blood Sugar (mg/dL)</label>
           <Input type="text" inputMode="numeric" maxLength={3} placeholder="e.g. 100" value={info.bloodSugar} onChange={e => handleChange("bloodSugar", e.target.value)} className="rounded-xl h-11" />
         </div>
       </div>
 
       <div className="space-y-1.5">
-        <label className="text-xs font-bold text-muted-foreground">Current Medications</label>
-        <Input placeholder="List any medications" value={info.medications} onChange={e => handleChange("medications", e.target.value)} className="rounded-xl h-11" />
+        <label className="text-xs font-bold text-muted-foreground">Current Medications / Symptoms Note</label>
+        <Input placeholder="List any current medications or symptoms" value={info.medications} onChange={e => handleChange("medications", e.target.value)} className="rounded-xl h-11" />
       </div>
 
       <div className="flex gap-3 mt-4">
