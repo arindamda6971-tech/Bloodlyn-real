@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -58,7 +58,10 @@ const PaymentScreen = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
   const [verifyingServiceability, setVerifyingServiceability] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [bpAddonPrice, setBpAddonPrice] = useState<number | null>(null);
+  const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const idempotencyKeyRef = useRef<string | null>(null);
+
 
   // Listen for payment method selection from PaymentMethodsScreen
   useEffect(() => {
@@ -84,8 +87,45 @@ const PaymentScreen = () => {
     }
   }, [location]);
 
+  // ---- Home BP Check add-on -------------------------------------------------
+  const UUID_MATCH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const orderLabId = (() => {
+    const raw = paymentState?.selectedLabId || paymentState?.cartItems?.[0]?.labId || "";
+    return UUID_MATCH.test(raw) ? raw : null;
+  })();
+  const alreadyHasBpItem = (paymentState?.cartItems || []).some((i) => String(i.id).startsWith("bp-"));
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!orderLabId || alreadyHasBpItem) {
+      setBpAddonPrice(null);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("diagnostic_centers")
+        .select("offers_home_bp, home_bp_price")
+        .eq("id", orderLabId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data?.offers_home_bp === true) {
+        setBpAddonPrice(Number(data.home_bp_price) || 0);
+      } else {
+        setBpAddonPrice(null);
+        setBpAddonSelected(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderLabId, alreadyHasBpItem]);
+
+  const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
+  const effectiveSubtotal = stateSubtotal + (bpAddonActive ? (bpAddonPrice || 0) : 0);
+
   const discount = couponApplied ? 100 : 0;
-  const total = stateSubtotal - discount;
+  const total = effectiveSubtotal - discount;
+
 
   const applyCoupon = () => {
     if (couponCode.toUpperCase() === "HEALTH100") setCouponApplied(true);
@@ -156,7 +196,22 @@ const PaymentScreen = () => {
   const handlePayment = async () => {
     if (isSubmittingOrder) return;
 
-    const cartItems = paymentState?.cartItems || [];
+    const baseItems = paymentState?.cartItems || [];
+    const cartItems = bpAddonActive && orderLabId
+      ? [
+          ...baseItems,
+          {
+            id: `bp-${orderLabId}`,
+            name: "Home BP Check (Add-on)",
+            price: bpAddonPrice || 0,
+            quantity: 1,
+            labId: orderLabId,
+            labName: paymentState?.selectedLabName || baseItems[0]?.labName,
+            vendorId: paymentState?.labVendorId || baseItems[0]?.vendorId,
+            familyMemberId: baseItems[0]?.familyMemberId,
+          },
+        ]
+      : baseItems;
     if (cartItems.length === 0) {
       toast.error("Your cart is empty. Please add tests before placing an order.");
       navigate("/cart");
@@ -251,7 +306,7 @@ const PaymentScreen = () => {
       // Accepts: UUID, UUID-prefixed (uuid-suffix), or known synthetic prefixes.
       // Anything else gets a `dc-` prefix so the function treats it as an unresolved
       // lab item and uses the client-supplied price as a safe fallback.
-      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio)-/i;
+      const SYNTHETIC_PREFIX = /^(ecg|ai|dc|reorder|pkg|bridge|lifecare|doc|physio|bp)-/i;
       const UUID_PREFIXED = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(-.+)?$/i;
       const normalizeItemId = (raw: unknown, item?: { name?: string; labId?: string | null }): string => {
         const id = String(raw ?? "").trim();
@@ -291,7 +346,7 @@ const PaymentScreen = () => {
           addressId: paymentState?.addressId || null,
           scheduledDate: paymentState?.scheduledDate || null,
           scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
-          subtotal: stateSubtotal,
+          subtotal: effectiveSubtotal,
           discount,
           total,
           paymentMethod: selectedPaymentMethod.id,
@@ -310,9 +365,10 @@ const PaymentScreen = () => {
       if (fnData?.error) throw new Error(fnData.error);
 
       // Insert appointment into Supabase appointments table for doctor services
-      for (const item of cartItems) {
+      for (const rawItem of cartItems) {
+        const item = rawItem as any;
         if (isDoctorServiceItem(item)) {
-          const rawDocId = (item.doctorId || item.vendorId || item.id || "").replace(/^doc-(video-|audio-)?/i, "");
+          const rawDocId = String(item.doctorId || item.vendorId || item.id || "").replace(/^doc-(video-|audio-)?/i, "");
           const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawDocId);
           if (isUuid) {
             const typePrefix = getDoctorServicePrefix(item);
@@ -320,7 +376,7 @@ const PaymentScreen = () => {
             const apptPayload = {
               doctor_id: rawDocId,
               patient_name: item.patientName || paymentState?.patientName || "Patient",
-              patient_phone: paymentState?.patientPhone || (user?.phone || ""),
+              patient_phone: paymentState?.patientPhone || "",
               patient_age: paymentState?.patientAge ? Number(paymentState.patientAge) : 30,
               patient_gender: paymentState?.patientGender || "Male",
               scheduled_at: paymentState?.scheduledDate ? new Date(paymentState.scheduledDate).toISOString() : new Date().toISOString(),
@@ -331,7 +387,11 @@ const PaymentScreen = () => {
               source: "main_app",
               external_booking_id: fnData?.orderId || fnData?.id || null,
             };
-            await supabase.from("appointments").insert(apptPayload as any).catch(e => console.warn("Failed to insert appointment row:", e));
+            try {
+              await (supabase as any).from("appointments").insert(apptPayload);
+            } catch (e) {
+              console.warn("Failed to insert appointment row:", e);
+            }
           }
         }
       }
@@ -342,6 +402,8 @@ const PaymentScreen = () => {
         replace: true,
         state: {
           ...paymentState,
+          cartItems,
+          subtotal: effectiveSubtotal,
           couponApplied,
           discount,
           total,
@@ -462,6 +524,41 @@ const PaymentScreen = () => {
           )}
         </motion.div>
 
+        {/* Home BP Check add-on — only when the selected lab offers it */}
+        {bpAddonPrice !== null && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            onClick={() => setBpAddonSelected((v) => !v)}
+            aria-pressed={bpAddonSelected}
+            className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
+              bpAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <HeartPulse className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">Add Home BP Check</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  Blood pressure measured at home during the same visit
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-foreground">
+                  {bpAddonPrice > 0 ? `₹ ${bpAddonPrice}` : "FREE"}
+                </p>
+                <p className={`text-xs font-semibold ${bpAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
+                  {bpAddonSelected ? "Added" : "Add"}
+                </p>
+              </div>
+            </div>
+          </motion.button>
+        )}
+
         {/* Offers & Benefits */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-4">
           <h3 className="text-base font-bold text-foreground mb-3">Offers & Benefits</h3>
@@ -501,6 +598,14 @@ const PaymentScreen = () => {
               <span className="text-muted-foreground">MRP Total</span>
               <span className="text-foreground">₹ {stateSubtotal}.0/-</span>
             </div>
+            {bpAddonActive && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Home BP Check</span>
+                <span className="text-foreground">
+                  {(bpAddonPrice || 0) > 0 ? `₹ ${bpAddonPrice}.0/-` : "FREE"}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
               <span className="text-success font-medium">FREE</span>

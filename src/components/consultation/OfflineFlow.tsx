@@ -16,6 +16,11 @@ interface OfflineFlowProps {
   updateOfflineState: (updates: Partial<ConsultationFlowState["offlineState"]>) => void;
   doctors: Doctor[];
   onBook: (doctor: Doctor, type: "video" | "audio" | "physical") => void;
+  familyMembers?: any[];
+  selectedMemberId?: string | null;
+  setSelectedMemberId?: (id: any) => void;
+  selfProfile?: any;
+  onOpenAddDialog?: () => void;
 }
 
 const HEALTH_CONCERNS = [
@@ -51,7 +56,7 @@ const LocationStep = ({ updateOfflineState, onNext }: any) => {
   const { user } = useAuth();
   const [pincode, setPincode] = useState("");
   const [error, setError] = useState("");
-  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; type?: string; pincode: string; address_line1?: string; is_default?: boolean }>>([]);
+  const [savedAddresses, setSavedAddresses] = useState<Array<{ id: string; type?: string | null; pincode: string; address_line1?: string | null; is_default?: boolean | null }>>([]);
 
   useEffect(() => {
     if (!user) return;
