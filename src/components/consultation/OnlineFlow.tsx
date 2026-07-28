@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConsultationFlowState, Doctor } from "@/types/consultation";
 import { matchSymptomToSpecialty } from "@/utils/symptomMatching";
-import { Search, ChevronRight, Video, Phone, MessageSquare, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Search, ChevronRight, Video, Phone, ShieldCheck, CheckCircle2, Users, Plus, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DoctorCard } from "./DoctorCard";
@@ -27,13 +27,18 @@ const HEALTH_CONCERNS = [
   "Diabetes", "Bone", "Nutrition", "Hair", "Pregnancy", "Sexual Health", "Other"
 ];
 
-export const OnlineFlow = ({ state, updateState, updateOnlineState, doctors, onBook }: OnlineFlowProps) => {
-  // Step 2: Language
-  // Step 3: Health Concern
-  // Step 4: Basic Health Info
-  // Step 5: Consultation Type
-  // Step 6: Doctor Matching
-  
+export const OnlineFlow = ({
+  state,
+  updateState,
+  updateOnlineState,
+  doctors,
+  onBook,
+  familyMembers = [],
+  selectedMemberId = "self",
+  setSelectedMemberId,
+  selfProfile,
+  onOpenAddDialog,
+}: any) => {
   const step = state.currentStep;
 
   return (
@@ -45,7 +50,17 @@ export const OnlineFlow = ({ state, updateState, updateOnlineState, doctors, onB
         <HealthConcernStep key="concern" updateState={updateState} onNext={() => updateState({ currentStep: 4 })} />
       )}
       {step === 4 && (
-        <BasicHealthInfoStep key="vitals" state={state.onlineState} updateOnlineState={updateOnlineState} onNext={() => updateState({ currentStep: 5 })} />
+        <BasicHealthInfoStep
+          key="vitals"
+          state={state.onlineState}
+          updateOnlineState={updateOnlineState}
+          onNext={() => updateState({ currentStep: 5 })}
+          familyMembers={familyMembers}
+          selectedMemberId={selectedMemberId}
+          setSelectedMemberId={setSelectedMemberId}
+          selfProfile={selfProfile}
+          onOpenAddDialog={onOpenAddDialog}
+        />
       )}
       {step === 5 && (
         <ConsultationTypeStep key="type" state={state.onlineState} updateOnlineState={updateOnlineState} onNext={() => updateState({ currentStep: 6 })} />
@@ -134,7 +149,16 @@ const HealthConcernStep = ({ updateState, onNext }: any) => {
 };
 
 // --- Step 4: Basic Health Info ---
-const BasicHealthInfoStep = ({ state, updateOnlineState, onNext }: any) => {
+const BasicHealthInfoStep = ({
+  state,
+  updateOnlineState,
+  onNext,
+  familyMembers = [],
+  selectedMemberId = "self",
+  setSelectedMemberId,
+  selfProfile,
+  onOpenAddDialog,
+}: any) => {
   const [info, setInfo] = useState(state.basicInfo);
 
   const handleChange = (field: string, value: string) => {
@@ -153,6 +177,60 @@ const BasicHealthInfoStep = ({ state, updateOnlineState, onNext }: any) => {
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Share your health details</h2>
         <p className="text-xs text-muted-foreground mt-1 font-semibold text-emerald-600">All fields are optional.</p>
+      </div>
+
+      {/* Family Member System Selector */}
+      <div className="bg-card border border-border/60 rounded-2xl p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3 px-0.5">
+          <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-primary" /> Who is this consultation for?
+          </label>
+          {onOpenAddDialog && (
+            <button
+              type="button"
+              onClick={onOpenAddDialog}
+              className="text-xs font-bold text-primary hover:text-primary/80 flex items-center gap-1 bg-primary/10 active:bg-primary/20 px-2.5 py-1 rounded-xl transition-colors shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Member
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {/* Self Option */}
+          <button
+            type="button"
+            onClick={() => setSelectedMemberId && setSelectedMemberId("self")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+              selectedMemberId === "self"
+                ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                : "bg-background border-border/60 text-foreground hover:border-primary/40"
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>Self {selfProfile?.name ? `(${selfProfile.name})` : ""}</span>
+          </button>
+
+          {/* Family Members List */}
+          {(familyMembers || []).map((m: any) => {
+            const isSelected = selectedMemberId === m.id;
+            return (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => setSelectedMemberId && setSelectedMemberId(m.id)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+                  isSelected
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+                    : "bg-background border-border/60 text-foreground hover:border-primary/40"
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                <span>{m.relationship === "Other" ? m.customRelationship || "Relative" : m.relationship} ({m.fullName})</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -191,8 +269,7 @@ const BasicHealthInfoStep = ({ state, updateOnlineState, onNext }: any) => {
 const ConsultationTypeStep = ({ state, updateOnlineState, onNext }: any) => {
   const options = [
     { id: "video", title: "Video Call", desc: "Face-to-face virtual consultation", icon: Video, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { id: "audio", title: "Audio Call", desc: "Voice only consultation", icon: Phone, color: "text-indigo-500", bg: "bg-indigo-500/10" },
-    { id: "chat", title: "Chat", desc: "Text-based consultation (Optional)", icon: MessageSquare, color: "text-emerald-500", bg: "bg-emerald-500/10" }
+    { id: "audio", title: "Audio Call", desc: "Voice only consultation", icon: Phone, color: "text-indigo-500", bg: "bg-indigo-500/10" }
   ];
 
   return (

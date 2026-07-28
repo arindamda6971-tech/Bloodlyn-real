@@ -87,7 +87,7 @@ export interface ConsultationFlowState {
       medications: string;
       symptomsDuration: string;
     };
-    consultationType: "video" | "audio" | "chat" | null;
+    consultationType: "video" | "audio" | null;
     filters: {
       sort: "lowest-fee" | "highest-rating" | "fastest-available" | "most-experienced" | null;
     };

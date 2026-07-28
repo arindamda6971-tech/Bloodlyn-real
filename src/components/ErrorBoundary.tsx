@@ -50,6 +50,11 @@ class ErrorBoundary extends Component<Props, State> {
               <p className="text-sm text-muted-foreground">
                 We hit an unexpected error. Please try again — your data is safe.
               </p>
+              {this.state.error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-left text-xs font-mono text-red-600 dark:text-red-400 break-words max-h-40 overflow-y-auto">
+                  <p className="font-bold">{this.state.error.name}: {this.state.error.message}</p>
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Button onClick={this.handleReload} className="w-full">
