@@ -58,7 +58,10 @@ const PaymentScreen = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
   const [verifyingServiceability, setVerifyingServiceability] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [bpAddonPrice, setBpAddonPrice] = useState<number | null>(null);
+  const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const idempotencyKeyRef = useRef<string | null>(null);
+
 
   // Listen for payment method selection from PaymentMethodsScreen
   useEffect(() => {
