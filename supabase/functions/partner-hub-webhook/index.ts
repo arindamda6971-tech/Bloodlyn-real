@@ -133,11 +133,31 @@ Deno.serve(async (req) => {
       if (presM) prescription_url = presM[1];
     }
 
+    // Classify the order so the Partner project routes it to the right queue.
+    // A "bp_check" order is ONLY one where EVERY line item is a BP check.
+    // If a BP check rides along with real lab tests, it is a normal lab order
+    // (with a BP add-on) and must land on the blood-test booking page.
+    const lineItems = (order.test_name || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const BP_RE = /(home\s*bp|bp\s*check|blood\s*pressure)/i;
+    const bpItems = lineItems.filter((n) => BP_RE.test(n));
+    const testItems = lineItems.filter((n) => !BP_RE.test(n));
+    const hasBpAddon = bpItems.length > 0 && testItems.length > 0;
+    const orderType: "bp_check" | "lab_test" =
+      bpItems.length > 0 && testItems.length === 0 ? "bp_check" : "lab_test";
+
     // Prepare the notification payload for the vendor
     const vendorNotification = {
       order_id: order.id,
       order_number: order.order_number,
       vendor_id: order.vendor_id,
+      // Routing hints for the Partner hub UI.
+      order_type: orderType,
+      has_bp_addon: hasBpAddon,
+      bp_addon_items: hasBpAddon ? bpItems : [],
+      test_items: testItems,
       diagnostic_center: vendorCenter ? {
         id: vendorCenter.id,
         name: vendorCenter.name,
@@ -148,9 +168,15 @@ Deno.serve(async (req) => {
       // fields instead of looking up the buyer's profile name.
       patient,
       prescription_url,
+
       order_details: {
         lab_name: order.lab_name,
         test_name: order.test_name,
+        order_type: orderType,
+        has_bp_addon: hasBpAddon,
+        bp_addon_items: hasBpAddon ? bpItems : [],
+        test_items: testItems,
+
         total: order.total,
         subtotal: order.subtotal,
         discount: order.discount,
