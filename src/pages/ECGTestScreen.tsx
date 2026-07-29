@@ -102,6 +102,9 @@ interface EcgLab {
   reviews_count: number | null;
   logo_url: string | null;
   home_ecg_price: number;
+  ecg_price?: number | null;
+  offers_home_ecg?: boolean | null;
+  ecg_available?: boolean | null;
   vendor_id: string | null;
   service_pincodes: string[] | null;
   pincode: string | null;
@@ -247,16 +250,31 @@ const ECGTestScreen = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Fetch labs offering ECG services whenever we enter the LAB step
   useEffect(() => {
     if (step !== "LAB") return;
     let cancelled = false;
     setLabsLoading(true);
     (async () => {
+      // Query diagnostic centers that offer ECG services
       let { data, error } = await supabase
         .from("diagnostic_centers")
-        .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active")
+        .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
         .eq("is_active", true)
+        .or("offers_home_ecg.eq.true,ecg_available.eq.true")
         .order("rating", { ascending: false });
+
+      // Fallback: If no labs explicitly have offers_home_ecg/ecg_available set to true, query active centers
+      if (!error && (!data || data.length === 0)) {
+        const { data: fallbackData } = await supabase
+          .from("diagnostic_centers")
+          .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
+          .eq("is_active", true)
+          .order("rating", { ascending: false });
+        if (fallbackData) {
+          data = fallbackData;
+        }
+      }
 
       if (cancelled) return;
       if (error || !data) {
@@ -267,7 +285,7 @@ const ECGTestScreen = () => {
         );
         const mapped = filtered.map((l: any) => ({
           ...l,
-          home_ecg_price: 599,
+          home_ecg_price: l.ecg_price || 599,
         }));
         setLabs(mapped as EcgLab[]);
       }
@@ -275,6 +293,7 @@ const ECGTestScreen = () => {
     })();
     return () => { cancelled = true; };
   }, [step, pincode]);
+
 
   const handleBack = () => {
     switch (step) {
