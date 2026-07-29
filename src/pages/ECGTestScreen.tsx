@@ -177,8 +177,9 @@ const ECGTestScreen = () => {
     "Evening (4 PM - 7 PM)",
   ];
 
-  const { familyMembers } = useFamilyMembers();
+  const { members: familyMembers = [] } = useFamilyMembers();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("self");
+
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [selfProfile, setSelfProfile] = useState<{ name: string; age: string; gender: string; mobile: string }>({
     name: "", age: "", gender: "", mobile: "",
@@ -735,16 +736,17 @@ const ECGTestScreen = () => {
                     >
                       Myself ({selfProfile.name || "Self"})
                     </button>
-                    {familyMembers.map((m) => (
+                    {(familyMembers || []).map((m) => (
                       <button
                         key={m.id}
+                        type="button"
                         onClick={() => {
                           setSelectedMemberId(m.id);
                           setPatient({
-                            name: m.name,
-                            age: String(m.age),
-                            gender: m.gender,
-                            mobile: selfProfile.mobile,
+                            name: m.fullName || "",
+                            age: String(m.age || ""),
+                            gender: m.gender || "Male",
+                            mobile: m.phone || selfProfile.mobile || "",
                             notes: "",
                           });
                         }}
@@ -754,9 +756,10 @@ const ECGTestScreen = () => {
                             : "bg-muted/40 text-muted-foreground hover:bg-muted"
                         }`}
                       >
-                        {m.name} ({m.relation})
+                        {m.fullName} ({m.relationship || "Family"})
                       </button>
                     ))}
+
                     <button
                       onClick={() => setAddMemberOpen(true)}
                       className="px-3 py-2.5 rounded-xl text-xs font-bold shrink-0 border border-dashed border-rose-300 text-rose-600 flex items-center gap-1"
