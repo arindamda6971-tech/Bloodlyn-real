@@ -258,6 +258,7 @@ const BPCheckScreen = () => {
     let cancelled = false;
     setLabsLoading(true);
     (async () => {
+      // 1. Query centers that explicitly offer Home BP Check
       let { data, error } = await supabase
         .from("diagnostic_centers")
         .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
@@ -265,19 +266,21 @@ const BPCheckScreen = () => {
         .eq("is_active", true)
         .order("rating", { ascending: false });
 
-      // Fallback: If no centers explicitly have offers_home_bp = true, fetch all active diagnostic centers
-      if (!error && (!data || data.length === 0)) {
+      let filtered = (data || []).filter((l: any) =>
+        pincode ? labServesPincode(l, pincode) : true
+      );
+
+      // 2. Fallback: If no BP-flagged labs serve this pincode, fetch all active centers serving this pincode
+      if (!error && filtered.length === 0) {
         const { data: fallbackData } = await supabase
           .from("diagnostic_centers")
           .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
           .eq("is_active", true)
           .order("rating", { ascending: false });
-        if (fallbackData) {
-          data = fallbackData.map((l: any) => ({
-            ...l,
-            home_bp_price: l.home_bp_price ?? 299,
-          }));
-        }
+
+        filtered = (fallbackData || []).filter((l: any) =>
+          pincode ? labServesPincode(l, pincode) : true
+        );
       }
 
       if (cancelled) return;
@@ -285,15 +288,17 @@ const BPCheckScreen = () => {
         toast.error("Couldn't load labs. Try again.");
         setLabs([]);
       } else {
-        const filtered = (data || []).filter((l: any) =>
-          pincode ? labServesPincode(l, pincode) : true
-        );
-        setLabs(filtered as BpLab[]);
+        const mapped = filtered.map((l: any) => ({
+          ...l,
+          home_bp_price: l.home_bp_price ?? 299,
+        }));
+        setLabs(mapped as BpLab[]);
       }
       setLabsLoading(false);
     })();
     return () => { cancelled = true; };
   }, [step, pincode]);
+
 
   const handleBack = () => {
     switch (step) {

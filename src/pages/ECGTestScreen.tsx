@@ -256,7 +256,7 @@ const ECGTestScreen = () => {
     let cancelled = false;
     setLabsLoading(true);
     (async () => {
-      // Query diagnostic centers that offer ECG services
+      // 1. Query diagnostic centers that offer ECG services
       let { data, error } = await supabase
         .from("diagnostic_centers")
         .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
@@ -264,25 +264,27 @@ const ECGTestScreen = () => {
         .or("offers_home_ecg.eq.true,ecg_available.eq.true")
         .order("rating", { ascending: false });
 
-      // Fallback: If no labs explicitly have offers_home_ecg/ecg_available set to true, query active centers
-      if (!error && (!data || data.length === 0)) {
+      let filtered = (data || []).filter((l: any) =>
+        pincode ? labServesPincode(l, pincode) : true
+      );
+
+      // 2. Fallback: If no ECG-flagged labs serve this pincode, fetch all active centers serving this pincode
+      if (!error && filtered.length === 0) {
         const { data: fallbackData } = await supabase
           .from("diagnostic_centers")
           .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
           .eq("is_active", true)
           .order("rating", { ascending: false });
-        if (fallbackData) {
-          data = fallbackData;
-        }
+
+        filtered = (fallbackData || []).filter((l: any) =>
+          pincode ? labServesPincode(l, pincode) : true
+        );
       }
 
       if (cancelled) return;
-      if (error || !data) {
+      if (error) {
         setLabs([]);
       } else {
-        const filtered = (data || []).filter((l: any) =>
-          pincode ? labServesPincode(l, pincode) : true
-        );
         const mapped = filtered.map((l: any) => ({
           ...l,
           home_ecg_price: l.ecg_price || 599,
@@ -293,6 +295,7 @@ const ECGTestScreen = () => {
     })();
     return () => { cancelled = true; };
   }, [step, pincode]);
+
 
 
   const handleBack = () => {
