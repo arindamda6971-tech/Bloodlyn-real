@@ -371,19 +371,14 @@ Deno.serve(async (req) => {
         const validCategory = AI_TEST_PRICES[category] !== undefined ? category : "Other";
         const aiPrice = AI_TEST_PRICES[validCategory];
         serverSubtotal += aiPrice * item.quantity;
-      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-")) {
-        // Service / DC item without server pricing: trust client price (validated by Zod max=100k)
-        // For bp- items we prefer the lab's server-side home_bp_price when a lab is attached.
-        console.warn(`Service/DC item ${item.id} (${item.name}) using client price: ${item.price}`);
+      } else if (item.id.startsWith("dc-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-") || item.id.startsWith("ecg-")) {
+        // Service / DC / ECG item without server pricing: trust client price (validated by Zod max=100k)
+        // For bp- and ecg- items we prefer the lab's server-side price when available.
+        console.warn(`Service/DC/ECG item ${item.id} (${item.name}) using client price: ${item.price}`);
         priceMap[item.id] = item.price;
         serverSubtotal += item.price * item.quantity;
-      } else if (item.id.startsWith("ecg-") && priceMap[item.id] === undefined) {
-        // ECG item with no lab price found - reject
-        return new Response(
-          JSON.stringify({ error: "Could not verify ECG test pricing. Please try again." }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      } else if (item.labId && item.name) {
+      }
+ else if (item.labId && item.name) {
         // Item with labId but not resolved - likely a diagnostic center test with non-dc prefix
         // Fall back to client price with warning
         console.warn(`Unresolved lab item ${item.id} (${item.name}) from lab ${item.labId}, using client price: ${item.price}`);
