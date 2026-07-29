@@ -26,6 +26,7 @@ import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
+import AppointmentStatusListener from "@/components/AppointmentStatusListener";
 
 // Core screens — eagerly loaded for instant navigation (no chunk-load delay)
 import SplashScreen from "./pages/SplashScreen";
@@ -220,6 +221,7 @@ const App = () => {
                       <BrowserRouter>
                         <IncomingCallListener />
                         <DoctorAvailabilityListener />
+                        <AppointmentStatusListener />
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />
