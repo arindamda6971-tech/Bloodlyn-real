@@ -323,6 +323,22 @@ const ECGTestScreen = () => {
     }
   };
 
+  const getIsoDate = (dateStr: string) => {
+    const today = new Date();
+    if (dateStr === "Today") return today.toISOString().split("T")[0];
+    if (dateStr === "Tomorrow") {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return tomorrow.toISOString().split("T")[0];
+    }
+    if (dateStr === "DayAfter") {
+      const dayAfter = new Date(today);
+      dayAfter.setDate(today.getDate() + 2);
+      return dayAfter.toISOString().split("T")[0];
+    }
+    return dateStr || today.toISOString().split("T")[0];
+  };
+
   const handlePlaceOrder = async () => {
     if (placing) return;
     if (!user) {
@@ -339,28 +355,41 @@ const ECGTestScreen = () => {
     setPlacing(true);
     try {
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const safeLabId = UUID_RE.test(selectedLab.id) ? selectedLab.id : null;
-      const safeVendorId = selectedLab.vendor_id && UUID_RE.test(selectedLab.vendor_id) ? selectedLab.vendor_id : null;
+      const safeLabId = (selectedLab.id && UUID_RE.test(selectedLab.id)) ? selectedLab.id : null;
+      const safeVendorId = (selectedLab.vendor_id && UUID_RE.test(selectedLab.vendor_id)) ? selectedLab.vendor_id : null;
 
-      let validAddressId: string | null = selectedAddress?.id && UUID_RE.test(selectedAddress.id) ? selectedAddress.id : null;
-      if (!validAddressId && pincode) {
+      let validAddressId: string | null = (selectedAddress?.id && UUID_RE.test(selectedAddress.id)) ? selectedAddress.id : null;
+      if (!validAddressId && user) {
+        const visitPincode = pincode || selectedAddress?.pincode || "000000";
+        const visitAddressLine = selectedAddress?.fullAddress && selectedAddress.fullAddress !== "Manual Visit Location"
+          ? selectedAddress.fullAddress
+          : `Home ECG Visit Location (Pincode: ${visitPincode})`;
+
         try {
           const { data: newAddr } = await supabase
             .from("addresses")
             .insert({
               user_id: user.id,
-              type: "ECG Visit Location",
-              address_line1: selectedAddress?.fullAddress || `Home ECG Visit — Pincode: ${pincode}`,
-              pincode: pincode,
+              type: "Home Visit",
+              address_line1: visitAddressLine,
+              city: "City",
+              state: "State",
+              pincode: visitPincode,
               is_default: false,
             })
             .select()
             .single();
           if (newAddr?.id) {
             validAddressId = newAddr.id;
+            setSelectedAddress({
+              id: newAddr.id,
+              type: newAddr.type || "Home Visit",
+              fullAddress: newAddr.address_line1,
+              pincode: newAddr.pincode,
+            });
           }
         } catch (addrErr) {
-          console.warn("Could not create address record:", addrErr);
+          console.warn("Could not create fallback address record:", addrErr);
         }
       }
 
@@ -369,7 +398,7 @@ const ECGTestScreen = () => {
         name: `12-Lead ECG Test — ${selectedLab.name}`,
         price: rawPrice,
         quantity: 1,
-        labId: safeLabId || selectedLab.id,
+        labId: safeLabId || undefined,
         labName: selectedLab.name,
         vendorId: safeVendorId || undefined,
         category: "ECG Test",
@@ -383,19 +412,19 @@ const ECGTestScreen = () => {
       const { data, error } = await supabase.functions.invoke("create-order", {
         body: {
           cartItems,
-          addressId: validAddressId,
-          scheduledDate: appointment.date || new Date().toISOString().split("T")[0],
+          addressId: validAddressId || null,
+          scheduledDate: getIsoDate(appointment.date),
           scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
           subtotal: rawPrice,
           discount,
           total: price,
-          paymentMethod: selectedPaymentMethod.id,
+          paymentMethod: selectedPaymentMethod.id || "cod",
           couponCode: couponApplied ? "ECG100" : null,
           patientName: patient.name || "Patient",
           patientAge: validAge,
           patientGender: patient.gender || "Other",
           patientPhone: validPhone,
-          labId: safeLabId || selectedLab.id,
+          labId: safeLabId || null,
           labName: selectedLab.name,
           vendorId: safeVendorId || null,
           order_type: "ecg_check",
@@ -407,6 +436,7 @@ const ECGTestScreen = () => {
       });
 
       if (error || !data?.orderId || data?.error) {
+        console.error("ECG order error details:", error, data);
         const errMsg = data?.error || error?.message || "Couldn't place your booking. Please try again.";
         toast.error(errMsg);
         setPlacing(false);
@@ -417,6 +447,7 @@ const ECGTestScreen = () => {
       setShowConfetti(true);
       setStep("SUCCESS");
     } catch (e: any) {
+      console.error("ECG order exception:", e);
       toast.error(e?.message || "Something went wrong. Please try again.");
     } finally {
       setPlacing(false);
