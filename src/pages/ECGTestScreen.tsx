@@ -108,7 +108,7 @@ const ECGTestScreen = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
-  const isServiceAvailable = false;
+  const isServiceAvailable = true;
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -135,6 +135,7 @@ const ECGTestScreen = () => {
       labId: "ecg-service",
       labName: "HealthSwift Cardiac Care",
       vendorId: "generic-service",
+      category: "ECG Test",
     });
 
     if (success) {
@@ -145,6 +146,7 @@ const ECGTestScreen = () => {
       navigate("/cart");
     }
   };
+
 
   const handleConfirmReplace = () => {
     confirmReplace(() => navigate("/cart"));
