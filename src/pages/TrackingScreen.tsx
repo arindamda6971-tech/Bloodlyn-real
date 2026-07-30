@@ -15,6 +15,7 @@ import {
   IndianRupee,
   Calendar,
   User,
+  UserCheck,
   XCircle,
   CreditCard,
   Video,
@@ -34,31 +35,37 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
+  { key: "assigned", label: "Delivery Boy Assigned", icon: UserCheck },
   { key: "in_progress", label: "Sample Collected", icon: FlaskConical },
   { key: "completed", label: "Report Ready", icon: FileText },
 ];
 
-function getCompletedIndex(status: string | null): number {
-  switch (status) {
+function getCompletedIndex(status: string | null, partnerName?: string | null): number {
+  const s = status?.toLowerCase();
+  switch (s) {
     case "pending":
       return -1;
     case "confirmed":
     case "accepted":
+      if (partnerName) return 1;
+      return 0;
     case "processing":
     case "assigned":
+    case "partner_assigned":
     case "out_for_collection":
-      return 0;
+      return 1;
     case "sample_collected":
     case "in_progress":
     case "collection_complete":
     case "sample_received":
     case "lab_processing":
-      return 1;
+      return 2;
     case "report_ready":
     case "report_delivered":
     case "completed":
-      return 2;
+      return 3;
     default:
+      if (partnerName) return 1;
       return -1;
   }
 }
@@ -155,7 +162,7 @@ const TrackingScreen = () => {
 
   const completedIndex = isBpOrder
     ? (["completed", "report_ready", "report_delivered", "checked"].includes(order.status?.toLowerCase() || "") ? 1 : 0)
-    : getCompletedIndex(order.status);
+    : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
 
