@@ -392,8 +392,39 @@ const PaymentScreen = () => {
             } catch (e) {
               console.warn("Failed to insert appointment row:", e);
             }
-          }
-        }
+      // Save real booking order for partner portal sync
+      const newRealOrder = {
+        id: fnData?.orderId || `ord-real-${Date.now()}`,
+        order_number: fnData?.orderNumber || `BL-${Math.floor(10000 + Math.random() * 90000)}`,
+        status: "accepted",
+        created_at: new Date().toISOString(),
+        customer_name: paymentState?.patientName || user?.user_metadata?.full_name || "Patient",
+        customer_phone: paymentState?.patientPhone || user?.phone || "9876543210",
+        patient_name: paymentState?.patientName || "Patient",
+        patient_age: paymentState?.patientAge || "30",
+        patient_gender: paymentState?.patientGender || "Male",
+        test_name: cartItems.map((c: any) => c.name).join(", ") || "Lab Diagnostic Test",
+        total_amount: total,
+        payment_status: "Paid",
+        payment_method: selectedPaymentMethod.name || "UPI / Online",
+        scheduled_date: paymentState?.scheduledDate || new Date().toISOString().slice(0, 10),
+        scheduled_time_slot: paymentState?.scheduledSlot || "Morning Slot",
+        test_items: cartItems.map((c: any) => c.name || "Diagnostic Test"),
+      };
+
+      try {
+        await (supabase as any).from("blood_lyn_orders").insert([newRealOrder]);
+      } catch (e) {
+        console.warn("Failed to insert blood_lyn_orders row:", e);
+      }
+
+      try {
+        const existingRealStr = localStorage.getItem("healthswift_real_orders") || "[]";
+        const existingRealList = JSON.parse(existingRealStr);
+        existingRealList.unshift(newRealOrder);
+        localStorage.setItem("healthswift_real_orders", JSON.stringify(existingRealList));
+      } catch (e) {
+        console.warn("Failed to update healthswift_real_orders in localStorage:", e);
       }
 
       clearCart();
