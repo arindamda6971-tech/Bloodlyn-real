@@ -199,7 +199,7 @@ const ECGTestScreen = () => {
     (async () => {
       const [{ data: addrs }, { data: profile }] = await Promise.all([
         supabase.from("addresses").select("id, type, address_line1, address_line2, city, state, pincode, is_default").eq("user_id", user.id).order("is_default", { ascending: false }),
-        supabase.from("profiles").select("full_name, age, gender, phone").eq("user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("full_name, date_of_birth, gender, phone").eq("id", user.id).maybeSingle(),
       ]);
 
       if (cancelled) return;
@@ -217,7 +217,9 @@ const ECGTestScreen = () => {
       if (profile) {
         const profName = profile.full_name || "";
         const profPhone = profile.phone || "";
-        const profAgeStr = profile.age ? String(profile.age) : "";
+        const profAgeStr = profile.date_of_birth
+          ? String(Math.max(0, Math.floor((Date.now() - new Date(profile.date_of_birth).getTime()) / 31557600000)))
+          : "";
         const rawGender = (profile.gender || "").toLowerCase();
         const profGender = rawGender.includes("f") ? "Female" : rawGender.includes("m") ? "Male" : "Other";
 
@@ -1018,7 +1020,7 @@ const ECGTestScreen = () => {
         )}
       </div>
 
-      <AddFamilyMemberDialog open={addMemberOpen} onOpenChange={setAddMemberOpen} />
+      <AddFamilyMemberDialog open={addMemberOpen} onOpenChange={setAddMemberOpen} onAdd={() => setAddMemberOpen(false)} />
     </MobileLayout>
   );
 };
