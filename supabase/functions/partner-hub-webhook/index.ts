@@ -155,9 +155,11 @@ Deno.serve(async (req) => {
       vendor_id: order.vendor_id,
       // Routing hints for the Partner hub UI.
       order_type: orderType,
-      has_bp_addon: hasBpAddon,
-      bp_addon_items: hasBpAddon ? bpItems : [],
-      test_items: testItems,
+      has_bp_addon: orderType === "lab_test" ? hasBpAddon : false,
+      bp_addon_items: orderType === "lab_test" && hasBpAddon ? bpItems : [],
+      test_items: orderType === "bp_check" ? [] : testItems,
+      // Backward compat: full raw line-item list
+      items: lineItems,
       diagnostic_center: vendorCenter ? {
         id: vendorCenter.id,
         name: vendorCenter.name,
@@ -173,9 +175,11 @@ Deno.serve(async (req) => {
         lab_name: order.lab_name,
         test_name: order.test_name,
         order_type: orderType,
-        has_bp_addon: hasBpAddon,
-        bp_addon_items: hasBpAddon ? bpItems : [],
-        test_items: testItems,
+        has_bp_addon: orderType === "lab_test" ? hasBpAddon : false,
+        bp_addon_items: orderType === "lab_test" && hasBpAddon ? bpItems : [],
+        test_items: orderType === "bp_check" ? [] : testItems,
+        items: lineItems,
+
 
         total: order.total,
         subtotal: order.subtotal,
