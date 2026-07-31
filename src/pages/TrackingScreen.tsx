@@ -36,8 +36,8 @@ import { useQueryClient } from "@tanstack/react-query";
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
   { key: "assigned", label: "Delivery Boy Assigned", icon: UserCheck },
-  { key: "in_progress", label: "Sample Collected", icon: FlaskConical },
-  { key: "completed", label: "Report Ready", icon: FileText },
+  { key: "sample", label: "Sample Collected", icon: FlaskConical },
+  { key: "report", label: "Report Ready", icon: FileText },
 ];
 
 function getCompletedIndex(status: string | null, partnerName?: string | null): number {
@@ -418,7 +418,7 @@ const TrackingScreen = () => {
                         )}
 
                         {/* Report actions */}
-                        {step.key === "completed" && isCompleted && order.report_url && (
+                        {(step.key === "report" || step.key === "completed") && isCompleted && order.report_url && (
                           <div className="flex gap-2 mt-2">
                             <Button
                               variant="soft"

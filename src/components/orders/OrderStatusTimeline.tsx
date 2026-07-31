@@ -9,8 +9,9 @@ interface OrderStatusTimelineProps {
 
 const steps = [
   { key: "accepted", label: "Accepted" },
-  { key: "in_progress", label: "Collected" },
-  { key: "completed", label: "Report" },
+  { key: "assigned", label: "Assigned" },
+  { key: "sample", label: "Collected" },
+  { key: "report", label: "Report" },
 ];
 
 const OrderStatusTimeline = ({ status, className, isBp }: OrderStatusTimelineProps) => {
