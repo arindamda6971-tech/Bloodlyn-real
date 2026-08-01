@@ -392,7 +392,12 @@ const PaymentScreen = () => {
             } catch (e) {
               console.warn("Failed to insert appointment row:", e);
             }
+          }
+        }
+      }
+
       // Save real booking order for partner portal sync
+
       const newRealOrder = {
         id: fnData?.orderId || `ord-real-${Date.now()}`,
         order_number: fnData?.orderNumber || `BL-${Math.floor(10000 + Math.random() * 90000)}`,
