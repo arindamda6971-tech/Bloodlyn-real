@@ -392,14 +392,19 @@ const PaymentScreen = () => {
             } catch (e) {
               console.warn("Failed to insert appointment row:", e);
             }
+          }
+        }
+      }
+
       // Save real booking order for partner portal sync
+
       const newRealOrder = {
         id: fnData?.orderId || `ord-real-${Date.now()}`,
         order_number: fnData?.orderNumber || `BL-${Math.floor(10000 + Math.random() * 90000)}`,
         status: "accepted",
         created_at: new Date().toISOString(),
-        customer_name: paymentState?.patientName || user?.user_metadata?.full_name || "Patient",
-        customer_phone: paymentState?.patientPhone || user?.phone || "9876543210",
+        customer_name: paymentState?.patientName || "Patient",
+        customer_phone: paymentState?.patientPhone || "9876543210",
         patient_name: paymentState?.patientName || "Patient",
         patient_age: paymentState?.patientAge || "30",
         patient_gender: paymentState?.patientGender || "Male",
@@ -408,7 +413,7 @@ const PaymentScreen = () => {
         payment_status: "Paid",
         payment_method: selectedPaymentMethod.name || "UPI / Online",
         scheduled_date: paymentState?.scheduledDate || new Date().toISOString().slice(0, 10),
-        scheduled_time_slot: paymentState?.scheduledSlot || "Morning Slot",
+        scheduled_time_slot: paymentState?.scheduledTimeSlot || "Morning Slot",
         test_items: cartItems.map((c: any) => c.name || "Diagnostic Test"),
       };
 

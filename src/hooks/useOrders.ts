@@ -59,7 +59,7 @@ export const useOrders = () => {
 
       let bloodLynOrders: Order[] = [];
       try {
-        const { data } = await supabase
+        const { data } = await (supabase as any)
           .from("blood_lyn_orders")
           .select("*")
           .order("created_at", { ascending: false });
