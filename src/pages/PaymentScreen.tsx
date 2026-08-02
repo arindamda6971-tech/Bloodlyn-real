@@ -112,15 +112,15 @@ const PaymentScreen = () => {
         .eq("id", orderLabId)
         .maybeSingle();
       if (cancelled) return;
-      if (data?.offers_home_bp === true && !alreadyHasBpItem) {
-        setBpAddonPrice(Number(data.home_bp_price) || 299);
+      if (!alreadyHasBpItem && data?.offers_home_bp !== false) {
+        setBpAddonPrice(Number(data?.home_bp_price) || 299);
       } else {
         setBpAddonPrice(null);
         setBpAddonSelected(false);
       }
 
-      if ((data?.offers_home_ecg === true || data?.ecg_available === true || (data?.ecg_price != null && Number(data.ecg_price) > 0)) && !alreadyHasEcgItem) {
-        setEcgAddonPrice(Number(data.ecg_price) || 599);
+      if (!alreadyHasEcgItem && data?.offers_home_ecg !== false && data?.ecg_available !== false) {
+        setEcgAddonPrice(Number(data?.ecg_price) || 499);
       } else {
         setEcgAddonPrice(null);
         setEcgAddonSelected(false);
