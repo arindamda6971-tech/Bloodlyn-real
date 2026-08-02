@@ -267,21 +267,9 @@ const BPCheckScreen = () => {
         .order("rating", { ascending: false });
 
       let filtered = (data || []).filter((l: any) =>
-        pincode ? labServesPincode(l, pincode) : true
+        l.offers_home_bp === true &&
+        (pincode ? labServesPincode(l, pincode) : true)
       );
-
-      // 2. Fallback: If no BP-flagged labs serve this pincode, fetch all active centers serving this pincode
-      if (!error && filtered.length === 0) {
-        const { data: fallbackData } = await supabase
-          .from("diagnostic_centers")
-          .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
-          .eq("is_active", true)
-          .order("rating", { ascending: false });
-
-        filtered = (fallbackData || []).filter((l: any) =>
-          pincode ? labServesPincode(l, pincode) : true
-        );
-      }
 
       if (cancelled) return;
       if (error) {

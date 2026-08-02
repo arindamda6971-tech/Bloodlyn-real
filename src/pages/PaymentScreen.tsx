@@ -100,34 +100,32 @@ const PaymentScreen = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!alreadyHasBpItem) {
-      setBpAddonPrice(299);
-    } else {
+    if (!orderLabId) {
       setBpAddonPrice(null);
-      setBpAddonSelected(false);
-    }
-
-    if (!alreadyHasEcgItem) {
-      setEcgAddonPrice(499);
-    } else {
       setEcgAddonPrice(null);
-      setEcgAddonSelected(false);
+      return;
     }
-
-    if (!orderLabId) return;
 
     (async () => {
       const { data } = await supabase
         .from("diagnostic_centers")
-        .select("home_bp_price, ecg_price")
+        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price")
         .eq("id", orderLabId)
         .maybeSingle();
-      if (cancelled || !data) return;
-      if (data.home_bp_price != null && Number(data.home_bp_price) > 0) {
-        setBpAddonPrice(Number(data.home_bp_price));
+      if (cancelled) return;
+
+      if (!alreadyHasBpItem && data?.offers_home_bp === true) {
+        setBpAddonPrice(Number(data.home_bp_price) || 299);
+      } else {
+        setBpAddonPrice(null);
+        setBpAddonSelected(false);
       }
-      if (data.ecg_price != null && Number(data.ecg_price) > 0) {
-        setEcgAddonPrice(Number(data.ecg_price));
+
+      if (!alreadyHasEcgItem && (data?.offers_home_ecg === true || data?.ecg_available === true)) {
+        setEcgAddonPrice(Number(data.ecg_price) || 599);
+      } else {
+        setEcgAddonPrice(null);
+        setEcgAddonSelected(false);
       }
     })();
     return () => {
