@@ -21,8 +21,8 @@ describe('Unified Booking screens — Cart workflow verification', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText(/Advanced ECG Diagnostics/i)).toBeInTheDocument();
-    expect(screen.getByText(/Location Not Covered/i)).toBeInTheDocument();
+    expect(await screen.findByText(/At-Home ECG Test/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/Back/i)).toBeInTheDocument();
   });
 
   it('PhysioConsultScreen renders premium header and therapist list', async () => {

@@ -105,10 +105,12 @@ export const useOrders = () => {
           mergedMap.set(String(o.id), existing ? { ...existing, ...o } : o);
         }
       }
+      // Locally cached orders are optimistic only and are user-editable, so the
+      // database row always wins on any field it already provides.
       for (const o of storedOrders) {
         if (o && o.id) {
           const existing = mergedMap.get(String(o.id));
-          mergedMap.set(String(o.id), existing ? { ...existing, ...o } : o);
+          mergedMap.set(String(o.id), existing ? { ...o, ...existing } : o);
         }
       }
 

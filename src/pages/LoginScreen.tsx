@@ -39,7 +39,10 @@ const LoginScreen = () => {
   const location = useLocation();
   useEffect(() => {
     if (user) {
-      const destination = (location.state as any)?.from?.pathname || "/home";
+      // `from` may be a pathname string (current guard) or a location object (legacy).
+      const rawFrom = (location.state as { from?: string | { pathname?: string } } | null)?.from;
+      const fromPath = typeof rawFrom === "string" ? rawFrom : rawFrom?.pathname;
+      const destination = fromPath && fromPath !== "/login" ? fromPath : "/home";
       navigate(destination, { replace: true });
     }
   }, [user, navigate, location]);
