@@ -358,7 +358,7 @@ const LabSelectionScreen = () => {
       state: {
         cartItems: items.map(item => ({ ...item, labId, labName })),
         scheduledDate: dates[selectedDate].fullDate,
-        scheduledTimeSlot: selectedSlot?.time || "",
+        scheduledTimeSlot: selectedSlot?.time || selectedTime || "",
         subtotal,
         selectedLabName: labName,
         selectedLabId: labId,
