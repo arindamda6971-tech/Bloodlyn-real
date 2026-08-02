@@ -151,7 +151,9 @@ const ECGTestScreen = () => {
         try {
           setSelectedPaymentMethod(JSON.parse(stored));
           sessionStorage.removeItem("bloodlyn-selected-payment");
-        } catch {}
+        } catch {
+          /* ignore malformed stored payment method */
+        }
       }
     };
     checkMethod();
@@ -259,7 +261,7 @@ const ECGTestScreen = () => {
     setLabsLoading(true);
     (async () => {
       // 1. Query diagnostic centers that offer ECG services
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from("diagnostic_centers")
         .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
         .eq("is_active", true)

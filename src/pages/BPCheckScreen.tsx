@@ -259,7 +259,7 @@ const BPCheckScreen = () => {
     setLabsLoading(true);
     (async () => {
       // 1. Query centers that explicitly offer Home BP Check
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from("diagnostic_centers")
         .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
         .eq("offers_home_bp", true)

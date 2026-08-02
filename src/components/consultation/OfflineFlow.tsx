@@ -330,7 +330,7 @@ const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, onBoo
   const filterGender = state?.offlineState?.filters?.gender || "any";
 
   // Filter logic
-  let matchedDoctors = doctors.filter((d: Doctor) => {
+  const matchedDoctors = doctors.filter((d: Doctor) => {
     // Search query filter
     if (nameQuery.trim()) {
       const q = nameQuery.toLowerCase();
