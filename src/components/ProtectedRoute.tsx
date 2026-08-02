@@ -83,7 +83,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Require location check if not already saved in this device
   if (location.pathname !== "/location-check" && location.pathname !== "/unauthorized" && location.pathname !== "/") {
-    const locationChecked = localStorage.getItem(`location_checked_${user.id}`);
+    const locationChecked = localStorage.getItem(`location_checked_${userId}`);
     if (locationChecked !== "true") {
       return <Navigate to="/location-check" replace />;
     }
