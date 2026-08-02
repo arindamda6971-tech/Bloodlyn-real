@@ -10,6 +10,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  const userId = user?.id ?? null;
   const location = useLocation();
   const [roleChecked, setRoleChecked] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(true);
@@ -57,12 +58,16 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       setRoleChecked(true);
     };
 
-    setRoleChecked(false);
+    // Depend on the stable user id, not the user object: Supabase hands back a
+    // fresh object on every auth event, which would otherwise re-run this
+    // effect (and reset roleChecked) on every token refresh.
+    if (userId) setRoleChecked(false);
     checkRole();
     return () => {
       cancelled = true;
     };
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   if (loading || (user && !roleChecked)) {
     return <RouteFallback />;
