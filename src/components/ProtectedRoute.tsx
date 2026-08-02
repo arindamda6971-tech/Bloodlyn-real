@@ -22,13 +22,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user!.id);
+        .eq("user_id", userId as string);
       if (error) throw error;
       return (data ?? []).map((r) => r.role);
     };
 
     const checkRole = async () => {
-      if (!user) {
+      if (!userId) {
         setRoleChecked(true);
         return;
       }
