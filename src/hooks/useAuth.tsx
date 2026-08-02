@@ -56,12 +56,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    // Safety timeout to prevent infinite loading
+    // Safety timeout to prevent infinite loading. Uses the state setter's
+    // callback form so it never reads a stale `loading` from this closure.
     const timeout = setTimeout(() => {
-      if (loading) {
-        console.warn("Auth loading timeout - forcing completion");
-        setLoading(false);
-      }
+      setLoading((prev) => {
+        if (prev) console.warn("Auth loading timeout - forcing completion");
+        return false;
+      });
     }, 3000);
 
     return () => {

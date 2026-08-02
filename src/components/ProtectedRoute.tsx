@@ -16,32 +16,47 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     let cancelled = false;
+
+    const fetchRoles = async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.role);
+    };
+
     const checkRole = async () => {
       if (!user) {
         setRoleChecked(true);
         return;
       }
-      try {
-        const { data, error } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", user.id);
 
-        if (cancelled) return;
-
-        if (error) {
-          setIsAuthorized(true);
-        } else {
-          const roles = (data ?? []).map((r) => r.role);
+      // Fail closed on a persistent error: a vendor/admin must never silently
+      // land in the consumer app just because one request failed. We retry
+      // twice first, and stay permissive only while the device is offline.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const roles = await fetchRoles();
+          if (cancelled) return;
           const blocked = roles.some((r) => r === "vendor" || r === "admin");
           setIsAuthorized(!blocked);
+          setRoleChecked(true);
+          return;
+        } catch {
+          if (cancelled) return;
+          if (attempt < 2) {
+            await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+          }
         }
-      } catch {
-        if (!cancelled) setIsAuthorized(true);
-      } finally {
-        if (!cancelled) setRoleChecked(true);
       }
+
+      if (cancelled) return;
+      const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      setIsAuthorized(offline);
+      setRoleChecked(true);
     };
+
     setRoleChecked(false);
     checkRole();
     return () => {
