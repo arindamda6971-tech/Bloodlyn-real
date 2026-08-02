@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -60,6 +60,8 @@ const PaymentScreen = () => {
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [bpAddonPrice, setBpAddonPrice] = useState<number | null>(null);
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
+  const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
+  const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
   const idempotencyKeyRef = useRef<string | null>(null);
 
 
@@ -87,41 +89,53 @@ const PaymentScreen = () => {
     }
   }, [location]);
 
-  // ---- Home BP Check add-on -------------------------------------------------
+  // ---- Home BP & ECG Check add-ons ------------------------------------------
   const UUID_MATCH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const orderLabId = (() => {
     const raw = paymentState?.selectedLabId || paymentState?.cartItems?.[0]?.labId || "";
     return UUID_MATCH.test(raw) ? raw : null;
   })();
   const alreadyHasBpItem = (paymentState?.cartItems || []).some((i) => String(i.id).startsWith("bp-"));
+  const alreadyHasEcgItem = (paymentState?.cartItems || []).some((i) => String(i.id).startsWith("ecg-"));
 
   useEffect(() => {
     let cancelled = false;
-    if (!orderLabId || alreadyHasBpItem) {
+    if (!orderLabId) {
       setBpAddonPrice(null);
+      setEcgAddonPrice(null);
       return;
     }
     (async () => {
       const { data } = await supabase
         .from("diagnostic_centers")
-        .select("offers_home_bp, home_bp_price")
+        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price")
         .eq("id", orderLabId)
         .maybeSingle();
       if (cancelled) return;
-      if (data?.offers_home_bp === true) {
-        setBpAddonPrice(Number(data.home_bp_price) || 0);
+      if (data?.offers_home_bp === true && !alreadyHasBpItem) {
+        setBpAddonPrice(Number(data.home_bp_price) || 299);
       } else {
         setBpAddonPrice(null);
         setBpAddonSelected(false);
+      }
+
+      if ((data?.offers_home_ecg === true || data?.ecg_available === true || (data?.ecg_price != null && Number(data.ecg_price) > 0)) && !alreadyHasEcgItem) {
+        setEcgAddonPrice(Number(data.ecg_price) || 599);
+      } else {
+        setEcgAddonPrice(null);
+        setEcgAddonSelected(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [orderLabId, alreadyHasBpItem]);
+  }, [orderLabId, alreadyHasBpItem, alreadyHasEcgItem]);
 
   const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
-  const effectiveSubtotal = stateSubtotal + (bpAddonActive ? (bpAddonPrice || 0) : 0);
+  const ecgAddonActive = ecgAddonPrice !== null && ecgAddonSelected;
+  const effectiveSubtotal = stateSubtotal 
+    + (bpAddonActive ? (bpAddonPrice || 0) : 0)
+    + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
 
   const discount = couponApplied ? 100 : 0;
   const total = effectiveSubtotal - discount;
@@ -197,21 +211,33 @@ const PaymentScreen = () => {
     if (isSubmittingOrder) return;
 
     const baseItems = paymentState?.cartItems || [];
-    const cartItems = bpAddonActive && orderLabId
-      ? [
-          ...baseItems,
-          {
-            id: `bp-${orderLabId}`,
-            name: "Home BP Check (Add-on)",
-            price: bpAddonPrice || 0,
-            quantity: 1,
-            labId: orderLabId,
-            labName: paymentState?.selectedLabName || baseItems[0]?.labName,
-            vendorId: paymentState?.labVendorId || baseItems[0]?.vendorId,
-            familyMemberId: baseItems[0]?.familyMemberId,
-          },
-        ]
-      : baseItems;
+    let cartItems = [...baseItems];
+
+    if (bpAddonActive && orderLabId) {
+      cartItems.push({
+        id: `bp-${orderLabId}`,
+        name: "Home BP Check (Add-on)",
+        price: bpAddonPrice || 0,
+        quantity: 1,
+        labId: orderLabId,
+        labName: paymentState?.selectedLabName || baseItems[0]?.labName,
+        vendorId: paymentState?.labVendorId || baseItems[0]?.vendorId,
+        familyMemberId: baseItems[0]?.familyMemberId,
+      });
+    }
+
+    if (ecgAddonActive && orderLabId) {
+      cartItems.push({
+        id: `ecg-${orderLabId}-addon`,
+        name: "Home ECG Check (Add-on)",
+        price: ecgAddonPrice || 0,
+        quantity: 1,
+        labId: orderLabId,
+        labName: paymentState?.selectedLabName || baseItems[0]?.labName,
+        vendorId: paymentState?.labVendorId || baseItems[0]?.vendorId,
+        familyMemberId: baseItems[0]?.familyMemberId,
+      });
+    }
     if (cartItems.length === 0) {
       toast.error("Your cart is empty. Please add tests before placing an order.");
       navigate("/cart");
@@ -569,7 +595,7 @@ const PaymentScreen = () => {
             transition={{ delay: 0.12 }}
             onClick={() => setBpAddonSelected((v) => !v)}
             aria-pressed={bpAddonSelected}
-            className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
+            className={`w-full text-left mb-3 rounded-2xl border p-4 transition-colors ${
               bpAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
             }`}
           >
@@ -589,6 +615,41 @@ const PaymentScreen = () => {
                 </p>
                 <p className={`text-xs font-semibold ${bpAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
                   {bpAddonSelected ? "Added" : "Add"}
+                </p>
+              </div>
+            </div>
+          </motion.button>
+        )}
+
+        {/* Home ECG Check add-on — only when the selected lab offers it */}
+        {ecgAddonPrice !== null && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.13 }}
+            onClick={() => setEcgAddonSelected((v) => !v)}
+            aria-pressed={ecgAddonSelected}
+            className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
+              ecgAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Activity className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground">Add Home ECG Check</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  12-lead ECG recording at home during the same visit
+                </p>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-bold text-foreground">
+                  {ecgAddonPrice > 0 ? `₹ ${ecgAddonPrice}` : "FREE"}
+                </p>
+                <p className={`text-xs font-semibold ${ecgAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
+                  {ecgAddonSelected ? "Added" : "Add"}
                 </p>
               </div>
             </div>
@@ -639,6 +700,14 @@ const PaymentScreen = () => {
                 <span className="text-muted-foreground">Home BP Check</span>
                 <span className="text-foreground">
                   {(bpAddonPrice || 0) > 0 ? `₹ ${bpAddonPrice}.0/-` : "FREE"}
+                </span>
+              </div>
+            )}
+            {ecgAddonActive && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Home ECG Check</span>
+                <span className="text-foreground">
+                  {(ecgAddonPrice || 0) > 0 ? `₹ ${ecgAddonPrice}.0/-` : "FREE"}
                 </span>
               </div>
             )}
