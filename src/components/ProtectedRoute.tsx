@@ -73,8 +73,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <RouteFallback />;
   }
 
+  // Guard against a redirect loop: while AnimatePresence keeps the exiting
+  // route mounted, this component re-renders after navigation. Passing a new
+  // `state` object each time would re-trigger the navigation indefinitely.
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    if (location.pathname === "/login") return null;
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   if (!isAuthorized && location.pathname !== "/unauthorized") {
