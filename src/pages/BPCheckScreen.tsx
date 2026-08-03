@@ -252,39 +252,74 @@ const BPCheckScreen = () => {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Fetch labs whenever we enter the LAB step
+  // Fetch labs whenever we enter the LAB step + subscribe to realtime updates
   useEffect(() => {
     if (step !== "LAB") return;
     let cancelled = false;
-    setLabsLoading(true);
-    (async () => {
-      // 1. Query centers that explicitly offer Home BP Check
+
+    const loadLabs = async () => {
+      setLabsLoading(true);
       const { data, error } = await supabase
         .from("diagnostic_centers")
-        .select("id, name, rating, reviews_count, logo_url, home_bp_price, vendor_id, service_pincodes, pincode, is_active, offers_home_bp")
-        .eq("offers_home_bp", true)
-        .eq("is_active", true)
+        .select("*")
         .order("rating", { ascending: false });
 
-      let filtered = (data || []).filter((l: any) =>
-        l.offers_home_bp === true &&
-        (pincode ? labServesPincode(l, pincode) : true)
-      );
-
       if (cancelled) return;
-      if (error) {
-        toast.error("Couldn't load labs. Try again.");
+      if (error || !data) {
         setLabs([]);
-      } else {
-        const mapped = filtered.map((l: any) => ({
-          ...l,
-          home_bp_price: l.home_bp_price ?? 299,
-        }));
-        setLabs(mapped as BpLab[]);
+        setLabsLoading(false);
+        return;
       }
+
+      // Also query vendor_verifications to ensure service overrides are respected
+      const { data: vendorVers } = await supabase
+        .from("vendor_verifications")
+        .select("user_id, offers_home_bp, home_bp_price");
+
+      const vendorMap = new Map((vendorVers || []).map((v: any) => [v.user_id, v]));
+
+      // Filter to active centers offering BP Check
+      const bpCenters = data.filter((l: any) => {
+        const v = vendorMap.get(l.vendor_id || l.id);
+        const offersV = v?.offers_home_bp;
+        const offersC = l.offers_home_bp;
+
+        if (offersV === false || offersC === false || l.is_active === false) return false;
+        return true;
+      });
+
+      let pincodeMatches = bpCenters;
+      if (pincode) {
+        const matching = bpCenters.filter((l: any) => labServesPincode(l, pincode));
+        if (matching.length > 0) {
+          pincodeMatches = matching;
+        }
+      }
+
+      const mapped = pincodeMatches.map((l: any) => {
+        const v = vendorMap.get(l.vendor_id || l.id);
+        return {
+          ...l,
+          home_bp_price: v?.home_bp_price || l.home_bp_price || 299,
+        };
+      });
+      setLabs(mapped as BpLab[]);
       setLabsLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+
+    loadLabs();
+
+    // Subscribe to realtime database changes on diagnostic_centers & vendor_verifications
+    const channel = supabase
+      .channel("bp_labs_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => loadLabs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "vendor_verifications" }, () => loadLabs())
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [step, pincode]);
 
 

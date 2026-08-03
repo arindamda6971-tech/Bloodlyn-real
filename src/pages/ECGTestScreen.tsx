@@ -254,38 +254,74 @@ const ECGTestScreen = () => {
     return () => { cancelled = true; };
   }, [user]);
 
-  // Fetch labs offering ECG services whenever we enter the LAB step
+  // Fetch labs offering ECG services whenever we enter the LAB step + subscribe to realtime updates
   useEffect(() => {
     if (step !== "LAB") return;
     let cancelled = false;
-    setLabsLoading(true);
-    (async () => {
-      // 1. Query diagnostic centers that offer ECG services
+
+    const loadLabs = async () => {
+      setLabsLoading(true);
       const { data, error } = await supabase
         .from("diagnostic_centers")
-        .select("id, name, rating, reviews_count, logo_url, ecg_price, vendor_id, service_pincodes, pincode, is_active, offers_home_ecg, ecg_available")
-        .eq("is_active", true)
-        .or("offers_home_ecg.eq.true,ecg_available.eq.true")
+        .select("*")
         .order("rating", { ascending: false });
 
-      let filtered = (data || []).filter((l: any) =>
-        (l.offers_home_ecg === true || l.ecg_available === true) &&
-        (pincode ? labServesPincode(l, pincode) : true)
-      );
-
       if (cancelled) return;
-      if (error) {
+      if (error || !data) {
         setLabs([]);
-      } else {
-        const mapped = filtered.map((l: any) => ({
-          ...l,
-          home_ecg_price: l.ecg_price || 599,
-        }));
-        setLabs(mapped as EcgLab[]);
+        setLabsLoading(false);
+        return;
       }
+
+      // Also query vendor_verifications to ensure service overrides are respected
+      const { data: vendorVers } = await supabase
+        .from("vendor_verifications")
+        .select("user_id, offers_home_ecg, home_ecg_price");
+
+      const vendorMap = new Map((vendorVers || []).map((v: any) => [v.user_id, v]));
+
+      // Filter to active centers offering ECG
+      const ecgCenters = data.filter((l: any) => {
+        const v = vendorMap.get(l.vendor_id || l.id);
+        const offersV = v?.offers_home_ecg;
+        const offersC = l.offers_home_ecg ?? l.ecg_available;
+
+        if (offersV === false || offersC === false || l.is_active === false) return false;
+        return true;
+      });
+
+      let pincodeMatches = ecgCenters;
+      if (pincode) {
+        const matching = ecgCenters.filter((l: any) => labServesPincode(l, pincode));
+        if (matching.length > 0) {
+          pincodeMatches = matching;
+        }
+      }
+
+      const mapped = pincodeMatches.map((l: any) => {
+        const v = vendorMap.get(l.vendor_id || l.id);
+        return {
+          ...l,
+          home_ecg_price: v?.home_ecg_price || l.home_ecg_price || l.ecg_price || 599,
+        };
+      });
+      setLabs(mapped as EcgLab[]);
       setLabsLoading(false);
-    })();
-    return () => { cancelled = true; };
+    };
+
+    loadLabs();
+
+    // Subscribe to realtime database changes on diagnostic_centers & vendor_verifications
+    const channel = supabase
+      .channel("ecg_labs_realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => loadLabs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "vendor_verifications" }, () => loadLabs())
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [step, pincode]);
 
 
