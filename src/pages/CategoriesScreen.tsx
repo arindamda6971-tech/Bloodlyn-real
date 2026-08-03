@@ -147,21 +147,22 @@ const CategoriesScreen = () => {
 
   return (
     <MobileLayout>
-      {/* Unified sticky header + search shell (rounded bottom corners) */}
+      {/* Page Header - Scrolls away naturally like Home screen */}
+      <div className="px-5 pt-3 pb-1">
+        <PremiumPageHeader
+          title="Explore Tests"
+          subtitle="Curated diagnostics · NABL certified labs"
+          icon={Beaker}
+          badgeText="Tests"
+        />
+      </div>
+
+      {/* Sticky Search Input Bar - Pins at top-0 */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests..."
         accent="from-sky-500 via-primary to-indigo-600"
-        header={
-          <PremiumPageHeader
-            title="Explore Tests"
-            subtitle="Curated diagnostics · NABL certified labs"
-            icon={Beaker}
-            accent="from-sky-500 via-primary to-indigo-600"
-            flush
-          />
-        }
       />
 
 

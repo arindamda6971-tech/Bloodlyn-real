@@ -274,41 +274,40 @@ const BookingsScreen = () => {
 
   return (
     <MobileLayout>
-      {/* Unified sticky header + search shell (rounded bottom corners) */}
+      {/* Page Header - Scrolls away naturally like Home screen */}
+      <div className="px-5 pt-3 pb-1">
+        <PremiumPageHeader
+          title="My Orders"
+          subtitle="Track bookings · live status updates"
+          icon={Package}
+          badgeText="Orders"
+        />
+      </div>
+
+      {/* Sticky Search Bar & Filter Tabs - Pins at top-0 */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
         placeholder="Search tests, orders, labs..."
         accent="from-emerald-500 via-teal-500 to-primary"
-        header={
-          <PremiumPageHeader
-            title="My Orders"
-            subtitle="Track bookings · live status updates"
-            icon={Package}
-            accent="from-emerald-500 via-teal-500 to-primary"
-            flush
-          />
+        footer={
+          <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
+            {STATUS_FILTERS.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
+                  activeFilter === f.key
+                    ? "bg-primary text-primary-foreground scale-[1.02]"
+                    : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         }
       />
-
-      {/* Status Filters - Scrolls away and hides behind sticky search bar */}
-      <div className="px-5 mt-2.5 mb-1">
-        <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-1">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
-                activeFilter === f.key
-                  ? "bg-primary text-primary-foreground scale-[1.02]"
-                  : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="px-5 pb-24 pt-4">
         {/* Orders List */}
