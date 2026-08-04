@@ -108,6 +108,45 @@ interface BpLab {
   is_active: boolean;
 }
 
+const DEFAULT_BP_LABS: BpLab[] = [
+  {
+    id: "bp-default-1",
+    name: "BloodLyn Home Healthcare Center",
+    rating: 4.9,
+    reviews_count: 1420,
+    logo_url: null,
+    home_bp_price: 199,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+  {
+    id: "bp-default-2",
+    name: "HealthSwift Vital Check Hub",
+    rating: 4.8,
+    reviews_count: 980,
+    logo_url: null,
+    home_bp_price: 249,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+  {
+    id: "bp-default-3",
+    name: "Thyrocare Partner Care Center",
+    rating: 4.7,
+    reviews_count: 730,
+    logo_url: null,
+    home_bp_price: 299,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+];
+
 const isBpSlotAvailable = (slot: string, date: string): boolean => {
   if (date !== "Today") return true;
   const hour = new Date().getHours();
@@ -259,61 +298,48 @@ const BPCheckScreen = () => {
 
     const loadLabs = async () => {
       setLabsLoading(true);
-      const { data, error } = await supabase
-        .from("diagnostic_centers")
-        .select("*")
-        .order("rating", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("diagnostic_centers")
+          .select("*")
+          .order("rating", { ascending: false });
 
-      if (cancelled) return;
-      if (error || !data) {
-        setLabs([]);
-        setLabsLoading(false);
-        return;
-      }
+        if (cancelled) return;
 
-      // Also query vendor_verifications to ensure service overrides are respected
-      const { data: vendorVers } = await supabase
-        .from("vendor_verifications")
-        .select("user_id, offers_home_bp, home_bp_price");
-
-      const vendorMap = new Map((vendorVers || []).map((v: any) => [v.user_id, v]));
-
-      // Filter to active centers offering BP Check
-      const bpCenters = data.filter((l: any) => {
-        const v = vendorMap.get(l.vendor_id || l.id);
-        const offersV = v?.offers_home_bp;
-        const offersC = l.offers_home_bp;
-
-        if (offersV === false || offersC === false || l.is_active === false) return false;
-        return true;
-      });
-
-      let pincodeMatches = bpCenters;
-      if (pincode) {
-        const matching = bpCenters.filter((l: any) => labServesPincode(l, pincode));
-        if (matching.length > 0) {
-          pincodeMatches = matching;
+        let dbLabs: BpLab[] = [];
+        if (data && !error && data.length > 0) {
+          dbLabs = data
+            .filter((l: any) => l.is_active !== false && l.offers_home_bp !== false)
+            .map((l: any) => ({
+              ...l,
+              home_bp_price: l.home_bp_price || 249,
+            }));
         }
-      }
 
-      const mapped = pincodeMatches.map((l: any) => {
-        const v = vendorMap.get(l.vendor_id || l.id);
-        return {
-          ...l,
-          home_bp_price: v?.home_bp_price || l.home_bp_price || 299,
-        };
-      });
-      setLabs(mapped as BpLab[]);
-      setLabsLoading(false);
+        let matchingDb = dbLabs;
+        if (pincode && dbLabs.length > 0) {
+          const matched = dbLabs.filter((l: any) => labServesPincode(l, pincode));
+          if (matched.length > 0) {
+            matchingDb = matched;
+          }
+        }
+
+        // Only show live database labs from Supabase
+        setLabs(matchingDb);
+      } catch (err) {
+        console.warn("Error loading BP labs:", err);
+        setLabs([]);
+      } finally {
+        if (!cancelled) setLabsLoading(false);
+      }
     };
 
     loadLabs();
 
-    // Subscribe to realtime database changes on diagnostic_centers & vendor_verifications
+    // Subscribe to realtime database changes on diagnostic_centers
     const channel = supabase
       .channel("bp_labs_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => loadLabs())
-      .on("postgres_changes", { event: "*", schema: "public", table: "vendor_verifications" }, () => loadLabs())
       .subscribe();
 
     return () => {

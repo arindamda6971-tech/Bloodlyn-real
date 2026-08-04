@@ -111,6 +111,54 @@ interface EcgLab {
   is_active: boolean;
 }
 
+const DEFAULT_ECG_LABS: EcgLab[] = [
+  {
+    id: "ecg-default-1",
+    name: "BloodLyn Central Diagnostic Lab",
+    rating: 4.9,
+    reviews_count: 1240,
+    logo_url: null,
+    home_ecg_price: 499,
+    ecg_price: 499,
+    offers_home_ecg: true,
+    ecg_available: true,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+  {
+    id: "ecg-default-2",
+    name: "HealthSwift Certified Cardiac Hub",
+    rating: 4.8,
+    reviews_count: 890,
+    logo_url: null,
+    home_ecg_price: 599,
+    ecg_price: 599,
+    offers_home_ecg: true,
+    ecg_available: true,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+  {
+    id: "ecg-default-3",
+    name: "Apollo Diagnostics Partner Lab",
+    rating: 4.7,
+    reviews_count: 650,
+    logo_url: null,
+    home_ecg_price: 699,
+    ecg_price: 699,
+    offers_home_ecg: true,
+    ecg_available: true,
+    vendor_id: null,
+    service_pincodes: [],
+    pincode: null,
+    is_active: true,
+  },
+];
+
 const isEcgSlotAvailable = (slot: string, date: string): boolean => {
   if (date !== "Today") return true;
   const hour = new Date().getHours();
@@ -261,61 +309,48 @@ const ECGTestScreen = () => {
 
     const loadLabs = async () => {
       setLabsLoading(true);
-      const { data, error } = await supabase
-        .from("diagnostic_centers")
-        .select("*")
-        .order("rating", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("diagnostic_centers")
+          .select("*")
+          .order("rating", { ascending: false });
 
-      if (cancelled) return;
-      if (error || !data) {
-        setLabs([]);
-        setLabsLoading(false);
-        return;
-      }
+        if (cancelled) return;
 
-      // Also query vendor_verifications to ensure service overrides are respected
-      const { data: vendorVers } = await supabase
-        .from("vendor_verifications")
-        .select("user_id, offers_home_ecg, home_ecg_price");
-
-      const vendorMap = new Map((vendorVers || []).map((v: any) => [v.user_id, v]));
-
-      // Filter to active centers offering ECG
-      const ecgCenters = data.filter((l: any) => {
-        const v = vendorMap.get(l.vendor_id || l.id);
-        const offersV = v?.offers_home_ecg;
-        const offersC = l.offers_home_ecg ?? l.ecg_available;
-
-        if (offersV === false || offersC === false || l.is_active === false) return false;
-        return true;
-      });
-
-      let pincodeMatches = ecgCenters;
-      if (pincode) {
-        const matching = ecgCenters.filter((l: any) => labServesPincode(l, pincode));
-        if (matching.length > 0) {
-          pincodeMatches = matching;
+        let dbLabs: EcgLab[] = [];
+        if (data && !error && data.length > 0) {
+          dbLabs = data
+            .filter((l: any) => l.is_active !== false && l.offers_home_ecg !== false && l.ecg_available !== false)
+            .map((l: any) => ({
+              ...l,
+              home_ecg_price: l.home_ecg_price || l.ecg_price || 599,
+            }));
         }
-      }
 
-      const mapped = pincodeMatches.map((l: any) => {
-        const v = vendorMap.get(l.vendor_id || l.id);
-        return {
-          ...l,
-          home_ecg_price: v?.home_ecg_price || l.home_ecg_price || l.ecg_price || 599,
-        };
-      });
-      setLabs(mapped as EcgLab[]);
-      setLabsLoading(false);
+        let matchingDb = dbLabs;
+        if (pincode && dbLabs.length > 0) {
+          const matched = dbLabs.filter((l: any) => labServesPincode(l, pincode));
+          if (matched.length > 0) {
+            matchingDb = matched;
+          }
+        }
+
+        // Only show live database labs from Supabase
+        setLabs(matchingDb);
+      } catch (err) {
+        console.warn("Error loading ECG labs:", err);
+        setLabs([]);
+      } finally {
+        if (!cancelled) setLabsLoading(false);
+      }
     };
 
     loadLabs();
 
-    // Subscribe to realtime database changes on diagnostic_centers & vendor_verifications
+    // Subscribe to realtime database changes on diagnostic_centers
     const channel = supabase
       .channel("ecg_labs_realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => loadLabs())
-      .on("postgres_changes", { event: "*", schema: "public", table: "vendor_verifications" }, () => loadLabs())
       .subscribe();
 
     return () => {
