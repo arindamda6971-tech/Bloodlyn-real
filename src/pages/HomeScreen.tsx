@@ -291,6 +291,40 @@ const HomeScreen = () => {
           }
         />
 
+        {/* Running Features Marquee */}
+        <div className="mt-4 flex overflow-hidden whitespace-nowrap bg-primary/5 py-3 border-y border-primary/10 relative">
+          {/* Gradient masks for smooth fade effect at edges */}
+          <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
+          <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
+          
+          <div className="animate-marquee inline-flex gap-8 px-4 items-center min-w-max">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="flex gap-8 items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">ECG at Home</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Pressure Check</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Test Booking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Doctor Consultations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">NABL Certified Labs</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Diagnostic Centers */}
         {centersLoading ? (
           <div className="flex gap-4 px-6 mt-6 overflow-hidden">
