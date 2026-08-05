@@ -105,6 +105,16 @@ const quickActions = [
     glow: "bg-[#6366f1]/20",
     badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]"
   },
+  { 
+    icon: FileUp, 
+    label: "Upload Prescription", 
+    path: "/upload-prescription", 
+    badge: "Get a Call",
+    desc: "Simply upload your prescription and our experts will call you to arrange the tests.",
+    gradient: "from-[#f59e0b] to-[#d97706]",
+    glow: "bg-[#f59e0b]/20",
+    badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]"
+  },
 ];
 
 
