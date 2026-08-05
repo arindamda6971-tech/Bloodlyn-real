@@ -1,7 +1,6 @@
 import { ReactNode, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import BottomNavigation from "./BottomNavigation";
-import FloatingAddButton from "./FloatingAddButton";
 import PullToRefresh from "@/components/ui/PullToRefresh";
 
 interface MobileLayoutProps {
@@ -16,7 +15,6 @@ interface MobileLayoutProps {
 const MobileLayout = ({
   children,
   showNav = true,
-  showFloatingAdd = true,
   className = "",
   onRefresh,
   enablePullToRefresh = true,
@@ -68,7 +66,6 @@ const MobileLayout = ({
         </div>
       )}
       {showNav && <BottomNavigation />}
-      {showFloatingAdd && <FloatingAddButton />}
     </div>
   );
 };
