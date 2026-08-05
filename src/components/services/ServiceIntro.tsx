@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Stethoscope, Video, Languages, Activity, Calendar, FileText, HeartPulse, Home, FileHeart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
+import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 
 type ServiceType = "doctor" | "physio" | "ecg" | "bp";
@@ -127,27 +128,11 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
   const Icon = data.icon;
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <div className="flex flex-col min-h-[100dvh] bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <ArrowLeft className="w-5 h-5 text-foreground" />
-            </button>
-            <div>
-              <h1 className="text-xl font-black tracking-tight">How It Works</h1>
-              <p className="text-xs text-muted-foreground font-semibold">
-                3 simple steps to your service
-              </p>
-            </div>
-          </div>
-        </div>
+        <ScreenHeader title="How It Works" />
 
-        <div className="flex-1 p-6 flex flex-col items-center">
+        <div className="flex-1 p-6 pb-12 flex flex-col items-center">
           
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
