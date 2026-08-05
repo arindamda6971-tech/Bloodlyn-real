@@ -74,7 +74,6 @@ const PartnerLabsScreen = lazy(() => safeImport(() => import("./pages/PartnerLab
 const LabDetailScreen = lazy(() => safeImport(() => import("./pages/LabDetailScreen")));
 const PackagesScreen = lazy(() => safeImport(() => import("./pages/PackagesScreen")));
 const PackageDetailScreen = lazy(() => safeImport(() => import("./pages/PackageDetailScreen")));
-const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen")));
 const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
 const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
@@ -150,7 +149,6 @@ const AnimatedRoutes = () => {
           <Route path="/lab/:labId" element={<ProtectedRoute><LabDetailScreen /></ProtectedRoute>} />
           <Route path="/package/:packageId" element={<ProtectedRoute><PackageDetailScreen /></ProtectedRoute>} />
           <Route path="/packages" element={<ProtectedRoute><PackagesScreen /></ProtectedRoute>} />
-          <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
           <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
           <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />

@@ -65,7 +65,6 @@ const getGreeting = () => {
 };
 
 const quickActions = [
-  { icon: FileUp, label: "Upload Prescription", path: "/upload-prescription", color: "bg-[#f0f9ff] text-[#0ea5e9]", subtext: "AI Analysis" },
   { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-[#ecfdf5] text-[#10b981]", subtext: "Live Video" },
   { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-[#f1f5f9] text-[#0f172a]", subtext: "Expert Care" },
   { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-[#fef2f2] text-[#ef4444]", subtext: "At Home" },
@@ -312,23 +311,6 @@ const HomeScreen = () => {
           ))}
         </div>
 
-        {/* Health Tip of the Day */}
-        <section className="px-4 mt-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-primary/5 to-success/5 border border-primary/10 rounded-2xl p-4 flex gap-3 items-start"
-          >
-            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center shrink-0">
-              <MessageCircle className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Health Tip of the Day</p>
-              <p className="text-[13px] font-bold text-foreground leading-snug">{currentTip}</p>
-            </div>
-          </motion.div>
-        </section>
-
         {/* Diagnostic Centers */}
         {centersLoading ? (
           <div className="flex gap-4 px-6 mt-6 overflow-hidden">
@@ -488,38 +470,6 @@ const HomeScreen = () => {
 
         {/* Health Packages (real-time, vendor-driven) */}
         <HealthPackagesSection />
-
-        {/* Prescription Call-Assistance Banner (Second Last Section) */}
-        <section className="px-4 mt-8 mb-4 transform-gpu">
-          <div
-            onClick={() => navigate('/upload-prescription')}
-            className="w-full relative overflow-hidden bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border border-slate-700/50 rounded-3xl p-6 shadow-xl cursor-pointer group active:scale-[0.98] transition-all flex items-center justify-between"
-          >
-            {/* Background glowing accent */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 flex-1 pr-4">
-              <div className="flex items-center gap-1.5 mb-2">
-                <span className="flex h-2 w-2 rounded-full bg-success animate-pulse" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-success">Instant Call Assistance</p>
-              </div>
-              <h3 className="text-white text-xl font-black tracking-tight leading-tight mb-1">
-                Have a Prescription?
-              </h3>
-              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-4 max-w-[260px]">
-                Upload it now & our medical experts will call you back with exact pricing and slot details.
-              </p>
-              <span className="inline-flex items-center gap-2 bg-primary text-white text-xs font-black px-5 py-2.5 rounded-2xl shadow-lg shadow-primary/30 group-hover:opacity-90 transition-opacity">
-                <FileUp className="w-4 h-4" /> Upload & Get a Call →
-              </span>
-            </div>
-
-            {/* Right side floating icon */}
-            <div className="relative z-10 w-20 h-20 rounded-2xl bg-primary/10 border border-primary/20 backdrop-blur-md flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 transition-transform">
-              <Phone className="w-10 h-10 text-primary animate-bounce" />
-            </div>
-          </div>
-        </section>
 
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 transform-gpu">
