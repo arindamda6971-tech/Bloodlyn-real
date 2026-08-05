@@ -213,7 +213,7 @@ const PaymentScreen = () => {
     if (isSubmittingOrder) return;
 
     const baseItems = paymentState?.cartItems || [];
-    let cartItems = [...baseItems];
+    const cartItems = [...baseItems];
 
     if (bpAddonActive && orderLabId) {
       cartItems.push({
