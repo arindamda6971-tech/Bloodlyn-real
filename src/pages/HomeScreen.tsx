@@ -95,6 +95,16 @@ const quickActions = [
     glow: "bg-[#f43f5e]/20",
     badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]"
   },
+  {
+    icon: HeartPulse,
+    label: "BP Check",
+    path: "/bp-check",
+    badge: "Home Visit",
+    desc: "Book a trained professional to measure your blood pressure accurately.",
+    gradient: "from-[#f43f5e] to-[#3b82f6]",
+    glow: "bg-[#3b82f6]/20",
+    badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]"
+  },
 ];
 
 
@@ -482,56 +492,7 @@ const HomeScreen = () => {
           </section>
         )}
 
-        {/* Home BP Check Banner */}
-        <section className="px-4 mt-8 transform-gpu">
-          <div
-            onClick={() => navigate('/bp-check')}
-            className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
-          >
-            {/* Background glowing accent */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#3b82f6]/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -left-10 -top-10 w-40 h-40 bg-[#ef4444]/10 rounded-full blur-3xl pointer-events-none" />
 
-            <div className="relative z-10">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-red-500 to-blue-600 flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-                    <HeartPulse className="w-5 h-5 text-white" />
-                  </div>
-                  <h3 className="text-foreground text-[16px] font-black tracking-tight leading-tight max-w-[160px]">
-                    Home Blood Pressure Check
-                  </h3>
-                </div>
-                <span className="bg-blue-50 text-blue-600 border border-blue-100 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shrink-0">
-                  Home Visit
-                </span>
-              </div>
-              
-              <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed mb-4 pr-2">
-                Book a trained healthcare professional to visit your home and measure your blood pressure accurately.
-              </p>
-              
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mb-5">
-                <div className="flex items-center gap-1">
-                  <Check className="w-3 h-3 text-success" />
-                  <span className="text-[10px] font-bold text-foreground/80">Home Visit</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Check className="w-3 h-3 text-success" />
-                  <span className="text-[10px] font-bold text-foreground/80">Certified Staff</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Check className="w-3 h-3 text-success" />
-                  <span className="text-[10px] font-bold text-foreground/80">Digital BP Monitor</span>
-                </div>
-              </div>
-
-              <button className="w-full bg-gradient-to-r from-red-500 to-blue-600 text-white text-[13px] font-black py-3.5 rounded-2xl shadow-lg shadow-blue-500/20 group-hover:opacity-90 transition-opacity flex justify-center items-center gap-2">
-                Book Now →
-              </button>
-            </div>
-          </div>
-        </section>
 
         {/* Health Packages (real-time, vendor-driven) */}
         <HealthPackagesSection />
