@@ -155,7 +155,6 @@ const AnimatedRoutes = () => {
           <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
           <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
           <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
-          <Route path="/rewards" element={<ProtectedRoute><RewardsScreen /></ProtectedRoute>} />
           <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
           <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
           <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
