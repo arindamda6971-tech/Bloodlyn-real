@@ -301,23 +301,23 @@ const HomeScreen = () => {
             {[...Array(2)].map((_, i) => (
               <div key={i} className="flex gap-8 items-center shrink-0">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
                   <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">ECG at Home</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse" />
                   <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Pressure Check</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
                   <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Test Booking</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#a855f7] animate-pulse" />
                   <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Doctor Consultations</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse" />
                   <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">NABL Certified Labs</span>
                 </div>
               </div>
@@ -462,8 +462,8 @@ const HomeScreen = () => {
             className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
           >
             {/* Background glowing accent */}
-            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -left-10 -top-10 w-40 h-40 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-[#3b82f6]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -left-10 -top-10 w-40 h-40 bg-[#ef4444]/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10">
               <div className="flex items-start justify-between mb-3">
