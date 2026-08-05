@@ -187,19 +187,6 @@ export const ZomatoStyleHeader = ({
         </div>
       </div>
 
-      {/* Trust line — quiet, single row, never clipped */}
-      <div className="flex items-center gap-2.5 text-[10px] font-bold text-muted-foreground min-w-0 bg-muted/40 py-2 px-3.5 rounded-full w-fit border border-border/30">
-        <span className="flex items-center gap-1.5 shrink-0 text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-          15-min collection
-        </span>
-        <span className="w-1 h-1 bg-border rounded-full shrink-0" />
-        <span className="flex items-center gap-1.5 shrink-0 uppercase tracking-wide text-primary">
-          <ShieldCheck className="w-3.5 h-3.5" />
-          NABL Certified
-        </span>
-      </div>
-
       {/* Location Picker Bottom Sheet Modal */}
       <AnimatePresence>
         {showLocationModal && (
