@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, ChevronDown, Bell, Phone, Coins, Crosshair, Check, ShieldCheck, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, Bell, Phone, Coins, Crosshair, Check, ShieldCheck, Loader2, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
 
 interface ZomatoStyleHeaderProps {
   unreadCount?: number;
@@ -33,6 +34,8 @@ export const ZomatoStyleHeader = ({
   const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { items } = useCart();
+  const cartCount = items.length;
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [currentAddress, setCurrentAddress] = useState("Home • 42 Medical Lane, Bandra West");
   const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([
@@ -123,82 +126,77 @@ export const ZomatoStyleHeader = ({
   })();
 
   return (
-    <div className="flex flex-col gap-2.5 pb-1">
+    <div className="flex flex-col pb-2">
       {/* Top Header Row: Location Selector + Action Buttons */}
-      <div className="flex items-center justify-between gap-3">
-        {/* Left: Clean Premium Location Selector */}
-        <button
-          type="button"
-          onClick={() => navigate("/saved-addresses")}
-          className="flex items-center gap-2.5 min-w-0 flex-1 text-left group active:scale-[0.98] transition-all rounded-2xl py-1"
-        >
-          <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <MapPin className="w-4.5 h-4.5" />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              <span className="text-[13.5px] font-bold text-foreground truncate tracking-tight">
-                {addressTitle}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground shrink-0 group-hover:text-primary transition-colors" />
-            </div>
-            <p className="text-[11.5px] font-medium text-muted-foreground truncate leading-tight mt-0.5">
-              {addressLine}
-            </p>
-          </div>
-        </button>
+      <div className="flex items-start justify-between pb-3 gap-2">
+        {/* Left: Premium Greeting & Location Selector */}
+        <div className="flex flex-col min-w-0 flex-1 pr-2 pt-1">
+          <p className="text-[11px] font-black text-primary uppercase tracking-[0.15em] mb-1 flex items-center gap-1 opacity-90">
+             {greeting}, {userName.split(' ')[0]}
+          </p>
+          <button 
+             type="button"
+             onClick={() => setShowLocationModal(true)}
+             className="flex items-center gap-1 text-left group min-w-0"
+          >
+             <h2 className="text-[22px] font-black text-foreground tracking-tight truncate leading-none">
+               {addressTitle}
+             </h2>
+             <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+          </button>
+          <p className="text-xs text-muted-foreground font-medium truncate mt-1.5 flex items-center gap-1.5 opacity-80">
+             <MapPin className="w-3.5 h-3.5 shrink-0" />
+             {addressLine}
+          </p>
+        </div>
 
         {/* Right: Clean Action Buttons */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {onOpenCall && (
-            <button
-              type="button"
-              onClick={onOpenCall}
-              className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center active:scale-90 transition-all hover:bg-muted"
-              aria-label="Contact support"
-              title="Contact support"
-            >
-              <Phone className="w-[18px] h-[18px]" />
-            </button>
-          )}
-
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => navigate("/rewards")}
-            className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center active:scale-90 transition-all hover:bg-muted"
-            aria-label="Rewards"
-            title="Rewards"
+            onClick={() => navigate("/cart")}
+            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:border-primary/40 hover:shadow-md"
+            aria-label="Cart"
+            title="Cart"
           >
-            <Coins className="w-[18px] h-[18px]" />
+            <ShoppingCart className="w-5 h-5" />
+            {cartCount > 0 && (
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm" 
+              >
+                {cartCount}
+              </motion.span>
+            )}
           </button>
 
           {/* Notifications Button */}
           <button
             type="button"
             onClick={() => navigate("/notifications")}
-            className="w-9 h-9 rounded-full bg-muted/70 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:bg-muted"
+            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:border-primary/40 hover:shadow-md"
             aria-label="Notifications"
             title="Notifications"
           >
-            <Bell className="w-[18px] h-[18px]" />
+            <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-background" />
             )}
           </button>
         </div>
       </div>
 
       {/* Trust line — quiet, single row, never clipped */}
-      <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground min-w-0">
-        <span className="flex items-center gap-1.5 shrink-0 text-emerald-600 dark:text-emerald-400">
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+      <div className="flex items-center gap-2.5 text-[10px] font-bold text-muted-foreground min-w-0 bg-muted/40 py-2 px-3.5 rounded-full w-fit border border-border/30">
+        <span className="flex items-center gap-1.5 shrink-0 text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
           15-min collection
         </span>
-        <span className="w-px h-3 bg-border shrink-0" />
-        <span className="flex items-center gap-1.5 shrink-0">
-          <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-          NABL certified labs
+        <span className="w-1 h-1 bg-border rounded-full shrink-0" />
+        <span className="flex items-center gap-1.5 shrink-0 uppercase tracking-wide text-primary">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          NABL Certified
         </span>
       </div>
 

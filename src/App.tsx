@@ -87,7 +87,6 @@ const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFam
 const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
 const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
 const PrivacyPolicyScreen = lazy(() => safeImport(() => import("./pages/PrivacyPolicyScreen")));
-const RewardsScreen = lazy(() => safeImport(() => import("./pages/RewardsScreen")));
 const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
