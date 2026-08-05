@@ -292,17 +292,7 @@ const DoctorConsultScreen = () => {
             </p>
           </div>
           
-          <button
-            onClick={() => {
-              sessionStorage.removeItem("consultationState");
-              setState(initialConsultationState);
-              toast.info("Reset doctor consultation");
-            }}
-            title="Start New Booking"
-            className="w-9 h-9 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95"
-          >
-            <RefreshCw className="w-4 h-4 text-primary" />
-          </button>
+          <div className="w-9 h-9" />
         </div>
 
         {/* Progress Bar */}
