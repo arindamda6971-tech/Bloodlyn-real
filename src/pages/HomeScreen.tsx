@@ -65,9 +65,36 @@ const getGreeting = () => {
 };
 
 const quickActions = [
-  { icon: Stethoscope, label: "Consult Doctor", path: "/doctor-consult", color: "bg-[#ecfdf5] text-[#10b981]", subtext: "Live Video" },
-  { icon: Activity, label: "Consult Physiotherapist", path: "/physio-consult", color: "bg-[#f1f5f9] text-[#0f172a]", subtext: "Expert Care" },
-  { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-[#fef2f2] text-[#ef4444]", subtext: "At Home" },
+  { 
+    icon: Stethoscope, 
+    label: "Consult Doctor", 
+    path: "/doctor-consult", 
+    badge: "Live Video",
+    desc: "Connect with specialized doctors instantly via secure video call.",
+    gradient: "from-[#10b981] to-[#0d9488]",
+    glow: "bg-[#10b981]/20",
+    badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]"
+  },
+  { 
+    icon: Activity, 
+    label: "Consult Physiotherapist", 
+    path: "/physio-consult", 
+    badge: "Expert Care",
+    desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
+    gradient: "from-[#6366f1] to-[#2563eb]",
+    glow: "bg-[#6366f1]/20",
+    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]"
+  },
+  { 
+    icon: HeartPulse, 
+    label: "ECG Test", 
+    path: "/ecg-test", 
+    badge: "At Home",
+    desc: "Clinical-grade resting ECG test performed by certified technicians.",
+    gradient: "from-[#f43f5e] to-[#dc2626]",
+    glow: "bg-[#f43f5e]/20",
+    badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]"
+  },
 ];
 
 
