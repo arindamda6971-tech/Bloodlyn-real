@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
 import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
+import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 
@@ -171,6 +172,7 @@ const isEcgSlotAvailable = (slot: string, date: string): boolean => {
 const ECGTestScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showIntro, setShowIntro] = useState(true);
 
   const [step, setStep] = useState<FlowStep>("ADDRESS");
   const [bootLoading, setBootLoading] = useState(true);
@@ -545,6 +547,10 @@ const ECGTestScreen = () => {
     return i < 0 ? 0 : i;
   }, [step]);
   const totalSteps = 4;
+
+  if (showIntro) {
+    return <ServiceIntro serviceType="ecg" onProceed={() => setShowIntro(false)} />;
+  }
 
   return (
     <MobileLayout showNav={false}>

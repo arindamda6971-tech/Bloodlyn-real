@@ -14,6 +14,7 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ConsultationFlowState, initialConsultationState, Doctor } from "@/types/consultation";
 import { ConsultationTypeStep } from "@/components/consultation/ConsultationTypeStep";
 import { OfflineFlow } from "@/components/consultation/OfflineFlow";
+import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { OnlineFlow } from "@/components/consultation/OnlineFlow";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -22,6 +23,7 @@ const DoctorConsultScreen = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const [showIntro, setShowIntro] = useState(true);
   
   // State machine with deep safe restoration
   const [state, setState] = useState<ConsultationFlowState>(() => {
@@ -267,6 +269,10 @@ const DoctorConsultScreen = () => {
     confirmReplace(() => navigate("/cart"));
     toast.success("Cart replaced with new booking");
   };
+
+  if (showIntro) {
+    return <ServiceIntro serviceType="doctor" onProceed={() => setShowIntro(false)} />;
+  }
 
   return (
     <MobileLayout showNav={false}>

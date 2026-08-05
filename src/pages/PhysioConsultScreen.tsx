@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
+import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -102,6 +103,7 @@ const specializations = [
 const PhysioConsultScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [showIntro, setShowIntro] = useState(true);
   const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
   const [selectedSpecialization, setSelectedSpecialization] = useState<string | null>(null);
   const isServiceAvailable = false;
@@ -142,6 +144,10 @@ const PhysioConsultScreen = () => {
     confirmReplace(() => navigate("/cart"));
     toast.success("Cart replaced with new booking");
   };
+
+  if (showIntro) {
+    return <ServiceIntro serviceType="physio" onProceed={() => setShowIntro(false)} />;
+  }
 
   return (
     <MobileLayout showNav={true}>
