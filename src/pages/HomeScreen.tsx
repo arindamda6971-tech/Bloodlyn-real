@@ -337,25 +337,49 @@ const HomeScreen = () => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <section className="px-4 mt-6 transform-gpu">
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => (
-              <button
-                key={action.label}
-                onClick={() => navigate(action.path)}
-                className="bg-card/85 backdrop-blur-xl border border-border/50 rounded-3xl p-4 text-left flex items-center gap-3.5 active:scale-[0.97] transition-all shadow-[0_6px_20px_-8px_rgba(0,0,0,0.05)] hover:shadow-md group"
-              >
-                <div className={`w-12 h-12 rounded-2xl ${action.color} flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform`}>
-                  <action.icon className="w-5.5 h-5.5" />
+        {/* Quick Actions (Premium Banners) */}
+        <section className="px-4 mt-8 transform-gpu flex flex-col gap-4">
+          <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
+          {quickActions.map((action) => (
+            <div
+              key={action.label}
+              onClick={() => navigate(action.path)}
+              className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
+            >
+              {/* Background glowing accent */}
+              <div className={`absolute -right-10 -bottom-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none`} />
+              <div className={`absolute -left-10 -top-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none`} />
+
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform`}>
+                      <action.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-foreground text-[16px] font-black tracking-tight leading-tight">
+                      {action.label}
+                    </h3>
+                  </div>
+                  <span className={`${action.badgeColor} border text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shrink-0`}>
+                    {action.badge}
+                  </span>
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-[13.5px] font-black text-foreground tracking-tight leading-tight truncate">{action.label}</span>
-                  <span className="text-[10.5px] font-semibold text-muted-foreground/80 mt-0.5 truncate">{action.subtext}</span>
+                
+                <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed mb-4 pr-2">
+                  {action.desc}
+                </p>
+
+                <div className="flex items-center justify-between mt-2">
+                  <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient}`}>
+                    Book Now
+                  </span>
+                  <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${action.gradient} flex items-center justify-center shadow-md group-hover:opacity-90 transition-opacity`}>
+                    <ChevronRight className="w-4 h-4 text-white" />
+                  </div>
                 </div>
-              </button>
-            ))}
-          </div>
+              </div>
+            </div>
+          ))}
         </section>
 
         {/* Recent Orders */}
