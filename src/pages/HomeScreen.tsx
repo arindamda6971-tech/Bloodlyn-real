@@ -70,9 +70,6 @@ const quickActions = [
   { icon: HeartPulse, label: "ECG Test", path: "/ecg-test", color: "bg-[#fef2f2] text-[#ef4444]", subtext: "At Home" },
 ];
 
-const trendingTests = [
-  "CBC", "Thyroid", "HbA1c", "Full Body", "Vitamin D", "Lipid Profile"
-];
 
 const healthTips = [
   "Drinking water before a blood test makes the process easier for the technician.",
@@ -293,23 +290,6 @@ const HomeScreen = () => {
             ) : null
           }
         />
-
-        {/* Trending Search Suggestion Chips - Scrolls away and hides behind sticky search bar */}
-        <div className="px-5 pt-2 pb-1 overflow-x-auto hide-scrollbar flex gap-2">
-          {trendingTests.map((test) => (
-            <button
-              key={test}
-              onClick={() => {
-                setSearchQuery(test);
-                setShowSearchResults(true);
-              }}
-              className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-card/80 hover:bg-card border border-border/60 text-[11.5px] font-extrabold text-foreground/80 active:scale-95 transition-all flex items-center gap-1.5 shadow-2xs hover:border-primary/40"
-            >
-              <TrendingUp className="w-3.5 h-3.5 text-primary" />
-              {test}
-            </button>
-          ))}
-        </div>
 
         {/* Diagnostic Centers */}
         {centersLoading ? (
