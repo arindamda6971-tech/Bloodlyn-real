@@ -76,16 +76,6 @@ const quickActions = [
     badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]"
   },
   { 
-    icon: Activity, 
-    label: "Consult Physiotherapist", 
-    path: "/physio-consult", 
-    badge: "Expert Care",
-    desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
-    gradient: "from-[#6366f1] to-[#2563eb]",
-    glow: "bg-[#6366f1]/20",
-    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]"
-  },
-  { 
     icon: HeartPulse, 
     label: "ECG Test", 
     path: "/ecg-test", 
@@ -104,6 +94,16 @@ const quickActions = [
     gradient: "from-[#f43f5e] to-[#3b82f6]",
     glow: "bg-[#3b82f6]/20",
     badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]"
+  },
+  { 
+    icon: Activity, 
+    label: "Consult Physiotherapist", 
+    path: "/physio-consult", 
+    badge: "Expert Care",
+    desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
+    gradient: "from-[#6366f1] to-[#2563eb]",
+    glow: "bg-[#6366f1]/20",
+    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]"
   },
 ];
 
@@ -406,7 +406,7 @@ const HomeScreen = () => {
                   {action.desc}
                 </p>
 
-                <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center justify-end gap-2 mt-2">
                   <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient}`}>
                     Book Now
                   </span>
