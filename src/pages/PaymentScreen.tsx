@@ -441,7 +441,7 @@ const PaymentScreen = () => {
         payment_status: "Paid",
         payment_method: selectedPaymentMethod.name || "UPI / Online",
         scheduled_date: paymentState?.scheduledDate || new Date().toISOString().slice(0, 10),
-        scheduled_time_slot: paymentState?.scheduledTimeSlot || paymentState?.scheduledSlot || "Morning Slot",
+        scheduled_time_slot: paymentState?.scheduledTimeSlot || "Morning Slot",
         test_items: cartItems.map((c: any) => c.name || "Diagnostic Test"),
       };
 

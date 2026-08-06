@@ -298,6 +298,9 @@ interface DiagnosticCenter {
   logo_url: string | null;
   phone: string | null;
   vendor_id: string | null;
+  offers_home_bp?: boolean | null;
+  offers_home_ecg?: boolean | null;
+  ecg_available?: boolean | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
   is_active: boolean | null;
