@@ -9,6 +9,8 @@ interface PremiumPageHeaderProps {
   /** Tailwind gradient classes, e.g. "from-primary via-primary to-blue-600" */
   accent?: string;
   rightSlot?: ReactNode;
+  /** Optional small chip rendered next to the title. */
+  badgeText?: string;
   /** When true, removes card chrome (rounded, border, margin) so it blends
    *  seamlessly with a sibling search bar inside the same sticky shell. */
   flush?: boolean;
@@ -24,6 +26,7 @@ const PremiumPageHeader = ({
   icon: Icon,
   accent = "from-primary via-primary to-blue-600",
   rightSlot,
+  badgeText,
   flush = false,
 }: PremiumPageHeaderProps) => {
   return (
@@ -46,6 +49,12 @@ const PremiumPageHeader = ({
             </p>
           )}
         </div>
+
+        {badgeText && (
+          <span className="shrink-0 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+            {badgeText}
+          </span>
+        )}
 
         {rightSlot && <div className="shrink-0">{rightSlot}</div>}
       </div>
