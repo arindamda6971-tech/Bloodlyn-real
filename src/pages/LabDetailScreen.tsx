@@ -519,111 +519,71 @@ const LabDetailScreen = () => {
 
   return (
     <MobileLayout showNav={false}>
-      <ScreenHeader title="" />
+      <div className="pb-24 bg-slate-50 min-h-screen">
+        {/* Header with image */}
+        <div className="relative h-72 w-full rounded-b-[2.5rem] overflow-hidden shadow-sm">
+          <img src="/lab-banner.png" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-safe">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white">
+              <ChevronRight className="w-5 h-5 rotate-180" />
+            </button>
+            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white relative">
+              <ShoppingCart className="w-5 h-5" />
+              {items.length > 0 && (
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-transparent" />
+              )}
+            </button>
+          </div>
 
-      <div className="pb-24">
-        {/* Hero Banner — SVG, instant render */}
-        <div className="px-4 pt-4">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`relative overflow-hidden rounded-3xl shadow-2xl ${isClosed ? 'grayscale' : ''}`}
-            style={{ minHeight: '200px' }}
-          >
-            {/* SVG banner — no image fetch */}
-            <LabBanner labName={labName} />
-            {/* Dark Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/10" />
-
-            {/* Content */}
-            <div className="relative p-5 flex flex-col h-full min-h-[200px]">
-              {/* Top Badges */}
-              <div className="flex items-center justify-between mb-3">
-                <motion.div 
-                  className="flex items-center gap-1.5 bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/30"
-                  animate={{ scale: [1, 1.05, 1] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  <Zap className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                  <span className="text-xs font-bold text-white">Up to 40% OFF</span>
-                </motion.div>
-                <div className="flex items-center gap-1 bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                  <BadgeCheck className="w-3.5 h-3.5 text-green-300" />
-                  <span className="text-[10px] font-medium text-white/90">{accreditedText} Certified</span>
-                </div>
-              </div>
-              
-              {/* Main Content Row */}
-              <div className="flex items-center gap-4 flex-1">
-                {/* Logo Container */}
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 shadow-xl border-2 border-white/50 overflow-hidden">
-                    {logoUrl ? (
-                      <img 
-                        src={logoUrl} 
-                        alt={labName} 
-                        className="w-16 h-16 object-contain p-1"
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-
-                    ) : null}
-                    <Building2 className={`w-10 h-10 text-gray-600 ${logoUrl ? 'hidden' : ''}`} />
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white shadow-lg flex items-center justify-center">
-                    <Shield className="w-4 h-4 text-primary" />
-                  </div>
-                </div>
-                
-                {/* Lab Info */}
-                <div className="flex-1 min-w-0">
-                  <h1 className="font-bold text-white text-lg leading-tight line-clamp-1 drop-shadow-md">
-                    {labName}
-                  </h1>
-                  <p className="text-white/80 text-xs font-medium mt-0.5 italic">"{tagline}"</p>
-                  
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                      <Star className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                      <span className="text-xs font-bold text-white">{lab.rating || 4.5}</span>
-                      <span className="text-[10px] text-white/80">({reviewsCountText})</span>
-                    </div>
-                    <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
-                      <Beaker className="w-3.5 h-3.5 text-white" />
-                      <span className="text-xs font-medium text-white">{labTests.length}+ Tests</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Quick Info Pills */}
-              <div className="flex items-center gap-2 mt-3 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                  <MapPin className="w-3 h-3 text-white/80" />
-                  <span className="text-[10px] text-white/90 line-clamp-1">{lab.location}</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                  <Clock className="w-3 h-3 text-white/80" />
-                  <span className="text-[10px] text-white/90">{lab.timing}</span>
-                </div>
-                {lab.homeCollection && (
-                  <div className="flex items-center gap-1.5 bg-green-500/30 backdrop-blur-sm px-2.5 py-1 rounded-full">
-                    <Home className="w-3 h-3 text-green-200" />
-                    <span className="text-[10px] text-green-100 font-medium">Home Collection</span>
-                  </div>
-                )}
-              </div>
+          <div className="absolute bottom-10 left-6 right-6">
+            <h1 className="text-2xl font-black text-white leading-tight drop-shadow-md mb-2">{labName}</h1>
+            <div className="flex items-center gap-2">
+               {logoUrl ? (
+                 <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
+               ) : (
+                 <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                   <Building2 className="w-4 h-4 text-primary" />
+                 </div>
+               )}
+               <p className="text-[13px] font-semibold text-white/90 drop-shadow-sm">{tagline}</p>
             </div>
-          </motion.div>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="px-5 -mt-6 relative z-20">
+          <div className="grid grid-cols-3 gap-3">
+             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
+               <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] flex items-center justify-center mb-2">
+                 <Heart className="w-5 h-5 text-[#0284c7]" />
+               </div>
+               <p className="text-sm font-black text-foreground">10K+</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Patients</p>
+             </div>
+             
+             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
+               <div className="w-10 h-10 rounded-xl bg-[#f3e8ff] flex items-center justify-center mb-2">
+                 <BadgeCheck className="w-5 h-5 text-[#9333ea]" />
+               </div>
+               <p className="text-sm font-black text-foreground line-clamp-1">{accreditedText}</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Certified</p>
+             </div>
+             
+             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
+               <div className="w-10 h-10 rounded-xl bg-[#fef3c7] flex items-center justify-center mb-2">
+                 <Star className="w-5 h-5 text-[#d97706] fill-[#d97706]" />
+               </div>
+               <p className="text-sm font-black text-foreground">{lab.rating || 4.5}</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Rating</p>
+             </div>
+          </div>
         </div>
 
         {/* CLOSED Banner */}
         {isClosed && (
-          <div className="mx-4 mt-3 bg-destructive/10 border border-destructive/30 rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="mx-5 mt-4 bg-destructive/10 border border-destructive/30 rounded-2xl px-4 py-3 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center flex-shrink-0">
               <AlertCircle className="w-5 h-5 text-destructive" />
             </div>
@@ -634,6 +594,21 @@ const LabDetailScreen = () => {
           </div>
         )}
 
+        {/* About Section */}
+        <div className="px-5 mt-6 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[17px] font-black text-foreground tracking-tight">About</h2>
+            {lab.homeCollection && (
+              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                Home Collection
+              </span>
+            )}
+          </div>
+          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed">
+            {labName} is a state-of-the-art diagnostic center providing accurate, fast, and reliable health tests. With our highly trained staff and advanced equipment, we ensure a premium healthcare experience. We specialize in pathology, wellness checkups, and specialized clinical diagnostics.
+          </p>
+        </div>
+
         {/* Sticky search input bar - Pins at top-0 */}
         <StickySearch
           value={searchQuery}
@@ -641,9 +616,13 @@ const LabDetailScreen = () => {
           placeholder="Search tests, packages..."
         />
 
+        <div className="px-5 mt-2 flex items-center justify-between">
+            <h2 className="text-[17px] font-black text-foreground tracking-tight">Schedules & Tests</h2>
+        </div>
+
         {/* Tab filters - Scrolls away and hides behind sticky search bar */}
-        <div className="px-4 pt-3 pb-1">
-          <div className="relative grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-card border border-border/60 shadow-2xs">
+        <div className="px-5 pt-3 pb-1">
+          <div className="relative grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
               const count = tab.key === "packages" ? packageCount : allTestsCount;
@@ -651,12 +630,12 @@ const LabDetailScreen = () => {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-extrabold transition-all"
+                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
                 >
                   {isActive && (
                     <motion.div
                       layoutId="lab-tab-pill"
-                      className="absolute inset-0 bg-primary rounded-xl shadow-xs"
+                      className="absolute inset-0 bg-[#0f172a] rounded-xl shadow-xs"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
@@ -676,7 +655,7 @@ const LabDetailScreen = () => {
           </div>
         </div>
 
-        <div className="px-4 py-4 space-y-4">
+        <div className="px-5 py-2 space-y-4">
           {/* Tests Count */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
