@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Activity, MapPin, Calendar, Clock, User, CheckCircle2,
@@ -171,6 +171,8 @@ const isEcgSlotAvailable = (slot: string, date: string): boolean => {
 
 const ECGTestScreen = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const preselectedLab = location.state?.preselectedLab;
   const { user } = useAuth();
   const [showIntro, setShowIntro] = useState(true);
 
@@ -295,7 +297,12 @@ const ECGTestScreen = () => {
           pincode: def.pincode,
         });
         setPincode(def.pincode);
-        setStep("LAB");
+        if (preselectedLab) {
+          setSelectedLab(preselectedLab);
+          setStep("APPOINTMENT");
+        } else {
+          setStep("LAB");
+        }
       } else {
         setStep("ADDRESS");
       }
@@ -385,7 +392,12 @@ const ECGTestScreen = () => {
         pincode: pincode,
       });
     }
-    setStep("LAB");
+    if (preselectedLab) {
+      setSelectedLab(preselectedLab);
+      setStep("APPOINTMENT");
+    } else {
+      setStep("LAB");
+    }
   };
 
   const progressToPayment = () => {

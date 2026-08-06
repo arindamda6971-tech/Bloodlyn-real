@@ -22,6 +22,8 @@ import {
   Heart,
   TrendingUp,
   AlertCircle,
+  Activity,
+  HeartPulse,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -144,6 +146,8 @@ const labsData: Record<string, {
       { id: "lpl18", name: "Aarogyam 1.3", price: 1799, originalPrice: 4000, category: "Health Packages" },
       { id: "lpl19", name: "Aarogyam Full Body Checkup", price: 2999, originalPrice: 6500, category: "Health Packages", popular: true },
       { id: "lpl20", name: "Swasthfit Basic", price: 599, originalPrice: 1200, category: "Health Packages" },
+      { id: "lpl21", name: "Blood Pressure (BP) Check", price: 50, originalPrice: 100, category: "Heart Health" },
+      { id: "lpl22", name: "Electrocardiogram (ECG)", price: 300, originalPrice: 450, category: "Heart Health" },
     ],
   },
   "metropolis": {
@@ -296,6 +300,7 @@ interface DiagnosticCenter {
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
   is_active: boolean | null;
+  closed_days?: string[] | null;
 }
 
 interface DynamicTest {
@@ -460,6 +465,7 @@ const LabDetailScreen = () => {
         logoUrl: labFromDb.logo_url,
         vendorId: labFromDb.vendor_id,
         isActive: labFromDb.is_active !== false,
+        closedDays: labFromDb.closed_days || ["Sun"],
       };
     }
     
@@ -526,10 +532,24 @@ const LabDetailScreen = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-safe">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
-            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white relative">
+            
+            <div className="flex-1 mx-3">
+              <div className="relative flex items-center w-full h-10 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 shadow-sm overflow-hidden">
+                <Search className="w-4 h-4 text-white ml-3" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tests..."
+                  className="flex-1 bg-transparent border-none text-white text-sm px-2 py-2 placeholder:text-white/70 focus:outline-none focus:ring-0"
+                />
+              </div>
+            </div>
+
+            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white relative flex-shrink-0">
               <ShoppingCart className="w-5 h-5" />
               {items.length > 0 && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-transparent" />
@@ -552,32 +572,55 @@ const LabDetailScreen = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Services Cards */}
         <div className="px-5 -mt-6 relative z-20">
           <div className="grid grid-cols-3 gap-3">
-             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
+             <button onClick={() => { setActiveTab("all"); setSearchQuery("Blood"); }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
+               <div className="w-10 h-10 rounded-xl bg-[#fee2e2] flex items-center justify-center mb-2">
+                 <Beaker className="w-5 h-5 text-[#ef4444]" />
+               </div>
+               <p className="text-[13px] font-black text-foreground">Blood Tests</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Explore</p>
+             </button>
+             
+             <button onClick={() => {
+               navigate("/bp-check", {
+                 state: {
+                   preselectedLab: {
+                     id: labFromDb?.id || "lal-pathlabs",
+                     name: labName,
+                     logo_url: logoUrl,
+                     home_bp_price: 199,
+                   }
+                 }
+               });
+             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
                <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] flex items-center justify-center mb-2">
-                 <Heart className="w-5 h-5 text-[#0284c7]" />
+                 <Activity className="w-5 h-5 text-[#0284c7]" />
                </div>
-               <p className="text-sm font-black text-foreground">10K+</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Patients</p>
-             </div>
+               <p className="text-[13px] font-black text-foreground">BP Check</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Order Book</p>
+             </button>
              
-             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
-               <div className="w-10 h-10 rounded-xl bg-[#f3e8ff] flex items-center justify-center mb-2">
-                 <BadgeCheck className="w-5 h-5 text-[#9333ea]" />
+             <button onClick={() => {
+               navigate("/ecg-test", {
+                 state: {
+                   preselectedLab: {
+                     id: labFromDb?.id || "lal-pathlabs",
+                     name: labName,
+                     logo_url: logoUrl,
+                     home_ecg_price: 599,
+                     ecg_available: true,
+                   }
+                 }
+               });
+             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
+               <div className="w-10 h-10 rounded-xl bg-[#dcfce7] flex items-center justify-center mb-2">
+                 <HeartPulse className="w-5 h-5 text-[#16a34a]" />
                </div>
-               <p className="text-sm font-black text-foreground line-clamp-1">{accreditedText}</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Certified</p>
-             </div>
-             
-             <div className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center">
-               <div className="w-10 h-10 rounded-xl bg-[#fef3c7] flex items-center justify-center mb-2">
-                 <Star className="w-5 h-5 text-[#d97706] fill-[#d97706]" />
-               </div>
-               <p className="text-sm font-black text-foreground">{lab.rating || 4.5}</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Rating</p>
-             </div>
+               <p className="text-[13px] font-black text-foreground">ECG</p>
+               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Order Book</p>
+             </button>
           </div>
         </div>
 
@@ -604,17 +647,29 @@ const LabDetailScreen = () => {
               </span>
             )}
           </div>
-          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed">
+          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed line-clamp-2">
             {labName} is a state-of-the-art diagnostic center providing accurate, fast, and reliable health tests. With our highly trained staff and advanced equipment, we ensure a premium healthcare experience. We specialize in pathology, wellness checkups, and specialized clinical diagnostics.
           </p>
         </div>
 
-        {/* Sticky search input bar - Pins at top-0 */}
-        <StickySearch
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search tests, packages..."
-        />
+        {/* Schedule Section */}
+        <div className="px-5 mb-4">
+          <h2 className="text-[17px] font-black text-foreground tracking-tight mb-3">Schedules</h2>
+          <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 scrollbar-none">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => {
+              const closedDaysList = (lab as any).closedDays || ["Sun"];
+              const isClosedDay = closedDaysList.includes(day);
+              return (
+                <div key={day} className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-2xl flex-1 border ${isClosedDay ? 'bg-muted/30 border-border/40 opacity-70' : 'bg-white border-border shadow-sm'}`}>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{day}</span>
+                  <span className={`text-[11px] font-black mt-1 ${isClosedDay ? 'text-destructive' : 'text-foreground'}`}>
+                    {isClosedDay ? 'OFF' : 'Open'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="px-5 mt-2 flex items-center justify-between">
             <h2 className="text-[17px] font-black text-foreground tracking-tight">Schedules & Tests</h2>
