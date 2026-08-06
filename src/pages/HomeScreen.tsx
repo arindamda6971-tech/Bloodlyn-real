@@ -273,7 +273,7 @@ const HomeScreen = () => {
 
       <MobileLayout>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
-        <div className="px-5 pt-3 pb-1">
+        <div className="px-5 pt-3 pb-0">
           <ZomatoStyleHeader
             unreadCount={unreadCount}
             onOpenCall={() => setShowCallSheet(true)}
@@ -284,6 +284,7 @@ const HomeScreen = () => {
 
         {/* Sticky Search Input Bar - Pins at top-0 */}
         <StickySearch
+          className="-mt-2"
           value={searchQuery}
           onChange={(v) => { setSearchQuery(v); setShowSearchResults(true); }}
           onFocus={() => setShowSearchResults(true)}

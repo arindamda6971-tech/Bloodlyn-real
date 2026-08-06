@@ -313,10 +313,9 @@ interface DynamicTest {
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
   const navigate = useNavigate();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [addedTests, setAddedTests] = useState<Set<string>>(new Set());
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
@@ -485,32 +484,21 @@ const LabDetailScreen = () => {
   });
 
   const handleAddTest = (testId: string, testName: string) => {
-    setAddedTests((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(testId)) {
-        newSet.delete(testId);
-        toast.info(`${testName} removed from cart`);
-      } else {
-        newSet.add(testId);
-        const test = lab.tests.find((t) => t.id === testId);
-        if (test) {
-          const ok = addToCart({
-            id: testId,
-            name: testName,
-            price: test.price,
-            labId: labId || "",
-            labName: lab.name,
-            vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
-            kind: test.category === "Health Packages" ? "package" : "test",
-          });
-          if (ok) {
-            toast.success(`${testName} added to cart`);
-          }
-        }
-
+    const test = lab.tests.find((t) => t.id === testId);
+    if (test) {
+      const ok = addToCart({
+        id: testId,
+        name: testName,
+        price: test.price,
+        labId: labId || "",
+        labName: lab.name,
+        vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
+        kind: test.category === "Health Packages" ? "package" : "test",
+      });
+      if (ok) {
+        toast.success(`${testName} added to cart`);
       }
-      return newSet;
-    });
+    }
   };
 
   const handleConfirmReplace = () => {
@@ -699,23 +687,14 @@ const LabDetailScreen = () => {
             <p className="text-xs font-extrabold text-muted-foreground tracking-tight">
               {filteredTests.length} {activeTab === "packages" ? "packages" : "tests"} available
             </p>
-            {addedTests.size > 0 && (
-              <Button
-                size="sm"
-                onClick={() => navigate("/cart")}
-                className="gap-1.5 font-extrabold text-xs rounded-xl shadow-xs"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                View Cart ({addedTests.size})
-              </Button>
-            )}
+
           </motion.div>
 
           {/* Tests List */}
           <div className="space-y-3 pb-8">
             {filteredTests.map((rawTest, index) => {
               const test = rawTest as DynamicTest;
-              const isAdded = addedTests.has(test.id);
+              const isAdded = items.some(item => item.id === test.id);
               return (
                 <motion.div
                   key={test.id}
@@ -774,25 +753,22 @@ const LabDetailScreen = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleAddTest(test.id, test.name)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isAdded) {
+                          navigate("/cart");
+                        } else {
+                          handleAddTest(test.id, test.name);
+                        }
+                      }}
                       disabled={isClosed}
-                      className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-black flex items-center gap-1 transition-all active:scale-95 ${
+                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
                         isAdded
-                          ? "bg-emerald-600 text-white border-2 border-emerald-600 shadow-xs"
-                          : "border-2 border-primary text-primary hover:bg-primary hover:text-white"
+                          ? "bg-success text-white shadow-md active:scale-90"
+                          : "bg-[#38bdf8] text-white shadow-md active:scale-90"
                       }`}
                     >
-                      {isAdded ? (
-                        <>
-                          <Check className="w-3.5 h-3.5" />
-                          Added
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5" />
-                          Add
-                        </>
-                      )}
+                      {isAdded ? <ShoppingCart className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
                     </button>
                   </div>
                 </motion.div>

@@ -90,6 +90,7 @@ const PrivacyPolicyScreen = lazy(() => safeImport(() => import("./pages/PrivacyP
 const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsScreen")));
 const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
 const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
+const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 
 const AnimatedRoutes = () => {
   const location = useLocation();
@@ -141,6 +142,7 @@ const AnimatedRoutes = () => {
           <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
           <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
           <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
+          <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
           <Route path="/family-members" element={<ProtectedRoute><FamilyMembersScreen /></ProtectedRoute>} />
           <Route path="/add-family-member" element={<ProtectedRoute><AddFamilyMemberScreen /></ProtectedRoute>} />
           <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
