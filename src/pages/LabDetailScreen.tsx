@@ -584,6 +584,10 @@ const LabDetailScreen = () => {
              </button>
              
              <button onClick={() => {
+               if (labFromDb && !labFromDb.offers_home_bp) {
+                 toast.error(`${labName} does not provide BP Check services.`);
+                 return;
+               }
                navigate("/bp-check", {
                  state: {
                    preselectedLab: {
@@ -603,6 +607,11 @@ const LabDetailScreen = () => {
              </button>
              
              <button onClick={() => {
+               const ecgAvailable = labFromDb ? (labFromDb.offers_home_ecg || labFromDb.ecg_available) : true;
+               if (labFromDb && !ecgAvailable) {
+                 toast.error(`${labName} does not provide ECG services.`);
+                 return;
+               }
                navigate("/ecg-test", {
                  state: {
                    preselectedLab: {
