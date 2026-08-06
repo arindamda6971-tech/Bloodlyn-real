@@ -93,7 +93,24 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Error loading cart:", error);
       } else if (data && data.length > 0) {
-        const cartItems: CartItem[] = data
+        // Filter out stale items older than 24 hours to prevent unwanted items
+        const now = Date.now();
+        const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
+        const freshData = data.filter((item) => {
+          if (item.created_at) {
+            const age = now - new Date(item.created_at).getTime();
+            return age < MAX_AGE_MS;
+          }
+          return true; // keep items without created_at for safety
+        });
+
+        // Delete stale items from DB
+        const staleIds = data.filter(d => !freshData.includes(d)).map(d => d.id);
+        if (staleIds.length > 0) {
+          await supabase.from("cart_items").delete().in("id", staleIds);
+        }
+
+        const cartItems: CartItem[] = freshData
           .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
           .map((item) => ({
             id: item.package_id || item.test_id || item.id,
@@ -109,12 +126,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setItems(cartItems);
         setLocalCart(cartItems);
       } else {
-        // If DB has no items, check if local cart has items and sync them to DB
-        const local = getLocalCart();
-        if (local.length > 0) {
-          setItems(local);
-          syncItemsToSupabase(local, user.id);
-        }
+        // DB has no items — clear local storage too so old items don't resurface
+        setItems([]);
+        setLocalCart([]);
       }
     } catch (err) {
       console.error("Error loading cart:", err);
@@ -124,13 +138,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [user]);
 
-  // Sync items to Supabase safely (Insert first, then delete old)
+  // Sync items to Supabase safely (Delete first, then insert)
   const syncItemsToSupabase = async (cartItems: CartItem[], userId: string) => {
     try {
+      // Always delete all existing cart items for user first
+      await supabase.from("cart_items").delete().eq("user_id", userId);
+
       if (cartItems.length === 0) {
-        // If cart is empty, simply delete all for user
-        await supabase.from("cart_items").delete().eq("user_id", userId);
-        return;
+        return; // Cart cleared, nothing to insert
       }
 
       const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
@@ -146,27 +161,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         family_member_id: item.familyMemberId || null,
       } as any));
 
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("cart_items")
-        .insert(cartItemsToInsert)
-        .select("id");
+        .insert(cartItemsToInsert);
 
       if (error) {
         console.error("Error syncing cart (insert failed):", error);
-        return; // Abort, do not delete existing items to prevent data loss
       }
-
-      // If insert succeeded, delete old items that don't match the new IDs
-      if (data && data.length > 0) {
-        const newIds = data.map(d => d.id);
-        await supabase
-          .from("cart_items")
-          .delete()
-          .eq("user_id", userId)
-          .not("id", "in", `(${newIds.join(',')})`);
-      }
-
     } catch (err) {
       console.error("Error syncing cart:", err);
     }
