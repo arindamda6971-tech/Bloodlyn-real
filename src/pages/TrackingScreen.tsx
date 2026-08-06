@@ -35,9 +35,8 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
-  { key: "assigned", label: "Delivery Boy Assigned", icon: UserCheck },
-  { key: "sample", label: "Sample Collected", icon: FlaskConical },
-  { key: "report", label: "Report Ready", icon: FileText },
+  { key: "processing", label: "Processing", icon: FlaskConical },
+  { key: "report", label: "Reports Ready", icon: FileText },
 ];
 
 function getCompletedIndex(status: string | null, partnerName?: string | null): number {
@@ -47,23 +46,21 @@ function getCompletedIndex(status: string | null, partnerName?: string | null): 
       return -1;
     case "confirmed":
     case "accepted":
-      if (partnerName) return 1;
       return 0;
     case "processing":
     case "assigned":
     case "partner_assigned":
     case "out_for_collection":
-      return 1;
     case "sample_collected":
     case "in_progress":
     case "collection_complete":
     case "sample_received":
     case "lab_processing":
-      return 2;
+      return 1;
     case "report_ready":
     case "report_delivered":
     case "completed":
-      return 3;
+      return 2;
     default:
       if (partnerName) return 1;
       return -1;
