@@ -337,7 +337,7 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active')
+          .select('*')
           .eq('id', labId)
           .maybeSingle();
 
