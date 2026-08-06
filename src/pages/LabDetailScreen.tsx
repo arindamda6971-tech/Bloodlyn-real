@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useLabSlots } from "@/hooks/useLabSlots";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -298,6 +299,9 @@ interface DiagnosticCenter {
   logo_url: string | null;
   phone: string | null;
   vendor_id: string | null;
+  offers_home_bp?: boolean | null;
+  offers_home_ecg?: boolean | null;
+  ecg_available?: boolean | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
   is_active: boolean | null;
@@ -325,6 +329,8 @@ const LabDetailScreen = () => {
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
   const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
+  // Live schedule from the Partner dashboard — same source as the booking slots.
+  const { data: partnerSlots } = useLabSlots(labFromDb?.vendor_id ?? null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -673,9 +679,11 @@ const LabDetailScreen = () => {
         <div className="px-5 mb-4">
           <h2 className="text-[17px] font-black text-foreground tracking-tight mb-3">Schedules</h2>
           <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 scrollbar-none">
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => {
-              const closedDaysList = (lab as any).closedDays || ["Sun"];
-              const isClosedDay = closedDaysList.includes(day);
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, dayIndex) => {
+              const partnerDay = partnerSlots?.byDay?.[dayIndex];
+              const isClosedDay = partnerSlots?.hasSchedule
+                ? !partnerDay?.is_open || (partnerDay?.slots?.length ?? 0) === 0
+                : ((lab as any).closedDays || ["Sun"]).includes(day);
               return (
                 <div key={day} className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-2xl flex-1 border ${isClosedDay ? 'bg-muted/30 border-border/40 opacity-70' : 'bg-white border-border shadow-sm'}`}>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{day}</span>

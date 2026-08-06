@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, Star, Clock, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Building2, Star, Clock, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { getLabSlotDates, isSameDaySlotBookable, type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
+import { useLabSlots } from "@/hooks/useLabSlots";
 
 interface PatientState {
   patientName?: string;
@@ -50,23 +51,16 @@ const LabSelectionScreen = () => {
   );
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [dateScrollStart, setDateScrollStart] = useState(0);
 
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
-  // Slots fetched from Partner project for the currently selected lab
-  const [labSlotsByDay, setLabSlotsByDay] = useState<
-    Record<number, { is_open: boolean; slots: string[] }>
-  >({});
-  const [slotsLoading, setSlotsLoading] = useState(false);
-
-  const dates = useMemo(() => getLabSlotDates(7), []);
+  // Only today, tomorrow and the day after tomorrow are bookable.
+  const dates = useMemo(() => getLabSlotDates(3), []);
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
-    // Reset stale slot data immediately when switching labs
-    setLabSlotsByDay({});
+    // Reset stale slot selection immediately when switching labs
     setSelectedTime(null);
     if (!selectedLabId) {
       setSelectedLabVendorId(null);
@@ -98,82 +92,34 @@ const LabSelectionScreen = () => {
     };
   }, [selectedLabId, labs, items]);
 
-  // Fetch lab_time_slots from Partner project whenever the selected lab changes
-  useEffect(() => {
-    if (!selectedLabVendorId) {
-      setLabSlotsByDay({});
-      return;
-    }
-    if (selectedLabVendorId === "generic-service") {
-      const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
-      const map: Record<number, { is_open: boolean; slots: string[] }> = {};
-      for (let i = 0; i <= 6; i++) {
-        map[i] = { is_open: true, slots: defaultSlots };
-      }
-      setLabSlotsByDay(map);
-      return;
-    }
-    let cancelled = false;
-    setSlotsLoading(true);
-    supabase.functions
-      .invoke("lab-slots", { body: { lab_user_id: selectedLabVendorId } })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
-        const defaultMap: Record<number, { is_open: boolean; slots: string[] }> = {};
-        for (let i = 0; i <= 6; i++) defaultMap[i] = { is_open: true, slots: defaultSlots };
+  // Real schedule straight from the Partner dashboard (lab_time_slots).
+  const isGenericService = selectedLabVendorId === "generic-service";
+  const {
+    data: labSlots,
+    isLoading: slotsQueryLoading,
+  } = useLabSlots(isGenericService ? null : selectedLabVendorId);
 
-        if (error || !data?.rows || data.rows.length === 0) {
-          console.warn("lab-slots using default slot mapping:", error);
-          setLabSlotsByDay(defaultMap);
-        } else {
-          const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> = data.rows;
-          const map: Record<number, { is_open: boolean; slots: string[] }> = {};
-          rows.forEach((r) => {
-            map[r.day_of_week] = {
-              is_open: !!r.is_open,
-              slots: Array.isArray(r.slots) && r.slots.length > 0 ? r.slots : defaultSlots,
-            };
-          });
-          setLabSlotsByDay(map);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          console.error("lab-slots invoke error:", err);
-          const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
-          const defaultMap: Record<number, { is_open: boolean; slots: string[] }> = {};
-          for (let i = 0; i <= 6; i++) defaultMap[i] = { is_open: true, slots: defaultSlots };
-          setLabSlotsByDay(defaultMap);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setSlotsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedLabVendorId]);
+  const labSlotsByDay = useMemo(() => {
+    if (isGenericService) {
+      const genericSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
+      const map: Record<number, { is_open: boolean; slots: string[] }> = {};
+      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: genericSlots };
+      return map;
+    }
+    return labSlots?.byDay ?? {};
+  }, [isGenericService, labSlots]);
+
+  const slotsLoading = !isGenericService && slotsQueryLoading;
 
   // Compute slots for the currently selected date, bucketed and gated for "today"
   const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
-  const labIsClosedOnDate = !!selectedLabVendorId && (!activeDayRow || !activeDayRow.is_open);
+  const labIsClosedOnDate =
+    !!selectedLabVendorId &&
+    !slotsLoading &&
+    (!activeDayRow || !activeDayRow.is_open || activeDayRow.slots.length === 0);
 
   const allSlotItems = useMemo<SlotItem[]>(
-    () => {
-      if (!activeDayRow) return [];
-      // Filter out slots starting at or after 8 PM (1200 minutes)
-      const filteredSlots = activeDayRow.slots.filter((s) => {
-          const m = s.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
-          if (!m) return false;
-          let h = parseInt(m[1], 10);
-          const ampm = m[3].toUpperCase();
-          if (ampm === "PM" && h !== 12) h += 12;
-          if (ampm === "AM" && h === 12) h = 0;
-          return h < 20;
-      });
-      return toSortedSlotItems(filteredSlots);
-    },
+    () => (activeDayRow?.is_open ? toSortedSlotItems(activeDayRow.slots) : []),
     [activeDayRow]
   );
 
@@ -272,27 +218,9 @@ const LabSelectionScreen = () => {
     if (items.length === 0) navigate("/cart");
   }, [items, navigate]);
 
-  // Auto switch to Tomorrow if Today has no remaining slots on mount
+  // Reset a stale slot pick whenever the date or the lab changes.
   useEffect(() => {
-    const currentHour = new Date().getHours();
-    if (currentHour >= 20 && selectedDate === 0) {
-      setSelectedDate(1);
-    }
-  }, []);
-
-  // Reset slot selection when date or lab changes if selected slot is not available
-  useEffect(() => {
-    setSelectedTime((prev) => {
-      if (prev === null) return null;
-      const now = new Date();
-      const currentHour = now.getHours();
-      const isAvailable = selectedDate !== 0 || (
-        prev.includes("Morning") ? currentHour < 12 :
-        prev.includes("Afternoon") ? currentHour < 16 :
-        currentHour < 20
-      );
-      return isAvailable ? prev : null;
-    });
+    setSelectedTime(null);
   }, [selectedDate, selectedLabVendorId]);
 
   if (items.length === 0) {
@@ -336,8 +264,6 @@ const LabSelectionScreen = () => {
     }
     return null;
   };
-
-  const visibleDates = dates.slice(dateScrollStart, dateScrollStart + 4);
 
   const handleConfirm = () => {
     if (!hasVendorLab && (!selectedLabId || !selectedLabName)) {
@@ -448,48 +374,37 @@ const LabSelectionScreen = () => {
         {/* Date Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-base font-bold text-foreground mb-3">Select Date</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setDateScrollStart(Math.max(0, dateScrollStart - 1))}
-              disabled={dateScrollStart === 0}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center disabled:opacity-30"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <div className="flex-1 flex gap-2">
-              {visibleDates.map((date, i) => {
-                const actualIndex = dateScrollStart + i;
-                return (
-                  <button
-                    key={actualIndex}
-                    onClick={() => date.available && setSelectedDate(actualIndex)}
-                    disabled={!date.available}
-                    className={`flex-1 py-3 rounded-xl text-center transition-all ${
-                      !date.available
-                        ? "bg-muted/50 text-muted-foreground opacity-60"
-                        : selectedDate === actualIndex
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card border border-border text-foreground"
-                    }`}
-                  >
-                    <p className="text-xs font-bold">{date.date} {date.month}</p>
-                    <p className="text-[10px] mt-0.5">{date.day}</p>
-                    <p className={`text-[9px] mt-0.5 ${
-                      !date.available ? "text-destructive" : selectedDate === actualIndex ? "text-primary-foreground/80" : "text-success"
-                    }`}>
-                      {date.available ? "Available" : "Closed"}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => setDateScrollStart(Math.min(dates.length - 4, dateScrollStart + 1))}
-              disabled={dateScrollStart >= dates.length - 4}
-              className="w-8 h-8 rounded-full bg-muted flex items-center justify-center disabled:opacity-30"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="flex gap-2">
+            {dates.map((date, index) => {
+              const dayRow = labSlotsByDay[date.dayOfWeek];
+              const isOpen = !selectedLabVendorId || slotsLoading
+                ? true
+                : !!dayRow?.is_open && dayRow.slots.length > 0;
+              return (
+                <button
+                  key={date.fullDate}
+                  onClick={() => isOpen && setSelectedDate(index)}
+                  disabled={!isOpen}
+                  className={`flex-1 py-3 rounded-xl text-center transition-all ${
+                    !isOpen
+                      ? "bg-muted/50 text-muted-foreground opacity-60"
+                      : selectedDate === index
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card border border-border text-foreground"
+                  }`}
+                >
+                  <p className="text-xs font-bold">{date.date} {date.month}</p>
+                  <p className="text-[10px] mt-0.5">
+                    {index === 0 ? "Today" : index === 1 ? "Tomorrow" : date.day}
+                  </p>
+                  <p className={`text-[9px] mt-0.5 ${
+                    !isOpen ? "text-destructive" : selectedDate === index ? "text-primary-foreground/80" : "text-success"
+                  }`}>
+                    {isOpen ? "Available" : "Closed"}
+                  </p>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 
@@ -510,45 +425,58 @@ const LabSelectionScreen = () => {
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
-                const now = new Date();
-                const currentHour = now.getHours();
-                const isAvailable = selectedDate !== 0 || (
-                  slot.includes("Morning") ? currentHour < 12 :
-                  slot.includes("Afternoon") ? currentHour < 16 :
-                  currentHour < 20
-                );
-                const isSelected = selectedTime === slot;
+            <div className="space-y-4">
+              {(["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
+                const bucketSlots = allSlotItems.filter((s) => s.label === bucket);
+                if (bucketSlots.length === 0) return null;
                 return (
-                  <button
-                    key={slot}
-                    onClick={() => isAvailable && setSelectedTime(slot)}
-                    disabled={!isAvailable}
-                    className={`w-full p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${
-                      !isAvailable
-                        ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                        : isSelected 
-                        ? "bg-primary/5 border-primary shadow-sm" 
-                        : "bg-card border-slate-200/80 hover:border-primary/40 shadow-xs"
-                    }`}
-                  >
-                    <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
-                      <Clock className={`w-5 h-5 ${!isAvailable ? "text-foreground/30" : isSelected ? "text-white" : "text-slate-600"}`} strokeWidth={2} />
+                  <div key={bucket}>
+                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                      {bucket}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {bucketSlots.map((slot) => {
+                        const isAvailable = getSlotAvailability(slot);
+                        const isSelected = selectedTime === slot.id;
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => isAvailable && setSelectedTime(slot.id)}
+                            disabled={!isAvailable}
+                            className={`p-3 rounded-2xl border transition-all flex items-center gap-2.5 text-left ${
+                              !isAvailable
+                                ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-primary/5 border-primary shadow-sm"
+                                : "bg-card border-slate-200/80 hover:border-primary/40"
+                            }`}
+                          >
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
+                              <Clock className="w-4 h-4" strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0">
+                              <span className={`block text-[13px] font-bold truncate ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
+                                {slot.time}
+                              </span>
+                              {!isAvailable && (
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+                                  Passed
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                    <div className="flex flex-col items-start flex-1 text-left">
-                      <span className={`text-[15px] font-bold ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
-                        {slot}
-                      </span>
-                      {!isAvailable && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
-                          Passed
-                        </span>
-                      )}
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
+
+              {allSlotItems.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No slots published by this lab for the selected date.
+                </p>
+              )}
             </div>
           )}
         </motion.div>

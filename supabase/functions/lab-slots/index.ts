@@ -55,16 +55,11 @@ Deno.serve(async (req) => {
       console.error("Partner PostgREST error:", res.status, data);
     }
 
-    const defaultSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
-    const rows = Array.isArray(data) && data.length > 0
-      ? data
-      : Array.from({ length: 7 }, (_, i) => ({
-          day_of_week: i,
-          is_open: true,
-          slots: defaultSlots,
-        }));
+    // No fabricated fallback: the customer app must show the lab's real
+    // Partner-dashboard schedule. An empty list means "no schedule published".
+    const rows = Array.isArray(data) ? data : [];
 
-    return new Response(JSON.stringify({ rows }), {
+    return new Response(JSON.stringify({ rows, source: "partner" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
