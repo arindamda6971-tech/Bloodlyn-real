@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Building2, Star, Clock, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Building2, Star, Clock, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -51,7 +51,6 @@ const LabSelectionScreen = () => {
   );
   const [selectedDate, setSelectedDate] = useState(0);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [dateScrollStart, setDateScrollStart] = useState(0);
 
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
@@ -266,8 +265,6 @@ const LabSelectionScreen = () => {
     }
     return null;
   };
-
-  const visibleDates = dates.slice(dateScrollStart, dateScrollStart + 4);
 
   const handleConfirm = () => {
     if (!hasVendorLab && (!selectedLabId || !selectedLabName)) {
