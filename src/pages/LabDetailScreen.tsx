@@ -689,7 +689,7 @@ const LabDetailScreen = () => {
         </div>
 
         <div className="px-5 mt-2 flex items-center justify-between">
-            <h2 className="text-[17px] font-black text-foreground tracking-tight">Schedules & Tests</h2>
+            <h2 className="text-[17px] font-black text-foreground tracking-tight">Tests & Packages</h2>
         </div>
 
         {/* Tab filters - Scrolls away and hides behind sticky search bar */}
