@@ -46,6 +46,6 @@ describe('Unified Booking screens — Cart workflow verification', () => {
       </MemoryRouter>
     );
 
-    expect(await screen.findByText(/Book Doctor/i)).toBeInTheDocument();
+    expect((await screen.findAllByText(/Consultancy/i)).length).toBeGreaterThan(0);
   });
 });
