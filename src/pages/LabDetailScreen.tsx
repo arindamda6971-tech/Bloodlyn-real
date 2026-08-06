@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import LabBanner from "@/components/labs/LabBanner";
@@ -874,42 +875,46 @@ const LabDetailScreen = () => {
       </AlertDialog>
 
       {/* Service Error Popup */}
-      <AnimatePresence>
-        {serviceError && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-5"
-          >
+      {createPortal(
+        <AnimatePresence>
+          {serviceError && (
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-5"
             >
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
-                  <AlertCircle className="w-8 h-8 text-destructive" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="bg-white rounded-[2rem] p-6 w-full max-w-sm shadow-2xl overflow-hidden"
+              >
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mb-4">
+                    <AlertCircle className="w-8 h-8 text-destructive" />
+                  </div>
+                  <h3 className="text-xl font-black text-foreground tracking-tight mb-2">
+                    {serviceError.title}
+                  </h3>
+                  <p className="text-sm font-medium text-muted-foreground leading-relaxed mb-6">
+                    {serviceError.message}
+                  </p>
+                  <button
+                    onClick={() => setServiceError(null)}
+                    className="w-full bg-[#0f172a] text-white font-bold py-3.5 rounded-xl active:scale-95 transition-transform"
+                  >
+                    Got it
+                  </button>
                 </div>
-                <h3 className="text-xl font-black text-foreground tracking-tight mb-2">
-                  {serviceError.title}
-                </h3>
-                <p className="text-sm font-medium text-muted-foreground leading-relaxed mb-6">
-                  {serviceError.message}
-                </p>
-                <button
-                  onClick={() => setServiceError(null)}
-                  className="w-full bg-[#0f172a] text-white font-bold py-3.5 rounded-xl active:scale-95 transition-transform"
-                >
-                  Got it
-                </button>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+
     </MobileLayout>
   );
 };
