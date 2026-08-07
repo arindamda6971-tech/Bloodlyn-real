@@ -20,6 +20,7 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -148,14 +149,12 @@ const DEFAULT_BP_LABS: BpLab[] = [
   },
 ];
 
-const isBpSlotAvailable = (slot: string, date: string): boolean => {
-  if (date !== "Today") return true;
-  const hour = new Date().getHours();
-  if (slot.includes("Morning")) return hour < 12;
-  if (slot.includes("Afternoon")) return hour < 16;
-  if (slot.includes("Evening")) return hour < 20;
-  return true;
-};
+const dayOffsetForDate = (date: string): number =>
+  date === "Tomorrow" ? 1 : date === "Today" ? 0 : 2;
+
+/** Fixed collection windows; a slot needs >1 hour before it ends. */
+const isSlotAvailable = (slot: FixedCollectionSlot, date: string): boolean =>
+  isFixedSlotBookable(slot, dayOffsetForDate(date));
 
 const BPCheckScreen = () => {
   const navigate = useNavigate();
