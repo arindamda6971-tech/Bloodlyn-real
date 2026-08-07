@@ -414,60 +414,46 @@ const LabSelectionScreen = () => {
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {(["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
-                const bucketSlots = allSlotItems.filter((s) => s.label === bucket);
-                if (bucketSlots.length === 0) return null;
+            <div className="space-y-2.5">
+              {allSlotItems.map((slot) => {
+                const isAvailable = getSlotAvailability(slot);
+                const isSelected = selectedTime === slot.id;
                 return (
-                  <div key={bucket}>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                      {bucket}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {bucketSlots.map((slot) => {
-                        const isAvailable = getSlotAvailability(slot);
-                        const isSelected = selectedTime === slot.id;
-                        return (
-                          <button
-                            key={slot.id}
-                            onClick={() => isAvailable && setSelectedTime(slot.id)}
-                            disabled={!isAvailable}
-                            className={`p-3 rounded-2xl border transition-all flex items-center gap-2.5 text-left ${
-                              !isAvailable
-                                ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                                : isSelected
-                                ? "bg-primary/5 border-primary shadow-sm"
-                                : "bg-card border-slate-200/80 hover:border-primary/40"
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
-                              <Clock className="w-4 h-4" strokeWidth={2} />
-                            </div>
-                            <div className="min-w-0">
-                              <span className={`block text-[13px] font-bold truncate ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
-                                {slot.time}
-                              </span>
-                              {!isAvailable && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                                  Passed
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
+                  <button
+                    key={slot.id}
+                    onClick={() => isAvailable && setSelectedTime(slot.id)}
+                    disabled={!isAvailable}
+                    className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
+                      !isAvailable
+                        ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
+                        : isSelected
+                        ? "bg-primary/5 border-primary shadow-sm"
+                        : "bg-card border-slate-200/80 hover:border-primary/40"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-primary-foreground" : "bg-slate-100/90 text-slate-600"}`}>
+                      <Clock className="w-4 h-4" strokeWidth={2} />
                     </div>
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <span className={`block text-[14px] font-bold ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
+                        {slot.label} · {slot.time}
+                      </span>
+                      <span className="block text-[10px] font-medium text-muted-foreground truncate">
+                        {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
+                      </span>
+                    </div>
+                  </button>
                 );
               })}
 
-              {allSlotItems.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No slots published by this lab for the selected date.
+              {allSlotItems.every((slot) => !getSlotAvailability(slot)) && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  All of today's slots have passed. Please book for tomorrow.
                 </p>
               )}
             </div>
           )}
+
         </motion.div>
       </div>
 
