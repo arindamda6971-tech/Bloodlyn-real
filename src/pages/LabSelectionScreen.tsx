@@ -10,7 +10,12 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
-import { getLabSlotDates, isSameDaySlotBookable, type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
+import {
+  getLabSlotDates,
+  FIXED_COLLECTION_SLOTS,
+  isFixedSlotBookable,
+  type FixedCollectionSlot,
+} from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
 
 interface PatientState {
