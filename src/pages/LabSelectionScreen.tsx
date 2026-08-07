@@ -368,7 +368,7 @@ const LabSelectionScreen = () => {
               const dayRow = labSlotsByDay[date.dayOfWeek];
               const isOpen = !selectedLabVendorId || slotsLoading
                 ? true
-                : !!dayRow?.is_open && dayRow.slots.length > 0;
+                : !!dayRow?.is_open;
               return (
                 <button
                   key={date.fullDate}
