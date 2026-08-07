@@ -227,11 +227,7 @@ const ECGTestScreen = () => {
     ];
   }, []);
 
-  const timeSlots = [
-    "Morning (8 AM - 11 AM)",
-    "Afternoon (12 PM - 3 PM)",
-    "Evening (4 PM - 7 PM)",
-  ];
+  const timeSlots = FIXED_COLLECTION_SLOTS;
 
   const { members: familyMembers = [] } = useFamilyMembers();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("self");
