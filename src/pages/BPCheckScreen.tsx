@@ -173,6 +173,34 @@ const BPCheckScreen = () => {
   const [labsLoading, setLabsLoading] = useState(false);
   const [selectedLab, setSelectedLab] = useState<BpLab | null>(null);
   const [appointment, setAppointment] = useState<AppointmentDetails>({ date: "Today", timeSlot: "" });
+
+  const dateOptions = useMemo(() => {
+    const today = new Date();
+    const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+    const dayAfter = new Date(today); dayAfter.setDate(today.getDate() + 2);
+    const fmtDisplay = (d: Date) => d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", weekday: "short" });
+    return [
+      { id: "Today", label: "Today", sub: fmtDisplay(today) },
+      { id: "Tomorrow", label: "Tomorrow", sub: fmtDisplay(tomorrow) },
+      { id: "DayAfter", label: fmtDisplay(dayAfter), sub: "Scheduled" },
+    ];
+  }, []);
+
+  const getIsoDate = (dateStr: string) => {
+    const today = new Date();
+    if (dateStr === "Today") return today.toISOString().split("T")[0];
+    if (dateStr === "Tomorrow") {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return tomorrow.toISOString().split("T")[0];
+    }
+    if (dateStr === "DayAfter") {
+      const dayAfter = new Date(today);
+      dayAfter.setDate(today.getDate() + 2);
+      return dayAfter.toISOString().split("T")[0];
+    }
+    return dateStr || today.toISOString().split("T")[0];
+  };
   const [patient, setPatient] = useState<PatientDetails>({ name: "", age: "", gender: "", mobile: "", notes: "" });
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -482,7 +510,7 @@ const BPCheckScreen = () => {
         body: {
           cartItems,
           addressId: validAddressId,
-          scheduledDate: appointment.date || new Date().toISOString().split("T")[0],
+          scheduledDate: getIsoDate(appointment.date),
           scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
           subtotal: rawPrice,
           discount,
@@ -772,18 +800,19 @@ const BPCheckScreen = () => {
             <motion.div key="appointment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-6">When should we visit?</h2>
               <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3 px-1">Select Date</p>
-              <div className="flex gap-3 mb-8">
-                {["Today", "Tomorrow"].map((date) => (
+              <div className="grid grid-cols-3 gap-2.5 mb-8">
+                {dateOptions.map((opt) => (
                   <button
-                    key={date}
-                    onClick={() => setAppointment({ ...appointment, date })}
-                    className={`flex-1 py-4 rounded-2xl font-bold text-sm transition-all border ${
-                      appointment.date === date
+                    key={opt.id}
+                    onClick={() => setAppointment({ ...appointment, date: opt.id })}
+                    className={`p-3.5 rounded-2xl border text-center transition-all ${
+                      appointment.date === opt.id
                         ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20"
                         : "bg-card border-border/50 text-foreground"
                     }`}
                   >
-                    {date}
+                    <span className="block text-xs font-black">{opt.label}</span>
+                    <span className={`block text-[10px] mt-0.5 font-medium ${appointment.date === opt.id ? "text-blue-100" : "text-muted-foreground"}`}>{opt.sub}</span>
                   </button>
                 ))}
               </div>
@@ -984,7 +1013,7 @@ const BPCheckScreen = () => {
                     </div>
                     <div className="flex items-center gap-2 text-foreground">
                       <Clock className="w-3.5 h-3.5 text-blue-600" />
-                      <span>{appointment.date} • {appointment.timeSlot}</span>
+                      <span>{(dateOptions.find(o => o.id === appointment.date)?.label || appointment.date)} • {appointment.timeSlot}</span>
                     </div>
                     {selectedAddress && (
                       <div className="flex items-start gap-2 text-muted-foreground">
