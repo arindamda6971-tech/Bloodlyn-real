@@ -10,7 +10,12 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
-import { getLabSlotDates, isSameDaySlotBookable, type SlotItem, toSortedSlotItems } from "@/lib/lab-slots";
+import {
+  getLabSlotDates,
+  FIXED_COLLECTION_SLOTS,
+  isFixedSlotBookable,
+  type FixedCollectionSlot,
+} from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
 
 interface PatientState {
@@ -101,9 +106,8 @@ const LabSelectionScreen = () => {
 
   const labSlotsByDay = useMemo(() => {
     if (isGenericService) {
-      const genericSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
       const map: Record<number, { is_open: boolean; slots: string[] }> = {};
-      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: genericSlots };
+      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: [] };
       return map;
     }
     return labSlots?.byDay ?? {};
@@ -111,36 +115,21 @@ const LabSelectionScreen = () => {
 
   const slotsLoading = !isGenericService && slotsQueryLoading;
 
-  // Compute slots for the currently selected date, bucketed and gated for "today"
+  // The Partner dashboard only decides whether the lab is OPEN on a given day.
+  // The collection windows themselves are fixed across the whole app.
   const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
   const labIsClosedOnDate =
-    !!selectedLabVendorId &&
-    !slotsLoading &&
-    (!activeDayRow || !activeDayRow.is_open || activeDayRow.slots.length === 0);
+    !!selectedLabVendorId && !slotsLoading && (!activeDayRow || !activeDayRow.is_open);
 
-  const allSlotItems = useMemo<SlotItem[]>(
-    () => (activeDayRow?.is_open ? toSortedSlotItems(activeDayRow.slots) : []),
-    [activeDayRow]
+  const allSlotItems = useMemo(
+    () => (labIsClosedOnDate ? [] : FIXED_COLLECTION_SLOTS),
+    [labIsClosedOnDate]
   );
 
-  const getSlotAvailability = (slot: SlotItem) => {
-    if (selectedDate !== 0) return true;
-    return isSameDaySlotBookable(slot.startMinutes);
-  };
+  const getSlotAvailability = (slot: FixedCollectionSlot) =>
+    isFixedSlotBookable(slot, selectedDate);
 
-  const groupedSlots = useMemo(() => {
-    const groups: Record<string, SlotItem[]> = {
-      Morning: [],
-      Afternoon: [],
-      Evening: [],
-    };
-    allSlotItems.forEach((s) => {
-        if (s.label !== "Overnight") {
-            groups[s.label].push(s);
-        }
-    });
-    return groups;
-  }, [allSlotItems]);
+
 
 
   const { pincode: userPincode } = useUserPincode();
@@ -284,7 +273,7 @@ const LabSelectionScreen = () => {
       state: {
         cartItems: items.map(item => ({ ...item, labId, labName })),
         scheduledDate: dates[selectedDate].fullDate,
-        scheduledTimeSlot: selectedSlot?.time || selectedTime || "",
+        scheduledTimeSlot: selectedSlot?.display || selectedTime || "",
         subtotal,
         selectedLabName: labName,
         selectedLabId: labId,
@@ -379,7 +368,7 @@ const LabSelectionScreen = () => {
               const dayRow = labSlotsByDay[date.dayOfWeek];
               const isOpen = !selectedLabVendorId || slotsLoading
                 ? true
-                : !!dayRow?.is_open && dayRow.slots.length > 0;
+                : !!dayRow?.is_open;
               return (
                 <button
                   key={date.fullDate}
@@ -425,60 +414,46 @@ const LabSelectionScreen = () => {
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {(["Morning", "Afternoon", "Evening", "Overnight"] as const).map((bucket) => {
-                const bucketSlots = allSlotItems.filter((s) => s.label === bucket);
-                if (bucketSlots.length === 0) return null;
+            <div className="space-y-2.5">
+              {allSlotItems.map((slot) => {
+                const isAvailable = getSlotAvailability(slot);
+                const isSelected = selectedTime === slot.id;
                 return (
-                  <div key={bucket}>
-                    <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
-                      {bucket}
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {bucketSlots.map((slot) => {
-                        const isAvailable = getSlotAvailability(slot);
-                        const isSelected = selectedTime === slot.id;
-                        return (
-                          <button
-                            key={slot.id}
-                            onClick={() => isAvailable && setSelectedTime(slot.id)}
-                            disabled={!isAvailable}
-                            className={`p-3 rounded-2xl border transition-all flex items-center gap-2.5 text-left ${
-                              !isAvailable
-                                ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                                : isSelected
-                                ? "bg-primary/5 border-primary shadow-sm"
-                                : "bg-card border-slate-200/80 hover:border-primary/40"
-                            }`}
-                          >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-white" : "bg-slate-100/90 text-slate-600"}`}>
-                              <Clock className="w-4 h-4" strokeWidth={2} />
-                            </div>
-                            <div className="min-w-0">
-                              <span className={`block text-[13px] font-bold truncate ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
-                                {slot.time}
-                              </span>
-                              {!isAvailable && (
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
-                                  Passed
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        );
-                      })}
+                  <button
+                    key={slot.id}
+                    onClick={() => isAvailable && setSelectedTime(slot.id)}
+                    disabled={!isAvailable}
+                    className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
+                      !isAvailable
+                        ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
+                        : isSelected
+                        ? "bg-primary/5 border-primary shadow-sm"
+                        : "bg-card border-slate-200/80 hover:border-primary/40"
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-primary-foreground" : "bg-slate-100/90 text-slate-600"}`}>
+                      <Clock className="w-4 h-4" strokeWidth={2} />
                     </div>
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <span className={`block text-[14px] font-bold ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
+                        {slot.label} · {slot.time}
+                      </span>
+                      <span className="block text-[10px] font-medium text-muted-foreground truncate">
+                        {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
+                      </span>
+                    </div>
+                  </button>
                 );
               })}
 
-              {allSlotItems.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No slots published by this lab for the selected date.
+              {allSlotItems.every((slot) => !getSlotAvailability(slot)) && (
+                <p className="text-xs text-muted-foreground pt-1">
+                  All of today's slots have passed. Please book for tomorrow.
                 </p>
               )}
             </div>
           )}
+
         </motion.div>
       </div>
 

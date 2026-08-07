@@ -20,6 +20,7 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -160,14 +161,12 @@ const DEFAULT_ECG_LABS: EcgLab[] = [
   },
 ];
 
-const isEcgSlotAvailable = (slot: string, date: string): boolean => {
-  if (date !== "Today") return true;
-  const hour = new Date().getHours();
-  if (slot.includes("Morning")) return hour < 12;
-  if (slot.includes("Afternoon")) return hour < 16;
-  if (slot.includes("Evening")) return hour < 20;
-  return true;
-};
+const dayOffsetForDate = (date: string): number =>
+  date === "Tomorrow" ? 1 : date === "Today" ? 0 : 2;
+
+/** Fixed collection windows; a slot needs >1 hour before it ends. */
+const isSlotAvailable = (slot: FixedCollectionSlot, date: string): boolean =>
+  isFixedSlotBookable(slot, dayOffsetForDate(date));
 
 const ECGTestScreen = () => {
   const navigate = useNavigate();
@@ -228,11 +227,7 @@ const ECGTestScreen = () => {
     ];
   }, []);
 
-  const timeSlots = [
-    "Morning (8 AM - 11 AM)",
-    "Afternoon (12 PM - 3 PM)",
-    "Evening (4 PM - 7 PM)",
-  ];
+  const timeSlots = FIXED_COLLECTION_SLOTS;
 
   const { members: familyMembers = [] } = useFamilyMembers();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("self");
@@ -513,7 +508,7 @@ const ECGTestScreen = () => {
           cartItems,
           addressId: validAddressId || null,
           scheduledDate: getIsoDate(appointment.date),
-          scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
+          scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
           discount,
           total: price,
@@ -805,25 +800,31 @@ const ECGTestScreen = () => {
                   <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Time Slot</span>
                   <div className="space-y-2.5">
                     {timeSlots.map((slot) => {
-                      const avail = isEcgSlotAvailable(slot, appointment.date);
+                      const avail = isSlotAvailable(slot, appointment.date);
+                      const isSelected = appointment.timeSlot === slot.display;
                       return (
                         <button
-                          key={slot}
+                          key={slot.id}
                           disabled={!avail}
-                          onClick={() => setAppointment((a) => ({ ...a, timeSlot: slot }))}
+                          onClick={() => setAppointment((a) => ({ ...a, timeSlot: slot.display }))}
                           className={`w-full p-4 rounded-2xl border flex items-center justify-between text-left transition-all ${
                             !avail
                               ? "opacity-40 bg-muted/20 border-border cursor-not-allowed"
-                              : appointment.timeSlot === slot
+                              : isSelected
                               ? "bg-rose-50 dark:bg-rose-950/30 border-rose-500 text-rose-700 dark:text-rose-300 font-bold"
                               : "bg-card border-border/60 hover:border-rose-500/40 text-foreground"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 text-rose-500 shrink-0" />
-                            <span className="text-xs font-bold">{slot}</span>
+                            <div className="min-w-0">
+                              <span className="block text-xs font-bold">{slot.label} ({slot.time})</span>
+                              <span className="block text-[10px] font-medium text-muted-foreground">
+                                {avail ? slot.note : "Too late — needs 1 hour lead time"}
+                              </span>
+                            </div>
                           </div>
-                          {appointment.timeSlot === slot && <CheckCircle className="w-4 h-4 text-rose-600" />}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-rose-600" />}
                         </button>
                       );
                     })}

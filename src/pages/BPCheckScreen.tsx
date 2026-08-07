@@ -20,6 +20,7 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -148,14 +149,12 @@ const DEFAULT_BP_LABS: BpLab[] = [
   },
 ];
 
-const isBpSlotAvailable = (slot: string, date: string): boolean => {
-  if (date !== "Today") return true;
-  const hour = new Date().getHours();
-  if (slot.includes("Morning")) return hour < 12;
-  if (slot.includes("Afternoon")) return hour < 16;
-  if (slot.includes("Evening")) return hour < 20;
-  return true;
-};
+const dayOffsetForDate = (date: string): number =>
+  date === "Tomorrow" ? 1 : date === "Today" ? 0 : 2;
+
+/** Fixed collection windows; a slot needs >1 hour before it ends. */
+const isSlotAvailable = (slot: FixedCollectionSlot, date: string): boolean =>
+  isFixedSlotBookable(slot, dayOffsetForDate(date));
 
 const BPCheckScreen = () => {
   const navigate = useNavigate();
@@ -511,7 +510,7 @@ const BPCheckScreen = () => {
           cartItems,
           addressId: validAddressId,
           scheduledDate: getIsoDate(appointment.date),
-          scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
+          scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
           discount,
           total: price,
@@ -819,13 +818,13 @@ const BPCheckScreen = () => {
 
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Select Time Slot</p>
               <div className="space-y-3">
-                {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
-                  const isAvailable = isBpSlotAvailable(slot, appointment.date);
-                  const isSelected = appointment.timeSlot === slot && isAvailable;
+                {FIXED_COLLECTION_SLOTS.map((slot) => {
+                  const isAvailable = isSlotAvailable(slot, appointment.date);
+                  const isSelected = appointment.timeSlot === slot.display && isAvailable;
                   return (
                     <button
-                      key={slot}
-                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot })}
+                      key={slot.id}
+                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot.display })}
                       disabled={!isAvailable}
                       className={`w-full p-4 rounded-2xl border transition-all flex items-center gap-4 text-left ${
                         !isAvailable
@@ -852,13 +851,11 @@ const BPCheckScreen = () => {
                             !isAvailable ? "text-foreground/50 line-through" : isSelected ? "text-primary" : "text-slate-800"
                           }`}
                         >
-                          {slot}
+                          {slot.label} ({slot.time})
                         </span>
-                        {!isAvailable && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
-                            Passed
-                          </span>
-                        )}
+                        <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
+                          {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
+                        </span>
                       </div>
                     </button>
                   );
@@ -868,7 +865,7 @@ const BPCheckScreen = () => {
               <div className="mt-10">
                 <button
                   onClick={() => setStep("DETAILS")}
-                  disabled={!appointment.timeSlot || !isBpSlotAvailable(appointment.timeSlot, appointment.date)}
+                  disabled={!appointment.timeSlot}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
                   Continue to Patient Details

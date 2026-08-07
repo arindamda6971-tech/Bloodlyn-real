@@ -124,3 +124,72 @@ export function toSortedSlotItems(raw: string[] | null | undefined): SlotItem[] 
     .filter((slot): slot is SlotItem => slot !== null)
     .sort((a, b) => a.startMinutes - b.startMinutes || a.time.localeCompare(b.time));
 }
+/* ------------------------------------------------------------------
+ * Fixed collection slots (blood test, ECG, BP — one shared system)
+ * ------------------------------------------------------------------ */
+
+export interface FixedCollectionSlot {
+  id: string;
+  label: Exclude<SlotBucket, "Overnight">;
+  /** Human readable range, e.g. "6 AM - 10 AM" */
+  time: string;
+  /** Short note shown under the slot name */
+  note: string;
+  startMinutes: number;
+  endMinutes: number;
+  /** Value persisted on the order, e.g. "Morning (6 AM - 10 AM)" */
+  display: string;
+}
+
+export const FIXED_COLLECTION_SLOTS: FixedCollectionSlot[] = [
+  {
+    id: "morning",
+    label: "Morning",
+    time: "6 AM - 10 AM",
+    note: "Fast service",
+    startMinutes: 6 * 60,
+    endMinutes: 10 * 60,
+    display: "Morning (6 AM - 10 AM)",
+  },
+  {
+    id: "afternoon",
+    label: "Afternoon",
+    time: "10 AM - 2 PM",
+    note: "Might be heavy traffic on the road",
+    startMinutes: 10 * 60,
+    endMinutes: 14 * 60,
+    display: "Afternoon (10 AM - 2 PM)",
+  },
+  {
+    id: "evening",
+    label: "Evening",
+    time: "2 PM - 6 PM",
+    note: "It's a little slow",
+    startMinutes: 14 * 60,
+    endMinutes: 18 * 60,
+    display: "Evening (2 PM - 6 PM)",
+  },
+];
+
+/** Collection partner needs at least this much lead time before a slot ends. */
+export const SLOT_MIN_LEAD_MINUTES = 60;
+
+/**
+ * A slot is bookable only if it ends more than 1 hour from now.
+ * Future days (offset > 0) are always bookable.
+ */
+export function isFixedSlotBookable(
+  slot: Pick<FixedCollectionSlot, "endMinutes">,
+  dayOffset: number,
+  now: Date = new Date()
+): boolean {
+  if (dayOffset > 0) return true;
+  return slot.endMinutes - getCurrentLabSlotMinutes(now) > SLOT_MIN_LEAD_MINUTES;
+}
+
+/** Resolve a stored slot string back to a fixed slot (label match). */
+export function findFixedSlot(value: string | null | undefined): FixedCollectionSlot | undefined {
+  if (!value) return undefined;
+  const v = value.toLowerCase();
+  return FIXED_COLLECTION_SLOTS.find((s) => v.includes(s.label.toLowerCase()) || s.id === v);
+}
