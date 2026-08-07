@@ -510,7 +510,7 @@ const BPCheckScreen = () => {
           cartItems,
           addressId: validAddressId,
           scheduledDate: getIsoDate(appointment.date),
-          scheduledTimeSlot: appointment.timeSlot || "Morning (8 AM - 11 AM)",
+          scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
           discount,
           total: price,
