@@ -101,9 +101,8 @@ const LabSelectionScreen = () => {
 
   const labSlotsByDay = useMemo(() => {
     if (isGenericService) {
-      const genericSlots = ["9:00 AM", "11:00 AM", "1:00 PM", "3:00 PM", "5:00 PM", "7:00 PM"];
       const map: Record<number, { is_open: boolean; slots: string[] }> = {};
-      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: genericSlots };
+      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: [] };
       return map;
     }
     return labSlots?.byDay ?? {};
@@ -111,36 +110,21 @@ const LabSelectionScreen = () => {
 
   const slotsLoading = !isGenericService && slotsQueryLoading;
 
-  // Compute slots for the currently selected date, bucketed and gated for "today"
+  // The Partner dashboard only decides whether the lab is OPEN on a given day.
+  // The collection windows themselves are fixed across the whole app.
   const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
   const labIsClosedOnDate =
-    !!selectedLabVendorId &&
-    !slotsLoading &&
-    (!activeDayRow || !activeDayRow.is_open || activeDayRow.slots.length === 0);
+    !!selectedLabVendorId && !slotsLoading && (!activeDayRow || !activeDayRow.is_open);
 
-  const allSlotItems = useMemo<SlotItem[]>(
-    () => (activeDayRow?.is_open ? toSortedSlotItems(activeDayRow.slots) : []),
-    [activeDayRow]
+  const allSlotItems = useMemo(
+    () => (labIsClosedOnDate ? [] : FIXED_COLLECTION_SLOTS),
+    [labIsClosedOnDate]
   );
 
-  const getSlotAvailability = (slot: SlotItem) => {
-    if (selectedDate !== 0) return true;
-    return isSameDaySlotBookable(slot.startMinutes);
-  };
+  const getSlotAvailability = (slot: FixedCollectionSlot) =>
+    isFixedSlotBookable(slot, selectedDate);
 
-  const groupedSlots = useMemo(() => {
-    const groups: Record<string, SlotItem[]> = {
-      Morning: [],
-      Afternoon: [],
-      Evening: [],
-    };
-    allSlotItems.forEach((s) => {
-        if (s.label !== "Overnight") {
-            groups[s.label].push(s);
-        }
-    });
-    return groups;
-  }, [allSlotItems]);
+
 
 
   const { pincode: userPincode } = useUserPincode();
