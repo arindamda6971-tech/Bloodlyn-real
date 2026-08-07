@@ -800,25 +800,31 @@ const ECGTestScreen = () => {
                   <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Time Slot</span>
                   <div className="space-y-2.5">
                     {timeSlots.map((slot) => {
-                      const avail = isEcgSlotAvailable(slot, appointment.date);
+                      const avail = isSlotAvailable(slot, appointment.date);
+                      const isSelected = appointment.timeSlot === slot.display;
                       return (
                         <button
-                          key={slot}
+                          key={slot.id}
                           disabled={!avail}
-                          onClick={() => setAppointment((a) => ({ ...a, timeSlot: slot }))}
+                          onClick={() => setAppointment((a) => ({ ...a, timeSlot: slot.display }))}
                           className={`w-full p-4 rounded-2xl border flex items-center justify-between text-left transition-all ${
                             !avail
                               ? "opacity-40 bg-muted/20 border-border cursor-not-allowed"
-                              : appointment.timeSlot === slot
+                              : isSelected
                               ? "bg-rose-50 dark:bg-rose-950/30 border-rose-500 text-rose-700 dark:text-rose-300 font-bold"
                               : "bg-card border-border/60 hover:border-rose-500/40 text-foreground"
                           }`}
                         >
                           <div className="flex items-center gap-3">
                             <Clock className="w-4 h-4 text-rose-500 shrink-0" />
-                            <span className="text-xs font-bold">{slot}</span>
+                            <div className="min-w-0">
+                              <span className="block text-xs font-bold">{slot.label} ({slot.time})</span>
+                              <span className="block text-[10px] font-medium text-muted-foreground">
+                                {avail ? slot.note : "Too late — needs 1 hour lead time"}
+                              </span>
+                            </div>
                           </div>
-                          {appointment.timeSlot === slot && <CheckCircle className="w-4 h-4 text-rose-600" />}
+                          {isSelected && <CheckCircle className="w-4 h-4 text-rose-600" />}
                         </button>
                       );
                     })}
