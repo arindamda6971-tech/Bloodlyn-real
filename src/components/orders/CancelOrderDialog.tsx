@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { FIXED_COLLECTION_SLOTS } from "@/lib/lab-slots";
 import { format, addDays } from "date-fns";
 
 type Reason = "preparation" | "reschedule" | "not_now";
@@ -24,11 +25,7 @@ interface CancelOrderDialogProps {
   onSuccess: (mode: "rescheduled" | "cancelled") => void;
 }
 
-const DEFAULT_SLOTS = [
-  "Morning (8 AM - 12 PM)",
-  "Afternoon (12 PM - 4 PM)",
-  "Evening (4 PM - 8 PM)"
-];
+const DEFAULT_SLOTS = FIXED_COLLECTION_SLOTS.map((s) => s.display);
 
 const REASONS: { key: Reason; title: string; subtitle: string; icon: any; tone: string }[] = [
   {
