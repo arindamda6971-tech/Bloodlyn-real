@@ -818,13 +818,13 @@ const BPCheckScreen = () => {
 
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Select Time Slot</p>
               <div className="space-y-3">
-                {["Morning (8 AM - 12 PM)", "Afternoon (12 PM - 4 PM)", "Evening (4 PM - 8 PM)"].map((slot) => {
-                  const isAvailable = isBpSlotAvailable(slot, appointment.date);
-                  const isSelected = appointment.timeSlot === slot && isAvailable;
+                {FIXED_COLLECTION_SLOTS.map((slot) => {
+                  const isAvailable = isSlotAvailable(slot, appointment.date);
+                  const isSelected = appointment.timeSlot === slot.display && isAvailable;
                   return (
                     <button
-                      key={slot}
-                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot })}
+                      key={slot.id}
+                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot.display })}
                       disabled={!isAvailable}
                       className={`w-full p-4 rounded-2xl border transition-all flex items-center gap-4 text-left ${
                         !isAvailable
@@ -851,13 +851,11 @@ const BPCheckScreen = () => {
                             !isAvailable ? "text-foreground/50 line-through" : isSelected ? "text-primary" : "text-slate-800"
                           }`}
                         >
-                          {slot}
+                          {slot.label} ({slot.time})
                         </span>
-                        {!isAvailable && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
-                            Passed
-                          </span>
-                        )}
+                        <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
+                          {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
+                        </span>
                       </div>
                     </button>
                   );
@@ -867,7 +865,7 @@ const BPCheckScreen = () => {
               <div className="mt-10">
                 <button
                   onClick={() => setStep("DETAILS")}
-                  disabled={!appointment.timeSlot || !isBpSlotAvailable(appointment.timeSlot, appointment.date)}
+                  disabled={!appointment.timeSlot}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
                   Continue to Patient Details
