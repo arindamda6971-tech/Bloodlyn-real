@@ -287,162 +287,133 @@ const CartScreen = () => {
   const validationBorder = (isValid: boolean) =>
     showValidation && !isValid ? "ring-2 ring-destructive border-destructive" : "";
 
+  const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
+  const hasService = items.some(
+    (item) =>
+      item.id.startsWith("doc-") ||
+      item.id.startsWith("physio-") ||
+      item.id.startsWith("ecg-") ||
+      item.name.includes(" with ")
+  );
+  const activeMemberName =
+    selectedMemberId === "self"
+      ? "You"
+      : familyMembers.find((m) => m.id === selectedMemberId)?.fullName || "Member";
+  const initials = (name: string) =>
+    name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "U";
+
   return (
     <MobileLayout>
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-64">
-        {(() => {
-          const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
-          const hasService = items.some((item) => item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("ecg-") || item.name.includes(" with "));
-          const itemLabel = hasService ? (totalQty === 1 ? "Service" : "Services") : (totalQty === 1 ? "Test" : "Tests");
-          return (
-            <div className="flex items-center justify-between mt-2 mb-3">
-              <h2 className="text-base font-extrabold text-foreground tracking-tight">
-                {totalQty} {itemLabel} Selected
-              </h2>
-              <span className="text-xs font-bold text-muted-foreground">
-                Subtotal: <span className="text-primary font-black">₹{subtotal}</span>
-              </span>
+      <div className="px-4 pb-64 space-y-3.5">
+        {/* Collection point */}
+        {currentLabName && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3"
+          >
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <MapPin className="w-5 h-5 text-primary" />
             </div>
-          );
-        })()}
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Collection Point</p>
+              <h3 className="text-sm font-extrabold text-foreground truncate">{currentLabName}</h3>
+            </div>
+            <Badge variant="softSuccess" className="text-[10px] font-bold px-2.5 py-0.5 shrink-0">
+              Open
+            </Badge>
+          </motion.div>
+        )}
 
-        {/* Cart items */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-          {items.map((item, index) => {
-            let doctorName = "";
-            let serviceTitle = item.name;
-            if (item.name.includes(" with Dr. ")) {
-              const parts = item.name.split(" with Dr. ");
-              serviceTitle = parts[0].trim();
-              doctorName = "Dr. " + parts[1].trim();
-            } else if (item.name.includes(" with ")) {
-              const parts = item.name.split(" with ");
-              serviceTitle = parts[0].trim();
-              doctorName = parts[1].trim();
-            }
-
-            return (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.04 }}
-                className="bg-card rounded-2xl border border-border/60 overflow-hidden shadow-2xs hover:shadow-xs transition-all"
-              >
-                {doctorName ? (
-                  <>
-                    {/* Upper Tile for Doctor Name */}
-                    <div className="bg-primary/5 px-4 py-2 border-b border-border/40 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">👨‍⚕️</span>
-                        <span className="text-xs font-bold text-primary tracking-tight">
-                          {doctorName}
-                        </span>
-                      </div>
-                      <Badge variant="soft" className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5">
-                        Assigned Specialist
-                      </Badge>
-                    </div>
-
-                    {/* Lower Section for Service / Physio Booking */}
-                    <div className="p-4 flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
-                        {item.price > 0 && (
-                          <p className="text-xs font-black text-primary mt-1">₹{item.price}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="w-8.5 h-8.5 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
-                        title="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-4 flex items-center justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
-                      {item.price > 0 && (
-                        <p className="text-xs font-black text-primary mt-1">₹{item.price}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="w-8.5 h-8.5 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
-                      title="Remove item"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        <button
-          onClick={() => navigate("/categories")}
-          className="w-full mt-3 py-3 rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 text-primary text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all"
+        {/* Booking for — member selector + patient details */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-card rounded-2xl border border-border/70 shadow-sm p-4"
         >
-          <Plus className="w-4 h-4" />
-          {items.some((item) => item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("ecg-") || item.name.includes(" with "))
-            ? "Add More Services or Tests"
-            : "Add More Tests or Health Checks"}
-        </button>
-
-        {/* Patient Details Section - Clean without card tile background */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h3 className="font-extrabold text-foreground text-sm tracking-tight">Patient Details</h3>
-              <p className="text-[11px] font-semibold text-muted-foreground">Select or enter details for sample report</p>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Booking For</p>
+              <h3 className="text-sm font-extrabold text-foreground">Select family member</h3>
+              <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                Choose a family member to add tests for them.
+              </p>
             </div>
-            <button
-              onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })}
-              className="flex items-center gap-1 text-xs font-extrabold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/15 active:scale-95 transition-all"
-            >
-              <UserPlus className="w-3.5 h-3.5" /> Add Member
-            </button>
           </div>
 
-          {/* Quick Patient Selector Chips */}
-          <div className="mb-4 pt-1">
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setSelectedMemberId("self")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
-                  selectedMemberId === "self"
-                    ? "bg-primary text-white border-primary shadow-xs"
-                    : "bg-muted/60 hover:bg-muted text-foreground border-border/60"
-                }`}
-              >
-                Self
-              </button>
-              {familyMembers.map((m) => (
+          {/* Member chips */}
+          <div className="mt-3.5 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setSelectedMemberId("self")}
+              className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
+                selectedMemberId === "self"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border/70 bg-muted/40 hover:border-primary/40"
+              }`}
+            >
+              <span className="w-8 h-8 rounded-full bg-primary/15 text-primary text-[11px] font-black flex items-center justify-center">
+                <User className="w-4 h-4" />
+              </span>
+              <span className="text-left">
+                <span className="block text-xs font-extrabold text-foreground leading-tight">You</span>
+                <span className="block text-[10px] font-semibold text-muted-foreground leading-tight">Self</span>
+              </span>
+              {selectedMemberId === "self" && <Check className="w-4 h-4 text-primary" />}
+            </button>
+
+            {familyMembers.map((m) => {
+              const active = selectedMemberId === m.id;
+              return (
                 <button
                   key={m.id}
                   type="button"
                   onClick={() => setSelectedMemberId(m.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold border transition-all active:scale-95 ${
-                    selectedMemberId === m.id
-                      ? "bg-primary text-white border-primary shadow-xs"
-                      : "bg-muted/60 hover:bg-muted text-foreground border-border/60"
+                  className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
+                    active
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "border-border/70 bg-muted/40 hover:border-primary/40"
                   }`}
                 >
-                  {m.fullName} ({m.relationship === "Other" ? m.customRelationship : m.relationship})
+                  <span className="w-8 h-8 rounded-full bg-primary/15 text-primary text-[11px] font-black flex items-center justify-center">
+                    {initials(m.fullName)}
+                  </span>
+                  <span className="text-left max-w-[104px]">
+                    <span className="block text-xs font-extrabold text-foreground leading-tight truncate">{m.fullName}</span>
+                    <span className="block text-[10px] font-semibold text-muted-foreground leading-tight truncate">
+                      {m.relationship === "Other" ? m.customRelationship : m.relationship}
+                    </span>
+                  </span>
+                  {active && <Check className="w-4 h-4 text-primary" />}
                 </button>
-              ))}
-            </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })}
+              className="shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-2.5 text-primary active:scale-95 transition-all"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span className="text-[10px] font-extrabold">Add new</span>
+            </button>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="mt-3 flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2.5">
+            <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+              <Info className="w-3 h-3" />
+            </div>
+            <p className="text-[11px] font-semibold text-muted-foreground">
+              Tests will be added for <span className="text-foreground font-extrabold">{activeMemberName}</span>
+            </p>
+          </div>
+
+          {/* Patient details */}
+          <div className="mt-4 pt-4 border-t border-dashed border-border space-y-3.5">
             <div className="space-y-1">
               <Label htmlFor="patient_name" className="text-xs font-bold text-foreground">Full Name *</Label>
               <Input
@@ -502,23 +473,107 @@ const CartScreen = () => {
           </div>
         </motion.div>
 
+        {/* Selected tests */}
+        <div className="pt-1">
+          <div className="flex items-end justify-between mb-2.5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {hasService ? "Services" : "Test Packages"}
+              </p>
+              <h2 className="text-base font-extrabold text-foreground tracking-tight">{totalQty} selected</h2>
+            </div>
+            <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-extrabold text-primary">
+              Subtotal
+              <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 tabular-nums">₹{subtotal}</span>
+            </span>
+          </div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            {items.map((item, index) => {
+              let doctorName = "";
+              let serviceTitle = item.name;
+              if (item.name.includes(" with Dr. ")) {
+                const parts = item.name.split(" with Dr. ");
+                serviceTitle = parts[0].trim();
+                doctorName = "Dr. " + parts[1].trim();
+              } else if (item.name.includes(" with ")) {
+                const parts = item.name.split(" with ");
+                serviceTitle = parts[0].trim();
+                doctorName = parts[1].trim();
+              }
+
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                  className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
+                >
+                  {doctorName && (
+                    <div className="bg-primary/5 px-4 py-2 border-b border-border/40 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">👨‍⚕️</span>
+                        <span className="text-xs font-bold text-primary tracking-tight">{doctorName}</span>
+                      </div>
+                      <Badge variant="soft" className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5">
+                        Assigned Specialist
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div className="p-4">
+                    <span className="inline-block text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full mb-2">
+                      1 added
+                    </span>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
+                        {item.price > 0 && (
+                          <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeFromCart(item.id)}
+                        className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
+                        title="Remove item"
+                        aria-label={`Remove ${serviceTitle}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+
+          <button
+            onClick={() => navigate("/categories")}
+            className="w-full mt-3 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 text-primary text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            {hasService ? "Add more services or tests" : "Add more tests"}
+          </button>
+        </div>
+
         {/* Collection Address */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                 <MapPin className="w-4 h-4" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h3 className="font-extrabold text-foreground text-sm tracking-tight">Collection Address *</h3>
                 <p className="text-[11px] font-semibold text-muted-foreground">Sample pickup location</p>
               </div>
             </div>
             <button
               onClick={() => navigate("/saved-addresses")}
-              className="text-xs font-extrabold text-primary flex items-center gap-0.5 bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/15 active:scale-95 transition-all"
+              className="text-xs font-extrabold text-primary flex items-center gap-0.5 bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/15 active:scale-95 transition-all shrink-0"
             >
-              Change Address <ChevronRight className="w-3.5 h-3.5" />
+              Change <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -527,7 +582,7 @@ const CartScreen = () => {
           ) : savedAddresses.length === 0 ? (
             <button
               onClick={() => navigate("/saved-addresses")}
-              className={`w-full bg-card rounded-3xl border-2 border-dashed transition-all p-5 ${showValidation && !selectedAddressId ? "border-destructive bg-destructive/5" : "border-primary/30 hover:border-primary/50 bg-primary/5"}`}
+              className={`w-full rounded-2xl border-2 border-dashed transition-all p-5 ${showValidation && !selectedAddressId ? "border-destructive bg-destructive/5" : "border-primary/30 hover:border-primary/50 bg-primary/5"}`}
             >
               <div className="flex flex-col items-center py-2 text-center">
                 <MapPin className="w-8 h-8 text-primary mb-2" />
@@ -544,17 +599,17 @@ const CartScreen = () => {
                     key={addr.id}
                     type="button"
                     onClick={() => setSelectedAddressId(addr.id)}
-                    className={`w-full text-left bg-card rounded-2xl border p-3.5 transition-all shadow-2xs ${
+                    className={`w-full text-left rounded-2xl border p-3.5 transition-all ${
                       isSelected
-                        ? "ring-2 ring-primary border-primary bg-primary/5 shadow-xs"
+                        ? "ring-1 ring-primary border-primary bg-primary/5"
                         : showValidation && !selectedAddressId
                         ? "border-destructive bg-destructive/5"
-                        : "border-border/60 hover:border-primary/40"
+                        : "border-border/70 bg-muted/30 hover:border-primary/40"
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                        isSelected ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
+                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                       }`}>
                         <MapPin className="w-4 h-4" />
                       </div>
@@ -565,20 +620,7 @@ const CartScreen = () => {
                         </div>
                         <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
                       </div>
-                      <div className="flex flex-col items-end justify-between shrink-0 gap-1.5 self-stretch">
-                        {isSelected && (
-                          <Check className="w-4.5 h-4.5 text-primary" />
-                        )}
-                        <span
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate("/saved-addresses");
-                          }}
-                          className="text-[11px] font-black text-primary hover:underline cursor-pointer bg-primary/10 px-2 py-0.5 rounded-md"
-                        >
-                          Change
-                        </span>
-                      </div>
+                      {isSelected && <Check className="w-4 h-4 text-primary shrink-0 mt-1" />}
                     </div>
                   </button>
                 );
@@ -591,25 +633,33 @@ const CartScreen = () => {
       {/* Bottom Sticky Order Summary & Checkout Drawer */}
       <motion.div
         initial={{ y: 100 }} animate={{ y: 0 }}
-        className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border/80 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] px-4.5 py-3 z-40"
+        className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto px-3 z-40"
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
       >
-        <div className="flex items-center justify-between mb-2 px-1">
-          <div>
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground">Total Payable</span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-black text-foreground tabular-nums">₹{subtotal}</span>
-              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">Free Sample Pickup</span>
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3 shadow-lg shadow-primary/25">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative shrink-0">
+              <ShoppingCart className="w-6 h-6 text-primary-foreground" />
+              <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-success text-[9px] font-black text-white flex items-center justify-center">
+                {totalQty}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold text-primary-foreground/80 leading-tight">
+                {totalQty} {totalQty === 1 ? "item" : "items"}
+              </p>
+              <p className="text-lg font-black text-primary-foreground leading-tight tabular-nums">₹{subtotal}</p>
             </div>
           </div>
           <Button
-            variant="hero"
-            className="px-8 h-12 text-sm font-extrabold shadow-md shadow-primary/20"
+            variant="secondary"
+            className="h-12 px-6 rounded-xl text-sm font-extrabold text-primary bg-white hover:bg-white/90 gap-1"
             size="lg"
             onClick={handleCheckout}
             disabled={isCheckingOut}
           >
             {isCheckingOut ? "Please wait…" : "Checkout"}
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </motion.div>
