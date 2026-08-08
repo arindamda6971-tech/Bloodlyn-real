@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
