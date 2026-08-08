@@ -299,8 +299,8 @@ const CartScreen = () => {
     selectedMemberId === "self"
       ? "You"
       : familyMembers.find((m) => m.id === selectedMemberId)?.fullName || "Member";
-  const initials = (name: string) =>
-    name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "U";
+  const initials = (name?: string | null) =>
+    String(name ?? "").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "U";
 
   return (
     <MobileLayout>
