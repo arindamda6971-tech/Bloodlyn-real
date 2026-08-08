@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -535,52 +535,71 @@ const PaymentScreen = () => {
 
       <div className="px-4 pb-32">
         {/* Appointment Details */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border p-4 mb-4">
-          <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
-            <h3 className="text-base font-bold text-foreground">Appointment Details</h3>
-            {appointmentOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-          </button>
-          {appointmentOpen && (
-            <div className="mt-3 space-y-2.5">
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span>{paymentState?.selectedLabName || "Home Collection"}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm text-foreground">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span>{formatDate(paymentState?.scheduledDate)}</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-4">
+          <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden />
+          <div className="p-4 pl-5">
+            <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
+              <h3 className="text-base font-bold text-foreground tracking-tight">Appointment Details</h3>
+              {appointmentOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+            </button>
+            {appointmentOpen && (
+              <div className="mt-4 grid grid-cols-3 divide-x divide-border/60">
+                <div className="flex items-center gap-2 pr-2 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Lab</p>
+                    <p className="text-xs font-bold text-foreground truncate">{paymentState?.selectedLabName || "Home Collection"}</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-primary" />
-                  <span>{paymentState?.scheduledTimeSlot || "Any time"}</span>
+                <div className="flex items-center gap-2 px-2 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Date</p>
+                    <p className="text-xs font-bold text-foreground truncate">{formatDate(paymentState?.scheduledDate)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 pl-2 min-w-0">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <Clock className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Time</p>
+                    <p className="text-xs font-bold text-foreground truncate">{paymentState?.scheduledTimeSlot || "Any time"}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
 
         {/* Order Details */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border p-4 mb-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
           <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
-            <h3 className="text-base font-bold text-foreground">Order Details</h3>
+            <h3 className="text-base font-bold text-foreground tracking-tight">Order Details</h3>
             {orderOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
           </button>
           {orderOpen && (
             <div className="mt-3">
               {paymentState?.patientName && (
-                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border/50">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="font-medium text-foreground text-sm">{paymentState.patientName}</span>
+                <div className="flex items-center gap-2.5 mb-3 pb-3 border-b border-dashed border-border">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Member</p>
+                    <p className="font-bold text-foreground text-sm truncate">{paymentState.patientName}</p>
+                  </div>
                 </div>
               )}
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {(paymentState?.cartItems || []).map((item) => (
-                  <div key={item.id} className="flex justify-between items-center text-sm">
-                    <span className="text-foreground flex-1 truncate pr-4">{item.name}</span>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-foreground font-semibold">₹ {item.price * item.quantity}</span>
-                    </div>
+                  <div key={item.id} className="flex justify-between items-center gap-3 text-sm">
+                    <span className="text-foreground font-semibold flex-1 truncate">{item.name}</span>
+                    <span className="text-foreground font-bold tabular-nums shrink-0">₹ {item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>
@@ -598,24 +617,27 @@ const PaymentScreen = () => {
             onClick={() => setBpAddonSelected((v) => !v)}
             aria-pressed={bpAddonSelected}
             className={`w-full text-left mb-3 rounded-2xl border p-4 transition-colors ${
-              bpAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+              bpAddonSelected ? "border-primary bg-primary/5" : "border-border/70 bg-primary/[0.03]"
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <HeartPulse className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-foreground">Add Home BP Check</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  Blood pressure measured at home during the same visit
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <Star className="w-2.5 h-2.5" /> Recommended
+                </span>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Blood pressure measured at home using digital device.
                 </p>
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-sm font-bold text-foreground">
                   {bpAddonPrice > 0 ? `₹ ${bpAddonPrice}` : "FREE"}
                 </p>
-                <p className={`text-xs font-semibold ${bpAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
+                <p className={`text-xs font-bold mt-1 ${bpAddonSelected ? "text-primary" : "text-primary/80"}`}>
                   {bpAddonSelected ? "Added" : "Add"}
                 </p>
               </div>
@@ -633,24 +655,27 @@ const PaymentScreen = () => {
             onClick={() => setEcgAddonSelected((v) => !v)}
             aria-pressed={ecgAddonSelected}
             className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
-              ecgAddonSelected ? "border-primary bg-primary/5" : "border-border bg-card"
+              ecgAddonSelected ? "border-primary bg-primary/5" : "border-border/70 bg-primary/[0.03]"
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Activity className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-foreground">Add Home ECG Check</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  12-lead ECG recording at home during the same visit
+                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                  <Star className="w-2.5 h-2.5" /> Recommended
+                </span>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  12-lead ECG recorded at home &amp; analysis by expert.
                 </p>
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-sm font-bold text-foreground">
                   {ecgAddonPrice > 0 ? `₹ ${ecgAddonPrice}` : "FREE"}
                 </p>
-                <p className={`text-xs font-semibold ${ecgAddonSelected ? "text-primary" : "text-muted-foreground"}`}>
+                <p className={`text-xs font-bold mt-1 ${ecgAddonSelected ? "text-primary" : "text-primary/80"}`}>
                   {ecgAddonSelected ? "Added" : "Add"}
                 </p>
               </div>
@@ -659,27 +684,23 @@ const PaymentScreen = () => {
         )}
 
         {/* Offers & Benefits */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mb-4">
-          <h3 className="text-base font-bold text-foreground mb-3">Offers & Benefits</h3>
-          <div className="bg-card rounded-2xl border border-border p-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Tag className="w-4 h-4 text-primary" />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
+          <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Offers &amp; Benefits</h3>
+          <div className="rounded-xl bg-success/5 border border-success/20 p-2.5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
+                <Tag className="w-4 h-4 text-success" />
               </div>
-              <div className="flex-1">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Apply Coupon Code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 bg-muted border-0 rounded-lg h-9 text-sm"
-                    disabled={couponApplied}
-                  />
-                  <Button variant="soft" size="sm" onClick={applyCoupon} disabled={couponApplied} className="h-9">
-                    {couponApplied ? "Applied" : "Apply"}
-                  </Button>
-                </div>
-              </div>
+              <Input
+                placeholder="Apply Coupon Code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                className="flex-1 bg-transparent border-0 shadow-none h-9 text-sm font-medium focus-visible:ring-0"
+                disabled={couponApplied}
+              />
+              <Button variant="softSuccess" size="sm" onClick={applyCoupon} disabled={couponApplied} className="h-9 px-4 font-bold">
+                {couponApplied ? "Applied" : "Apply"}
+              </Button>
             </div>
             {couponApplied && (
               <Badge variant="softSuccess" className="mt-2 ml-11">
@@ -690,43 +711,42 @@ const PaymentScreen = () => {
         </motion.div>
 
         {/* Bill Summary */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border p-4">
-          <h3 className="text-base font-bold text-foreground mb-3">Bill Summary</h3>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
+          <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Bill Summary</h3>
           <div className="space-y-2.5">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">MRP Total</span>
-              <span className="text-foreground">₹ {stateSubtotal}.0/-</span>
+              <span className="text-foreground font-semibold tabular-nums">₹ {stateSubtotal}.00</span>
             </div>
             {bpAddonActive && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Home BP Check</span>
-                <span className="text-foreground">
-                  {(bpAddonPrice || 0) > 0 ? `₹ ${bpAddonPrice}.0/-` : "FREE"}
+                <span className="text-foreground font-semibold tabular-nums">
+                  {(bpAddonPrice || 0) > 0 ? `₹ ${bpAddonPrice}.00` : "FREE"}
                 </span>
               </div>
             )}
             {ecgAddonActive && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Home ECG Check</span>
-                <span className="text-foreground">
-                  {(ecgAddonPrice || 0) > 0 ? `₹ ${ecgAddonPrice}.0/-` : "FREE"}
+                <span className="text-foreground font-semibold tabular-nums">
+                  {(ecgAddonPrice || 0) > 0 ? `₹ ${ecgAddonPrice}.00` : "FREE"}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success font-medium">FREE</span>
+              <span className="text-success font-bold">FREE</span>
             </div>
             {couponApplied && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Coupon Discount</span>
-                <span className="text-success font-medium">- ₹ {discount}.0/-</span>
+                <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
               </div>
             )}
-            <div className="h-px bg-border my-2" />
-            <div className="flex justify-between">
+            <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
               <span className="font-bold text-foreground">Payable Amount</span>
-              <span className="font-bold text-lg text-foreground">₹ {total}.0/-</span>
+              <span className="font-black text-lg text-primary tabular-nums">₹ {total}.00</span>
             </div>
           </div>
         </motion.div>
@@ -754,14 +774,14 @@ const PaymentScreen = () => {
 
           {/* Right: Pay Now Button */}
           <Button
-            variant="destructive"
-            className="flex-1 h-14 rounded-xl text-base font-bold gap-2"
+            variant="hero"
+            className="flex-1 h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
             onClick={handlePayment}
             disabled={verifyingServiceability || isSubmittingOrder}
           >
-            <span className="flex flex-col items-center leading-tight">
-              <span className="text-xs font-semibold opacity-90">₹{total}</span>
-              <span className="text-xs opacity-70">TOTAL</span>
+            <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
+              <span className="text-sm font-bold">₹{total}</span>
+              <span className="text-[10px] font-semibold opacity-80 tracking-wide">TOTAL</span>
             </span>
             <span className="text-base font-bold">
               {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
