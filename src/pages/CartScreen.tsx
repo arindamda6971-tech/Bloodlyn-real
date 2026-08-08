@@ -357,7 +357,7 @@ const CartScreen = () => {
               }`}
             >
               <span className="w-8 h-8 rounded-full bg-primary/15 text-primary text-[11px] font-black flex items-center justify-center">
-                <User className="w-4 h-4" />
+                <UserIcon className="w-4 h-4" />
               </span>
               <span className="text-left">
                 <span className="block text-xs font-extrabold text-foreground leading-tight">You</span>
