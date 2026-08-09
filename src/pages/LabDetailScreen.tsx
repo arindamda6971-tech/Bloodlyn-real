@@ -536,7 +536,7 @@ const LabDetailScreen = () => {
       <div className="pb-24 bg-slate-50 min-h-screen">
         {/* Header with image */}
         <div className="relative h-72 w-full rounded-b-[2.5rem] overflow-hidden shadow-sm">
-          <img src="/lab-banner.png" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
+          <img loading="lazy" decoding="async" src="/lab-banner.png" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-safe">
@@ -570,7 +570,7 @@ const LabDetailScreen = () => {
             <div className="flex items-center gap-2">
                <motion.div layoutId={`lab-logo-${labId}`} className="flex items-center justify-center">
                  {logoUrl ? (
-                   <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
+                   <img loading="lazy" decoding="async" src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
                  ) : (
                    <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
                      <Building2 className="w-4 h-4 text-primary" />

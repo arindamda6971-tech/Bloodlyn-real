@@ -569,12 +569,9 @@ const CartScreen = () => {
                 <p className="text-[11px] font-semibold text-muted-foreground">Sample pickup location</p>
               </div>
             </div>
-            <button
-              onClick={() => navigate("/saved-addresses")}
-              className="text-xs font-extrabold text-primary flex items-center gap-0.5 bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/15 active:scale-95 transition-all shrink-0"
-            >
-              Change <ChevronRight className="w-3.5 h-3.5" />
-            </button>
+            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted px-2.5 py-1.5 rounded-full shrink-0">
+              Fixed
+            </span>
           </div>
 
           {addressLoading ? (
@@ -591,41 +588,32 @@ const CartScreen = () => {
               </div>
             </button>
           ) : (
-            <div className="space-y-2.5">
-              {savedAddresses.map((addr) => {
-                const isSelected = selectedAddressId === addr.id;
-                return (
-                  <button
-                    key={addr.id}
-                    type="button"
-                    onClick={() => setSelectedAddressId(addr.id)}
-                    className={`w-full text-left rounded-2xl border p-3.5 transition-all ${
-                      isSelected
-                        ? "ring-1 ring-primary border-primary bg-primary/5"
-                        : showValidation && !selectedAddressId
-                        ? "border-destructive bg-destructive/5"
-                        : "border-border/70 bg-muted/30 hover:border-primary/40"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                        isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}>
-                        <MapPin className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-foreground">{addr.type || "Home"}</span>
-                          {addr.is_default && <Badge variant="soft" className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0">Default</Badge>}
-                        </div>
-                        <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
-                      </div>
-                      {isSelected && <Check className="w-4 h-4 text-primary shrink-0 mt-1" />}
+            (() => {
+              const addr =
+                savedAddresses.find((a) => a.id === selectedAddressId) ??
+                savedAddresses.find((a) => a.is_default) ??
+                savedAddresses[0];
+              if (!addr) return null;
+              return (
+                <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3.5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4" />
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">{addr.type || "Home"}</span>
+                        {addr.is_default && (
+                          <Badge variant="soft" className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0">Default</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
+                    </div>
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-1" />
+                  </div>
+                </div>
+              );
+            })()
           )}
         </motion.div>
       </div>

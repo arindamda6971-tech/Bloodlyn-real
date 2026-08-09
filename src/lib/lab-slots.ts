@@ -194,33 +194,27 @@ export function findFixedSlot(value: string | null | undefined): FixedCollection
   return FIXED_COLLECTION_SLOTS.find((s) => v.includes(s.label.toLowerCase()) || s.id === v);
 }
 
+/* ------------------------------------------------------------------
+ * Shared lab-schedule mapping (blood test schedule === BP / ECG schedule)
+ * ------------------------------------------------------------------ */
+
 /**
- * Mapping function ensuring that the lab schedules established for blood test services 
- * are identically applied to all service bookings (e.g. BP and ECG), 
- * dynamically referencing the blood test data source.
+ * Resolves whether a lab is open on a given day offset (0 = today, 1 = tomorrow, …)
+ * using the exact same Partner-dashboard schedule source the blood-test flow uses.
+ *
+ * - `byDay` undefined / still loading  → treated as open (never blocks the UI)
+ * - lab has no published schedule rows → closed (mirrors the blood-test flow)
  */
-export function mapBloodTestScheduleToFixedSlots(
-  targetDateIso: string,
-  partnerSlots: { hasSchedule: boolean; byDay: Record<number, { is_open: boolean }> } | undefined,
-  fallbackClosedDays: string[] = ["Sun"]
-): FixedCollectionSlot[] {
-  if (!partnerSlots) return FIXED_COLLECTION_SLOTS;
-
-  const targetDate = new Date(targetDateIso);
-  const dayOfWeek = targetDate.getDay();
-
-  if (partnerSlots.hasSchedule) {
-    const activeDayRow = partnerSlots.byDay[dayOfWeek];
-    if (!activeDayRow || !activeDayRow.is_open) {
-      return [];
-    }
-    return FIXED_COLLECTION_SLOTS;
-  } else {
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    if (fallbackClosedDays.includes(dayNames[dayOfWeek])) {
-      return [];
-    }
-    return FIXED_COLLECTION_SLOTS;
-  }
+export function isLabOpenOnDayOffset(
+  byDay: Record<number, { is_open: boolean }> | undefined,
+  hasSchedule: boolean,
+  dayOffset: number,
+  now: Date = new Date()
+): boolean {
+  if (!byDay) return true;
+  if (!hasSchedule) return false;
+  const dates = getLabSlotDates(dayOffset + 1, now);
+  const target = dates[dayOffset];
+  if (!target) return false;
+  return !!byDay[target.dayOfWeek]?.is_open;
 }
-
