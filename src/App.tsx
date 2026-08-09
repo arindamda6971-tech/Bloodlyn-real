@@ -99,23 +99,22 @@ const AnimatedRoutes = () => {
   const navigate = useNavigate();
   const isPop = navType === "POP";
 
-  // Authentic iOS-style sliding transitions
+  // High-fidelity iOS-style sliding transitions optimized for 60fps
   const variants = {
     initial: (isPop: boolean) => ({
-      x: isPop ? "-30%" : "100%",
-      opacity: isPop ? 0.8 : 1,
-      boxShadow: isPop ? "none" : "-10px 0 25px rgba(0,0,0,0.15)",
+      x: isPop ? "-25%" : "100%",
+      opacity: isPop ? 0.9 : 1,
+      zIndex: isPop ? 1 : 10,
     }),
     animate: {
-      x: 0,
+      x: "0%",
       opacity: 1,
-      boxShadow: "none",
+      zIndex: 10,
     },
     exit: (isPop: boolean) => ({
-      x: isPop ? "100%" : "-30%",
-      opacity: isPop ? 1 : 0.8,
-      boxShadow: isPop ? "-10px 0 25px rgba(0,0,0,0.15)" : "none",
-      zIndex: isPop ? 10 : -1,
+      x: isPop ? "100%" : "-25%",
+      opacity: isPop ? 1 : 0.9,
+      zIndex: isPop ? 10 : 1,
     }),
   };
 
@@ -128,10 +127,11 @@ const AnimatedRoutes = () => {
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={{ type: "spring", stiffness: 400, damping: 35, mass: 0.8 }}
+        transition={{ type: "tween", duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.6}
+        dragDirectionLock
         onDragEnd={(e, { offset, velocity }) => {
           const swipeRight = offset.x > 80 || velocity.x > 500;
           if (swipeRight && location.pathname !== "/" && location.pathname !== "/home") {
@@ -139,9 +139,10 @@ const AnimatedRoutes = () => {
           }
         }}
         style={{
-          willChange: "opacity, transform",
+          willChange: "transform, opacity",
           transform: "translateZ(0)",
           backfaceVisibility: "hidden",
+          WebkitBackfaceVisibility: "hidden",
           width: "100%",
           position: "relative",
           flex: 1,
@@ -149,6 +150,7 @@ const AnimatedRoutes = () => {
           flexDirection: "column",
           minHeight: "100dvh",
           background: "hsl(var(--background))",
+          boxShadow: "-4px 0 16px rgba(0,0,0,0.1)",
         }}
       >
         <Routes location={location}>
