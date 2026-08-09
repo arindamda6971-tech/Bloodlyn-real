@@ -174,6 +174,15 @@ const BPCheckScreen = () => {
   const [selectedLab, setSelectedLab] = useState<BpLab | null>(null);
   const [appointment, setAppointment] = useState<AppointmentDetails>({ date: "Today", timeSlot: "" });
 
+  // BP / ECG bookings reuse the exact same lab schedule published for blood-test
+  // collection (Partner dashboard `lab_time_slots`) — single source of truth.
+  const { data: labSchedule } = useLabSlots(selectedLab?.vendor_id ?? null);
+  const isLabClosedOnDate = !isLabOpenOnDayOffset(
+    labSchedule?.byDay,
+    labSchedule?.hasSchedule ?? true,
+    dayOffsetForDate(appointment.date)
+  );
+
   const dateOptions = useMemo(() => {
     const today = new Date();
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
@@ -820,7 +829,7 @@ const BPCheckScreen = () => {
               <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Select Time Slot</p>
               <div className="space-y-3">
                 {FIXED_COLLECTION_SLOTS.map((slot) => {
-                  const isAvailable = isSlotAvailable(slot, appointment.date);
+                  const isAvailable = !isLabClosedOnDate && isSlotAvailable(slot, appointment.date);
                   const isSelected = appointment.timeSlot === slot.display && isAvailable;
                   return (
                     <button
@@ -855,7 +864,7 @@ const BPCheckScreen = () => {
                           {slot.label} ({slot.time})
                         </span>
                         <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
-                          {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
+                          {isAvailable ? slot.note : isLabClosedOnDate ? "Center closed on this day" : "Too late — needs 1 hour lead time"}
                         </span>
                       </div>
                     </button>
