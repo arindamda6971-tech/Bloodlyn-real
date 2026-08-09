@@ -160,7 +160,7 @@ const PartnerLabsScreen = () => {
                   {/* Lab Icon */}
                   <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {center.logo_url ? (
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={center.logo_url}
                         alt={center.name}
                         className="w-10 h-10 object-contain rounded-lg"

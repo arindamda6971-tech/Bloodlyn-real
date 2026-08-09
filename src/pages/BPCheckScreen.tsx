@@ -769,7 +769,7 @@ const BPCheckScreen = () => {
                       >
                         <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
                           {lab.logo_url ? (
-                            <img src={lab.logo_url} alt={lab.name} className="w-full h-full object-cover" />
+                            <img loading="lazy" decoding="async" src={lab.logo_url} alt={lab.name} className="w-full h-full object-cover" />
                           ) : (
                             <Building2 className="w-6 h-6 text-blue-600" />
                           )}
