@@ -16,11 +16,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
+import { useLabSlots } from "@/hooks/useLabSlots";
 import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
-import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { FixedCollectionSlot, FIXED_COLLECTION_SLOTS, isFixedSlotBookable, mapBloodTestScheduleToFixedSlots } from "@/lib/lab-slots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -227,7 +228,31 @@ const ECGTestScreen = () => {
     ];
   }, []);
 
-  const timeSlots = FIXED_COLLECTION_SLOTS;
+  const { data: partnerSlots } = useLabSlots(selectedLab?.vendor_id ?? null);
+
+  const getIsoDate = (dateStr: string) => {
+    const today = new Date();
+    if (dateStr === "Today") return today.toISOString().split("T")[0];
+    if (dateStr === "Tomorrow") {
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      return tomorrow.toISOString().split("T")[0];
+    }
+    if (dateStr === "DayAfter") {
+      const dayAfter = new Date(today);
+      dayAfter.setDate(today.getDate() + 2);
+      return dayAfter.toISOString().split("T")[0];
+    }
+    return dateStr || today.toISOString().split("T")[0];
+  };
+
+  const timeSlots = useMemo(() => {
+    return mapBloodTestScheduleToFixedSlots(
+      getIsoDate(appointment.date),
+      partnerSlots,
+      (selectedLab as any)?.closed_days || ["Sun"]
+    );
+  }, [appointment.date, partnerSlots, selectedLab]);
 
   const { members: familyMembers = [] } = useFamilyMembers();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("self");
@@ -415,22 +440,6 @@ const ECGTestScreen = () => {
     } else {
       toast.error("Invalid coupon code. Try ECG100");
     }
-  };
-
-  const getIsoDate = (dateStr: string) => {
-    const today = new Date();
-    if (dateStr === "Today") return today.toISOString().split("T")[0];
-    if (dateStr === "Tomorrow") {
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      return tomorrow.toISOString().split("T")[0];
-    }
-    if (dateStr === "DayAfter") {
-      const dayAfter = new Date(today);
-      dayAfter.setDate(today.getDate() + 2);
-      return dayAfter.toISOString().split("T")[0];
-    }
-    return dateStr || today.toISOString().split("T")[0];
   };
 
   const handlePlaceOrder = async () => {

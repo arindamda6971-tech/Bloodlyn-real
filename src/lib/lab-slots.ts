@@ -193,3 +193,34 @@ export function findFixedSlot(value: string | null | undefined): FixedCollection
   const v = value.toLowerCase();
   return FIXED_COLLECTION_SLOTS.find((s) => v.includes(s.label.toLowerCase()) || s.id === v);
 }
+
+/**
+ * Mapping function ensuring that the lab schedules established for blood test services 
+ * are identically applied to all service bookings (e.g. BP and ECG), 
+ * dynamically referencing the blood test data source.
+ */
+export function mapBloodTestScheduleToFixedSlots(
+  targetDateIso: string,
+  partnerSlots: { hasSchedule: boolean; byDay: Record<number, { is_open: boolean }> } | undefined,
+  fallbackClosedDays: string[] = ["Sun"]
+): FixedCollectionSlot[] {
+  if (!partnerSlots) return FIXED_COLLECTION_SLOTS;
+
+  const targetDate = new Date(targetDateIso);
+  const dayOfWeek = targetDate.getDay();
+
+  if (partnerSlots.hasSchedule) {
+    const activeDayRow = partnerSlots.byDay[dayOfWeek];
+    if (!activeDayRow || !activeDayRow.is_open) {
+      return [];
+    }
+    return FIXED_COLLECTION_SLOTS;
+  } else {
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    if (fallbackClosedDays.includes(dayNames[dayOfWeek])) {
+      return [];
+    }
+    return FIXED_COLLECTION_SLOTS;
+  }
+}
+

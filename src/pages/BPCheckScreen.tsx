@@ -20,7 +20,8 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
-import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot, mapBloodTestScheduleToFixedSlots } from "@/lib/lab-slots";
+import { useLabSlots } from "@/hooks/useLabSlots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -200,6 +201,16 @@ const BPCheckScreen = () => {
     }
     return dateStr || today.toISOString().split("T")[0];
   };
+
+  const { data: partnerSlots } = useLabSlots(selectedLab?.vendor_id ?? null);
+
+  const timeSlots = useMemo(() => {
+    return mapBloodTestScheduleToFixedSlots(
+      getIsoDate(appointment.date),
+      partnerSlots,
+      (selectedLab as any)?.closed_days || ["Sun"]
+    );
+  }, [appointment.date, partnerSlots, selectedLab]);
   const [patient, setPatient] = useState<PatientDetails>({ name: "", age: "", gender: "", mobile: "", notes: "" });
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);

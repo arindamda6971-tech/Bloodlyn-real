@@ -566,15 +566,17 @@ const LabDetailScreen = () => {
           </div>
 
           <div className="absolute bottom-10 left-6 right-6">
-            <h1 className="text-2xl font-black text-white leading-tight drop-shadow-md mb-2">{labName}</h1>
+            <motion.h1 layoutId={`lab-name-${labId}`} className="text-2xl font-black text-white leading-tight drop-shadow-md mb-2">{labName}</motion.h1>
             <div className="flex items-center gap-2">
-               {logoUrl ? (
-                 <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
-               ) : (
-                 <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                   <Building2 className="w-4 h-4 text-primary" />
-                 </div>
-               )}
+               <motion.div layoutId={`lab-logo-${labId}`} className="flex items-center justify-center">
+                 {logoUrl ? (
+                   <img src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
+                 ) : (
+                   <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                     <Building2 className="w-4 h-4 text-primary" />
+                   </div>
+                 )}
+               </motion.div>
                <p className="text-[13px] font-semibold text-white/90 drop-shadow-sm">{tagline}</p>
             </div>
           </div>

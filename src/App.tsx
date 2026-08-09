@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, useNavigate, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -94,15 +94,49 @@ const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/Upl
 
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const navType = useNavigationType();
+  const navigate = useNavigate();
+  const isPop = navType === "POP";
+
+  // Authentic iOS-style sliding transitions
+  const variants = {
+    initial: (isPop: boolean) => ({
+      x: isPop ? "-30%" : "100%",
+      opacity: isPop ? 0.8 : 1,
+      boxShadow: isPop ? "none" : "-10px 0 25px rgba(0,0,0,0.15)",
+    }),
+    animate: {
+      x: 0,
+      opacity: 1,
+      boxShadow: "none",
+    },
+    exit: (isPop: boolean) => ({
+      x: isPop ? "100%" : "-30%",
+      opacity: isPop ? 1 : 0.8,
+      boxShadow: isPop ? "-10px 0 25px rgba(0,0,0,0.15)" : "none",
+      zIndex: isPop ? 10 : -1,
+    }),
+  };
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="popLayout" initial={false} custom={isPop}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: "easeInOut" }}
+        custom={isPop}
+        variants={variants}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ type: "spring", stiffness: 400, damping: 35, mass: 0.8 }}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.6}
+        onDragEnd={(e, { offset, velocity }) => {
+          const swipeRight = offset.x > 80 || velocity.x > 500;
+          if (swipeRight && location.pathname !== "/" && location.pathname !== "/home") {
+            navigate(-1);
+          }
+        }}
         style={{
           width: "100%",
           position: "relative",
@@ -110,6 +144,7 @@ const AnimatedRoutes = () => {
           display: "flex",
           flexDirection: "column",
           minHeight: "100dvh",
+          background: "hsl(var(--background))",
         }}
       >
         <Routes location={location}>

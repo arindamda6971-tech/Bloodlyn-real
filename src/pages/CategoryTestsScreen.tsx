@@ -40,11 +40,11 @@ const TestItem = React.memo(({
     className="soft-card p-4 transition-transform active:scale-[0.98] cursor-pointer"
   >
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+      <motion.div layoutId={`test-icon-${test.id}`} className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
         <FlaskConical className="w-5 h-5 text-primary" />
-      </div>
+      </motion.div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-foreground text-sm truncate">{test.test_name}</h3>
+        <motion.h3 layoutId={`test-name-${test.id}`} className="font-semibold text-foreground text-sm truncate">{test.test_name}</motion.h3>
         <p className="text-[10px] text-muted-foreground mt-0.5">Report in {test.report_delivery_time || "24h"}</p>
       </div>
       <div className="flex-shrink-0">
