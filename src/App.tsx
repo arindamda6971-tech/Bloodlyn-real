@@ -119,7 +119,7 @@ const AnimatedRoutes = () => {
   };
 
   return (
-    <AnimatePresence mode="popLayout" initial={false} custom={isPop}>
+    <AnimatePresence initial={false} custom={isPop}>
       <motion.div
         key={location.pathname}
         custom={isPop}
@@ -127,30 +127,23 @@ const AnimatedRoutes = () => {
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={{ type: "tween", duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.6}
-        dragDirectionLock
-        onDragEnd={(e, { offset, velocity }) => {
-          const swipeRight = offset.x > 80 || velocity.x > 500;
-          if (swipeRight && location.pathname !== "/" && location.pathname !== "/home") {
-            navigate(-1);
-          }
-        }}
+        transition={{ type: "tween", duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
         style={{
           willChange: "transform, opacity",
           transform: "translateZ(0)",
           backfaceVisibility: "hidden",
           WebkitBackfaceVisibility: "hidden",
           width: "100%",
-          position: "relative",
-          flex: 1,
+          position: "absolute", // Absolute positioning forces overlap without needing expensive mode="popLayout"
+          top: 0,
+          left: 0,
+          bottom: 0,
           display: "flex",
           flexDirection: "column",
           minHeight: "100dvh",
           background: "hsl(var(--background))",
           boxShadow: "-4px 0 16px rgba(0,0,0,0.1)",
+          overflowX: "hidden",
         }}
       >
         <Routes location={location}>
