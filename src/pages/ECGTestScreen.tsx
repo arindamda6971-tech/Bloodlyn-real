@@ -20,7 +20,8 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
-import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, isLabOpenOnDayOffset, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { useLabSlots } from "@/hooks/useLabSlots";
 
 const confettiColors = [
   "hsl(var(--primary))",
