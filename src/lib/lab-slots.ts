@@ -193,3 +193,28 @@ export function findFixedSlot(value: string | null | undefined): FixedCollection
   const v = value.toLowerCase();
   return FIXED_COLLECTION_SLOTS.find((s) => v.includes(s.label.toLowerCase()) || s.id === v);
 }
+
+/* ------------------------------------------------------------------
+ * Shared lab-schedule mapping (blood test schedule === BP / ECG schedule)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Resolves whether a lab is open on a given day offset (0 = today, 1 = tomorrow, …)
+ * using the exact same Partner-dashboard schedule source the blood-test flow uses.
+ *
+ * - `byDay` undefined / still loading  → treated as open (never blocks the UI)
+ * - lab has no published schedule rows → closed (mirrors the blood-test flow)
+ */
+export function isLabOpenOnDayOffset(
+  byDay: Record<number, { is_open: boolean }> | undefined,
+  hasSchedule: boolean,
+  dayOffset: number,
+  now: Date = new Date()
+): boolean {
+  if (!byDay) return true;
+  if (!hasSchedule) return false;
+  const dates = getLabSlotDates(dayOffset + 1, now);
+  const target = dates[dayOffset];
+  if (!target) return false;
+  return !!byDay[target.dayOfWeek]?.is_open;
+}

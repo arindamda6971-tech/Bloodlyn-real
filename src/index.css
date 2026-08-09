@@ -659,3 +659,36 @@
     @apply min-h-[44px] min-w-[44px];
   }
 }
+
+/* ------------------------------------------------------------------
+ * Rendering pipeline: keep animations on the compositor (60 fps)
+ * ------------------------------------------------------------------ */
+@layer utilities {
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
+/* Sticky/fixed action bars are promoted so scrolling never repaints them. */
+.safe-area-bottom,
+[class*="fixed left-0 right-0"] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth, momentum scrolling without layout thrash on WebViews. */
+html,
+body {
+  -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeSpeed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

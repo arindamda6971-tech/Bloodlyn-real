@@ -20,7 +20,8 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
-import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, isLabOpenOnDayOffset, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { useLabSlots } from "@/hooks/useLabSlots";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -184,6 +185,20 @@ const ECGTestScreen = () => {
   const [labsLoading, setLabsLoading] = useState(false);
   const [selectedLab, setSelectedLab] = useState<EcgLab | null>(null);
   const [appointment, setAppointment] = useState<AppointmentDetails>({ date: "Today", timeSlot: "" });
+
+  // BP / ECG bookings reuse the exact same lab schedule published for blood-test
+  // collection (Partner dashboard `lab_time_slots`) — single source of truth.
+  const { data: labSchedule } = useLabSlots(selectedLab?.vendor_id ?? null);
+  const isLabClosedOnDate = !isLabOpenOnDayOffset(
+    labSchedule?.byDay,
+    labSchedule?.hasSchedule ?? true,
+    dayOffsetForDate(appointment.date)
+  );
+
+  // Drop a stale slot pick if the center turns out to be closed on that date.
+  useEffect(() => {
+    if (isLabClosedOnDate) setAppointment((a) => (a.timeSlot ? { ...a, timeSlot: "" } : a));
+  }, [isLabClosedOnDate]);
   const [patient, setPatient] = useState<PatientDetails>({ name: "", age: "", gender: "", mobile: "", notes: "" });
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
@@ -800,7 +815,7 @@ const ECGTestScreen = () => {
                   <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Time Slot</span>
                   <div className="space-y-2.5">
                     {timeSlots.map((slot) => {
-                      const avail = isSlotAvailable(slot, appointment.date);
+                      const avail = !isLabClosedOnDate && isSlotAvailable(slot, appointment.date);
                       const isSelected = appointment.timeSlot === slot.display;
                       return (
                         <button
@@ -820,7 +835,7 @@ const ECGTestScreen = () => {
                             <div className="min-w-0">
                               <span className="block text-xs font-bold">{slot.label} ({slot.time})</span>
                               <span className="block text-[10px] font-medium text-muted-foreground">
-                                {avail ? slot.note : "Too late — needs 1 hour lead time"}
+                                {avail ? slot.note : isLabClosedOnDate ? "Center closed on this day" : "Too late — needs 1 hour lead time"}
                               </span>
                             </div>
                           </div>

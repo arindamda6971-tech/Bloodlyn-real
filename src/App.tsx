@@ -22,6 +22,7 @@ import PageTransition from "@/components/PageTransition";
 import SmoothRoutes from "@/components/SmoothRoutes";
 import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
+import DataWarmup from "@/components/DataWarmup";
 import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
@@ -99,11 +100,14 @@ const AnimatedRoutes = () => {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15, ease: "easeInOut" }}
+        initial={{ opacity: 0, scale: 0.995 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.995 }}
+        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         style={{
+          willChange: "opacity, transform",
+          transform: "translateZ(0)",
+          backfaceVisibility: "hidden",
           width: "100%",
           position: "relative",
           flex: 1,
@@ -224,6 +228,7 @@ const App = () => {
                         <CapacitorBackButton />
                         <ScrollToTop />
                         <RoutePrefetcher />
+                        <DataWarmup />
                         <Suspense fallback={<RouteFallback />}>
                           <AnimatedRoutes />
                         </Suspense>

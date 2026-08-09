@@ -112,7 +112,7 @@ const ConsultationCallScreen = () => {
           {isVideoCall && callStatus === "connected" && !isVideoOff ? (
             <div className="w-full h-full bg-gradient-to-br from-secondary via-secondary/90 to-secondary/80">
               {/* Simulated remote video - in real app this would be the WebRTC stream */}
-              <img
+              <img loading="lazy" decoding="async"
                 src={professional.image}
                 alt={professional.name}
                 className="w-full h-full object-cover opacity-30 blur-sm"
@@ -123,7 +123,7 @@ const ConsultationCallScreen = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-center"
                 >
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={professional.image}
                     alt={professional.name}
                     className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-primary shadow-2xl"
@@ -140,7 +140,7 @@ const ConsultationCallScreen = () => {
               className="text-center"
             >
               <div className="relative">
-                <img
+                <img loading="lazy" decoding="async"
                   src={professional.image}
                   alt={professional.name}
                   className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-primary/50 shadow-2xl"

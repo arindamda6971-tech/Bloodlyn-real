@@ -533,17 +533,17 @@ const PaymentScreen = () => {
       <ScreenHeader title="Check Out" />
       <BookingStepper currentStep={3} />
 
-      <div className="px-4 pb-32">
+      <div className="px-4 pb-28">
         {/* Appointment Details */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-4">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-3">
           <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden />
-          <div className="p-4 pl-5">
+          <div className="p-3.5 pl-5">
             <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
               <h3 className="text-base font-bold text-foreground tracking-tight">Appointment Details</h3>
               {appointmentOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
             </button>
             {appointmentOpen && (
-              <div className="mt-4 grid grid-cols-3 divide-x divide-border/60">
+              <div className="mt-3 grid grid-cols-3 divide-x divide-border/60">
                 <div className="flex items-center gap-2 pr-2 min-w-0">
                   <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4 text-primary" />
@@ -595,7 +595,7 @@ const PaymentScreen = () => {
                   </div>
                 </div>
               )}
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {(paymentState?.cartItems || []).map((item) => (
                   <div key={item.id} className="flex justify-between items-center gap-3 text-sm">
                     <span className="text-foreground font-semibold flex-1 truncate">{item.name}</span>
@@ -713,7 +713,7 @@ const PaymentScreen = () => {
         {/* Bill Summary */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
           <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Bill Summary</h3>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">MRP Total</span>
               <span className="text-foreground font-semibold tabular-nums">₹ {stateSubtotal}.00</span>

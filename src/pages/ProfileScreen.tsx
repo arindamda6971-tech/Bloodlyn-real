@@ -133,7 +133,7 @@ const ProfileScreen = () => {
             <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-muted border border-border shadow-sm overflow-hidden">
               <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card">
                 {profileImageUrl || user?.user_metadata?.avatar_url ? (
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={profileImageUrl || user?.user_metadata?.avatar_url}
                     alt={displayName}
                     className="w-full h-full object-cover"

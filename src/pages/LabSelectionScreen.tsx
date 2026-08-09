@@ -291,11 +291,11 @@ const LabSelectionScreen = () => {
       <ScreenHeader title="Select Lab & Slot" />
       <BookingStepper currentStep={2} />
 
-      <div className="px-4 pb-32">
+      <div className="px-4 pb-28">
         {/* Lab Selection */}
         {!hasVendorLab && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
-            <h2 className="text-base font-bold text-foreground mb-3">Choose Your Lab</h2>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+            <h2 className="text-base font-bold text-foreground mb-2">Choose Your Lab</h2>
             {labsLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -342,7 +342,7 @@ const LabSelectionScreen = () => {
 
         {/* Selected lab info for vendor lab */}
         {hasVendorLab && currentLabName && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
             <div className="bg-card rounded-xl border border-primary/30 p-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-5 h-5 text-primary" />
@@ -362,7 +362,7 @@ const LabSelectionScreen = () => {
 
         {/* Date Selection */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h2 className="text-base font-bold text-foreground mb-3">Select Date</h2>
+          <h2 className="text-base font-bold text-foreground mb-2">Select Date</h2>
           <div className="flex gap-2">
             {dates.map((date, index) => {
               const dayRow = labSlotsByDay[date.dayOfWeek];
@@ -398,8 +398,8 @@ const LabSelectionScreen = () => {
         </motion.div>
 
         {/* Time Selection */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-6">
-          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">SELECT TIME SLOT</h2>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-4">
+          <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SELECT TIME SLOT</h2>
 
           {!selectedLabId ? (
             <p className="text-sm text-muted-foreground">Select a lab to see available time slots.</p>
@@ -414,7 +414,7 @@ const LabSelectionScreen = () => {
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {allSlotItems.map((slot) => {
                 const isAvailable = getSlotAvailability(slot);
                 const isSelected = selectedTime === slot.id;
