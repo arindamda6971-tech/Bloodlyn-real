@@ -194,6 +194,11 @@ const ECGTestScreen = () => {
     labSchedule?.hasSchedule ?? true,
     dayOffsetForDate(appointment.date)
   );
+
+  // Drop a stale slot pick if the center turns out to be closed on that date.
+  useEffect(() => {
+    if (isLabClosedOnDate) setAppointment((a) => (a.timeSlot ? { ...a, timeSlot: "" } : a));
+  }, [isLabClosedOnDate]);
   const [patient, setPatient] = useState<PatientDetails>({ name: "", age: "", gender: "", mobile: "", notes: "" });
   const [placing, setPlacing] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);

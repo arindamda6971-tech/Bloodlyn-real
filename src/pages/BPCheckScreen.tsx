@@ -183,6 +183,11 @@ const BPCheckScreen = () => {
     dayOffsetForDate(appointment.date)
   );
 
+  // Drop a stale slot pick if the center turns out to be closed on that date.
+  useEffect(() => {
+    if (isLabClosedOnDate) setAppointment((a) => (a.timeSlot ? { ...a, timeSlot: "" } : a));
+  }, [isLabClosedOnDate]);
+
   const dateOptions = useMemo(() => {
     const today = new Date();
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
