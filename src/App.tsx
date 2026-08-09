@@ -102,17 +102,17 @@ const AnimatedRoutes = () => {
   // High-fidelity iOS-style sliding transitions optimized for 60fps
   const variants = {
     initial: (isPop: boolean) => ({
-      x: isPop ? "-25%" : "100%",
+      x: isPop ? "-25vw" : "100vw",
       opacity: isPop ? 0.9 : 1,
       zIndex: isPop ? 1 : 10,
     }),
     animate: {
-      x: "0%",
+      x: "0vw",
       opacity: 1,
       zIndex: 10,
     },
     exit: (isPop: boolean) => ({
-      x: isPop ? "100%" : "-25%",
+      x: isPop ? "100vw" : "-25vw",
       opacity: isPop ? 1 : 0.9,
       zIndex: isPop ? 10 : 1,
     }),
@@ -130,9 +130,12 @@ const AnimatedRoutes = () => {
         transition={{ type: "tween", duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
         style={{
           willChange: "transform, opacity",
-          transform: "translateZ(0)",
+          transform: "translate3d(0,0,0)",
+          WebkitTransform: "translate3d(0,0,0)",
           backfaceVisibility: "hidden",
           WebkitBackfaceVisibility: "hidden",
+          WebkitPerspective: 1000,
+          perspective: 1000,
           width: "100%",
           position: "absolute", // Absolute positioning forces overlap without needing expensive mode="popLayout"
           top: 0,
@@ -140,7 +143,7 @@ const AnimatedRoutes = () => {
           bottom: 0,
           display: "flex",
           flexDirection: "column",
-          minHeight: "100dvh",
+          height: "100dvh", // strict height prevents resize reflows
           background: "hsl(var(--background))",
           boxShadow: "-4px 0 16px rgba(0,0,0,0.1)",
           overflowX: "hidden",
