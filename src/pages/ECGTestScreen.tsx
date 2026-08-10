@@ -20,8 +20,8 @@ import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
 import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
-import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, isLabOpenOnDayOffset, type FixedCollectionSlot } from "@/lib/lab-slots";
-import { useLabSlots } from "@/hooks/useLabSlots";
+import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
+import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -188,10 +188,9 @@ const ECGTestScreen = () => {
 
   // BP / ECG bookings reuse the exact same lab schedule published for blood-test
   // collection (Partner dashboard `lab_time_slots`) — single source of truth.
-  const { data: labSchedule } = useLabSlots(selectedLab?.vendor_id ?? null);
-  const isLabClosedOnDate = !isLabOpenOnDayOffset(
-    labSchedule?.byDay,
-    labSchedule?.hasSchedule ?? true,
+  const { isClosed: isLabClosedOnDate } = useLabClosedOnDay(
+    selectedLab?.id ?? null,
+    selectedLab?.vendor_id ?? null,
     dayOffsetForDate(appointment.date)
   );
 
