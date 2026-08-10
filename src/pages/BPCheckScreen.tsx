@@ -176,12 +176,12 @@ const BPCheckScreen = () => {
 
   // BP / ECG bookings reuse the exact same lab schedule published for blood-test
   // collection (Partner dashboard `lab_time_slots`) — single source of truth.
-  const { data: labSchedule } = useLabSlots(selectedLab?.vendor_id ?? null);
-  const isLabClosedOnDate = !isLabOpenOnDayOffset(
-    labSchedule?.byDay,
-    labSchedule?.hasSchedule ?? true,
+  const { isClosed: isLabClosedOnDate } = useLabClosedOnDay(
+    selectedLab?.id ?? null,
+    selectedLab?.vendor_id ?? null,
     dayOffsetForDate(appointment.date)
   );
+
 
   // Drop a stale slot pick if the center turns out to be closed on that date.
   useEffect(() => {
