@@ -603,12 +603,14 @@ const LabDetailScreen = () => {
                }
                navigate("/bp-check", {
                  state: {
-                   preselectedLab: {
-                     id: labFromDb?.id || "lal-pathlabs",
-                     name: labName,
-                     logo_url: logoUrl,
-                     home_bp_price: 199,
-                   }
+                    preselectedLab: {
+                      id: labFromDb?.id || "lal-pathlabs",
+                      name: labName,
+                      logo_url: logoUrl,
+                      vendor_id: labFromDb?.vendor_id ?? null,
+                      home_bp_price: 199,
+                    }
+
                  }
                });
              }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
