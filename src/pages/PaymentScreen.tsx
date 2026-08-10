@@ -755,7 +755,7 @@ const PaymentScreen = () => {
       {/* Split Pay Button - Select Mode + Pay Now */}
       <div
         className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)' }}
       >
         <div className="flex items-center gap-0">
           {/* Left: Select Payment Mode */}

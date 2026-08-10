@@ -622,7 +622,7 @@ const CartScreen = () => {
       <motion.div
         initial={{ y: 100 }} animate={{ y: 0 }}
         className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto px-3 z-40"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)' }}
       >
         <div className="flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3 shadow-lg shadow-primary/25">
           <div className="flex items-center gap-3 min-w-0">

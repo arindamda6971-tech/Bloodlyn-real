@@ -20,7 +20,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       offset={16}
       toastOptions={{
         style: {
-          marginTop: "env(safe-area-inset-top, 0px)",
+          marginTop: "env(safe-area-inset-top, var(--safe-area-inset-top, 0px))",
         },
         classNames: {
           toast:

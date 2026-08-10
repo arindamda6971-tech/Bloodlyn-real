@@ -460,7 +460,7 @@ const LabSelectionScreen = () => {
       {/* Confirm Button */}
       <div
         className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)' }}
       >
         <Button
           variant="hero"
