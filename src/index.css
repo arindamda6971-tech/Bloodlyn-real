@@ -285,17 +285,17 @@
     display: none;
   }
 
-  /* GPU-accelerate fixed elements */
+  /* GPU-accelerate fixed elements (no persistent will-change: it pins layers
+     and starves the compositor on low-end devices) */
   .fixed, nav[class*="fixed"] {
-    will-change: transform;
     transform: translateZ(0);
   }
 
   .soft-card, .test-card, .category-card, .quick-action {
     contain: layout style;
     touch-action: pan-y;
-    will-change: transform;
   }
+
 
   /* Optimise touch interactions */
   button, a, [role="button"] {
