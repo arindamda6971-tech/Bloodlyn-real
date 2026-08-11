@@ -539,16 +539,18 @@
 
   .aurora-blob {
     position: absolute;
-    width: 400px;
-    height: 400px;
+    width: 320px;
+    height: 320px;
     border-radius: 9999px;
-    filter: blur(100px);
-    opacity: 0.35;
-    will-change: transform;
+    /* 100px blur on a 400px layer is one of the most expensive paints on
+       mobile GPUs — a cheaper radial gradient gives the same soft glow. */
+    filter: blur(48px);
+    opacity: 0.3;
     transform: translate3d(0, 0, 0); /* Force GPU */
     pointer-events: none;
     backface-visibility: hidden;
   }
+
   .aurora-blob-1 {
     top: -100px;
     left: -50px;
