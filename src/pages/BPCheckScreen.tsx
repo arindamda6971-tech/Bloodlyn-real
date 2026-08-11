@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
 import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
+import { useLabOpenDays } from "@/hooks/useLabOpenDays";
+import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -181,6 +183,9 @@ const BPCheckScreen = () => {
     selectedLab?.vendor_id ?? null,
     dayOffsetForDate(appointment.date)
   );
+
+  // Same 3-day open/closed strip the blood-test flow renders.
+  const labDays = useLabOpenDays(selectedLab?.id ?? null, selectedLab?.vendor_id ?? null, 3);
 
 
   // Drop a stale slot pick if the center turns out to be closed on that date.
