@@ -166,9 +166,11 @@ const AnimatedRoutes = () => {
           <Route path="/unauthorized" element={<UnauthorizedScreen />} />
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
-        </Routes>
-      </motion.div>
-    </AnimatePresence>
+          </Routes>
+        </PageTransition>
+      )}
+    </SmoothRoutes>
+
   );
 };
 
