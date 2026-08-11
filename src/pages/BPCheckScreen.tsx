@@ -813,69 +813,18 @@ const BPCheckScreen = () => {
           {step === "APPOINTMENT" && (
             <motion.div key="appointment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-6">When should we visit?</h2>
-              <p className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-3 px-1">Select Date</p>
-              <div className="grid grid-cols-3 gap-2.5 mb-8">
-                {dateOptions.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setAppointment({ ...appointment, date: opt.id })}
-                    className={`p-3.5 rounded-2xl border text-center transition-all ${
-                      appointment.date === opt.id
-                        ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20"
-                        : "bg-card border-border/50 text-foreground"
-                    }`}
-                  >
-                    <span className="block text-xs font-black">{opt.label}</span>
-                    <span className={`block text-[10px] mt-0.5 font-medium ${appointment.date === opt.id ? "text-blue-100" : "text-muted-foreground"}`}>{opt.sub}</span>
-                  </button>
-                ))}
-              </div>
+              <CollectionSlotPicker
+                dates={labDays.dates}
+                dateIds={["Today", "Tomorrow", "DayAfter"]}
+                selectedDateId={appointment.date}
+                onSelectDate={(id) => setAppointment((a) => ({ ...a, date: id }))}
+                openByOffset={labDays.openByOffset}
+                isLoading={labDays.isLoading}
+                hasLab={!!selectedLab}
+                selectedSlot={appointment.timeSlot}
+                onSelectSlot={(display) => setAppointment((a) => ({ ...a, timeSlot: display }))}
+              />
 
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 px-1">Select Time Slot</p>
-              <div className="space-y-3">
-                {FIXED_COLLECTION_SLOTS.map((slot) => {
-                  const isAvailable = !isLabClosedOnDate && isSlotAvailable(slot, appointment.date);
-                  const isSelected = appointment.timeSlot === slot.display && isAvailable;
-                  return (
-                    <button
-                      key={slot.id}
-                      onClick={() => isAvailable && setAppointment({ ...appointment, timeSlot: slot.display })}
-                      disabled={!isAvailable}
-                      className={`w-full p-4 rounded-2xl border transition-all flex items-center gap-4 text-left ${
-                        !isAvailable
-                          ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                          : isSelected
-                          ? "bg-primary/5 border-primary shadow-sm"
-                          : "bg-card border-slate-200/80 hover:border-primary/40 shadow-xs cursor-pointer"
-                      }`}
-                    >
-                      <div
-                        className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-colors ${
-                          !isAvailable
-                            ? "bg-muted/50 text-foreground/30"
-                            : isSelected
-                            ? "bg-primary text-white"
-                            : "bg-slate-100/90 text-slate-600"
-                        }`}
-                      >
-                        <Clock className="w-5 h-5" />
-                      </div>
-                      <div className="flex flex-col items-start flex-1 text-left">
-                        <span
-                          className={`text-[15px] font-bold ${
-                            !isAvailable ? "text-foreground/50 line-through" : isSelected ? "text-primary" : "text-slate-800"
-                          }`}
-                        >
-                          {slot.label} ({slot.time})
-                        </span>
-                        <span className="text-[10px] font-medium text-muted-foreground mt-0.5">
-                          {isAvailable ? slot.note : isLabClosedOnDate ? "Center closed on this day" : "Too late — needs 1 hour lead time"}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
 
               <div className="mt-10">
                 <button
