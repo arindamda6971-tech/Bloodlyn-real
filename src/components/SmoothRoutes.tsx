@@ -9,7 +9,7 @@ import { useLocation } from "react-router-dom";
 const SmoothRoutes = ({ children }: { children: (loc: ReturnType<typeof useLocation>) => ReactNode }) => {
   const location = useLocation();
   const [deferred, setDeferred] = useState(location);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (deferred.pathname === location.pathname && deferred.search === location.search) return;
