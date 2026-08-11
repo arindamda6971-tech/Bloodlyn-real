@@ -58,10 +58,10 @@ const MobileLayout = ({
           className="h-full overflow-y-auto overscroll-y-none"
           style={{
             WebkitOverflowScrolling: 'touch',
-            willChange: 'scroll-position',
             touchAction: 'pan-y',
           }}
         >
+
           {content}
         </div>
       )}
