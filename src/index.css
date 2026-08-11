@@ -310,13 +310,15 @@
 }
 
 @layer components {
-  /* Glass morphism card */
+  /* Glass morphism card — blur kept at 16px (blur-xl); larger radii force
+     costly full-surface repaints while looking near-identical. */
   .glass-card {
-    @apply bg-white/70 backdrop-blur-2xl border border-white/20;
+    @apply bg-white/70 backdrop-blur-xl border border-white/20;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     backface-visibility: hidden;
     transform: translateZ(0);
   }
+
 
   /* Soft card with rounded corners */
   .soft-card {
