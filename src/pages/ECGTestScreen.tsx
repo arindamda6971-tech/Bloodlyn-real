@@ -22,6 +22,8 @@ import { toast } from "sonner";
 import { sanitizePincode, sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
 import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot } from "@/lib/lab-slots";
 import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
+import { useLabOpenDays } from "@/hooks/useLabOpenDays";
+import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -193,6 +195,9 @@ const ECGTestScreen = () => {
     selectedLab?.vendor_id ?? null,
     dayOffsetForDate(appointment.date)
   );
+
+  // Same 3-day open/closed strip the blood-test flow renders.
+  const labDays = useLabOpenDays(selectedLab?.id ?? null, selectedLab?.vendor_id ?? null, 3);
 
   // Drop a stale slot pick if the center turns out to be closed on that date.
   useEffect(() => {
@@ -790,60 +795,18 @@ const ECGTestScreen = () => {
                   <p className="text-xs font-semibold text-muted-foreground">Select when our technician should arrive for the ECG test</p>
                 </div>
 
-                <div className="space-y-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Date</span>
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {dateOptions.map((opt) => (
-                      <button
-                        key={opt.id}
-                        onClick={() => setAppointment((a) => ({ ...a, date: opt.id }))}
-                        className={`p-3.5 rounded-2xl border text-center transition-all ${
-                          appointment.date === opt.id
-                            ? "bg-rose-600 text-white border-rose-600 shadow-md shadow-rose-600/20"
-                            : "bg-card border-border/60 text-foreground hover:bg-muted/40"
-                        }`}
-                      >
-                        <span className="block text-xs font-black">{opt.label}</span>
-                        <span className={`block text-[10px] mt-0.5 font-medium ${appointment.date === opt.id ? "text-rose-100" : "text-muted-foreground"}`}>{opt.sub}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <CollectionSlotPicker
+                  dates={labDays.dates}
+                  dateIds={["Today", "Tomorrow", "DayAfter"]}
+                  selectedDateId={appointment.date}
+                  onSelectDate={(id) => setAppointment((a) => ({ ...a, date: id }))}
+                  openByOffset={labDays.openByOffset}
+                  isLoading={labDays.isLoading}
+                  hasLab={!!selectedLab}
+                  selectedSlot={appointment.timeSlot}
+                  onSelectSlot={(display) => setAppointment((a) => ({ ...a, timeSlot: display }))}
+                />
 
-                <div className="space-y-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Time Slot</span>
-                  <div className="space-y-2.5">
-                    {timeSlots.map((slot) => {
-                      const avail = !isLabClosedOnDate && isSlotAvailable(slot, appointment.date);
-                      const isSelected = appointment.timeSlot === slot.display;
-                      return (
-                        <button
-                          key={slot.id}
-                          disabled={!avail}
-                          onClick={() => setAppointment((a) => ({ ...a, timeSlot: slot.display }))}
-                          className={`w-full p-4 rounded-2xl border flex items-center justify-between text-left transition-all ${
-                            !avail
-                              ? "opacity-40 bg-muted/20 border-border cursor-not-allowed"
-                              : isSelected
-                              ? "bg-rose-50 dark:bg-rose-950/30 border-rose-500 text-rose-700 dark:text-rose-300 font-bold"
-                              : "bg-card border-border/60 hover:border-rose-500/40 text-foreground"
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Clock className="w-4 h-4 text-rose-500 shrink-0" />
-                            <div className="min-w-0">
-                              <span className="block text-xs font-bold">{slot.label} ({slot.time})</span>
-                              <span className="block text-[10px] font-medium text-muted-foreground">
-                                {avail ? slot.note : isLabClosedOnDate ? "Center closed on this day" : "Too late — needs 1 hour lead time"}
-                              </span>
-                            </div>
-                          </div>
-                          {isSelected && <CheckCircle className="w-4 h-4 text-rose-600" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
 
                 <Button
                   disabled={!appointment.timeSlot}
