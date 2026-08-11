@@ -704,13 +704,14 @@ body {
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translate3d(14px, 0, 0);
+    transform: translate3d(10px, 0, 0);
   }
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
   }
 }
+
 
 .page-transition {
   width: 100%;
