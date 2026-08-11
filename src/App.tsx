@@ -94,62 +94,22 @@ const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/Unauthori
 const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 
 const AnimatedRoutes = () => {
-  const location = useLocation();
-  const navType = useNavigationType();
-  const navigate = useNavigate();
-  const isPop = navType === "POP";
-
-  // High-fidelity iOS-style sliding transitions optimized for 60fps
-  const variants = {
-    initial: (isPop: boolean) => ({
-      x: isPop ? "-25vw" : "100vw",
-      opacity: isPop ? 0.9 : 1,
-      zIndex: isPop ? 1 : 10,
-    }),
-    animate: {
-      x: "0vw",
-      opacity: 1,
-      zIndex: 10,
-    },
-    exit: (isPop: boolean) => ({
-      x: isPop ? "100vw" : "-25vw",
-      opacity: isPop ? 1 : 0.9,
-      zIndex: isPop ? 10 : 1,
-    }),
-  };
-
+  /**
+   * Route transitions are CSS-only (translate3d + opacity, see .page-transition
+   * in index.css). Previously two full-viewport 100dvh pages were kept mounted
+   * and animated by framer-motion for 450ms with a box-shadow on top — that is
+   * the single biggest source of navigation jitter on mobile WebViews.
+   * Now only the entering page is mounted and the compositor drives the
+   * animation, while SmoothRoutes keeps the old page painted until the next
+   * lazy chunk resolves (no blank flash) and useSwipeBack still provides the
+   * interactive iOS edge-swipe.
+   */
   return (
-    <AnimatePresence initial={false} custom={isPop}>
-      <motion.div
-        key={location.pathname}
-        custom={isPop}
-        variants={variants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={{ type: "tween", duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
-        style={{
-          willChange: "transform, opacity",
-          transform: "translate3d(0,0,0)",
-          WebkitTransform: "translate3d(0,0,0)",
-          backfaceVisibility: "hidden",
-          WebkitBackfaceVisibility: "hidden",
-          WebkitPerspective: 1000,
-          perspective: 1000,
-          width: "100%",
-          position: "absolute", // Absolute positioning forces overlap without needing expensive mode="popLayout"
-          top: 0,
-          left: 0,
-          bottom: 0,
-          display: "flex",
-          flexDirection: "column",
-          height: "100dvh", // strict height prevents resize reflows
-          background: "hsl(var(--background))",
-          boxShadow: "-4px 0 16px rgba(0,0,0,0.1)",
-          overflowX: "hidden",
-        }}
-      >
-        <Routes location={location}>
+    <SmoothRoutes>
+      {(loc) => (
+        <PageTransition routeKey={loc.pathname}>
+          <Routes location={loc}>
+
           {/* Public Routes */}
           <Route path="/" element={<SplashScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
