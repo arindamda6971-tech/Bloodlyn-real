@@ -1,5 +1,6 @@
 import { Home, Grid3X3, ShoppingBag, FileText, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { hapticImpact } from "@/utils/haptics";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/home" },
