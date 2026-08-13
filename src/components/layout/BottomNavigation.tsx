@@ -29,7 +29,11 @@ const BottomNavigation = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                // Native tap feedback (no-op on web)
+                if (!isActive) void hapticImpact();
+                navigate(item.path);
+              }}
                className="relative flex flex-col items-center gap-1 py-1.5 px-4 min-w-[64px] active:scale-[0.92] transition-transform duration-150"
             >
               <div
