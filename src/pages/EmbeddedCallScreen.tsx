@@ -56,9 +56,19 @@ export default function EmbeddedCallScreen() {
           }
         };
 
-        // 3. Setup Supabase Channel
+        // 3. Setup Supabase Channel (private: authorized via RLS on realtime.messages,
+        // so only the patient who owns this order — or the doctor portal — can join)
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+          setCallStatus("Please sign in to join this call.");
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        await supabase.realtime.setAuth(accessToken);
+
         const roomName = `webrtc-${id}`;
-        const chan = supabase.channel(roomName);
+        const chan = supabase.channel(roomName, { config: { private: true } });
         channel.current = chan;
 
         const iceQueue: RTCIceCandidate[] = [];
@@ -151,6 +161,8 @@ export default function EmbeddedCallScreen() {
               event: 'patient-ready',
               payload: {}
             });
+          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            setCallStatus("Not authorized to join this call.");
           }
         });
 
