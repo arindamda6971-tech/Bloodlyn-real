@@ -15,6 +15,8 @@ import {
   Stethoscope,
   Smartphone,
   AlertCircle,
+  Building2,
+  Star,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,7 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
-import { useUserPincode } from "@/hooks/useUserPincode";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -161,15 +163,69 @@ const TestDetailScreen = () => {
     return () => { cancelled = true; };
   }, [test?.name, test?.description]);
 
+  const [availableLabs, setAvailableLabs] = useState<any[]>([]);
+  const [labsLoading, setLabsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!test || !test.name) return;
+    let cancelled = false;
+    setLabsLoading(true);
+
+    (async () => {
+      try {
+        const { data: labsData } = await supabase
+          .from("diagnostic_centers")
+          .select("*")
+          .order("rating", { ascending: false });
+
+        if (!labsData) return;
+
+        const { data: productsData } = await supabase
+          .from("products")
+          .select("*")
+          .eq("product_name", test.name)
+          .eq("availability", true);
+
+        if (!productsData || cancelled) return;
+
+        const validLabs = labsData.filter((lab) => {
+          if (pincode && !labServesPincode(lab, pincode)) return false;
+          
+          const product = productsData.find(p => p.vendor_id === lab.vendor_id);
+          if (product) {
+            lab.productPrice = product.price;
+            return true;
+          }
+          return false;
+        });
+
+        if (!cancelled) setAvailableLabs(validLabs);
+      } catch (err) {
+        console.error("Error fetching labs for test:", err);
+      } finally {
+        if (!cancelled) setLabsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [test?.name, pincode]);
+
   const isInCart = useMemo(() => !!test && items.some((i) => i.id === test.id), [items, test]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (lab?: any) => {
     if (!test) return;
     if (isInCart) {
       navigate("/cart");
       return;
     }
-    const ok = addToCart({ id: test.id, name: test.name, price: test.price });
+    const finalPrice = lab?.productPrice ?? test.price;
+    const ok = addToCart({ 
+      id: test.id, 
+      name: test.name, 
+      price: finalPrice,
+      labId: lab?.id,
+      labName: lab?.name,
+      vendorId: lab?.vendor_id
+    });
     if (ok) toast.success(`${test.name} added to cart`);
   };
 
@@ -242,6 +298,19 @@ const TestDetailScreen = () => {
               <ShieldCheck className="w-3 h-3" /> NABL Certified
             </span>
           </div>
+        </motion.div>
+        
+        {/* Price Disclaimer */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-4 flex items-start gap-2 bg-white/10 p-3 rounded-xl border border-white/20"
+        >
+          <AlertCircle className="w-4 h-4 mt-0.5 text-blue-100 shrink-0" />
+          <p className="text-xs text-blue-50 leading-relaxed font-medium">
+            Prices vary by laboratory. Select a lab below to view pricing and add to cart.
+          </p>
         </motion.div>
       </div>
 
@@ -324,25 +393,89 @@ const TestDetailScreen = () => {
         </motion.section>
 
         {/* Inline Add to Cart CTA (replaces AI strip) */}
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
           className="pt-2"
         >
-          {itemCount > 0 && !isInCart && (
-            <p className="text-xs text-muted-foreground mb-2 text-center">
-              {itemCount} {itemCount === 1 ? "test" : "tests"} already in cart · ₹{subtotal}
-            </p>
+          <h3 className="text-[22px] font-bold text-secondary mb-4">Select Laboratory</h3>
+          
+          {!pincode && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <p>You haven't set a pincode. We are showing all available labs. Please set your pincode at checkout for accurate availability.</p>
+            </div>
           )}
-          <Button
-            onClick={handleAddToCart}
-            className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl active:scale-[0.99]"
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            {isInCart ? "Go to Cart" : "Add to Cart"}
-          </Button>
-        </motion.div>
+
+          {labsLoading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-24 bg-muted animate-pulse rounded-2xl" />
+              ))}
+            </div>
+          ) : availableLabs.length > 0 ? (
+            <div className="space-y-4">
+              {availableLabs.map((lab) => (
+                <div key={lab.id} className="p-4 rounded-2xl border border-border/60 bg-card shadow-sm flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-foreground text-base mb-1 truncate">{lab.name}</h4>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
+                      <div className="flex items-center gap-1 text-amber-500 font-medium bg-amber-50 px-1.5 py-0.5 rounded">
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        {lab.rating || "New"}
+                      </div>
+                      {lab.home_collection_available && (
+                        <div className="flex items-center gap-1">
+                          <Bike className="w-3.5 h-3.5" />
+                          <span>Home Visit</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-bold text-lg text-primary">
+                      ₹{lab.productPrice.toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => handleAddToCart(lab)}
+                    className="shrink-0 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1.5" />
+                    Add
+                  </Button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-6 bg-muted/30 rounded-2xl border border-border/50">
+              <Building2 className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No labs available for this test in your area right now.</p>
+            </div>
+          )}
+          
+          {itemCount > 0 && !isInCart && (
+            <div className="mt-6 flex justify-between items-center bg-primary/5 p-4 rounded-2xl border border-primary/10">
+              <div>
+                <p className="text-xs text-muted-foreground">Cart total</p>
+                <p className="font-bold text-primary">₹{subtotal}</p>
+              </div>
+              <Button onClick={() => navigate("/cart")} variant="outline" className="border-primary text-primary">
+                View Cart ({itemCount})
+              </Button>
+            </div>
+          )}
+          
+          {isInCart && (
+            <Button
+              onClick={() => navigate("/cart")}
+              className="w-full h-14 mt-6 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl active:scale-[0.99]"
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              Go to Cart
+            </Button>
+          )}
+        </motion.section>
       </div>
 
 
