@@ -243,6 +243,19 @@ const TestDetailScreen = () => {
             </span>
           </div>
         </motion.div>
+        
+        {/* Price Disclaimer (Idea 4) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-4 flex items-start gap-2 bg-white/10 p-3 rounded-xl border border-white/20"
+        >
+          <AlertCircle className="w-4 h-4 mt-0.5 text-blue-100 shrink-0" />
+          <p className="text-xs text-blue-50 leading-relaxed font-medium">
+            Prices vary by laboratory. Add to cart to compare lab prices in your area.
+          </p>
+        </motion.div>
       </div>
 
       <div className="px-4 pt-6 pb-12 space-y-7">
