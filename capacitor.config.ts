@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   webDir: "dist",
   android: {
     allowMixedContent: false,
+    // Native-feel WebView tuning
+    backgroundColor: "#f8fafc",
+    webContentsDebuggingEnabled: false,
+    // Route key/touch input straight to the WebView (less input latency)
+    captureInput: true,
     buildOptions: {
       releaseType: "APK",
     },
@@ -17,7 +22,7 @@ const config: CapacitorConfig = {
       backgroundColor: "#00000000",
     },
     SplashScreen: {
-      launchShowDuration: 3000,
+      launchShowDuration: 1200,
       launchAutoHide: true,
       backgroundColor: "#ffffff",
       androidSplashResourceName: "splash",
