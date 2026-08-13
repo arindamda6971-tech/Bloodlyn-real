@@ -161,6 +161,8 @@ export default function EmbeddedCallScreen() {
               event: 'patient-ready',
               payload: {}
             });
+          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
+            setCallStatus("Not authorized to join this call.");
           }
         });
 
