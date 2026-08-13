@@ -12,6 +12,8 @@ import {
   Info,
   ChevronDown,
   MessageCircle,
+  FileText,
+  FileSearch,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +48,16 @@ const reportDetails = {
 const ReportDetailScreen = () => {
   const navigate = useNavigate();
   const [showAiSummary, setShowAiSummary] = useState(true);
+  const [showPdfViewer, setShowPdfViewer] = useState(false);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+
+  const openPdfViewer = () => {
+    setShowPdfViewer(true);
+    setIsPdfLoading(true);
+    setTimeout(() => {
+      setIsPdfLoading(false);
+    }, 1500);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -207,21 +219,93 @@ const ReportDetailScreen = () => {
           transition={{ delay: 0.4 }}
           className="mt-6 space-y-3"
         >
-          <Button variant="hero" className="w-full" size="lg" onClick={() => navigate("/doctor-consult")}>
+          <Button variant="outline" className="w-full bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/50 text-[#128C7E]" size="lg" onClick={() => {
+            toast.success("Opening WhatsApp...");
+          }}>
+            <Share2 className="w-5 h-5" />
+            Share to WhatsApp
+          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" className="flex-1" size="lg" onClick={openPdfViewer}>
+              <FileSearch className="w-5 h-5" />
+              View Original PDF
+            </Button>
+            <Button variant="outline" className="flex-1" size="lg" onClick={() => {
+              toast.success("Downloading PDF...");
+              setTimeout(() => toast.error("Demo mode: No actual PDF file attached."), 1000);
+            }}>
+              <Download className="w-5 h-5" />
+              Download
+            </Button>
+          </div>
+          <Button variant="hero" className="w-full mt-2" size="lg" onClick={() => navigate("/doctor-consult")}>
             <MessageCircle className="w-5 h-5" />
             Consult a Doctor
           </Button>
-          <Button variant="outline" className="w-full" size="lg" onClick={() => {
-            toast.success("Downloading PDF...");
-            setTimeout(() => {
-              toast.error("Demo mode: No actual PDF file attached to this mock report.");
-            }, 1000);
-          }}>
-            <Download className="w-5 h-5" />
-            Download PDF Report
-          </Button>
         </motion.div>
       </div>
+
+      {/* Simulated Full-Screen PDF Viewer */}
+      {showPdfViewer && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          <div className="flex items-center justify-between p-4 bg-zinc-900 text-white">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowPdfViewer(false)} className="p-2 -ml-2 rounded-full hover:bg-zinc-800 active:bg-zinc-700 transition-colors">
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <h2 className="text-sm font-semibold truncate">CBC_Report_BloodLyn.pdf</h2>
+            </div>
+            <button className="p-2 -mr-2 rounded-full hover:bg-zinc-800 active:bg-zinc-700 transition-colors">
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto bg-zinc-950 p-4 flex items-start justify-center">
+            {isPdfLoading ? (
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <LoadingSpinner />
+                <p className="text-zinc-400 text-sm animate-pulse">Rendering Document...</p>
+              </div>
+            ) : (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white rounded shadow-2xl overflow-hidden mb-8">
+                {/* Mock PDF Content */}
+                <div className="p-6 pb-20 border-b border-gray-200">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h1 className="text-xl font-bold text-gray-900">BloodLyn Labs</h1>
+                      <p className="text-[10px] text-gray-500">NABL Accredited Laboratory</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-semibold text-gray-800">Complete Blood Count</p>
+                      <p className="text-[10px] text-gray-500">{reportDetails.date}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full border-t border-dashed border-gray-300 my-4" />
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-4 text-[10px] font-bold text-gray-500 border-b pb-2">
+                      <div className="col-span-2">Test Name</div>
+                      <div className="text-right">Result</div>
+                      <div className="text-right">Ref. Range</div>
+                    </div>
+                    {reportDetails.parameters.map((param, i) => (
+                      <div key={i} className="grid grid-cols-4 text-[11px] py-1 border-b border-gray-100 last:border-0">
+                        <div className="col-span-2 text-gray-800">{param.name}</div>
+                        <div className={`text-right font-bold ${param.status !== 'normal' ? 'text-red-600' : 'text-gray-900'}`}>{param.value} {param.unit}</div>
+                        <div className="text-right text-gray-500">{param.min} - {param.max}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-12 pt-4 border-t border-gray-800">
+                    <p className="text-[10px] text-gray-500 italic text-center">This is an electronically generated report. Signatures are not required.</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+      )}
     </MobileLayout>
   );
 };

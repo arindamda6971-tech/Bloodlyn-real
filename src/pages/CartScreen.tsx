@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -271,13 +271,26 @@ const CartScreen = () => {
     return (
       <MobileLayout>
         <ScreenHeader title="Cart" />
-        <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-            <ShoppingCart className="w-10 h-10 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
+          <div className="relative w-32 h-32 mb-6">
+            <div className="absolute inset-0 bg-primary/10 rounded-full animate-pulse" />
+            <div className="absolute inset-2 bg-primary/20 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ShoppingCart className="w-12 h-12 text-primary" />
+            </div>
+            <div className="absolute -bottom-2 -right-2 bg-white rounded-full p-2 shadow-lg">
+              <Activity className="w-6 h-6 text-rose-500" />
+            </div>
           </div>
-          <h2 className="text-lg font-semibold text-foreground mb-2">Your cart is empty</h2>
-          <p className="text-sm text-muted-foreground mb-6">Add tests to your cart to proceed with booking</p>
-          <Button onClick={() => navigate("/categories")}>Browse Tests</Button>
+          <h2 className="text-2xl font-black text-foreground mb-3 tracking-tight">Your health cart is empty</h2>
+          <p className="text-[15px] font-medium text-muted-foreground mb-8 leading-relaxed max-w-[260px]">
+            Explore our comprehensive health packages and individual tests to stay on top of your well-being.
+          </p>
+          <motion.div whileTap={{ scale: 0.95 }} className="w-full max-w-[240px]">
+            <Button onClick={() => navigate("/categories")} className="w-full h-14 rounded-2xl text-base font-bold shadow-lg shadow-primary/25 bg-gradient-to-r from-primary to-blue-600">
+              Browse Health Packages
+            </Button>
+          </motion.div>
         </div>
       </MobileLayout>
     );
@@ -559,6 +572,30 @@ const CartScreen = () => {
           </button>
         </div>
 
+        {/* Frequently Bought Together */}
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="pt-2">
+          <h3 className="text-sm font-extrabold text-foreground mb-3 px-1">Frequently Bought Together</h3>
+          <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-none">
+            {[
+              { id: "vitamin-d", name: "Vitamin D (25-OH)", price: 499, original: 899 },
+              { id: "hba1c", name: "HbA1c (Glycosylated Hb)", price: 299, original: 550 },
+            ].map(rec => (
+              <div key={rec.id} className="w-[200px] shrink-0 bg-card rounded-2xl border border-border/70 p-3 flex flex-col justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground line-clamp-2 leading-tight">{rec.name}</h4>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="text-sm font-black text-foreground">₹{rec.price}</span>
+                    <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{rec.original}</span>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full h-8 mt-3 rounded-xl text-xs font-bold border-primary text-primary hover:bg-primary/5">
+                  <Plus className="w-3 h-3 mr-1" /> Add
+                </Button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Collection Address */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
           <div className="flex items-center justify-between mb-3 gap-2">
@@ -617,6 +654,19 @@ const CartScreen = () => {
               );
             })()
           )}
+        </motion.div>
+
+        {/* HIPAA Banner */}
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 flex items-start gap-3">
+          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+            <Lock className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div>
+            <h4 className="text-xs font-extrabold text-emerald-800 tracking-tight">Data Privacy Guaranteed</h4>
+            <p className="text-[11px] font-medium text-emerald-700/80 leading-relaxed mt-0.5">
+              Your health records are 256-bit encrypted and HIPAA compliant. We never share your data.
+            </p>
+          </div>
         </motion.div>
       </div>
 

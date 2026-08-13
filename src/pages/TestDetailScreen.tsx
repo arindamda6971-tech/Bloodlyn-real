@@ -15,6 +15,7 @@ import {
   Stethoscope,
   Smartphone,
   AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Checkbox } from "@/components/ui/checkbox";
 import MobileLayout from "@/components/layout/MobileLayout";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
@@ -89,6 +98,8 @@ const TestDetailScreen = () => {
   });
   const [loading, setLoading] = useState(!bridgeTest);
   const [error, setError] = useState<string | null>(null);
+  const [showTrustSheet, setShowTrustSheet] = useState(false);
+  const [prepChecked, setPrepChecked] = useState<boolean[]>([]);
 
   useEffect(() => {
     if (test || !id) {
@@ -207,9 +218,9 @@ const TestDetailScreen = () => {
     );
   }
 
-  const prereqText =
-    test.prerequisites?.trim() ||
-    "No special prerequisites. This test can be performed at any time of the day. Please carry a valid ID and any previous medical records for reference.";
+  const prereqList = test.prerequisites 
+    ? test.prerequisites.split(/,|\n/).map(p => p.trim()).filter(Boolean)
+    : ["No special prerequisites required.", "Carry a valid government ID."];
 
   const aboutText =
     test.description?.trim() || aiDescription.trim() || "";
@@ -249,7 +260,10 @@ const TestDetailScreen = () => {
           </p>
           <motion.h2 layoutId={`test-name-${test.id}`} className="text-xl font-extrabold leading-tight text-secondary">{test.name}</motion.h2>
           <div className="flex items-center gap-2 mt-2">
-            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+            <span 
+              onClick={() => setShowTrustSheet(true)}
+              className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full cursor-pointer active:scale-95 transition-transform"
+            >
               <ShieldCheck className="w-3 h-3" /> NABL Certified
             </span>
           </div>
@@ -309,10 +323,31 @@ const TestDetailScreen = () => {
           )}
         </motion.section>
 
-        {/* Prerequisites */}
+        {/* Prerequisites Checklist */}
         <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-[22px] font-bold text-secondary mb-3">Prerequisites</h3>
-          <p className="text-[15px] leading-relaxed text-muted-foreground mb-4">{prereqText}</p>
+          <h3 className="text-[22px] font-bold text-secondary mb-3">Preparation Checklist</h3>
+          <div className="space-y-3 mb-6 bg-card border border-border/60 rounded-2xl p-4 shadow-sm">
+            {prereqList.map((prereq, idx) => (
+              <div key={idx} className="flex items-start gap-3">
+                <Checkbox 
+                  id={`prep-${idx}`} 
+                  className="mt-0.5"
+                  checked={prepChecked[idx] || false}
+                  onCheckedChange={(checked) => {
+                    const newChecked = [...prepChecked];
+                    newChecked[idx] = checked as boolean;
+                    setPrepChecked(newChecked);
+                  }}
+                />
+                <label 
+                  htmlFor={`prep-${idx}`} 
+                  className={`text-[14px] leading-relaxed cursor-pointer transition-colors ${prepChecked[idx] ? 'text-muted-foreground line-through' : 'text-foreground font-medium'}`}
+                >
+                  {prereq}
+                </label>
+              </div>
+            ))}
+          </div>
 
           <Accordion type="single" collapsible className="space-y-3">
             {[
@@ -376,15 +411,51 @@ const TestDetailScreen = () => {
               {itemCount} {itemCount === 1 ? "test" : "tests"} already in cart · ₹{subtotal}
             </p>
           )}
-          <Button
-            onClick={handleAddToCart}
-            className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl active:scale-[0.99]"
-          >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            {isInCart ? "Go to Cart" : "Add to Cart"}
-          </Button>
+          <motion.div whileTap={{ scale: 0.95 }}>
+            <Button
+              onClick={handleAddToCart}
+              className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl transition-all"
+            >
+              <ShoppingCart className="w-5 h-5 mr-2" />
+              {isInCart ? "Go to Cart" : "Add to Cart"}
+            </Button>
+          </motion.div>
         </motion.div>
       </div>
+
+      {/* Trust Sheet */}
+      <Sheet open={showTrustSheet} onOpenChange={setShowTrustSheet}>
+        <SheetContent side="bottom" className="rounded-t-3xl min-h-[300px]">
+          <SheetHeader>
+            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-2 mx-auto">
+              <ShieldCheck className="w-7 h-7 text-emerald-600" />
+            </div>
+            <SheetTitle className="text-center text-xl">NABL Certified Quality</SheetTitle>
+            <SheetDescription className="text-center text-base mt-2">
+              National Accreditation Board for Testing and Calibration Laboratories (NABL) accreditation ensures that our partner labs maintain the highest international standards for quality and competence.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              <p className="text-sm font-medium">99.9% Testing Accuracy Guaranteed</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              <p className="text-sm font-medium">Strict Quality Control Protocols</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              <p className="text-sm font-medium">Internationally Recognized Results</p>
+            </div>
+          </div>
+          <div className="mt-8">
+            <Button onClick={() => setShowTrustSheet(false)} className="w-full h-12 rounded-xl text-base font-semibold">
+              Got it
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
 
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>

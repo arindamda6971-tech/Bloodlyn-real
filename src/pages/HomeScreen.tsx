@@ -267,6 +267,22 @@ const HomeScreen = () => {
     }
   };
 
+  const HighlightText = ({ text, highlight }: { text: string; highlight: string }) => {
+    if (!highlight.trim()) return <span>{text}</span>;
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+    return (
+      <span>
+        {parts.map((part, i) => 
+          part.toLowerCase() === highlight.toLowerCase() ? (
+            <span key={i} className="text-primary font-black">{part}</span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
+      </span>
+    );
+  };
+
   return (
     <div className="relative bg-background min-h-screen">
       {StaticBackground}
@@ -310,7 +326,9 @@ const HomeScreen = () => {
                           className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center"
                         >
                           <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-[13px] font-bold text-foreground leading-tight truncate">{test.name}</p>
+                            <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
+                              <HighlightText text={test.name} highlight={searchQuery} />
+                            </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
