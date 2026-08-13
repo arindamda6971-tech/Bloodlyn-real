@@ -261,14 +261,39 @@ const TrackingScreen = () => {
             </div>
           )}
 
+          {/* Order Placed Time */}
+          {order.created_at && (
+            <div className="flex items-center gap-2 py-2.5 border-t border-border">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground flex-1">Order Placed:</span>
+              <span className="text-sm font-semibold text-foreground text-right">
+                {format(new Date(order.created_at), "MMM dd, yyyy • hh:mm a")}
+              </span>
+            </div>
+          )}
+
           {/* Schedule */}
           {(order.scheduled_date || order.scheduled_time_slot) && (
-            <div className="flex items-center gap-2 py-2.5 border-t border-border">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
-                {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
-              </span>
+            <div className="flex items-start gap-2 py-2.5 border-t border-border">
+              <Calendar className="w-4 h-4 text-muted-foreground mt-0.5" />
+              <div className="flex flex-col flex-1 gap-1">
+                <div className="flex justify-between items-start">
+                  <span className="text-sm text-muted-foreground">Booking Time:</span>
+                  <span className="text-sm font-semibold text-foreground text-right">
+                    {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
+                    {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
+                  </span>
+                </div>
+                {(order as any).is_rescheduled && (order as any).rescheduled_date && (
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm text-muted-foreground">Rescheduled Time:</span>
+                    <span className="text-sm font-semibold text-amber-600 text-right">
+                      {format(new Date((order as any).rescheduled_date), "MMM dd, yyyy")}
+                      {(order as any).rescheduled_time_slot && ` • ${(order as any).rescheduled_time_slot}`}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -556,6 +581,7 @@ const TrackingScreen = () => {
           orderTotal={order.total}
           userId={supabaseUserId}
           orderStatus={order.status}
+          labId={order.lab_id}
           onSuccess={(mode) => {
             queryClient.invalidateQueries({ queryKey: ["order", order.id] });
             if (mode === "cancelled") {
