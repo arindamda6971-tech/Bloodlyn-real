@@ -29,7 +29,7 @@ interface CartContextType {
   removeFromCart: (id: string) => void;
   updateQuantity: (id: string, delta: number) => void;
   updateFamilyMember: (id: string, familyMemberId: string | undefined) => void;
-  updateLabForItems: (labId: string, labName: string) => void;
+  updateLabForItems: (labId: string, labName: string, itemPrices?: Record<string, number>) => void;
   clearCart: () => void;
   replaceCart: (newItems: Omit<CartItem, "quantity">[]) => void;
   itemCount: number;
