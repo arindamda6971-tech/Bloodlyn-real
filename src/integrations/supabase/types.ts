@@ -1226,6 +1226,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_webrtc_topic: { Args: { _topic: string }; Returns: boolean }
       cleanup_orphan_cart_items: { Args: never; Returns: number }
       has_role: {
         Args: {
