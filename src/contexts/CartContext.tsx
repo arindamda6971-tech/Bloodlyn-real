@@ -7,11 +7,11 @@ import { toast } from "sonner";
 interface CartItem {
   id: string;
   name: string;
-  price: number;
+  price: number | null;
   labId?: string;
   labName?: string;
   vendorId?: string;
-  quantity: number;
+  quantity: number | null;
   familyMemberId?: string;
   category?: string;
   kind?: "test" | "package";

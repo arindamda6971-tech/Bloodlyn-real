@@ -13,7 +13,7 @@ type AddressItem = {
 type AddressDBRow = {
   id: string;
   user_id: string;
-  address_line1?: string | null;
+  address_line1: string;
   address_line2?: string | null;
   city?: string | null;
   state?: string | null;
@@ -22,7 +22,7 @@ type AddressDBRow = {
   phone?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  is_default?: boolean;
+  is_default?: boolean | null;
   type?: string | null;
 };
 
