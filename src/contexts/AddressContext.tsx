@@ -15,9 +15,9 @@ type AddressDBRow = {
   user_id: string;
   address_line1: string;
   address_line2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  pincode?: string | null;
+  city: string;
+  state: string;
+  pincode: string;
   address?: string | null;
   phone?: string | null;
   latitude?: number | null;
