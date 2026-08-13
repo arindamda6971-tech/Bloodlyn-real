@@ -22,10 +22,18 @@ export const useAppLifecycle = () => {
       autoHide: false,
     });
 
-    // Hide splash screen after a short delay to ensure React has rendered
-    const timer = setTimeout(() => {
+    // Hide the native splash as soon as React has actually painted a frame
+    // (double rAF = after layout + paint) instead of a fixed 1.5s wait.
+    // The timeout is only a safety net if rAF is throttled in background.
+    let hidden = false;
+    const hide = () => {
+      if (hidden) return;
+      hidden = true;
       SplashScreen.hide();
-    }, 1500);
+    };
+    requestAnimationFrame(() => requestAnimationFrame(hide));
+    const timer = setTimeout(hide, 1500);
+
 
     // Listen for app state changes (Background/Foreground)
     const listener = App.addListener('appStateChange', ({ isActive }) => {

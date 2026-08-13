@@ -54,4 +54,18 @@ function setupMemoryManagement() {
 runOneTimeCacheMigration();
 setupMemoryManagement();
 
+// Remove the static HTML loader the moment React has painted its first frame.
+// (Previously it waited for window.load + 500ms, which added visible startup lag.)
+function hideBootLoader() {
+  const loader = document.getElementById("app-loading-screen");
+  if (!loader) return;
+  loader.style.transition = "opacity 200ms ease";
+  loader.style.opacity = "0";
+  setTimeout(() => loader.remove(), 220);
+}
+(window as unknown as { __blHideLoader?: () => void }).__blHideLoader = hideBootLoader;
+
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Double rAF = after layout + paint of the first React frame.
+requestAnimationFrame(() => requestAnimationFrame(hideBootLoader));

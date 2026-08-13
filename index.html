@@ -89,15 +89,10 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Remove loading screen when React is ready
+      // Fallback only: main.tsx removes the loader as soon as React paints.
+      // No artificial delay here — the splash should never outlive first paint.
       window.addEventListener('load', () => {
-        const loader = document.getElementById('app-loading-screen');
-        if (loader) {
-          setTimeout(() => {
-            loader.style.opacity = '0';
-            setTimeout(() => loader.remove(), 400);
-          }, 500);
-        }
+        setTimeout(() => window.__blHideLoader && window.__blHideLoader(), 0);
       });
     </script>
   </body>

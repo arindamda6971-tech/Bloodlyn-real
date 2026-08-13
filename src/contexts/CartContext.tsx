@@ -30,11 +30,11 @@ type CartItemDBRow = {
   test_id: string | null;
   package_id: string | null;
   test_name: string | null;
-  price: number;
+  price: number | null;
   lab_id: string | null;
   lab_name: string | null;
   vendor_id?: string | null;
-  quantity: number;
+  quantity: number | null;
   family_member_id: string | null;
   created_at?: string;
 };
