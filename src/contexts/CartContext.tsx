@@ -309,13 +309,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  const updateLabForItems = (labId: string, labName: string) => {
+  const updateLabForItems = (labId: string, labName: string, itemPrices?: Record<string, number>) => {
     setItems((prev) => {
-      const updated = prev.map((item) => ({
-        ...item,
-        labId,
-        labName,
-      }));
+      const updated = prev.map((item) => {
+        const key = item.id;
+        const newPrice = itemPrices && itemPrices[key] !== undefined ? itemPrices[key] : item.price;
+        return {
+          ...item,
+          labId,
+          labName,
+          price: newPrice,
+        };
+      });
       setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;

@@ -238,10 +238,6 @@ const TestDetailScreen = () => {
           </p>
           <motion.h2 layoutId={`test-name-${test.id}`} className="text-xl font-extrabold leading-tight text-secondary">{test.name}</motion.h2>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xl font-extrabold text-foreground">₹{test.price}</span>
-            {test.originalPrice && test.originalPrice > test.price && (
-              <span className="text-sm text-muted-foreground line-through">₹{test.originalPrice}</span>
-            )}
             <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
               <ShieldCheck className="w-3 h-3" /> NABL Certified
             </span>

@@ -154,34 +154,42 @@ const LabSelectionScreen = () => {
 
         // Also fetch products for all vendor_ids to cross-match
         const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
-        const vendorProducts: Record<string, string[]> = {};
+        const vendorProducts: Record<string, {name: string, price: number}[]> = {};
         if (vendorIds.length > 0) {
           const { data: products } = await supabase
             .from("products")
-            .select("vendor_id, product_name")
+            .select("vendor_id, product_name, price")
             .in("vendor_id", vendorIds)
             .eq("availability", true);
           if (products) {
             products.forEach((p) => {
               if (!vendorProducts[p.vendor_id]) vendorProducts[p.vendor_id] = [];
-              vendorProducts[p.vendor_id].push(p.product_name.trim().toLowerCase());
+              vendorProducts[p.vendor_id].push({
+                name: p.product_name.trim().toLowerCase(),
+                price: Number(p.price) || 0
+              });
             });
           }
         }
 
-        const filteredLabs = pincodeFiltered.filter((lab) => {
-          // Collect all test names from available_tests JSONB
-          const labTestNames = new Set<string>();
-          if (Array.isArray(lab.available_tests)) {
-            lab.available_tests.forEach((t: any) => {
-              const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
-              if (name) labTestNames.add(name);
+        // Step 1: Inject vendor products into ALL labs safely
+        const mappedLabs = pincodeFiltered.map((lab) => {
+          let available_tests = Array.isArray(lab.available_tests) ? [...lab.available_tests] : [];
+          if (lab.vendor_id && vendorProducts[lab.vendor_id]) {
+            vendorProducts[lab.vendor_id].forEach(vp => {
+              available_tests.push({ test_name: vp.name, price: vp.price });
             });
           }
-          // Also add from products table
-          if (lab.vendor_id && vendorProducts[lab.vendor_id]) {
-            vendorProducts[lab.vendor_id].forEach(n => labTestNames.add(n));
-          }
+          return { ...lab, available_tests };
+        });
+
+        // Step 2: Filter labs based on the fully injected available_tests
+        const filteredLabs = mappedLabs.filter((lab) => {
+          const labTestNames = new Set<string>();
+          lab.available_tests.forEach((t: any) => {
+            const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
+            if (name) labTestNames.add(name);
+          });
 
           if (labTestNames.size === 0) return false;
 
@@ -228,14 +236,14 @@ const LabSelectionScreen = () => {
   const getLabPrice = (lab: DiagnosticCenter): number => {
     if (!lab.available_tests || !Array.isArray(lab.available_tests)) return 0;
     let total = 0;
-    const cartTestNames = items.map(item => item.name.toLowerCase());
-    cartTestNames.forEach(cartName => {
+    items.forEach(item => {
+      const cartName = item.name.trim().toLowerCase();
       const found = lab.available_tests.find((t: any) => {
-        const name = (t.test_name || t.name || t.product_name || "").toLowerCase();
+        const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
         return name.includes(cartName) || cartName.includes(name);
       });
       if (found) {
-        total += Number(found.price) || 0;
+        total += (Number(found.price) || 0) * (item.quantity || 1);
       }
     });
     return total;
@@ -263,18 +271,38 @@ const LabSelectionScreen = () => {
     const labId = selectedLabId || currentLabId || "";
     const labName = selectedLabName || currentLabName || "";
 
+    const updatedCartItems = items.map(item => {
+      if (hasVendorLab) return { ...item, labId, labName };
+      const selectedLab = labs.find(l => l.id === labId);
+      let newPrice = item.price;
+      if (selectedLab && Array.isArray(selectedLab.available_tests)) {
+        const cartName = item.name.trim().toLowerCase();
+        const found = selectedLab.available_tests.find((t: any) => {
+            const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
+            return name.includes(cartName) || cartName.includes(name);
+        });
+        if (found) newPrice = Number(found.price) || 0;
+      }
+      return { ...item, price: newPrice, labId, labName };
+    });
+
     if (!hasVendorLab) {
-      updateLabForItems(labId, labName);
+      const itemPrices: Record<string, number> = {};
+      updatedCartItems.forEach(item => {
+        itemPrices[item.id] = item.price;
+      });
+      updateLabForItems(labId, labName, itemPrices);
     }
 
     const selectedSlot = allSlotItems.find((s) => s.id === selectedTime);
+    const finalSubtotal = hasVendorLab ? subtotal : updatedCartItems.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0);
 
     navigate("/payment", {
       state: {
-        cartItems: items.map(item => ({ ...item, labId, labName })),
+        cartItems: updatedCartItems,
         scheduledDate: dates[selectedDate].fullDate,
         scheduledTimeSlot: selectedSlot?.display || selectedTime || "",
-        subtotal,
+        subtotal: finalSubtotal,
         selectedLabName: labName,
         selectedLabId: labId,
         labVendorId: selectedLabVendorId,

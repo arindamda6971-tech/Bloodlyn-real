@@ -235,7 +235,6 @@ const CartScreen = () => {
     });
 
     // Determine if the cart has a pre-selected lab (from vendor profile booking)
-    const hasVendorLab = items.some((item) => item.labId && item.labName);
 
     navigate("/lab-selection", {
       state: {
@@ -288,6 +287,7 @@ const CartScreen = () => {
     showValidation && !isValid ? "ring-2 ring-destructive border-destructive" : "";
 
   const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
+  const hasVendorLab = items.some((item) => item.labId && item.labName);
   const hasService = items.some(
     (item) =>
       item.id.startsWith("doc-") ||
@@ -482,10 +482,12 @@ const CartScreen = () => {
               </p>
               <h2 className="text-base font-extrabold text-foreground tracking-tight">{totalQty} selected</h2>
             </div>
-            <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-extrabold text-primary">
-              Subtotal
-              <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 tabular-nums">₹{subtotal}</span>
-            </span>
+            {hasVendorLab && (
+              <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-extrabold text-primary">
+                Subtotal
+                <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 tabular-nums">₹{subtotal}</span>
+              </span>
+            )}
           </div>
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
@@ -529,7 +531,7 @@ const CartScreen = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
-                        {item.price > 0 && (
+                        {item.price > 0 && !!item.labId && (
                           <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
                         )}
                       </div>
@@ -636,7 +638,11 @@ const CartScreen = () => {
               <p className="text-[11px] font-semibold text-primary-foreground/80 leading-tight">
                 {totalQty} {totalQty === 1 ? "item" : "items"}
               </p>
-              <p className="text-lg font-black text-primary-foreground leading-tight tabular-nums">₹{subtotal}</p>
+              {hasVendorLab ? (
+                <p className="text-lg font-black text-primary-foreground leading-tight tabular-nums">₹{subtotal}</p>
+              ) : (
+                <p className="text-xs font-semibold text-primary-foreground/90 leading-tight">Price shown at lab selection</p>
+              )}
             </div>
           </div>
           <Button
