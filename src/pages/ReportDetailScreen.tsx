@@ -230,10 +230,7 @@ const ReportDetailScreen = () => {
               <FileSearch className="w-5 h-5" />
               View Original PDF
             </Button>
-            <Button variant="outline" className="flex-1" size="lg" onClick={() => {
-              toast.success("Downloading PDF...");
-              setTimeout(() => toast.error("Demo mode: No actual PDF file attached."), 1000);
-            }}>
+            <Button variant="outline" className="flex-1" size="lg" disabled>
               <Download className="w-5 h-5" />
               Download
             </Button>

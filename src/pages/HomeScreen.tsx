@@ -348,8 +348,19 @@ const HomeScreen = () => {
                     })}
                   </div>
                 ) : (
-                  <div className="p-6 text-center">
-                    <p className="text-xs font-bold text-muted-foreground">No tests found for "{searchQuery}"</p>
+                  <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                      <Search className="w-6 h-6 text-muted-foreground/50" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">No tests found</p>
+                      <p className="text-xs font-medium text-muted-foreground mt-1">We couldn't find anything matching "{searchQuery}"</p>
+                    </div>
+                    <div className="flex gap-3 mt-2 w-full max-w-[200px]">
+                      <Button variant="outline" size="sm" className="flex-1 rounded-xl h-10 border-border/50 bg-background hover:bg-muted/30" onClick={() => { setSearchQuery(""); setShowSearchResults(false); }}>
+                        Clear Search
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>

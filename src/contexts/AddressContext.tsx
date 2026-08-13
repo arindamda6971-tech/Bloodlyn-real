@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type AddressItem = {
   id: string;
@@ -7,6 +8,22 @@ type AddressItem = {
   phone: string;
   lat?: number | null;
   lon?: number | null;
+};
+
+type AddressDBRow = {
+  id: string;
+  user_id: string;
+  address_line1?: string | null;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  pincode?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  is_default?: boolean;
+  type?: string | null;
 };
 
 type AddressContextType = {
@@ -92,7 +109,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         if (data && Array.isArray(data)) {
-          const mappedAddresses: AddressItem[] = data.map((addr: any) => {
+          const mappedAddresses: AddressItem[] = data.map((addr: AddressDBRow) => {
             // Support both address_line1 format and simple address format
             const fullAddress = addr.address_line1 
               ? `${addr.address_line1}${addr.address_line2 ? ", " + addr.address_line2 : ""}${addr.city ? ", " + addr.city : ""}${addr.state ? ", " + addr.state : ""}${addr.pincode ? " " + addr.pincode : ""}`
@@ -114,7 +131,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
 
           // Get default address
-          const defaultAddr = data.find((addr: any) => addr.is_default);
+          const defaultAddr = data.find((addr: AddressDBRow) => addr.is_default);
           if (defaultAddr) {
             setDefaultAddressId(defaultAddr.id);
           }
@@ -160,7 +177,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const insertData: any = {
+      const insertData: Omit<AddressDBRow, "id"> = {
         user_id: userId,
         address_line1: a.address,
         phone: a.phone,
@@ -180,6 +197,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) {
         console.error("Supabase insert error:", error);
+        toast.error("Failed to sync your new address. Saved locally.");
         // Fallback to localStorage
         const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newItem: AddressItem = { id, ...a };
@@ -205,6 +223,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     } catch (err) {
       console.error("Error adding address:", err);
+      toast.error("Network error while adding address. Saved locally.");
       // Fallback to localStorage
       const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const newItem: AddressItem = { id, ...a };
@@ -237,7 +256,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const updateData: any = {};
+      const updateData: Partial<AddressDBRow> = {};
       if (patch.address !== undefined) updateData.address_line1 = patch.address;
       if (patch.phone !== undefined) updateData.phone = patch.phone;
       if (patch.lat !== undefined) updateData.latitude = patch.lat;
@@ -251,6 +270,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) {
         console.error("Supabase update error:", error);
+        toast.error("Failed to update your address on the server.");
         // Fallback to local state
         setAddresses((prev) =>
           prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
@@ -270,6 +290,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
     } catch (err) {
       console.error("Error updating address:", err);
+      toast.error("Network error while updating address.");
       // Fallback to local state
       setAddresses((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...patch } : p))
@@ -309,6 +330,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       if (error) {
         console.error("Supabase delete error:", error);
+        toast.error("Failed to delete address from server.");
         // Fallback to local state
         setAddresses((prev) => prev.filter((p) => p.id !== id));
         if (defaultAddressId === id) setDefaultAddressId(null);
@@ -326,6 +348,7 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (defaultAddressId === id) setDefaultAddressId(null);
     } catch (err) {
       console.error("Error deleting address:", err);
+      toast.error("Network error while deleting address.");
       // Fallback to local state
       setAddresses((prev) => prev.filter((p) => p.id !== id));
       if (defaultAddressId === id) setDefaultAddressId(null);

@@ -23,6 +23,22 @@ interface PendingItem {
   existingLabName: string;
 }
 
+// Temporary type to bypass missing schema definitions safely
+type CartItemDBRow = {
+  id: string;
+  user_id: string;
+  test_id: string | null;
+  package_id: string | null;
+  test_name: string | null;
+  price: number;
+  lab_id: string | null;
+  lab_name: string | null;
+  vendor_id?: string | null;
+  quantity: number;
+  family_member_id: string | null;
+  created_at?: string;
+};
+
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "quantity">) => boolean;
@@ -92,11 +108,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error loading cart:", error);
+        toast.error("Failed to load your cart. Please try refreshing.");
       } else if (data && data.length > 0) {
         // Filter out stale items older than 24 hours to prevent unwanted items
         const now = Date.now();
         const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
-        const freshData = data.filter((item) => {
+        const freshData = data.filter((item: CartItemDBRow) => {
           if (item.created_at) {
             const age = now - new Date(item.created_at).getTime();
             return age < MAX_AGE_MS;
@@ -111,14 +128,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const cartItems: CartItem[] = freshData
-          .filter((item) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
-          .map((item) => ({
+          .filter((item: CartItemDBRow) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
+          .map((item: CartItemDBRow) => ({
             id: item.package_id || item.test_id || item.id,
             name: item.test_name!,
             price: Number(item.price) || 0,
             labId: item.lab_id || undefined,
             labName: item.lab_name || undefined,
-            vendorId: (item as any).vendor_id || undefined,
+            vendorId: item.vendor_id || undefined,
             quantity: item.quantity || 1,
             familyMemberId: item.family_member_id || undefined,
             kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
@@ -132,6 +149,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (err) {
       console.error("Error loading cart:", err);
+      toast.error("Network error while loading cart.");
     } finally {
       setIsLoading(false);
       isInitialized.current = true;
@@ -149,7 +167,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-      const cartItemsToInsert = cartItems.map((item) => ({
+      const cartItemsToInsert = cartItems.map((item): Omit<CartItemDBRow, "id" | "created_at"> => ({
         user_id: userId,
         test_id: item.kind === "test" && isUuid(item.id) ? item.id : null,
         package_id: item.kind === "package" && isUuid(item.id) ? item.id : null,
@@ -159,7 +177,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         lab_name: item.labName || null,
         quantity: item.quantity,
         family_member_id: item.familyMemberId || null,
-      } as any));
+      }));
 
       const { error } = await supabase
         .from("cart_items")
@@ -167,9 +185,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error("Error syncing cart (insert failed):", error);
+        toast.error("Failed to save items to your cart. Please try again.");
       }
     } catch (err) {
       console.error("Error syncing cart:", err);
+      toast.error("Network error while syncing cart.");
     }
   };
 

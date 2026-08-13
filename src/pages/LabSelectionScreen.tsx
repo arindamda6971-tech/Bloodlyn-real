@@ -174,12 +174,12 @@ const LabSelectionScreen = () => {
 
         // Step 1: Inject vendor products into ALL labs safely
         const mappedLabs = pincodeFiltered.map((lab) => {
-          let available_tests = Array.isArray(lab.available_tests) ? [...lab.available_tests] : [];
-          if (lab.vendor_id && vendorProducts[lab.vendor_id]) {
-            vendorProducts[lab.vendor_id].forEach(vp => {
-              available_tests.push({ test_name: vp.name, price: vp.price });
-            });
-          }
+          const baseTests = Array.isArray(lab.available_tests) ? lab.available_tests : [];
+          const additionalTests = (lab.vendor_id && vendorProducts[lab.vendor_id])
+            ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, price: vp.price }))
+            : [];
+          
+          const available_tests = [...baseTests, ...additionalTests];
           return { ...lab, available_tests };
         });
 

@@ -585,7 +585,17 @@ const LabDetailScreen = () => {
         {/* Services Cards */}
         <div className="px-5 -mt-6 relative z-20">
           <div className="grid grid-cols-3 gap-3">
-             <button onClick={() => { setActiveTab("all"); setSearchQuery("Blood"); }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
+             <button onClick={() => { 
+               setActiveTab("all"); 
+               setSearchQuery("Blood");
+               setTimeout(() => {
+                 const el = document.getElementById("tests-section");
+                 if (el) {
+                   const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                   window.scrollTo({ top: y, behavior: 'smooth' });
+                 }
+               }, 100);
+             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
                <div className="w-10 h-10 rounded-xl bg-[#fee2e2] flex items-center justify-center mb-2">
                  <Beaker className="w-5 h-5 text-[#ef4444]" />
                </div>
@@ -702,7 +712,7 @@ const LabDetailScreen = () => {
           </div>
         </div>
 
-        <div className="px-5 mt-2 flex items-center justify-between">
+        <div id="tests-section" className="px-5 mt-2 flex items-center justify-between">
             <h2 className="text-[17px] font-black text-foreground tracking-tight">Tests & Packages</h2>
         </div>
 

@@ -37,6 +37,9 @@ import HomeScreen from "./pages/HomeScreen";
 import CategoriesScreen from "./pages/CategoriesScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import BookingsScreen from "./pages/BookingsScreen";
+import LocationCheckScreen from "./pages/LocationCheckScreen";
+import TestDetailScreen from "./pages/TestDetailScreen";
+import CartScreen from "./pages/CartScreen";
 
 // All other screens — lazily loaded with auto-reload fallback
 const safeImport = <T,>(importFn: () => Promise<T>): Promise<T> => {
@@ -56,12 +59,9 @@ const CapacitorInitializer = () => {
   return null;
 };
 
-const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
 const InstallScreen = lazy(() => safeImport(() => import("./pages/InstallScreen")));
 const CategoryTestsScreen = lazy(() => safeImport(() => import("./pages/CategoryTestsScreen")));
-const TestDetailScreen = lazy(() => safeImport(() => import("./pages/TestDetailScreen")));
 const TestSelectionScreen = lazy(() => safeImport(() => import("./pages/TestSelectionScreen")));
-const CartScreen = lazy(() => safeImport(() => import("./pages/CartScreen")));
 const LabSelectionScreen = lazy(() => safeImport(() => import("./pages/LabSelectionScreen")));
 const PaymentScreen = lazy(() => safeImport(() => import("./pages/PaymentScreen")));
 const ReportsScreen = lazy(() => safeImport(() => import("./pages/ReportsScreen")));

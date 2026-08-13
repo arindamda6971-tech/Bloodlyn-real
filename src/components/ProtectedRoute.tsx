@@ -6,9 +6,10 @@ import RouteFallback from "./RouteFallback";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  allowedRoles?: string[];
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const userId = user?.id ?? null;
   const location = useLocation();
@@ -40,8 +41,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         try {
           const roles = await fetchRoles();
           if (cancelled) return;
-          const blocked = roles.some((r) => r === "vendor" || r === "admin");
-          setIsAuthorized(!blocked);
+          let isAuth = true;
+          if (allowedRoles) {
+            isAuth = roles.some((r) => allowedRoles.includes(r));
+          } else {
+            // Default behavior: block vendors/admins from customer routes
+            const blocked = roles.some((r) => r === "vendor" || r === "admin");
+            isAuth = !blocked;
+          }
+          setIsAuthorized(isAuth);
           setRoleChecked(true);
           return;
         } catch {
