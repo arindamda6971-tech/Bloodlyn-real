@@ -771,9 +771,20 @@ const LabDetailScreen = () => {
                   <div className="flex justify-between items-start gap-3">
                     <button
                       type="button"
-                      onClick={() => setExpandedTest(expandedTest === test.id ? null : test.id)}
+                      onClick={() => {
+                        navigate(`/test/${test.id}`, {
+                          state: {
+                            bridgeTest: test,
+                            preselectedLab: {
+                              id: labId || "lal-pathlabs",
+                              name: lab.name,
+                              vendor_id: (lab as any).vendorId || labFromDb?.vendor_id,
+                              productPrice: test.price
+                            }
+                          }
+                        });
+                      }}
                       className="flex-1 min-w-0 text-left"
-                      aria-expanded={expandedTest === test.id}
                     >
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-extrabold text-foreground text-sm tracking-tight">{test.name}</h3>
