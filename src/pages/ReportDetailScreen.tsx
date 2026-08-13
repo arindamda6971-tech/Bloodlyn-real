@@ -14,9 +14,11 @@ import {
   MessageCircle,
   FileText,
   FileSearch,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import LoadingSpinner from "@/components/ui/loading-spinner";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { toast } from "sonner";
