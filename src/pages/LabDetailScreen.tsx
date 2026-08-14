@@ -328,6 +328,7 @@ const LabDetailScreen = () => {
   const navigate = useNavigate();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
@@ -498,7 +499,8 @@ const LabDetailScreen = () => {
     const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
     const isPackage = test.category === "Health Packages";
     const matchesTab = activeTab === "packages" ? isPackage : !isPackage;
-    return matchesSearch && matchesTab;
+    const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
+    return matchesSearch && matchesTab && matchesCategory;
   });
 
   const handleAddTest = (testId: string, testName: string) => {
@@ -554,7 +556,10 @@ const LabDetailScreen = () => {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    if (selectedCategory) setSelectedCategory(null);
+                  }}
                   placeholder="Search tests..."
                   className="flex-1 bg-transparent border-none text-white text-sm px-2 py-2 placeholder:text-white/70 focus:outline-none focus:ring-0"
                 />
@@ -591,6 +596,8 @@ const LabDetailScreen = () => {
           <div className="grid grid-cols-3 gap-3">
              <button onClick={() => { 
                setActiveTab("all"); 
+               setSelectedCategory("Blood Tests");
+               setSearchQuery("");
                setTimeout(() => {
                  const el = document.getElementById("tests-section");
                  if (el) {
@@ -741,7 +748,10 @@ const LabDetailScreen = () => {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
+                  onClick={() => {
+                    setActiveTab(tab.key);
+                    setSelectedCategory(null);
+                  }}
                   className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
                 >
                   {isActive && (
