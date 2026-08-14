@@ -64,6 +64,7 @@ export const useAppLifecycle = () => {
 
     return () => {
       clearTimeout(timer);
+      offReady();
       listener.then(l => l.remove());
     };
   }, []);
