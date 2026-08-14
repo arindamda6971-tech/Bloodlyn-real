@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
+import { onAppReady } from '@/lib/boot';
 
 /**
  * Manages app-wide lifecycle events for native platforms.
