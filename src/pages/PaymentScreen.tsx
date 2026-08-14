@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BookingStepper from "@/components/BookingStepper";
+import { TermsConsent } from "@/components/TermsConsent";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +63,7 @@ const PaymentScreen = () => {
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const idempotencyKeyRef = useRef<string | null>(null);
 
 
@@ -758,9 +760,11 @@ const PaymentScreen = () => {
 
       {/* Split Pay Button - Select Mode + Pay Now */}
       <div
-        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)' }}
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 pb-safe z-40"
       >
+        <div className="pb-3 -mx-2">
+          <TermsConsent checked={acceptedTerms} onCheckedChange={setAcceptedTerms} />
+        </div>
         <div className="flex items-center gap-0">
           {/* Left: Select Payment Mode */}
           <button
@@ -781,7 +785,7 @@ const PaymentScreen = () => {
             variant="hero"
             className="flex-1 h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
             onClick={handlePayment}
-            disabled={verifyingServiceability || isSubmittingOrder}
+            disabled={!acceptedTerms || verifyingServiceability || isSubmittingOrder}
           >
             <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
               <span className="text-sm font-bold">₹{total}</span>

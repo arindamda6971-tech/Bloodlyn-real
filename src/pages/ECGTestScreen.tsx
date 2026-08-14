@@ -24,6 +24,7 @@ import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot }
 import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
+import { TermsConsent } from "@/components/TermsConsent";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -213,6 +214,7 @@ const ECGTestScreen = () => {
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => {
     const checkMethod = () => {
@@ -1019,9 +1021,10 @@ const ECGTestScreen = () => {
                   </div>
                 </div>
 
+                <TermsConsent checked={acceptedTerms} onCheckedChange={setAcceptedTerms} className="mb-4" />
                 <Button
                   onClick={handlePlaceOrder}
-                  disabled={placing}
+                  disabled={!acceptedTerms || placing}
                   className="w-full h-14 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:opacity-95 text-white font-bold shadow-lg shadow-rose-600/25"
                 >
                   {placing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}

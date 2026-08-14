@@ -10,56 +10,56 @@ const sections = [
     icon: Database,
     accent: "text-blue-500",
     content:
-      "We collect the details you provide while using BloodLyn: your name, mobile number, email, age, gender, saved addresses and PIN code, family member profiles you create, prescriptions you upload for scanning, and your booking, payment and consultation history.",
+      "We collect details provided while using HealthSwift: name, mobile, email, age, gender, addresses, PIN code, family member profiles, uploaded prescriptions, and your complete booking history (labs, doctors, physio, BP, ECG).",
   },
   {
     title: "2. How We Use Your Data",
     icon: UserCheck,
     accent: "text-emerald-500",
     content:
-      "Your data is used to book diagnostic tests, schedule at-home sample collection, route orders to the diagnostic centre you select, deliver lab reports, run AI report explanations, and provide customer support. We do not sell your health data to advertisers.",
+      "Your data is used strictly to fulfill your bookings (diagnostic tests, home sample collections, doctor/physiotherapist consultations), deliver reports, run AI explanations, and provide support. We never sell health data to advertisers.",
   },
   {
-    title: "3. Sharing With Diagnostic Partners",
+    title: "3. Sharing With Healthcare Partners",
     icon: Share2,
     accent: "text-amber-500",
     content:
-      "When you place an order, only the information needed to fulfil it — patient name, age, gender, contact number, visit address, and the tests booked — is shared with the partner lab, phlebotomist or doctor you selected. Nothing is shared with labs you did not book.",
+      "When you place an order or book a consult, only necessary information (patient details, address, booked service) is shared securely with the specific partner lab, phlebotomist, doctor, or physiotherapist fulfilling your request.",
   },
   {
-    title: "4. Prescription Scanning",
+    title: "4. Medical Records & Prescriptions",
     icon: Shield,
     accent: "text-purple-500",
     content:
-      "Prescription images you upload are processed only to extract test names and are not stored permanently on our servers. The scanned image is discarded once matching is complete; only the resulting test selections stay in your cart.",
+      "Prescriptions uploaded for booking assistance are processed securely to extract test requirements. We maintain strict confidentiality of your medical records and they are only accessible by you and authorized medical personnel.",
   },
   {
-    title: "5. Security",
+    title: "5. Data Security",
     icon: Lock,
     accent: "text-rose-500",
     content:
-      "Data is transmitted over HTTPS and stored in a Supabase Postgres database protected by Row Level Security, so your records are only readable by your own authenticated account. Payment card details are handled by the payment gateway and never stored by BloodLyn.",
+      "Data is transmitted over HTTPS and stored securely with Row Level Security, ensuring records are readable only by your authenticated account. Payment details are handled directly by payment gateways and never stored by us.",
   },
   {
     title: "6. Data Retention",
     icon: Clock,
     accent: "text-indigo-500",
     content:
-      "Orders, reports and invoices are retained while your account is active so you can access your health history. You may request removal of individual reports at any time by contacting support.",
+      "Booking records, health reports, and invoices are retained while your account is active to provide you with a continuous health history. You may request removal of specific reports at any time via support.",
   },
   {
-    title: "7. Notifications",
+    title: "7. Notifications & Updates",
     icon: Bell,
     accent: "text-sky-500",
     content:
-      "We send transactional messages about OTP login, order status, collection ETA and report availability via SMS, WhatsApp or push notification. These are service messages required to run your booking.",
+      "We send essential transactional messages regarding OTP logins, order statuses, consultation links (for online audio/video calls), collection ETAs, and report availability via SMS, WhatsApp, or push notifications.",
   },
   {
-    title: "8. Account Deletion & Your Rights",
+    title: "8. Account Deletion & Rights",
     icon: Trash2,
     accent: "text-red-500",
     content:
-      "You can delete your account from Profile at any time; this removes your profile, addresses, family members and cart. You may also request a copy or correction of your data by writing to our support team.",
+      "You can delete your account from your Profile at any time, which permanently removes your personal data, addresses, and family members. You may also request a data export or correction by contacting support.",
   },
 ];
 

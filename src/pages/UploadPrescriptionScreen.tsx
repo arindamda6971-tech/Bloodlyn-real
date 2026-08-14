@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, UploadCloud, File, X, PhoneCall, CheckCircle2 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
+import { TermsConsent } from "@/components/TermsConsent";
 
 const UploadPrescriptionScreen = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const UploadPrescriptionScreen = () => {
   const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -195,10 +197,13 @@ const UploadPrescriptionScreen = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="pt-6">
+            <div className="pt-2">
+              <TermsConsent checked={acceptedTerms} onCheckedChange={setAcceptedTerms} />
+            </div>
+            <div className="pt-4">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={!acceptedTerms || isSubmitting}
                 className="w-full relative h-14 bg-primary text-white rounded-2xl font-bold text-[16px] flex items-center justify-center shadow-lg shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:pointer-events-none overflow-hidden group"
               >
                 {isSubmitting ? (
