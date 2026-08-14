@@ -70,7 +70,7 @@ const CartScreen = () => {
   useSEO({ title: "Your Cart | BloodLyn", description: "Review your selected diagnostic tests and proceed to lab selection and secure checkout." });
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, removeFromCart, subtotal, currentLabName, isLoading, updateFamilyMember } = useCart();
+  const { items, removeFromCart, subtotal, currentLabName, currentLabId, isLoading, updateFamilyMember } = useCart();
   const { supabaseUserId, user } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
   const [selfProfile, setSelfProfile] = useState<{ full_name: string; age: string; gender: string; phone: string } | null>(null);
@@ -96,6 +96,7 @@ const CartScreen = () => {
   // Validation highlight
   const [showValidation, setShowValidation] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [recommendedTests, setRecommendedTests] = useState<{ id: string; name: string; price: number; original: number }[]>([]);
 
   // Address
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -206,6 +207,71 @@ const CartScreen = () => {
     };
     fetchAddresses();
   }, [supabaseUserId]);
+
+  // Fetch recommended tests based on lab
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      const isVendorCart = items.some((item) => item.labId && item.labName);
+      if (!isVendorCart || !currentLabId) {
+        setRecommendedTests([]);
+        return;
+      }
+      
+      try {
+        const { data: labData, error } = await supabase
+          .from("diagnostic_centers")
+          .select("vendor_id, available_tests")
+          .eq("id", currentLabId)
+          .maybeSingle();
+          
+        if (error || !labData) {
+          setRecommendedTests([]);
+          return;
+        }
+        
+        const baseTests = Array.isArray(labData.available_tests) ? labData.available_tests : [];
+        let vendorTests: any[] = [];
+        
+        if (labData.vendor_id) {
+           const { data: products } = await supabase
+             .from("products")
+             .select("product_name, price")
+             .eq("vendor_id", labData.vendor_id)
+             .eq("availability", true);
+           
+           if (products) {
+             vendorTests = products.map((p: any) => ({ test_name: p.product_name, price: p.price }));
+           }
+        }
+        
+        const allTests = [...baseTests, ...vendorTests];
+        const recs: { id: string; name: string; price: number; original: number }[] = [];
+        
+        const bpTest = allTests.find(t => {
+           const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
+           return name.includes("blood pressure") || name === "bp";
+        });
+        if (bpTest) {
+           const price = Number(bpTest.price) || 99;
+           recs.push({ id: "blood-pressure", name: "Blood Pressure", price, original: Math.round(price * 1.5) });
+        }
+        
+        const ecgTest = allTests.find(t => {
+           const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
+           return name.includes("ecg");
+        });
+        if (ecgTest) {
+           const price = Number(ecgTest.price) || 299;
+           recs.push({ id: "ecg-test", name: "ECG Test", price, original: Math.round(price * 1.5) });
+        }
+        
+        setRecommendedTests(recs);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchRecommendations();
+  }, [items, currentLabId]);
 
   
   const formatAddress = (addr: SavedAddress) => {
@@ -573,28 +639,41 @@ const CartScreen = () => {
         </div>
 
         {/* Frequently Bought Together */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="pt-2">
-          <h3 className="text-sm font-extrabold text-foreground mb-3 px-1">Frequently Bought Together</h3>
-          <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-none">
-            {[
-              { id: "vitamin-d", name: "Vitamin D (25-OH)", price: 499, original: 899 },
-              { id: "hba1c", name: "HbA1c (Glycosylated Hb)", price: 299, original: 550 },
-            ].map(rec => (
-              <div key={rec.id} className="w-[200px] shrink-0 bg-card rounded-2xl border border-border/70 p-3 flex flex-col justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-foreground line-clamp-2 leading-tight">{rec.name}</h4>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-sm font-black text-foreground">₹{rec.price}</span>
-                    <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{rec.original}</span>
+        {recommendedTests.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="pt-2">
+            <h3 className="text-sm font-extrabold text-foreground mb-3 px-1">Frequently Bought Together</h3>
+            <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-none">
+              {recommendedTests.map(rec => (
+                <div key={rec.id} className="w-[200px] shrink-0 bg-card rounded-2xl border border-border/70 p-3 flex flex-col justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-foreground line-clamp-2 leading-tight">{rec.name}</h4>
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="text-sm font-black text-foreground">₹{rec.price}</span>
+                      <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{rec.original}</span>
+                    </div>
                   </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-8 mt-3 rounded-xl text-xs font-bold border-primary text-primary hover:bg-primary/5"
+                    onClick={() => {
+                      addToCart({ 
+                        id: rec.id, 
+                        name: rec.name, 
+                        price: rec.price, 
+                        kind: "test", 
+                        labId: currentLabId || undefined, 
+                        labName: currentLabName || undefined 
+                      });
+                    }}
+                  >
+                    <Plus className="w-3 h-3 mr-1" /> Add
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm" className="w-full h-8 mt-3 rounded-xl text-xs font-bold border-primary text-primary hover:bg-primary/5">
-                  <Plus className="w-3 h-3 mr-1" /> Add
-                </Button>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Collection Address */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">

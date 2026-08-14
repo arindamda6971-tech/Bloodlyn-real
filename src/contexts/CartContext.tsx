@@ -143,9 +143,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         setItems(cartItems);
         setLocalCart(cartItems);
       } else {
-        // DB has no items — clear local storage too so old items don't resurface
-        setItems([]);
-        setLocalCart([]);
+        // DB has no items — if local storage has items, sync them to DB instead of wiping them
+        const local = getLocalCart();
+        if (local.length > 0) {
+          setItems(local);
+          syncItemsToSupabase(local, user.id).catch(console.error);
+        } else {
+          setItems([]);
+          setLocalCart([]);
+        }
       }
     } catch (err) {
       console.error("Error loading cart:", err);
