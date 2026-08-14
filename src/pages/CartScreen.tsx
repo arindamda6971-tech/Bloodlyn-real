@@ -217,37 +217,51 @@ const CartScreen = () => {
         return;
       }
       
-      try {
-        const { data: labData, error } = await supabase
-          .from("diagnostic_centers")
-          .select("vendor_id, available_tests")
-          .eq("id", currentLabId)
-          .maybeSingle();
-          
-        if (error || !labData) {
-          setRecommendedTests([]);
-          return;
+      const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+      let allTests: any[] = [];
+
+      if (!isUuid(currentLabId)) {
+        // It's a mock lab from labsData
+        const { labsData } = await import('./LabDetailScreen');
+        const mockLab = labsData[currentLabId];
+        if (mockLab && mockLab.tests) {
+          allTests = mockLab.tests.map(t => ({ test_name: t.name, price: t.price }));
         }
-        
-        const baseTests = Array.isArray(labData.available_tests) ? labData.available_tests : [];
-        let vendorTests: any[] = [];
-        
-        if (labData.vendor_id) {
-           const { data: products } = await supabase
-             .from("products")
-             .select("product_name, price")
-             .eq("vendor_id", labData.vendor_id)
-             .eq("availability", true);
-           
-           if (products) {
-             vendorTests = products.map((p: any) => ({ test_name: p.product_name, price: p.price }));
-           }
+      } else {
+        // It's a real lab in Supabase
+        try {
+          const { data: labData, error } = await supabase
+            .from("diagnostic_centers")
+            .select("vendor_id, available_tests")
+            .eq("id", currentLabId)
+            .maybeSingle();
+            
+          if (!error && labData) {
+            const baseTests = Array.isArray(labData.available_tests) ? labData.available_tests : [];
+            let vendorTests: any[] = [];
+            
+            if (labData.vendor_id) {
+               const { data: products } = await supabase
+                 .from("products")
+                 .select("product_name, price")
+                 .eq("vendor_id", labData.vendor_id)
+                 .eq("availability", true);
+               
+               if (products) {
+                 vendorTests = products.map((p: any) => ({ test_name: p.product_name, price: p.price }));
+               }
+            }
+            
+            allTests = [...baseTests, ...vendorTests];
+          }
+        } catch (err) {
+          console.error("Error fetching lab recommendations:", err);
         }
-        
-        const allTests = [...baseTests, ...vendorTests];
-        const recs: { id: string; name: string; price: number; original: number }[] = [];
-        
-        const bpTest = allTests.find(t => {
+      }
+
+      const recs: { id: string; name: string; price: number; original: number }[] = [];
+      
+      const bpTest = allTests.find(t => {
            const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
            return name.includes("blood pressure") || name === "bp";
         });
@@ -266,9 +280,6 @@ const CartScreen = () => {
         }
         
         setRecommendedTests(recs);
-      } catch (e) {
-        console.error(e);
-      }
     };
     fetchRecommendations();
   }, [items, currentLabId]);

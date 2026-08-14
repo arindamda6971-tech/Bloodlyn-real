@@ -79,7 +79,7 @@ const CategoryTestsScreen = () => {
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const { data: bridgeData, isLoading, error } = useBridgeTests();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
 
   // Incremental rendering for ultra-smooth list population
   const [visibleCount, setVisibleCount] = useState(20);
@@ -102,6 +102,8 @@ const CategoryTestsScreen = () => {
 
   const tests = useMemo(() => allTests.slice(0, visibleCount), [allTests, visibleCount]);
 
+  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
+
   useEffect(() => {
     if (visibleCount < allTests.length) {
       const id = requestAnimationFrame(() => {
@@ -111,7 +113,6 @@ const CategoryTestsScreen = () => {
     }
   }, [visibleCount, allTests.length]);
 
-  const isInCart = (testId: string) => items.some((item) => item.id === testId);
 
   const handleAddToCart = (test: BridgeTest) => {
     const price = test.price > 0 ? test.price : test.collection_fee || 0;
@@ -215,7 +216,7 @@ const CategoryTestsScreen = () => {
               <TestItem
                 key={test.id}
                 test={test}
-                isInCart={isInCart(test.id)}
+                isInCart={isInCart(test.id, test.test_name)}
                 onAdd={handleAddToCart}
                 onViewCart={() => navigate("/cart")}
                 onOpen={(t) => navigate(`/test/${t.id}`, { state: { bridgeTest: t } })}

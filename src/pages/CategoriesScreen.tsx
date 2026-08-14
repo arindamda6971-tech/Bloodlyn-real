@@ -131,7 +131,7 @@ const CategoriesScreen = () => {
     return categories;
   }, [debouncedSearchQuery, categories]);
 
-  const isInCart = (testId: string) => items.some((item) => item.id === testId);
+  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
   const handleAddToCart = (test: BridgeTest) => {
     const price = test.price > 0 ? test.price : test.collection_fee || 0;
@@ -175,7 +175,7 @@ const CategoriesScreen = () => {
           </h2>
           <div className="space-y-2">
             {searchResults.map((test, index) => {
-              const alreadyInCart = isInCart(test.id);
+              const alreadyInCart = isInCart(test.id, test.name);
               return (
                 <motion.div
                   key={test.id}

@@ -141,7 +141,7 @@ const HomeScreen = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const { unreadCount } = useNotifications();
   const { user } = useAuth();
-  const { addToCart, items, clearCart, replaceCart } = useCart();
+  const { addToCart, items, clearCart, replaceCart, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [greeting, setGreeting] = useState(getGreeting());
@@ -254,7 +254,7 @@ const HomeScreen = () => {
     return intelligentSearch(debouncedSearchQuery, [...allTests, ...(bridgeData?.tests || [])]);
   }, [debouncedSearchQuery, allTests, bridgeData]);
 
-  const isInCart = (testId: string) => items.some((item) => item.id === testId);
+  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
   const handleQuickAdd = (e: React.MouseEvent, test: any) => {
     e.stopPropagation();
@@ -314,7 +314,7 @@ const HomeScreen = () => {
                     {searchResults.map((test) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
-                      const inCart = isInCart(test.id);
+                      const inCart = isInCart(test.id, test.test_name);
                       return (
                         <button
                           key={test.id}

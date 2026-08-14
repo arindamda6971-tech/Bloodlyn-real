@@ -57,6 +57,7 @@ interface CartContextType {
   cancelReplace: () => void;
   isLoading: boolean;
   validateFamilyMember: (activeMemberIds: string[]) => void;
+  hasItem: (testId: string, testName?: string) => boolean;
 }
 
 const LOCAL_STORAGE_KEY = "healthswift_cart_items";
@@ -173,7 +174,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-      const cartItemsToInsert = cartItems.map((item): Omit<CartItemDBRow, "id" | "created_at"> => ({
+      let cartItemsToInsert = cartItems.map((item): Omit<CartItemDBRow, "id" | "created_at"> => ({
         user_id: userId,
         test_id: item.kind === "test" && isUuid(item.id) ? item.id : null,
         package_id: item.kind === "package" && isUuid(item.id) ? item.id : null,
@@ -182,16 +183,32 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
         lab_name: item.labName || null,
         quantity: item.quantity,
-        family_member_id: item.familyMemberId || null,
-      }));
+      } as any));
 
-      const { error } = await supabase
+      let { error } = await supabase
         .from("cart_items")
         .insert(cartItemsToInsert);
 
+      // Handle mock data foreign key violations
+      if (error && error.message?.includes("cart_items_test_id_fkey")) {
+        cartItemsToInsert = cartItemsToInsert.map(item => ({ ...item, test_id: null }));
+        const retry = await supabase.from("cart_items").insert(cartItemsToInsert);
+        error = retry.error;
+      }
+      if (error && error.message?.includes("cart_items_package_id_fkey")) {
+        cartItemsToInsert = cartItemsToInsert.map(item => ({ ...item, package_id: null }));
+        const retry = await supabase.from("cart_items").insert(cartItemsToInsert);
+        error = retry.error;
+      }
+      if (error && error.message?.includes("cart_items_lab_id_fkey")) {
+        cartItemsToInsert = cartItemsToInsert.map(item => ({ ...item, lab_id: null }));
+        const retry = await supabase.from("cart_items").insert(cartItemsToInsert);
+        error = retry.error;
+      }
+
       if (error) {
         console.error("Error syncing cart (insert failed):", error);
-        toast.error("Failed to save items to your cart. Please try again.");
+        toast.error(`Failed to save items: ${error.message || error.details || "Unknown error"}`);
       }
     } catch (err) {
       console.error("Error syncing cart:", err);
@@ -244,12 +261,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const currentLabId = items.length > 0 ? items[0].labId || null : null;
   const currentLabName = items.length > 0 ? items[0].labName || null : null;
 
+  const hasItem = useCallback((testId: string, testName?: string) => {
+    return items.some((i) => i.id === testId || (testName && i.name === testName));
+  }, [items]);
+
   const addToCart = (item: Omit<CartItem, "quantity">): boolean => {
     if (import.meta.env.DEV) console.log("CartContext.addToCart called with:", item);
     triggerHaptic('light');
 
     // Prevent duplicate adds — same test cannot be added twice
-    if (items.some((i) => i.id === item.id)) {
+    if (hasItem(item.id, item.name)) {
       toast.error("This test is already in your cart.");
       return false;
     }
@@ -411,6 +432,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         cancelReplace,
         isLoading,
         validateFamilyMember,
+        hasItem,
       }}
     >
       {children}

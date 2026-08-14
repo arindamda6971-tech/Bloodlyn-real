@@ -109,7 +109,7 @@ const fallbackThemes = [
 ];
 
 // Lab data with test catalogs
-const labsData: Record<string, {
+export const labsData: Record<string, {
   name: string;
   rating: number;
   reviews: number;
@@ -323,7 +323,7 @@ interface DynamicTest {
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
   const navigate = useNavigate();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace, items } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
@@ -769,7 +769,7 @@ const LabDetailScreen = () => {
           <div className="space-y-3 pb-8">
             {filteredTests.map((rawTest, index) => {
               const test = rawTest as DynamicTest;
-              const isAdded = items.some(item => item.id === test.id);
+              const isAdded = hasItem(test.id, test.name);
               return (
                 <motion.div
                   key={test.id}

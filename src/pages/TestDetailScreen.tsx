@@ -77,7 +77,7 @@ const TestDetailScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams<{ id: string }>();
-  const { addToCart, itemCount, items, subtotal, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, itemCount, items, subtotal, pendingItem, confirmReplace, cancelReplace, hasItem } = useCart();
   const { pincode } = useUserPincode();
   const { data: bridgeData } = useBridgeTests();
 
@@ -173,7 +173,7 @@ const TestDetailScreen = () => {
     return () => { cancelled = true; };
   }, [test?.name, test?.description]);
 
-  const isInCart = useMemo(() => !!test && items.some((i) => i.id === test.id), [items, test]);
+  const isInCart = useMemo(() => !!test && hasItem(test.id, test.test_name || test.name), [items, test, hasItem]);
 
   const handleAddToCart = () => {
     if (!test) return;
