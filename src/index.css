@@ -9,7 +9,19 @@
 
 @layer base {
   :root {
+    /* Safe area tokens.
+       Android WebView reports env(safe-area-inset-*) as 0px (so the env()
+       fallback never kicks in) while MainActivity injects the real inset via
+       --safe-area-inset-*. max() picks whichever is actually non-zero. */
+    --safe-area-inset-top: 0px;
+    --safe-area-inset-bottom: 0px;
+    --safe-area-inset-left: 0px;
+    --safe-area-inset-right: 0px;
+    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+
      /* BloodLyn Brand Colors */
+
     --background: 210 20% 98%;
     --foreground: 210 50% 15%;
 
