@@ -68,6 +68,10 @@ export const labServesPincode = (
   // Fallback: lab's own pincode field. Supports comma/space/semicolon-separated
   // values (some vendors store multiple pincodes in a single text column).
   const raw = (lab.pincode || "").trim();
+  
+  // If the lab has no location constraints defined at all, default to visible.
+  if (!raw && list.length === 0) return true;
+  
   if (!raw) return false;
   const pins = raw.split(/[,;\s]+/).map((p) => p.trim()).filter(Boolean);
   return pins.includes(userPincode);

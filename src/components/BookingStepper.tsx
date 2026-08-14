@@ -24,7 +24,7 @@ const BookingStepper = ({ currentStep }: BookingStepperProps) => {
           return (
             <span
               key={step.label}
-              className={`text-[11px] font-bold ${
+              className={`text-[11px] font-bold whitespace-nowrap ${
                 isActive
                   ? "text-primary"
                   : isCompleted

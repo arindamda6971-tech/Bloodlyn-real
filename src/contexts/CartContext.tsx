@@ -85,7 +85,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>(getLocalCart);
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const isInitialized = useRef(false);
   const isSyncing = useRef(false);
   const pendingSyncItems = useRef<CartItem[] | null>(null);

@@ -115,14 +115,16 @@ const PaymentScreen = () => {
       if (cancelled) return;
 
       if (!alreadyHasBpItem && data?.offers_home_bp === true) {
-        setBpAddonPrice(Number(data.home_bp_price) || 299);
+        // Fall back to 99 instead of 299, but ideally should match Cart
+        setBpAddonPrice(Number(data.home_bp_price) || 99);
       } else {
         setBpAddonPrice(null);
         setBpAddonSelected(false);
       }
 
       if (!alreadyHasEcgItem && (data?.offers_home_ecg === true || data?.ecg_available === true)) {
-        setEcgAddonPrice(Number(data.ecg_price) || 599);
+        // Fall back to 299 instead of 599, but ideally should match Cart
+        setEcgAddonPrice(Number(data.ecg_price) || 299);
       } else {
         setEcgAddonPrice(null);
         setEcgAddonSelected(false);

@@ -537,7 +537,7 @@ const LabDetailScreen = () => {
 
   return (
     <MobileLayout showNav={false}>
-      <div className="pb-24 bg-slate-50 min-h-screen">
+      <div className="pb-32 bg-slate-50 min-h-screen">
         {/* Header with image */}
         <div className="relative h-72 w-full rounded-b-[2.5rem] overflow-hidden shadow-sm">
           <img loading="lazy" decoding="async" src="/lab-banner.png" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
@@ -783,7 +783,7 @@ const LabDetailScreen = () => {
           </motion.div>
 
           {/* Tests List */}
-          <div className="space-y-3 pb-8">
+          <div className="space-y-3 pb-24">
             {filteredTests.map((rawTest, index) => {
               const test = rawTest as DynamicTest;
               const isAdded = hasItem(test.id, test.name);

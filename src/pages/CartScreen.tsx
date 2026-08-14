@@ -226,6 +226,13 @@ const CartScreen = () => {
 
   const handleCheckout = () => {
     if (isCheckingOut) return;
+    
+    if (!supabaseUserId) {
+      toast.error("Please login to proceed with checkout");
+      navigate("/login", { state: { returnTo: "/cart" } });
+      return;
+    }
+
     if (!isPatientInfoValid) {
       setShowValidation(true);
       toast.error("Please fill all required fields");
