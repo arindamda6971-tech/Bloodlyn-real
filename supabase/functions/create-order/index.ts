@@ -782,6 +782,55 @@ Deno.serve(async (req) => {
       status: orderStatus,
     };
 
+    // --- Migrate Insecure Client-Side Inserts to Edge Function ---
+    // 1. blood_lyn_orders insertion
+    const newRealOrder = {
+      id: orderData.id,
+      order_number: orderData.order_number,
+      status: "accepted",
+      created_at: new Date().toISOString(),
+      customer_name: patientName || "Patient",
+      customer_phone: patientPhone || "9876543210",
+      patient_name: patientName || "Patient",
+      patient_age: String(patientAge || "30"),
+      patient_gender: patientGender || "Male",
+      test_name: cartItems.map(c => c.name).join(", ") || "Lab Diagnostic Test",
+      total_amount: serverTotal,
+      payment_status: "Paid",
+      payment_method: paymentMethod || "UPI / Online",
+      scheduled_date: scheduledDate || new Date().toISOString().slice(0, 10),
+      scheduled_time_slot: scheduledTimeSlot || "Morning Slot",
+      test_items: cartItems.map(c => c.name || "Diagnostic Test"),
+    };
+    await adminClient.from("blood_lyn_orders").insert([newRealOrder]).catch(e => console.error("blood_lyn_orders edge insert error:", e));
+
+    // 2. appointments insertion
+    for (const item of cartItems) {
+      if (item.id.startsWith("doc-") || item.id.startsWith("physio-")) {
+        const rawDocId = String(item.vendorId || item.id || "").replace(/^doc-(video-|audio-)?/i, "").replace(/^physio-/i, "");
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawDocId);
+        if (isUuid) {
+          const mode = item.id.includes("doc-video") ? "video" : item.id.includes("doc-audio") ? "audio" : "in_clinic";
+          const apptPayload = {
+            doctor_id: rawDocId,
+            patient_name: patientName || "Patient",
+            patient_phone: patientPhone || "",
+            patient_age: patientAge ? Number(patientAge) : 30,
+            patient_gender: patientGender || "Male",
+            scheduled_at: scheduledDate ? new Date(scheduledDate).toISOString() : new Date().toISOString(),
+            mode,
+            symptoms: specialInstructions || "Doctor Consultation",
+            fee: priceMap[item.id] !== undefined ? priceMap[item.id] : (item.price || 0),
+            status: "pending",
+            source: "main_app",
+            external_booking_id: orderData.id,
+          };
+          await adminClient.from("appointments").insert([apptPayload]).catch(e => console.error("appointments edge insert error:", e));
+        }
+      }
+    }
+    // -----------------------------------------------------------
+
     if (idempotencyKey) {
       await adminClient.from("subscription_purchase_attempts").insert({
         user_id: userId,

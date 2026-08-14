@@ -418,7 +418,8 @@ const PaymentScreen = () => {
               external_booking_id: fnData?.orderId || fnData?.id || null,
             };
             try {
-              await (supabase as any).from("appointments").insert(apptPayload);
+              // Now securely handled by create-order Edge Function
+              // await (supabase as any).from("appointments").insert(apptPayload);
             } catch (e) {
               console.warn("Failed to insert appointment row:", e);
             }
@@ -448,7 +449,8 @@ const PaymentScreen = () => {
       };
 
       try {
-        await (supabase as any).from("blood_lyn_orders").insert([newRealOrder]);
+        // Now securely handled by create-order Edge Function
+        // await (supabase as any).from("blood_lyn_orders").insert([newRealOrder]);
       } catch (e) {
         console.warn("Failed to insert blood_lyn_orders row:", e);
       }
