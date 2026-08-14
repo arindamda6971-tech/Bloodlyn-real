@@ -48,6 +48,7 @@ const PartnerLabsScreen = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [diagnosticCenters, setDiagnosticCenters] = useState<DiagnosticCenter[]>([]);
+  const [totalCities, setTotalCities] = useState(0);
   const [loading, setLoading] = useState(true);
 
   // Subscribe to real-time updates
@@ -66,6 +67,8 @@ const PartnerLabsScreen = () => {
         if (error) {
           console.error("Error fetching diagnostic centers:", error);
         } else {
+          const uniqueCities = new Set((data || []).map((c: any) => c.city?.trim().toLowerCase()).filter(Boolean));
+          setTotalCities(uniqueCities.size);
           // Filter to only labs serving the user's pincode (Zomato-style)
           const serviceable = (data || []).filter((c) => labServesPincode(c as any, userPincode));
           setDiagnosticCenters(serviceable);
@@ -124,7 +127,7 @@ const PartnerLabsScreen = () => {
           </div>
           <div className="w-px h-10 bg-border" />
           <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-primary">500+</p>
+            <p className="text-xl font-bold text-primary">{totalCities}</p>
             <p className="text-xs text-muted-foreground">Cities</p>
           </div>
           <div className="w-px h-10 bg-border" />
@@ -208,13 +211,7 @@ const PartnerLabsScreen = () => {
                       <span className="truncate">{center.city}, {center.state}</span>
                     </div>
 
-                    {/* Timing */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTiming(center.opening_time, center.closing_time)}</span>
-                      </div>
-                    </div>
+
 
                     {/* Accreditations */}
                     <div className="flex items-center gap-1.5 mt-2">
