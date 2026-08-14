@@ -4,6 +4,7 @@ import {
   isFixedSlotBookable,
   type LabSlotDate,
 } from "@/lib/lab-slots";
+import { hapticSelection } from "@/utils/haptics";
 
 interface CollectionSlotPickerProps {
   /** 3-day strip built in the lab timezone (today, tomorrow, day after). */
