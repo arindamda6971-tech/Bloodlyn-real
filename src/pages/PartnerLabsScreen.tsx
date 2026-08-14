@@ -143,7 +143,7 @@ const PartnerLabsScreen = () => {
             <LoadingSpinner size="lg" />
           </div>
         ) : (
-          <div className="space-y-3 pb-8">
+          <div className="space-y-3 pb-8 list-virtual-lg">
             {filteredCenters.map((center, index) => (
               <motion.div
                 key={center.id}
