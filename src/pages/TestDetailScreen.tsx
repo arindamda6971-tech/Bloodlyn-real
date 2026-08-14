@@ -173,7 +173,7 @@ const TestDetailScreen = () => {
     return () => { cancelled = true; };
   }, [test?.name, test?.description]);
 
-  const isInCart = useMemo(() => !!test && hasItem(test.id, test.test_name || test.name), [items, test, hasItem]);
+  const isInCart = useMemo(() => !!test && hasItem(test.id, test.name), [items, test, hasItem]);
 
   const handleAddToCart = () => {
     if (!test) return;

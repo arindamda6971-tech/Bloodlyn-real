@@ -668,7 +668,7 @@ const LabDetailScreen = () => {
                       name: labName,
                       logo_url: logoUrl,
                       vendor_id: labFromDb?.vendor_id ?? null,
-                      home_ecg_price: labFromDb?.ecg_price || labFromDb?.home_ecg_price || 599,
+                      home_ecg_price: labFromDb?.ecg_price || 599,
                       ecg_available: true,
                     }
 

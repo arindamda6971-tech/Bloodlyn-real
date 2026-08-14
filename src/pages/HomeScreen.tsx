@@ -314,7 +314,7 @@ const HomeScreen = () => {
                     {searchResults.map((test) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
-                      const inCart = isInCart(test.id, test.test_name);
+                      const inCart = isInCart(test.id, test.name);
                       return (
                         <button
                           key={test.id}

@@ -74,7 +74,7 @@ const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
   const { data: bridgeData, isLoading } = useBridgeTests();
-  const { addToCart, items } = useCart();
+  const { addToCart, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -175,7 +175,7 @@ const CategoriesScreen = () => {
           </h2>
           <div className="space-y-2">
             {searchResults.map((test, index) => {
-              const alreadyInCart = isInCart(test.id, test.name);
+              const alreadyInCart = isInCart(test.id, test.test_name);
               return (
                 <motion.div
                   key={test.id}
