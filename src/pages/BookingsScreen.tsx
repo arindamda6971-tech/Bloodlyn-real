@@ -150,14 +150,13 @@ const BookingsScreen = () => {
     }
 
     return (
-      <motion.div
+      // CSS-only entrance (compositor driven). The previous spring + `layout`
+      // animation re-measured every card on each render, which is the main
+      // source of jank while scrolling a long order list.
+      <div
         key={order.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ delay: index * 0.05, type: "spring", stiffness: 300, damping: 25 }}
-        layout
-        className="relative group"
+        style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
+        className="relative group animate-fade-in press-row"
         onClick={() => handleOrderClick(order)}
       >
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-[2rem] blur opacity-0 group-active:opacity-100 transition duration-500" />
