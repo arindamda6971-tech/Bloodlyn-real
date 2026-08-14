@@ -222,6 +222,7 @@ const App = () => {
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />
+                        <BootReadySignal />
                         <RoutePrefetcher />
                         <DataWarmup />
                         <Suspense fallback={<RouteFallback />}>
