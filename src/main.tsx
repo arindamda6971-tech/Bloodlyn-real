@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
+import { onAppReady } from "./lib/boot";
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
 // per browser. Guarded by localStorage so the workbox precache and font caches
