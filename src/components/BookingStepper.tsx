@@ -5,46 +5,34 @@ interface BookingStepperProps {
 }
 
 const steps = [
-  { label: "Cart" },
-  { label: "Centre Slot" },
-  { label: "Payments" },
+  { label: "Review Cart Details" },
+  { label: "Select Centre Slot" },
+  { label: "Checkout & Payment" },
 ];
 
 const BookingStepper = ({ currentStep }: BookingStepperProps) => {
   const totalSteps = steps.length;
+  const currentLabel = steps[currentStep - 1].label;
 
   return (
-    <div className="px-5 py-3">
-      <div className="flex justify-between mb-2 px-1">
-        {steps.map((step, index) => {
-          const stepNum = index + 1;
-          const isActive = stepNum === currentStep;
-          const isCompleted = stepNum < currentStep;
-          
-          return (
-            <span
-              key={step.label}
-              className={`text-[11px] font-bold whitespace-nowrap ${
-                isActive
-                  ? "text-primary"
-                  : isCompleted
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {step.label}
-            </span>
-          );
-        })}
+    <div className="flex flex-col w-full pb-3">
+      <div className="px-5 mb-2">
+        <h1 className="text-sm font-black text-foreground">
+          Step {currentStep} of {totalSteps}
+        </h1>
+        <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+          {currentLabel}
+        </p>
       </div>
-      
-      <div className="flex h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-        <motion.div
-          className="bg-primary h-full rounded-full"
-          initial={{ width: `${((currentStep - 1) / totalSteps) * 100}%` }}
-          animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          transition={{ ease: "easeInOut", duration: 0.3 }}
-        />
+      <div className="px-5">
+        <div className="flex gap-1 h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
+          <motion.div
+            className="bg-blue-600 h-full rounded-full"
+            initial={{ width: `${Math.max(5, ((currentStep - 1) / totalSteps) * 100)}%` }}
+            animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            transition={{ ease: "easeInOut", duration: 0.3 }}
+          />
+        </div>
       </div>
     </div>
   );

@@ -462,7 +462,7 @@ const LabDetailScreen = () => {
       const baseTests = dynamicTests;
       const nonPackageBase = baseTests.filter((t) => t.category !== "Health Packages");
       const fetchedTests = [...nonPackageBase, ...packages];
-      const testsToUse = fetchedTests.length > 0 ? fetchedTests : (localData?.tests || labsData["lal-pathlabs"].tests);
+      const testsToUse = fetchedTests; // strictly rely on DB data
       
       return {
         name: labFromDb.name,
@@ -483,11 +483,12 @@ const LabDetailScreen = () => {
     
     // Fallback to hardcoded data
     const localId = labId ? (dbIdToLocalId[labId] || labId) : "lal-pathlabs";
-    return labsData[localId] || labsData["lal-pathlabs"] || Object.values(labsData)[0];
+    const fallback = labsData[localId] || labsData["lal-pathlabs"] || Object.values(labsData)[0];
+    return { ...fallback, tests: [] }; // Prevent hardcoded tests
   };
 
   const rawLab = getLabData();
-  const lab = rawLab || labsData["lal-pathlabs"];
+  const lab = rawLab || { ...labsData["lal-pathlabs"], tests: [] };
   const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
 
   const labTests = lab.tests || [];
