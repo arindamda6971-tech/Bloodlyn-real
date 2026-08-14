@@ -591,7 +591,6 @@ const LabDetailScreen = () => {
           <div className="grid grid-cols-3 gap-3">
              <button onClick={() => { 
                setActiveTab("all"); 
-               setSearchQuery("Blood");
                setTimeout(() => {
                  const el = document.getElementById("tests-section");
                  if (el) {
