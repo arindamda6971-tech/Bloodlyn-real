@@ -96,7 +96,7 @@ const CartScreen = () => {
   // Validation highlight
   const [showValidation, setShowValidation] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [recommendedTests, setRecommendedTests] = useState<{ id: string; name: string; price: number; original: number }[]>([]);
+
 
   // Address
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -208,83 +208,7 @@ const CartScreen = () => {
     fetchAddresses();
   }, [supabaseUserId]);
 
-  // Fetch recommended tests based on lab
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      const isVendorCart = items.some((item) => item.labId && item.labName);
-      if (!isVendorCart || !currentLabId) {
-        setRecommendedTests([]);
-        return;
-      }
-      
-      const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-      let allTests: any[] = [];
 
-      if (!isUuid(currentLabId)) {
-        // It's a mock lab from labsData
-        const { labsData } = await import('./LabDetailScreen');
-        const mockLab = labsData[currentLabId];
-        if (mockLab && mockLab.tests) {
-          allTests = mockLab.tests.map(t => ({ test_name: t.name, price: t.price }));
-        }
-      } else {
-        // It's a real lab in Supabase
-        try {
-          const { data: labData, error } = await supabase
-            .from("diagnostic_centers")
-            .select("vendor_id, available_tests")
-            .eq("id", currentLabId)
-            .maybeSingle();
-            
-          if (!error && labData) {
-            const baseTests = Array.isArray(labData.available_tests) ? labData.available_tests : [];
-            let vendorTests: any[] = [];
-            
-            if (labData.vendor_id) {
-               const { data: products } = await supabase
-                 .from("products")
-                 .select("product_name, price")
-                 .eq("vendor_id", labData.vendor_id)
-                 .eq("availability", true);
-               
-               if (products) {
-                 vendorTests = products.map((p: any) => ({ test_name: p.product_name, price: p.price }));
-               }
-            }
-            
-            allTests = [...baseTests, ...vendorTests];
-          }
-        } catch (err) {
-          console.error("Error fetching lab recommendations:", err);
-        }
-      }
-
-      const recs: { id: string; name: string; price: number; original: number }[] = [];
-      
-      const bpTest = allTests.find(t => {
-           const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
-           return name.includes("blood pressure") || name === "bp";
-        });
-      
-      const bpPrice = bpTest ? (Number(bpTest.price) || 99) : 99;
-      if (!items.some(i => i.name.toLowerCase().includes("blood pressure") || i.name.toLowerCase() === "bp")) {
-        recs.push({ id: "blood-pressure", name: "Blood Pressure Check", price: bpPrice, original: Math.round(bpPrice * 1.5) });
-      }
-        
-      const ecgTest = allTests.find(t => {
-         const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
-         return name.includes("ecg");
-      });
-      
-      const ecgPrice = ecgTest ? (Number(ecgTest.price) || 299) : 299;
-      if (!items.some(i => i.name.toLowerCase().includes("ecg"))) {
-        recs.push({ id: "ecg-test", name: "ECG Test at Home", price: ecgPrice, original: Math.round(ecgPrice * 1.5) });
-      }
-        
-      setRecommendedTests(recs);
-    };
-    fetchRecommendations();
-  }, [items, currentLabId]);
 
   const requiresFasting = items.some(i => {
     const name = i.name.toLowerCase();
@@ -706,43 +630,6 @@ const CartScreen = () => {
             {hasService ? "Add more services or tests" : "Add more tests"}
           </button>
         </div>
-
-        {/* Frequently Bought Together */}
-        {recommendedTests.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="pt-2">
-            <h3 className="text-sm font-extrabold text-foreground mb-3 px-1">Frequently Bought Together</h3>
-            <div className="flex gap-3 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-none">
-              {recommendedTests.map(rec => (
-                <div key={rec.id} className="w-[200px] shrink-0 bg-card rounded-2xl border border-border/70 p-3 flex flex-col justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground line-clamp-2 leading-tight">{rec.name}</h4>
-                    <div className="flex items-center gap-1.5 mt-1.5">
-                      <span className="text-sm font-black text-foreground">₹{rec.price}</span>
-                      <span className="text-[10px] font-semibold text-muted-foreground line-through">₹{rec.original}</span>
-                    </div>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full h-8 mt-3 rounded-xl text-xs font-bold border-primary text-primary hover:bg-primary/5"
-                    onClick={() => {
-                      addToCart({ 
-                        id: rec.id, 
-                        name: rec.name, 
-                        price: rec.price, 
-                        kind: "test", 
-                        labId: currentLabId || undefined, 
-                        labName: currentLabName || undefined 
-                      });
-                    }}
-                  >
-                    <Plus className="w-3 h-3 mr-1" /> Add
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
 
         {/* Collection Address */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
