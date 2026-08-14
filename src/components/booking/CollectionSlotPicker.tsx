@@ -4,6 +4,7 @@ import {
   isFixedSlotBookable,
   type LabSlotDate,
 } from "@/lib/lab-slots";
+import { hapticSelection } from "@/utils/haptics";
 
 interface CollectionSlotPickerProps {
   /** 3-day strip built in the lab timezone (today, tomorrow, day after). */
@@ -51,7 +52,11 @@ const CollectionSlotPicker = ({
             return (
               <button
                 key={date.fullDate}
-                onClick={() => isOpen && onSelectDate(dateIds[index])}
+                onClick={() => {
+                  if (!isOpen) return;
+                  hapticSelection();
+                  onSelectDate(dateIds[index]);
+                }}
                 disabled={!isOpen}
                 className={`flex-1 py-3 rounded-xl text-center transition-all ${
                   !isOpen
@@ -112,7 +117,11 @@ const CollectionSlotPicker = ({
               return (
                 <button
                   key={slot.id}
-                  onClick={() => isAvailable && onSelectSlot(slot.display)}
+                  onClick={() => {
+                    if (!isAvailable) return;
+                    hapticSelection();
+                    onSelectSlot(slot.display);
+                  }}
                   disabled={!isAvailable}
                   className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
                     !isAvailable

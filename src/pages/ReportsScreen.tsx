@@ -210,7 +210,7 @@ const ReportsScreen = () => {
             </div>
           </motion.div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 list-virtual-lg">
             {filteredOrders.map((order, i) => {
               const names = splitTestNames(order.test_name);
               const label = formatTestsLabel(names, "Health Test");

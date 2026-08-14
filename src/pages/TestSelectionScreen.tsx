@@ -235,7 +235,7 @@ const TestSelectionScreen = () => {
         </motion.div>
 
         {/* Lab Options */}
-        <div className="space-y-3">
+        <div className="space-y-3 list-virtual-lg">
           {labs.map((lab, index) => {
             const labPrice = Math.round(test.price * lab.priceMultiplier);
 

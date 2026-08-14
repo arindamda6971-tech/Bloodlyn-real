@@ -211,7 +211,7 @@ const CategoryTestsScreen = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 list-virtual-lg">
             {tests.map((test) => (
               <TestItem
                 key={test.id}

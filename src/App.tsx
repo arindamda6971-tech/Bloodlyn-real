@@ -14,6 +14,7 @@ import { AddressProvider } from "@/contexts/AddressContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import InstallPrompt from "@/components/InstallPrompt";
 import ScrollToTop from "@/components/ScrollToTop";
+import BootReadySignal from "@/components/BootReadySignal";
 import CapacitorBackButton from "@/components/CapacitorBackButton";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
@@ -222,6 +223,7 @@ const App = () => {
                         <CapacitorInitializer />
                         <CapacitorBackButton />
                         <ScrollToTop />
+                        <BootReadySignal />
                         <RoutePrefetcher />
                         <DataWarmup />
                         <Suspense fallback={<RouteFallback />}>

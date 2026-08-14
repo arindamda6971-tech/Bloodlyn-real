@@ -3,15 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Droplet, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { markAppReady } from "@/lib/boot";
 
 const ONBOARDED_KEY = "bloodlyn-onboarded";
+/** Shortest time the brand frame stays up so it never "blinks" on fast cold starts. */
+const MIN_SPLASH_MS = 450;
 
 const SplashScreen = () => {
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(15);
 
   useEffect(() => {
     let cancelled = false;
+    const startedAt = Date.now();
 
     const resolveDestination = async (): Promise<string> => {
       try {
@@ -28,22 +32,26 @@ const SplashScreen = () => {
       return onboarded ? "/login" : "/onboarding";
     };
 
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
-          resolveDestination().then((dest) => {
-            if (!cancelled) setTimeout(() => navigate(dest, { replace: true }), 300);
-          });
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 60);
+    // Fill the bar with a single CSS-driven step instead of a 10-tick interval.
+    const fill = requestAnimationFrame(() => setProgress(100));
+
+    // Kick the session lookup off immediately — the destination is known as soon
+    // as Supabase answers, not after a fixed ~900ms animation.
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    resolveDestination().then((dest) => {
+      if (cancelled) return;
+      const wait = Math.max(0, MIN_SPLASH_MS - (Date.now() - startedAt));
+      timeout = setTimeout(() => {
+        if (cancelled) return;
+        markAppReady();
+        navigate(dest, { replace: true });
+      }, wait);
+    });
 
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      cancelAnimationFrame(fill);
+      if (timeout) clearTimeout(timeout);
     };
   }, [navigate]);
 

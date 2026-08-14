@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
+import { onAppReady } from "./lib/boot";
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
 // per browser. Guarded by localStorage so the workbox precache and font caches
@@ -67,5 +68,8 @@ function hideBootLoader() {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Double rAF = after layout + paint of the first React frame.
-requestAnimationFrame(() => requestAnimationFrame(hideBootLoader));
+// Hide the HTML loader when the first real screen is ready (splash/auth gate has
+// decided what to show), or after a short cap so a slow session lookup can never
+// strand the loader on screen.
+onAppReady(() => requestAnimationFrame(() => requestAnimationFrame(hideBootLoader)));
+setTimeout(hideBootLoader, 1200);
