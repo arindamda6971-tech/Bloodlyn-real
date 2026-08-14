@@ -9,7 +9,19 @@
 
 @layer base {
   :root {
+    /* Safe area tokens.
+       Android WebView reports env(safe-area-inset-*) as 0px (so the env()
+       fallback never kicks in) while MainActivity injects the real inset via
+       --safe-area-inset-*. max() picks whichever is actually non-zero. */
+    --safe-area-inset-top: 0px;
+    --safe-area-inset-bottom: 0px;
+    --safe-area-inset-left: 0px;
+    --safe-area-inset-right: 0px;
+    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+
      /* BloodLyn Brand Colors */
+
     --background: 210 20% 98%;
     --foreground: 210 50% 15%;
 
@@ -399,11 +411,11 @@
     100% { transform: translateX(100%); }
   }
   .safe-area-top {
-    padding-top: env(safe-area-inset-top, var(--safe-area-inset-top, 0px));
+    padding-top: var(--sat);
   }
 
   .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px));
+    padding-bottom: var(--sab);
   }
 
   /* Category card hover */
@@ -457,7 +469,7 @@
   /* Bottom navigation */
   .bottom-nav {
     @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border;
-    padding-bottom: calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 4px);
+    padding-bottom: calc(var(--sab) + 4px);
     /* No margin — padding already accounts for safe area */
     margin-bottom: 0;
   }
@@ -470,12 +482,12 @@
   /* Header styles */
   .screen-header {
     @apply sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 pb-3;
-    padding-top: calc(env(safe-area-inset-top, var(--safe-area-inset-top, 0px)) + 8px);
+    padding-top: calc(var(--sat) + 8px);
   }
 
   /* Mobile safe area fixes */
   .safe-area-top {
-    padding-top: env(safe-area-inset-top, var(--safe-area-inset-top, 0px));
+    padding-top: var(--sat);
   }
 
   /* Icon button */

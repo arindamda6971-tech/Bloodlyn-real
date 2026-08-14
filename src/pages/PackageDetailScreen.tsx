@@ -603,8 +603,8 @@ const PackageDetailScreen = () => {
         animate={{ y: 0 }}
         className="fixed left-0 right-0 bg-gradient-to-t from-background via-background to-transparent border-t border-border/40 p-4 z-40"
         style={{
-          bottom: "calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)",
-          paddingBottom: "calc(1rem + env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)))",
+          bottom: "calc(var(--sab) + 72px)",
+          paddingBottom: "calc(1rem + var(--sab))",
         }}
       >
         <div className="mx-auto max-w-lg">

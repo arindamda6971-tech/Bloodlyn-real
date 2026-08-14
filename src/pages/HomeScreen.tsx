@@ -290,7 +290,7 @@ const HomeScreen = () => {
 
       <MobileLayout>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
-        <div className="px-5 pb-0" style={{ paddingTop: "calc(env(safe-area-inset-top, var(--safe-area-inset-top, 0px)) + 12px)" }}>
+        <div className="px-5 pb-0" style={{ paddingTop: "calc(var(--sat) + 12px)" }}>
           <ZomatoStyleHeader
             unreadCount={unreadCount}
             onOpenCall={() => setShowCallSheet(true)}
@@ -314,7 +314,7 @@ const HomeScreen = () => {
                     {searchResults.map((test) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
-                      const inCart = isInCart(test.id, test.test_name);
+                      const inCart = isInCart(test.id, test.name);
                       return (
                         <button
                           key={test.id}

@@ -12,6 +12,16 @@ export const useAppLifecycle = () => {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
+    // Safety net for the status-bar overlap: on native, env(safe-area-inset-top)
+    // is 0 in the Android WebView and MainActivity injects the real inset a tick
+    // later. Seed a sane default so the first painted frame never sits under the
+    // status bar; the native listener overrides it with the exact value.
+    const root = document.documentElement;
+    if (!root.style.getPropertyValue('--safe-area-inset-top')) {
+      root.style.setProperty('--safe-area-inset-top', '24px');
+    }
+
+
     // Persist current route to handle cold starts after process kill
     const saveCurrentRoute = () => {
       localStorage.setItem('bloodlyn_last_route', window.location.pathname + window.location.search);

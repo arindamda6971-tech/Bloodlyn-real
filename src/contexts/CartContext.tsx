@@ -462,6 +462,7 @@ export const useCart = () => {
       cancelReplace: () => {},
       isLoading: false,
       validateFamilyMember: () => {},
+      hasItem: () => false,
     } as CartContextType;
   }
   return context;
