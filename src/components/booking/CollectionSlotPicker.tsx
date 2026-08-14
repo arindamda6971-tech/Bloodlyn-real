@@ -117,7 +117,11 @@ const CollectionSlotPicker = ({
               return (
                 <button
                   key={slot.id}
-                  onClick={() => isAvailable && onSelectSlot(slot.display)}
+                  onClick={() => {
+                    if (!isAvailable) return;
+                    hapticSelection();
+                    onSelectSlot(slot.display);
+                  }}
                   disabled={!isAvailable}
                   className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
                     !isAvailable
