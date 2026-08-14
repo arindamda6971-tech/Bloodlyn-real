@@ -674,6 +674,54 @@
   .tap-target {
     @apply min-h-[44px] min-w-[44px];
   }
+
+  /* ----------------------------------------------------------------
+   * Native-style press feedback
+   * Touch devices have no hover, so a tap must acknowledge itself
+   * instantly. Transform+opacity only => compositor-driven, no layout.
+   * ---------------------------------------------------------------- */
+  .press {
+    transition: transform 110ms ease-out, opacity 110ms ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .press:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+
+  /* Row-style targets shouldn't shrink; they dim instead. */
+  .press-row {
+    transition: background-color 110ms ease-out, opacity 110ms ease-out;
+  }
+  .press-row:active {
+    opacity: 0.85;
+  }
+
+  /* Apply the same feel to the app's existing tappable surfaces on touch
+     devices without touching a single component file. */
+  @media (hover: none) and (pointer: coarse) {
+    .soft-card:active,
+    .test-card:active,
+    .category-card:active,
+    .quick-action:active,
+    [role="button"]:active {
+      transform: scale(0.98);
+      transition: transform 110ms ease-out;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .press,
+    .press:active,
+    .soft-card:active,
+    .test-card:active,
+    .category-card:active,
+    .quick-action:active,
+    [role="button"]:active {
+      transform: none;
+      transition: none;
+    }
+  }
 }
 
 /* ------------------------------------------------------------------
