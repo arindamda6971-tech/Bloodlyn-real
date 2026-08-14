@@ -1,84 +1,60 @@
-## Scope — 7 parts
+# Native-Feel Optimization Plan
 
-### 1. Location screen — remove landmark labels
-In `LocationCheckScreen.tsx`: keep `Icon`, `name`, `state`, `pincode`, `gradient`; remove the `landmark` text rendered under each city tile. Icons + city names stay.
+Goal: make BloodLyn (Capacitor WebView) feel indistinguishable from a native Android/iOS app — instant taps, no jank, no white flashes, native gestures and chrome. Executed step by step; each step is self-contained, ships independently, and touches no edge functions or booking logic.
 
-### 2. Sticky/squeezing search bar (industry-style)
-Build a reusable `<StickySearch>` component that:
-- Lives inside a scroll container.
-- On scroll-down: the content above it compresses (header shrinks, greeting fades), and the search bar sticks to the top with a slight elevation/blur.
-- On scroll-up: header re-expands.
-- Implemented with `useScroll` + `useTransform` from framer-motion (already in the project) for 60fps GPU transforms.
+## Step 1 — Startup & first paint
+- Ship bundled assets (remove `server.url` hot-reload from the release config) so the app boots from disk, not the network.
+- Splash hides only after the first real screen paints (already partly done) — extend to wait for auth + pincode gate resolution so users never see a flash of the wrong screen.
+- Inline critical CSS for the shell (background, safe areas, spinner) so there is zero white frame.
+- Preload the first route chunk and warm the home data cache during splash.
 
-Apply to: `HomeScreen`, `CategoriesScreen`, `CategoryTestsScreen`, `LabDetailScreen`, `PackagesScreen`, `TestSelectionScreen`, `ReportsScreen`, `BookingsScreen`, `SupportScreen` — wherever a top search exists.
+## Step 2 — Touch and input feel
+- Global `touch-action`, `-webkit-tap-highlight-color: transparent`, and no 300ms delay on all tappable elements.
+- Active-state press feedback (scale/opacity, 90–120ms) on cards, tiles, list rows, and nav items instead of hover styles.
+- Haptics on primary actions: add to cart, slot select, booking confirm, tab switch (extend the existing nav haptics).
+- Minimum 44x44 tap targets on icon-only buttons.
+- Disable text selection and overscroll bounce on non-scrollable chrome; keep it inside scroll containers.
 
-Also fixes the "search bar hiding / elements overlapping" bug by giving it a real sticky container with `z-index` and `backdrop-blur` instead of floating absolutely.
+## Step 3 — Scrolling at 60fps
+- Virtualize long lists (test catalogue, category tests, orders, reports, family members) so only visible rows render.
+- Stable skeletons with fixed heights to remove layout shift while data loads.
+- Momentum scrolling + `content-visibility: auto` on off-screen sections.
+- Audit and cut remaining large blurs/shadows on scrolling surfaces; keep glass effects only on fixed chrome.
 
-### 3. Redesign Lab Vendor Profile (`LabDetailScreen.tsx`)
-Modern redesign matching the screenshot baseline but elevated:
-- Hero with parallax gradient, lab logo in glass tile, NABL chip, rating, tests count, location/timing chips, "Home Collection" pill — refined typography & spacing.
-- Sticky tab bar (All Tests / Health Packages) that docks under the squeezing search.
-- Test list as **expandable cards**: tapping the test name expands inline to reveal description, parameters, prep instructions, sample type — with smooth height animation. "+ Add" stays on the right.
-- Empty / loading skeleton states.
-- Full dark-mode token coverage.
+## Step 4 — Navigation transitions
+- Consolidate on the existing CSS `translate3d` transitions; remove any leftover JS-driven animation on route change.
+- Push/pop direction awareness: forward slides in from right, back slides out to right, tab switches cross-fade.
+- Keep the swipe-back gesture, tune it to follow the finger 1:1 with a velocity-based commit threshold.
+- Preserve scroll position on back navigation (restore per-route scroll offsets).
 
-### 4. Over-scroll fix
-Add to `index.css`:
-```css
-html, body, #root { overscroll-behavior-y: contain; }
-.scroll-area { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-```
-Audit `TestSelectionScreen`, `BookingsScreen`, `ReportsScreen`, `CategoryTestsScreen` and replace nested scrollables that cause double-scroll with a single scroll container + `overscroll-behavior: contain`.
+## Step 5 — Perceived speed / caching
+- React Query defaults tuned per data class: catalogue and labs cached long, orders and slots short and realtime-backed.
+- Persist selected queries to storage so a cold launch renders last-known data instantly, then revalidates.
+- Prefetch on intent: warm the target route's data when a card enters the viewport or is pressed down.
+- Optimistic UI for cart add/remove and family member edits.
 
-### 5. Multi-test display = "FirstName + N other"
-Create helper `formatTestsLabel(tests)`:
-- 1 test → `"Lipid Profile"`
-- 2 tests → `"Lipid Profile + 1 other"`
-- 3+ → `"Lipid Profile + 2 others"`
+## Step 6 — Images and assets
+- Explicit width/height plus `aspect-ratio` on every image to stop reflow.
+- Lazy load below-the-fold images, eager + high priority for the home hero.
+- Serve WebP/AVIF where possible and cap icon/illustration payloads.
+- Route-level code splitting review so no screen pulls in unrelated heavy libs.
 
-Apply in:
-- `BookingsScreen` order tiles (replaces "3 tests").
-- Home recent-orders carousel tiles.
-- TrackingScreen header.
-- Cart summary chips.
+## Step 7 — Native chrome and system integration
+- Status bar and navigation bar theming that follows the current screen (light/dark, transparent overlay) with safe-area tokens already in place.
+- Android hardware back handling verified on every modal, sheet, and nested flow (no accidental app exit).
+- Keyboard behaviour: resize instead of overlay, auto-scroll the focused field into view, correct `inputmode`/`enterkeyhint` on all inputs.
+- Pull-to-refresh on the main tabs using the existing hook.
+- Offline state: cached shell + clear offline banner instead of failed screens.
 
-**Reorder button** must add the **actual order_items** (by test_id) back into the cart context, not a placeholder. Update the reorder handler to map `order.order_items` → `addToCart` with real names and prices.
+## Step 8 — Verification pass
+- Typecheck, lint, full test suite, production build after each step.
+- Manual walkthrough of the critical flows (login, location gate, catalogue, cart, slot selection, checkout, tracking, reports) to confirm nothing regressed.
+- Frame-rate spot checks on the heaviest screens, plus a report of before/after bundle size.
 
-### 6. Duplicate guards
-- **Family member**: add `savingRef` + uniqueness check on `(user_id, name, relation, age)` in `AddFamilyMemberDialog` before insert.
-- **Address (LocationChip)**: port the same `savingRef` + `savedKeyRef` + upsert-style pattern from `LocationCheckScreen` into `LocationChip.tsx`'s save handler.
+## Guardrails
+- No edge function, migration, RLS policy, or booking/slot business logic changes.
+- No visual redesign — only motion, timing, and rendering behaviour change.
+- Each step ends verified; if a step risks a flow, it is split smaller rather than forced through.
 
-### 7. Redesign for industry standard
-- **ProfileScreen**: hero card (avatar + name + health score chip), grouped settings list with iconography, subtle dividers, dark-mode parity.
-- **FamilyMembersScreen**: avatar-driven member cards with relation chip, age, quick edit/delete, empty state illustration.
-- **SavedAddressesScreen**: address cards with type icon (Home/Work/Other), default badge, set-default + delete actions, map pin gradient.
-- **BookingsScreen (My Orders)**: unified list, status pills with semantic colors, "Booked on…" timestamp, the new test-name label, search filter, dark-mode parity.
-
-### 8. Dark-mode sweep
-- Audit hard-coded `bg-white`, `text-black`, `text-gray-*`, `bg-gray-50` etc. across the screens above and especially **HomeScreen** (recent orders tiles in screenshot show washed-out cards in dark mode).
-- Replace with semantic tokens: `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-muted/50`.
-- Verify `.dark` variants in `index.css` cover surface, card, muted, accent.
-
-### 9. Leftovers from previous loop
-- Apply the dedup guard to `LocationChip` (covered in #6).
-- Run `supabase--linter` + `security--run_security_scan`; fix any `search_path` mutable warnings on functions, missing RLS, or exposed columns. **No edge-function code touched.**
-
----
-
-## Files to edit
-- `src/pages/LocationCheckScreen.tsx` (drop landmark text)
-- `src/components/home/LocationChip.tsx` (dedup guard)
-- `src/components/ui/StickySearch.tsx` *(new)*
-- `src/lib/format-tests.ts` *(new)*
-- `src/pages/HomeScreen.tsx`, `CategoriesScreen.tsx`, `CategoryTestsScreen.tsx`, `LabDetailScreen.tsx`, `PackagesScreen.tsx`, `TestSelectionScreen.tsx`, `ReportsScreen.tsx`, `BookingsScreen.tsx`, `SupportScreen.tsx`
-- `src/pages/ProfileScreen.tsx`, `FamilyMembersScreen.tsx`, `SavedAddressesScreen.tsx`, `TrackingScreen.tsx`
-- `src/components/AddFamilyMemberDialog.tsx`
-- `src/index.css` (overscroll + dark-mode token tweaks)
-- Migration: any `search_path` fixes flagged by linter.
-
-## What won't change
-- Edge functions (`create-order`, `partner-hub-webhook`, `purchase-subscription`, `delete-account`, `analyze-prescription`, `bridge-proxy`) — untouched.
-- Order/payment/tracking business logic.
-- Cart single-lab restriction.
-
-This is a large multi-screen change. I'll execute it in the order above and verify each section.
+## Suggested order
+Steps 1, 2, and 4 give the biggest perceived-native jump, so we start there, then 3 and 5 for sustained smoothness, then 6, 7, and 8.
