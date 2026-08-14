@@ -67,5 +67,8 @@ function hideBootLoader() {
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Double rAF = after layout + paint of the first React frame.
-requestAnimationFrame(() => requestAnimationFrame(hideBootLoader));
+// Hide the HTML loader when the first real screen is ready (splash/auth gate has
+// decided what to show), or after a short cap so a slow session lookup can never
+// strand the loader on screen.
+onAppReady(() => requestAnimationFrame(() => requestAnimationFrame(hideBootLoader)));
+setTimeout(hideBootLoader, 1200);
