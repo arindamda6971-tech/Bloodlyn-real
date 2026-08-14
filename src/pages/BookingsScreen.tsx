@@ -267,7 +267,7 @@ const BookingsScreen = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     );
   };
 
@@ -330,9 +330,9 @@ const BookingsScreen = () => {
               ))}
             </div>
           ) : filteredOrders.length > 0 ? (
-            <AnimatePresence mode="popLayout">
+            <div className="space-y-3 list-virtual-lg">
               {filteredOrders.map((order, idx) => renderOrderCard(order, idx))}
-            </AnimatePresence>
+            </div>
           ) : orders.length > 0 ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
