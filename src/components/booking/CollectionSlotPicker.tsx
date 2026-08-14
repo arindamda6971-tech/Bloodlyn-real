@@ -51,7 +51,11 @@ const CollectionSlotPicker = ({
             return (
               <button
                 key={date.fullDate}
-                onClick={() => isOpen && onSelectDate(dateIds[index])}
+                onClick={() => {
+                  if (!isOpen) return;
+                  hapticSelection();
+                  onSelectDate(dateIds[index]);
+                }}
                 disabled={!isOpen}
                 className={`flex-1 py-3 rounded-xl text-center transition-all ${
                   !isOpen
