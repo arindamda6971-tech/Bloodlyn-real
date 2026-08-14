@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { hapticSelection } from "@/utils/haptics";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Building2, Star, Clock, AlertCircle, Loader2 } from "lucide-react";
@@ -340,7 +341,7 @@ const LabSelectionScreen = () => {
                   return (
                     <button
                       key={lab.id}
-                      onClick={() => { setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
+                      onClick={() => { hapticSelection(); setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
                       className={`w-full bg-card rounded-xl border p-3 flex items-center gap-3 transition-all text-left ${
                         selectedLabId === lab.id ? "ring-2 ring-primary border-primary" : "border-border hover:border-primary/40"
                       }`}
@@ -400,7 +401,7 @@ const LabSelectionScreen = () => {
               return (
                 <button
                   key={date.fullDate}
-                  onClick={() => isOpen && setSelectedDate(index)}
+                  onClick={() => { if (!isOpen) return; hapticSelection(); setSelectedDate(index); }}
                   disabled={!isOpen}
                   className={`flex-1 py-3 rounded-xl text-center transition-all ${
                     !isOpen
@@ -449,7 +450,7 @@ const LabSelectionScreen = () => {
                 return (
                   <button
                     key={slot.id}
-                    onClick={() => isAvailable && setSelectedTime(slot.id)}
+                    onClick={() => { if (!isAvailable) return; hapticSelection(); setSelectedTime(slot.id); }}
                     disabled={!isAvailable}
                     className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
                       !isAvailable
