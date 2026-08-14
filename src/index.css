@@ -732,6 +732,28 @@
     transform: translateZ(0);
     backface-visibility: hidden;
   }
+
+  /* ----------------------------------------------------------------
+   * Long-list scrolling
+   * `content-visibility: auto` lets the browser skip layout/paint for
+   * rows outside the viewport — the cheap, non-invasive alternative to
+   * virtualisation. `contain-intrinsic-size` supplies a placeholder
+   * height so the scrollbar and scroll position stay stable.
+   * ---------------------------------------------------------------- */
+  .list-virtual > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 92px;
+  }
+  .list-virtual-lg > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 148px;
+  }
+
+  /* Off-screen page sections skip rendering work entirely. */
+  .section-defer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+  }
 }
 
 /* Sticky/fixed action bars are promoted so scrolling never repaints them. */
