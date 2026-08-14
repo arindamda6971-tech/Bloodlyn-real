@@ -6,7 +6,10 @@ import { cn } from "@/lib/utils";
 import { hapticImpact } from "@/utils/haptics";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 tap-target active:scale-[0.98]",
+  // Press feedback is intentionally fast (110ms) and limited to compositor-only
+  // properties (transform/opacity/colors) so taps feel native instead of
+  // animating every property for 300ms.
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-[transform,opacity,background-color,border-color,color,box-shadow] duration-[110ms] ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 tap-target active:scale-[0.97]",
   {
     variants: {
       variant: {
