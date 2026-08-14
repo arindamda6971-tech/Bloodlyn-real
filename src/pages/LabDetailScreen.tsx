@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Activity,
   HeartPulse,
+  Tag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -302,6 +303,8 @@ interface DiagnosticCenter {
   offers_home_bp?: boolean | null;
   offers_home_ecg?: boolean | null;
   ecg_available?: boolean | null;
+  home_bp_price?: number | null;
+  ecg_price?: number | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
   is_active: boolean | null;
@@ -345,7 +348,7 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available')
+          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available, home_bp_price, ecg_price')
           .eq('id', labId)
           .maybeSingle();
 
@@ -487,6 +490,7 @@ const LabDetailScreen = () => {
   const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
 
   const labTests = lab.tests || [];
+  const minTestPrice = labTests.length > 0 ? Math.min(...labTests.map(t => t.price).filter(p => p > 0)) : 0;
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
   const allTestsCount = labTests.length - packageCount;
   const filteredTests = labTests.filter((test) => {
@@ -600,7 +604,14 @@ const LabDetailScreen = () => {
                  <Beaker className="w-5 h-5 text-[#ef4444]" />
                </div>
                <p className="text-[13px] font-black text-foreground">Blood Tests</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Explore</p>
+               {minTestPrice > 0 ? (
+                 <div className="flex items-center gap-1 mt-0.5 justify-center">
+                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
+                   <p className="text-[11px] font-bold text-foreground">₹{minTestPrice} onwards</p>
+                 </div>
+               ) : (
+                 <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Explore</p>
+               )}
              </button>
              
              <button onClick={() => {
@@ -628,7 +639,10 @@ const LabDetailScreen = () => {
                  <Activity className="w-5 h-5 text-[#0284c7]" />
                </div>
                <p className="text-[13px] font-black text-foreground">BP Check</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Order Book</p>
+               <div className="flex items-center gap-1 mt-0.5 justify-center">
+                 <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
+                 <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.home_bp_price || 199}</p>
+               </div>
              </button>
              
              <button onClick={() => {
@@ -658,7 +672,10 @@ const LabDetailScreen = () => {
                  <HeartPulse className="w-5 h-5 text-[#16a34a]" />
                </div>
                <p className="text-[13px] font-black text-foreground">ECG</p>
-               <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Order Book</p>
+               <div className="flex items-center gap-1 mt-0.5 justify-center">
+                 <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
+                 <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.ecg_price || 599}</p>
+               </div>
              </button>
           </div>
         </div>

@@ -70,7 +70,7 @@ const CartScreen = () => {
   useSEO({ title: "Your Cart | BloodLyn", description: "Review your selected diagnostic tests and proceed to lab selection and secure checkout." });
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, removeFromCart, subtotal, currentLabName, currentLabId, isLoading, updateFamilyMember } = useCart();
+  const { items, addToCart, removeFromCart, subtotal, currentLabName, currentLabId, isLoading, updateFamilyMember } = useCart();
   const { supabaseUserId, user } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
   const [selfProfile, setSelfProfile] = useState<{ full_name: string; age: string; gender: string; phone: string } | null>(null);
@@ -265,24 +265,31 @@ const CartScreen = () => {
            const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
            return name.includes("blood pressure") || name === "bp";
         });
-        if (bpTest) {
-           const price = Number(bpTest.price) || 99;
-           recs.push({ id: "blood-pressure", name: "Blood Pressure", price, original: Math.round(price * 1.5) });
-        }
+      
+      const bpPrice = bpTest ? (Number(bpTest.price) || 99) : 99;
+      if (!items.some(i => i.name.toLowerCase().includes("blood pressure") || i.name.toLowerCase() === "bp")) {
+        recs.push({ id: "blood-pressure", name: "Blood Pressure Check", price: bpPrice, original: Math.round(bpPrice * 1.5) });
+      }
         
-        const ecgTest = allTests.find(t => {
-           const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
-           return name.includes("ecg");
-        });
-        if (ecgTest) {
-           const price = Number(ecgTest.price) || 299;
-           recs.push({ id: "ecg-test", name: "ECG Test", price, original: Math.round(price * 1.5) });
-        }
+      const ecgTest = allTests.find(t => {
+         const name = (t.test_name || t.name || t.product_name || "").trim().toLowerCase();
+         return name.includes("ecg");
+      });
+      
+      const ecgPrice = ecgTest ? (Number(ecgTest.price) || 299) : 299;
+      if (!items.some(i => i.name.toLowerCase().includes("ecg"))) {
+        recs.push({ id: "ecg-test", name: "ECG Test at Home", price: ecgPrice, original: Math.round(ecgPrice * 1.5) });
+      }
         
-        setRecommendedTests(recs);
+      setRecommendedTests(recs);
     };
     fetchRecommendations();
   }, [items, currentLabId]);
+
+  const requiresFasting = items.some(i => {
+    const name = i.name.toLowerCase();
+    return name.includes("fasting") || name.includes("sugar") || name.includes("lipid") || name.includes("cholesterol") || name.includes("fbs");
+  });
 
   
   const formatAddress = (addr: SavedAddress) => {
@@ -397,7 +404,26 @@ const CartScreen = () => {
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-64 space-y-3.5">
+      <div className="px-4 pb-44 space-y-3.5">
+        {/* Fasting Alert */}
+        {requiresFasting && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 flex gap-3 shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
+              <span className="text-amber-600 dark:text-amber-400 text-lg">⚠️</span>
+            </div>
+            <div>
+              <h4 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Fasting Required</h4>
+              <p className="text-[11px] font-semibold text-amber-700/80 dark:text-amber-400/80 mt-0.5 leading-snug">
+                One or more tests require 10-12 hours of fasting. Drink only water before sample collection.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* Collection point */}
         {currentLabName && (
           <motion.div
@@ -580,64 +606,96 @@ const CartScreen = () => {
             )}
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-            {items.map((item, index) => {
-              let doctorName = "";
-              let serviceTitle = item.name;
-              if (item.name.includes(" with Dr. ")) {
-                const parts = item.name.split(" with Dr. ");
-                serviceTitle = parts[0].trim();
-                doctorName = "Dr. " + parts[1].trim();
-              } else if (item.name.includes(" with ")) {
-                const parts = item.name.split(" with ");
-                serviceTitle = parts[0].trim();
-                doctorName = parts[1].trim();
-              }
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            
+            {/* Consultations Group */}
+            {items.some(i => i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-")) && (
+              <div className="space-y-3">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Consultations</h3>
+                {items.filter(i => i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-")).map((item, index) => {
+                  let doctorName = "";
+                  let serviceTitle = item.name;
+                  if (item.name.includes(" with Dr. ")) {
+                    const parts = item.name.split(" with Dr. ");
+                    serviceTitle = parts[0].trim();
+                    doctorName = "Dr. " + parts[1].trim();
+                  } else if (item.name.includes(" with ")) {
+                    const parts = item.name.split(" with ");
+                    serviceTitle = parts[0].trim();
+                    doctorName = parts[1].trim();
+                  }
 
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.04 }}
-                  className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
-                >
-                  {doctorName && (
-                    <div className="bg-primary/5 px-4 py-2 border-b border-border/40 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">👨‍⚕️</span>
-                        <span className="text-xs font-bold text-primary tracking-tight">{doctorName}</span>
-                      </div>
-                      <Badge variant="soft" className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5">
-                        Assigned Specialist
-                      </Badge>
-                    </div>
-                  )}
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.04 }}
+                      className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
+                    >
+                      {doctorName && (
+                        <div className="bg-primary/5 px-4 py-2 border-b border-border/40 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">👨‍⚕️</span>
+                            <span className="text-xs font-bold text-primary tracking-tight">{doctorName}</span>
+                          </div>
+                          <Badge variant="soft" className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5">
+                            Assigned Specialist
+                          </Badge>
+                        </div>
+                      )}
 
-                  <div className="p-4">
-                    <span className="inline-block text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded-full mb-2">
-                      1 added
-                    </span>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
-                        {item.price > 0 && !!item.labId && (
-                          <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
-                        )}
+                      <div className="p-4 flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
+                          {item.price > 0 && !!item.labId && (
+                            <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
-                        title="Remove item"
-                        aria-label={`Remove ${serviceTitle}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Lab Tests Group */}
+            {items.some(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))) && (
+              <div className="space-y-3 pt-2">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Tests & Profiles</h3>
+                {items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.04 }}
+                    className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all p-4 flex items-start justify-between gap-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <span className="inline-block text-[9px] font-black uppercase tracking-widest text-success bg-success/10 px-2 py-0.5 rounded-full mb-2">
+                        Included
+                      </span>
+                      <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
+                      {item.price > 0 && !!item.labId && (
+                        <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
+                      )}
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    <button
+                      onClick={() => removeFromCart(item.id)}
+                      className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </motion.div>
 
           <button
@@ -760,43 +818,29 @@ const CartScreen = () => {
         </motion.div>
       </div>
 
-      {/* Bottom Sticky Order Summary & Checkout Drawer */}
-      <motion.div
-        initial={{ y: 100 }} animate={{ y: 0 }}
-        className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto px-3 z-40"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px)) + 72px)' }}
-      >
-        <div className="flex items-center justify-between gap-3 rounded-2xl bg-primary px-4 py-3 shadow-lg shadow-primary/25">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="relative shrink-0">
-              <ShoppingCart className="w-6 h-6 text-primary-foreground" />
-              <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-success text-[9px] font-black text-white flex items-center justify-center">
-                {totalQty}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold text-primary-foreground/80 leading-tight">
-                {totalQty} {totalQty === 1 ? "item" : "items"}
-              </p>
-              {hasVendorLab ? (
-                <p className="text-lg font-black text-primary-foreground leading-tight tabular-nums">₹{subtotal}</p>
-              ) : (
-                <p className="text-xs font-semibold text-primary-foreground/90 leading-tight">Price shown at lab selection</p>
-              )}
-            </div>
+      {/* Sticky Checkout Bar */}
+      <div className="fixed bottom-[72px] left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] p-4 pb-safe">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Total Amount</p>
+            <h2 className="text-2xl font-black text-foreground tabular-nums leading-none">
+              ₹{hasVendorLab ? subtotal : items.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0)}
+            </h2>
           </div>
+          
           <Button
-            variant="secondary"
-            className="h-12 px-6 rounded-xl text-sm font-extrabold text-primary bg-white hover:bg-white/90 gap-1"
             size="lg"
+            className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-extrabold text-base shadow-lg shadow-primary/20"
             onClick={handleCheckout}
-            disabled={isCheckingOut}
+            disabled={isCheckingOut || addressLoading || (items.length > 0 && items.some(i => i.labId) && !currentLabId)}
           >
-            {isCheckingOut ? "Please wait…" : "Checkout"}
-            <ChevronRight className="w-4 h-4" />
+            <span className="flex items-center gap-2">
+              Checkout
+              <ChevronRight className="w-4 h-4" />
+            </span>
           </Button>
         </div>
-      </motion.div>
+      </div>
     </MobileLayout>
   );
 };
