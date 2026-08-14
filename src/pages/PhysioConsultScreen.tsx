@@ -130,7 +130,7 @@ const PhysioConsultScreen = () => {
       name: `Home Physiotherapy with ${physio.name}`,
       price: physio.videoCallFee ?? physio.audioCallFee ?? 399,
       labId: "physio-service",
-      labName: "HealthSwift Rehab Care",
+      labName: "BloodLyn Rehab Care",
       vendorId: "generic-service",
     });
 

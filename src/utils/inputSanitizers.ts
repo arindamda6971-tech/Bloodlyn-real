@@ -1,5 +1,5 @@
 /**
- * Universal Input Sanitizers for HealthSwift Mobile App
+ * Universal Input Sanitizers for BloodLyn Mobile App
  * Ensures users can only enter valid, realistic human data and phone numbers.
  */
 

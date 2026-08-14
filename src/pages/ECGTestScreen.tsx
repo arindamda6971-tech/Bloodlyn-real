@@ -135,7 +135,7 @@ const DEFAULT_ECG_LABS: EcgLab[] = [
   },
   {
     id: "ecg-default-2",
-    name: "HealthSwift Certified Cardiac Hub",
+    name: "BloodLyn Certified Cardiac Hub",
     rating: 4.8,
     reviews_count: 890,
     logo_url: null,

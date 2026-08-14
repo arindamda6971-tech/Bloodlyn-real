@@ -1,5 +1,5 @@
 -- =============================================
--- HEALTHSWIFT DATABASE SCHEMA
+-- BloodLyn DATABASE SCHEMA
 -- =============================================
 
 -- Test Categories
@@ -153,7 +153,7 @@ CREATE TABLE public.reports (
   ai_summary TEXT,
   ai_recommendations JSONB DEFAULT '[]'::jsonb,
   pdf_url TEXT,
-  lab_name TEXT DEFAULT 'HealthSwift Labs',
+  lab_name TEXT DEFAULT 'BloodLyn Labs',
   generated_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );

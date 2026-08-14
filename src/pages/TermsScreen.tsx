@@ -8,13 +8,13 @@ const sections = [
   {
     title: "1. Acceptance of Terms",
     icon: Scale,
-    content: "By accessing and using BloodLyn / HealthSwift, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must not use the application.",
+    content: "By accessing and using BloodLyn, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, you must not use the application.",
     accent: "text-blue-500",
   },
   {
     title: "2. Services Provided",
     icon: Sparkles,
-    content: "HealthSwift provides booking for diagnostic lab tests, at-home BP and ECG checks, physical and online (audio/video) doctor consultations, physiotherapy sessions, and AI-powered health report analysis. Services are subject to real-time availability in your pin code.",
+    content: "BloodLyn provides booking for diagnostic lab tests, at-home BP and ECG checks, physical and online (audio/video) doctor consultations, physiotherapy sessions, and AI-powered health report analysis. Services are subject to real-time availability in your pin code.",
     accent: "text-purple-500",
   },
   {
@@ -38,7 +38,7 @@ const sections = [
   {
     title: "6. Limitation of Liability",
     icon: AlertCircle,
-    content: "HealthSwift is an aggregator and facilitator. We are not a hospital and our services (including AI insights) are not a substitute for emergency medical care. Always consult a primary healthcare provider for immediate medical decisions.",
+    content: "BloodLyn is an aggregator and facilitator. We are not a hospital and our services (including AI insights) are not a substitute for emergency medical care. Always consult a primary healthcare provider for immediate medical decisions.",
     accent: "text-indigo-500",
   },
 ];

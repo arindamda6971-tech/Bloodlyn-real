@@ -128,7 +128,7 @@ const DEFAULT_BP_LABS: BpLab[] = [
   },
   {
     id: "bp-default-2",
-    name: "HealthSwift Vital Check Hub",
+    name: "BloodLyn Vital Check Hub",
     rating: 4.8,
     reviews_count: 980,
     logo_url: null,

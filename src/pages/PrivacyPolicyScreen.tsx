@@ -10,7 +10,7 @@ const sections = [
     icon: Database,
     accent: "text-blue-500",
     content:
-      "We collect details provided while using HealthSwift: name, mobile, email, age, gender, addresses, PIN code, family member profiles, uploaded prescriptions, and your complete booking history (labs, doctors, physio, BP, ECG).",
+      "We collect details provided while using BloodLyn: name, mobile, email, age, gender, addresses, PIN code, family member profiles, uploaded prescriptions, and your complete booking history (labs, doctors, physio, BP, ECG).",
   },
   {
     title: "2. How We Use Your Data",

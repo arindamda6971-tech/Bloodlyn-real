@@ -60,7 +60,7 @@ interface CartContextType {
   hasItem: (testId: string, testName?: string) => boolean;
 }
 
-const LOCAL_STORAGE_KEY = "healthswift_cart_items";
+const LOCAL_STORAGE_KEY = "BloodLyn_cart_items";
 
 const getLocalCart = (): CartItem[] => {
   try {
