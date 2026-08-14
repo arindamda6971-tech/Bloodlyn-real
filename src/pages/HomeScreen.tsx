@@ -290,7 +290,7 @@ const HomeScreen = () => {
 
       <MobileLayout>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
-        <div className="px-5 pb-0" style={{ paddingTop: "calc(env(safe-area-inset-top, var(--safe-area-inset-top, 0px)) + 12px)" }}>
+        <div className="px-5 pb-0" style={{ paddingTop: "calc(var(--sat) + 12px)" }}>
           <ZomatoStyleHeader
             unreadCount={unreadCount}
             onOpenCall={() => setShowCallSheet(true)}

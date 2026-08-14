@@ -43,8 +43,8 @@ const ScreenHeader = ({
           : "bg-background border-none shadow-none rounded-b-2xl"
       }`}
       style={{
-        paddingTop: "calc(env(safe-area-inset-top, var(--safe-area-inset-top, 0px)) + 16px)",
-        height: "calc(env(safe-area-inset-top, var(--safe-area-inset-top, 0px)) + 64px)",
+        paddingTop: "calc(var(--sat) + 16px)",
+        height: "calc(var(--sat) + 64px)",
         display: "flex",
         alignItems: "center"
       }}
