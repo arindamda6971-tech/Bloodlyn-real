@@ -33,17 +33,19 @@ export const useAppLifecycle = () => {
       autoHide: false,
     });
 
-    // Hide the native splash as soon as React has actually painted a frame
-    // (double rAF = after layout + paint) instead of a fixed 1.5s wait.
-    // The timeout is only a safety net if rAF is throttled in background.
+    // Hide the native splash the moment the first real screen is ready (the
+    // splash route resolves the session, then signals). Fixed timers either cut
+    // the splash before content exists (white flash) or hold it too long.
     let hidden = false;
     const hide = () => {
       if (hidden) return;
       hidden = true;
       SplashScreen.hide();
     };
-    requestAnimationFrame(() => requestAnimationFrame(hide));
-    const timer = setTimeout(hide, 1500);
+    const offReady = onAppReady(() =>
+      requestAnimationFrame(() => requestAnimationFrame(hide)),
+    );
+    const timer = setTimeout(hide, 2000);
 
 
     // Listen for app state changes (Background/Foreground)
