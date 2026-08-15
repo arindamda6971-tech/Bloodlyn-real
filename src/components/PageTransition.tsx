@@ -40,8 +40,8 @@ const PageTransition = ({ children, routeKey }: { children: ReactNode; routeKey?
       key={key}
       ref={ref}
       className="page-transition"
-      // Release the compositor layer as soon as the enter animation finishes so
-      // long-lived pages don't hold GPU memory (a common source of jitter).
+      data-nav={navDirection}
+
       onAnimationEnd={(e) => {
         if (e.target === e.currentTarget) e.currentTarget.style.willChange = "auto";
       }}
