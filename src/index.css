@@ -807,6 +807,37 @@ body {
   backface-visibility: hidden;
 }
 
+/* Direction-aware enter: back slides in from the left, tabs cross-fade. */
+@keyframes page-enter-back {
+  from {
+    opacity: 0;
+    transform: translate3d(-10px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes page-enter-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-transition[data-nav="back"] {
+  animation-name: page-enter-back;
+}
+
+.page-transition[data-nav="tab"] {
+  animation: page-enter-fade 140ms linear both;
+}
+
+
+
 
 /* Live swipe-back drag: no animation, transform driven directly. */
 .page-transition[data-swiping="true"] {
