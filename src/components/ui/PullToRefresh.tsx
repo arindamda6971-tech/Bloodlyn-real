@@ -100,6 +100,7 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
       {/* Content container */}
       <div
         ref={containerRef}
+        data-scroll-container=""
         className="h-full overflow-y-auto overscroll-contain"
         style={{
           transform: isActive ? `translate3d(0, ${pullDistance}px, 0)` : 'translate3d(0, 0, 0)',
