@@ -209,6 +209,8 @@ const App = () => {
       >
         <ThemeProvider>
           <AuthProvider>
+            <NativeChrome />
+
             <CartProvider>
               <AddressProvider>
                 <NotificationProvider>
