@@ -287,6 +287,9 @@ const LoginScreen = () => {
               <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="done"
                 maxLength={15}
                 placeholder="+91 9876543210"
                 value={phoneNumber}

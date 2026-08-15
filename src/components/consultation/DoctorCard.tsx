@@ -21,7 +21,7 @@ export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "
       <div className="flex items-start gap-4 mb-4">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-blue-500/20 flex items-center justify-center flex-shrink-0 border border-primary/20 group-hover:scale-105 transition-transform duration-300 overflow-hidden relative">
           {doctor.image ? (
-            <img loading="lazy" decoding="async" src={doctor.image} alt={doctor.name} className="w-full h-full object-cover" />
+            <img loading="lazy" decoding="async" width={56} height={56} src={doctor.image} alt={doctor.name} className="w-full h-full object-cover" />
           ) : (
             <Stethoscope className="w-7 h-7 text-primary" />
           )}

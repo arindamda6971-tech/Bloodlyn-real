@@ -185,6 +185,9 @@ const UploadPrescriptionScreen = () => {
                     <input
                       id="phone"
                       type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      enterKeyHint="done"
                       placeholder="Enter mobile number"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}

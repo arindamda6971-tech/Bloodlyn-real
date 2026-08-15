@@ -163,7 +163,7 @@ const PartnerLabsScreen = () => {
                   {/* Lab Icon */}
                   <motion.div layoutId={`lab-logo-${center.id}`} className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {center.logo_url ? (
-                      <img loading="lazy" decoding="async"
+                      <img loading="lazy" decoding="async" width={40} height={40}
                         src={center.logo_url}
                         alt={center.name}
                         className="w-10 h-10 object-contain rounded-lg"

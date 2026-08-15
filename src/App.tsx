@@ -24,6 +24,7 @@ import SmoothRoutes from "@/components/SmoothRoutes";
 import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
+import NativeChrome from "@/components/NativeChrome";
 import { Suspense, lazy, useEffect, type ReactNode } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
@@ -208,6 +209,8 @@ const App = () => {
       >
         <ThemeProvider>
           <AuthProvider>
+            <NativeChrome />
+
             <CartProvider>
               <AddressProvider>
                 <NotificationProvider>

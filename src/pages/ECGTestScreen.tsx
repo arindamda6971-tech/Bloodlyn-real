@@ -921,6 +921,9 @@ const ECGTestScreen = () => {
                     <label className="block text-xs font-bold text-muted-foreground mb-1">Mobile Number</label>
                     <Input
                       type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      enterKeyHint="done"
                       maxLength={10}
                       value={patient.mobile}
                       onChange={(e) => setPatient((p) => ({ ...p, mobile: sanitizePhone(e.target.value) }))}
