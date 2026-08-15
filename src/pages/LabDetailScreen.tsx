@@ -580,7 +580,7 @@ const LabDetailScreen = () => {
             <div className="flex items-center gap-2">
                <motion.div layoutId={`lab-logo-${labId}`} className="flex items-center justify-center">
                  {logoUrl ? (
-                   <img loading="lazy" decoding="async" src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
+                   <img loading="lazy" decoding="async" width={28} height={28} src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
                  ) : (
                    <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
                      <Building2 className="w-4 h-4 text-primary" />
