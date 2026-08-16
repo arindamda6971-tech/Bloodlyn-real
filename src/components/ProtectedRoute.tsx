@@ -81,25 +81,31 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <RouteFallback />;
   }
 
-  // Guard against a redirect loop: while AnimatePresence keeps the exiting
-  // route mounted, this component re-renders after navigation. Passing a new
-  // `state` object each time would re-trigger the navigation indefinitely.
+  // Guard against a redirect loop: SmoothRoutes/PageTransition keep the
+  // outgoing route mounted for a frame after navigation, so this component can
+  // re-render with a stale router location. Comparing against the real browser
+  // path makes each redirect a one-shot instead of an endless replace loop.
+  const currentPath =
+    typeof window !== "undefined" ? window.location.pathname : location.pathname;
+
   if (!user) {
-    if (location.pathname === "/login") return null;
+    if (currentPath === "/login") return null;
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  if (!isAuthorized && location.pathname !== "/unauthorized") {
+  if (!isAuthorized) {
+    if (currentPath === "/unauthorized") return null;
     return <Navigate to="/unauthorized" replace />;
   }
 
   // Require location check if not already saved in this device
-  if (location.pathname !== "/location-check" && location.pathname !== "/unauthorized" && location.pathname !== "/") {
+  if (currentPath !== "/location-check" && currentPath !== "/unauthorized" && currentPath !== "/") {
     const locationChecked = localStorage.getItem(`location_checked_${userId}`);
     if (locationChecked !== "true") {
       return <Navigate to="/location-check" replace />;
     }
   }
+
 
   return <>{children}</>;
 };
