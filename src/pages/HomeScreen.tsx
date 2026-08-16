@@ -533,10 +533,11 @@ const HomeScreen = () => {
           </section>
         )}
 
-
-
-        {/* Health Packages (real-time, vendor-driven) */}
-        <HealthPackagesSection />
+        {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
+            never competes with the route transition / first paint. */}
+        <DeferredMount minHeight={280}>
+          <HealthPackagesSection />
+        </DeferredMount>
 
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 transform-gpu">
