@@ -409,35 +409,42 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [syncCartToSupabase]);
 
-  const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-  return (
-    <CartContext.Provider
-      value={{ 
-        items, 
-        addToCart, 
-        removeFromCart, 
-        updateQuantity, 
-        updateFamilyMember, 
-        updateLabForItems,
-        clearCart,
-        replaceCart,
-        itemCount, 
-        subtotal,
-        currentLabId,
-        currentLabName,
-        pendingItem,
-        confirmReplace,
-        cancelReplace,
-        isLoading,
-        validateFamilyMember,
-        hasItem,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+  const { itemCount, subtotal } = useMemo(
+    () => ({
+      itemCount: items.reduce((acc, item) => acc + item.quantity, 0),
+      subtotal: items.reduce((acc, item) => acc + item.price * item.quantity, 0),
+    }),
+    [items]
   );
+
+  // Stable context value: consumers only re-render when cart state actually
+  // changes, not when an ancestor provider (theme/auth) re-renders.
+  const value = useMemo<CartContextType>(
+    () => ({
+      items,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      updateFamilyMember,
+      updateLabForItems,
+      clearCart,
+      replaceCart,
+      itemCount,
+      subtotal,
+      currentLabId,
+      currentLabName,
+      pendingItem,
+      confirmReplace,
+      cancelReplace,
+      isLoading,
+      validateFamilyMember,
+      hasItem,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, itemCount, subtotal, currentLabId, currentLabName, pendingItem, isLoading, validateFamilyMember, hasItem]
+  );
+
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
 
 export const useCart = () => {
