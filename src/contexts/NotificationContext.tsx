@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -222,22 +222,22 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     setNotifications([]);
   };
 
-  return (
-    <NotificationContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        markAsRead,
-        markAllAsRead,
-        addNotification,
-        clearNotifications,
-        smartAlertsEnabled,
-        setSmartAlertsEnabled,
-      }}
-    >
-      {children}
-    </NotificationContext.Provider>
+  const value = useMemo(
+    () => ({
+      notifications,
+      unreadCount,
+      markAsRead,
+      markAllAsRead,
+      addNotification,
+      clearNotifications,
+      smartAlertsEnabled,
+      setSmartAlertsEnabled,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [notifications, unreadCount, smartAlertsEnabled]
   );
+
+  return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>;
 }
 
 export function useNotifications() {

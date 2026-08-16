@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -401,21 +401,22 @@ export const AddressProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  return (
-    <AddressContext.Provider
-      value={{
-        addresses,
-        defaultAddressId,
-        addAddress,
-        updateAddress,
-        removeAddress,
-        setDefaultAddress,
-        loading,
-      }}
-    >
-      {children}
-    </AddressContext.Provider>
+  // Stable value so address consumers don't re-render on unrelated ancestor updates.
+  const value = useMemo(
+    () => ({
+      addresses,
+      defaultAddressId,
+      addAddress,
+      updateAddress,
+      removeAddress,
+      setDefaultAddress,
+      loading,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [addresses, defaultAddressId, loading]
   );
+
+  return <AddressContext.Provider value={value}>{children}</AddressContext.Provider>;
 };
 
 export const useAddresses = () => {

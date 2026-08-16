@@ -34,6 +34,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
+import DeferredMount from "@/components/DeferredMount";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { usePreviousOrders } from "@/hooks/usePreviousOrders";
@@ -416,7 +417,7 @@ const HomeScreen = () => {
         )}
 
         {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 transform-gpu flex flex-col gap-4">
+        <section className="px-4 mt-8 transform-gpu section-defer flex flex-col gap-4">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {quickActions.map((action) => (
             <div
@@ -462,7 +463,7 @@ const HomeScreen = () => {
 
         {/* Recent Orders */}
         {previousOrders.length > 0 && (
-          <section className="mt-10 transform-gpu">
+          <section className="mt-10 transform-gpu section-defer">
             <div className="flex items-center justify-between px-6 mb-4">
               <h2 className="text-xl font-black text-foreground tracking-tight">Recent Orders 📦</h2>
               <button onClick={() => navigate('/bookings')} className="text-primary text-xs font-black bg-primary/10 px-3 py-1.5 rounded-full">
@@ -533,13 +534,14 @@ const HomeScreen = () => {
           </section>
         )}
 
-
-
-        {/* Health Packages (real-time, vendor-driven) */}
-        <HealthPackagesSection />
+        {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
+            never competes with the route transition / first paint. */}
+        <DeferredMount minHeight={280}>
+          <HealthPackagesSection />
+        </DeferredMount>
 
         {/* Doctor Banner */}
-        <section className="px-4 mt-8 mb-8 transform-gpu">
+        <section className="px-4 mt-8 mb-8 transform-gpu section-defer">
           <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform bg-gradient-to-br from-[#38bdf8] to-[#0284c7] shadow-lg shadow-sky-500/20 h-[190px]">
             
             {/* Background Glows */}
