@@ -16,6 +16,15 @@ import { useTheme } from "@/contexts/ThemeContext";
 const NativeChrome = () => {
   const { theme } = useTheme();
 
+  // Flag the document so CSS can drop WebView-expensive effects on native.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    document.documentElement.classList.add("native");
+    return () => document.documentElement.classList.remove("native");
+  }, []);
+
+
+
   // --- Status bar theming (native only) ---
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
