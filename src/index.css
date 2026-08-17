@@ -849,3 +849,32 @@ body {
   animation: none !important;
   transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* ------------------------------------------------------------------
+ * Native (Capacitor WebView) rendering mode.
+ * Android WebViews pay a very high per-frame cost for backdrop-filter and
+ * large blur radii. On native we swap them for opaque surfaces — visually
+ * near-identical, but removes the biggest source of scroll/transition jank.
+ * ------------------------------------------------------------------ */
+html.native [class*="backdrop-blur"],
+html.native .glass-card,
+html.native .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.native .glass-card {
+  background-color: hsl(var(--card)) !important;
+}
+
+html.native [class*="blur-3xl"],
+html.native [class*="blur-2xl"],
+html.native .aurora-blob {
+  filter: blur(28px) !important;
+  opacity: 0.35 !important;
+}
+
+/* Scrolling containers on native never composite a shadow-heavy backdrop. */
+html.native [data-scroll-container] {
+  will-change: scroll-position;
+}
