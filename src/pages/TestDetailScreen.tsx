@@ -323,32 +323,9 @@ const TestDetailScreen = () => {
           )}
         </motion.section>
 
-        {/* Prerequisites Checklist */}
-        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <h3 className="text-[22px] font-bold text-secondary mb-3">Preparation Checklist</h3>
-          <div className="space-y-3 mb-6 bg-card border border-border/60 rounded-2xl p-4 shadow-sm">
-            {prereqList.map((prereq, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <Checkbox 
-                  id={`prep-${idx}`} 
-                  className="mt-0.5"
-                  checked={prepChecked[idx] || false}
-                  onCheckedChange={(checked) => {
-                    const newChecked = [...prepChecked];
-                    newChecked[idx] = checked as boolean;
-                    setPrepChecked(newChecked);
-                  }}
-                />
-                <label 
-                  htmlFor={`prep-${idx}`} 
-                  className={`text-[14px] leading-relaxed cursor-pointer transition-colors ${prepChecked[idx] ? 'text-muted-foreground line-through' : 'text-foreground font-medium'}`}
-                >
-                  {prereq}
-                </label>
-              </div>
-            ))}
-          </div>
 
+
+        <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Accordion type="single" collapsible className="space-y-3">
             {[
               { v: "diseases", title: "Diseases Covered", body: "Helps detect and monitor a range of conditions related to this test category. Discuss results with your physician for accurate diagnosis." },

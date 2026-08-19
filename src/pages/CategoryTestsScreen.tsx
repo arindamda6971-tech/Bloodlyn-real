@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, FlaskConical, ShoppingCart, Plus, Search } from "lucide-react";
+import { Loader2, FlaskConical, ShoppingCart, Plus, Search, ChevronRight } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BannerGraphic from "@/components/BannerGraphic";
@@ -24,15 +24,9 @@ import {
 // High-performance memoized test item
 const TestItem = React.memo(({
   test,
-  isInCart,
-  onAdd,
-  onViewCart,
   onOpen,
 }: {
   test: BridgeTest;
-  isInCart: boolean;
-  onAdd: (t: BridgeTest) => void;
-  onViewCart: () => void;
   onOpen: (t: BridgeTest) => void;
 }) => (
   <div
@@ -48,20 +42,7 @@ const TestItem = React.memo(({
         <p className="text-[10px] text-muted-foreground mt-0.5">Report in {test.report_delivery_time || "24h"}</p>
       </div>
       <div className="flex-shrink-0">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            if (isInCart) onViewCart();
-            else onAdd(test);
-          }}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-all ${
-            isInCart
-              ? "bg-success text-white shadow-md active:scale-90"
-              : "bg-[#38bdf8] text-white shadow-md active:scale-90"
-          }`}
-        >
-          {isInCart ? <ShoppingCart className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
-        </button>
+        <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
       </div>
     </div>
   </div>
@@ -216,9 +197,6 @@ const CategoryTestsScreen = () => {
               <TestItem
                 key={test.id}
                 test={test}
-                isInCart={isInCart(test.id, test.test_name)}
-                onAdd={handleAddToCart}
-                onViewCart={() => navigate("/cart")}
                 onOpen={(t) => navigate(`/test/${t.id}`, { state: { bridgeTest: t } })}
               />
             ))}
