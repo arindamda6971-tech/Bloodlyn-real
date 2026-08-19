@@ -88,7 +88,7 @@ const LanguageStep = ({ state, updateOnlineState, onNext }: any) => {
         <Input 
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search Language" 
-          className="h-12 rounded-2xl pl-10 bg-muted/30 border-transparent focus:bg-background transition-colors"
+          className="h-12 rounded-2xl pl-10 bg-gradient-to-r from-primary/10 via-primary/5 to-muted/30 border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 shadow-sm shadow-primary/5 transition-all"
         />
       </div>
 
@@ -130,7 +130,7 @@ const HealthConcernStep = ({ updateState, onNext }: any) => {
         <Input 
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search symptoms..." 
-          className="h-12 rounded-2xl pl-10 bg-muted/30 border-transparent focus:bg-background transition-colors"
+          className="h-12 rounded-2xl pl-10 bg-gradient-to-r from-primary/10 via-primary/5 to-muted/30 border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 shadow-sm shadow-primary/5 transition-all"
         />
       </div>
 

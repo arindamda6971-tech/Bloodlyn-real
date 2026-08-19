@@ -203,7 +203,7 @@ const HealthConcernStep = ({ updateState, onNext }: any) => {
         <Input 
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search symptoms or specialities..." 
-          className="h-12 rounded-2xl pl-10 bg-muted/30 border-transparent focus:bg-background transition-colors"
+          className="h-12 rounded-2xl pl-10 bg-gradient-to-r from-primary/10 via-primary/5 to-muted/30 border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 shadow-sm shadow-primary/5 transition-all"
         />
       </div>
 
@@ -391,7 +391,7 @@ const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, onBoo
           value={nameQuery}
           onChange={(e) => setNameQuery(e.target.value)}
           placeholder="Search doctor by name or specialty..."
-          className="h-12 rounded-2xl pl-10 bg-card border-border/60 font-medium"
+          className="h-12 rounded-2xl pl-10 bg-gradient-to-r from-primary/10 via-primary/5 to-muted/30 border-primary/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 shadow-sm shadow-primary/5 font-medium transition-all"
         />
       </div>
 

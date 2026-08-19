@@ -129,7 +129,7 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className={`w-full h-12 rounded-2xl bg-muted/60 border-none pl-11 ${rightSlot ? 'pr-16' : 'pr-11'} text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50 shadow-none`}
+            className={`w-full h-12 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-muted/30 border border-primary/20 pl-11 ${rightSlot ? 'pr-16' : 'pr-11'} text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/40 transition-all text-foreground placeholder:text-muted-foreground/60 shadow-sm shadow-primary/5`}
           />
           {value && (
             <button
