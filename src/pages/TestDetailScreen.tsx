@@ -16,6 +16,7 @@ import {
   Smartphone,
   AlertCircle,
   CheckCircle,
+  Star,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
-import { useUserPincode } from "@/hooks/useUserPincode";
+import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,6 +100,9 @@ const TestDetailScreen = () => {
   const [loading, setLoading] = useState(!bridgeTest);
   const [error, setError] = useState<string | null>(null);
   const [showTrustSheet, setShowTrustSheet] = useState(false);
+  const [showLabSheet, setShowLabSheet] = useState(false);
+  const [fetchingLabs, setFetchingLabs] = useState(false);
+  const [availableLabs, setAvailableLabs] = useState<any[]>([]);
   const [prepChecked, setPrepChecked] = useState<boolean[]>([]);
 
   useEffect(() => {
@@ -182,17 +186,100 @@ const TestDetailScreen = () => {
       return;
     }
     
-    const finalPrice = preselectedLab?.productPrice ?? test.price;
-    const ok = addToCart({ 
-      id: test.id, 
-      name: test.name, 
-      price: finalPrice,
-      labId: preselectedLab?.id,
-      labName: preselectedLab?.name,
-      vendorId: preselectedLab?.vendor_id
+    setShowLabSheet(true);
+    fetchLabsForTest();
+  };
+
+  const fetchLabsForTest = async () => {
+    if (!test) return;
+    setFetchingLabs(true);
+    try {
+      const { data, error } = await supabase
+        .from("diagnostic_centers")
+        .select("*")
+        .order("rating", { ascending: false });
+      
+      if (error || !data) throw error;
+
+      const pincodeFiltered = data.filter((d) => labServesPincode(d as any, pincode));
+      
+      const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
+      const vendorProducts: Record<string, {name: string, price: number}[]> = {};
+      if (vendorIds.length > 0) {
+        const { data: products } = await supabase
+          .from("products")
+          .select("*")
+          .in("vendor_id", vendorIds)
+          .eq("availability", true);
+        if (products) {
+          products.forEach((p) => {
+            if (!vendorProducts[p.vendor_id]) vendorProducts[p.vendor_id] = [];
+            const pName = (p.name || p.product_name || "").trim().toLowerCase();
+            if (pName) {
+              vendorProducts[p.vendor_id].push({
+                name: pName,
+                price: Number(p.price) || 0
+              });
+            }
+          });
+        }
+      }
+      
+      const targetTestName = test.name.trim().toLowerCase();
+      
+      const matchedLabs = pincodeFiltered.map((lab: any) => {
+        const baseTests = Array.isArray(lab.available_tests) ? lab.available_tests : [];
+        const additionalTests = (lab.vendor_id && vendorProducts[lab.vendor_id])
+          ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, price: vp.price }))
+          : [];
+        
+        const allTests = [...baseTests, ...additionalTests];
+        
+        const matchingTest = allTests.find((t: any) => {
+          const tNameRaw = typeof t === 'string' ? t : (t.test_name || t.name || t.product_name || "");
+          const tName = String(tNameRaw).trim().toLowerCase();
+          return tName && (tName.includes(targetTestName) || targetTestName.includes(tName));
+        });
+        
+        if (!matchingTest) return null;
+        
+        // Ensure we always have a valid number for price
+        const foundPrice = typeof matchingTest === 'string' ? test.price : (matchingTest.price || test.price);
+        
+        return {
+          ...lab,
+          testPrice: foundPrice > 0 ? foundPrice : (test.price || 0),
+        };
+      }).filter(Boolean);
+      
+      setAvailableLabs(matchedLabs);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to fetch labs");
+    } finally {
+      setFetchingLabs(false);
+    }
+  };
+
+  const selectLabAndAdd = (lab: any) => {
+    if (!test) return;
+    
+    const ok = addToCart({
+      id: test.id,
+      name: test.name,
+      price: lab.testPrice,
+      labId: lab.id,
+      labName: lab.name,
+      vendorId: lab.vendor_id,
+      category: test.category || "Blood Tests",
+      kind: "test",
     });
     
-    if (ok) toast.success(`${test.name} added to cart`);
+    if (ok) {
+      setShowLabSheet(false);
+      toast.success(`${test.name} added from ${lab.name}`);
+      navigate(`/lab/${lab.id}`);
+    }
   };
 
 
@@ -430,6 +517,72 @@ const TestDetailScreen = () => {
             <Button onClick={() => setShowTrustSheet(false)} className="w-full h-12 rounded-xl text-base font-semibold">
               Got it
             </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Lab Selection Sheet */}
+      <Sheet open={showLabSheet} onOpenChange={setShowLabSheet}>
+        <SheetContent side="bottom" className="rounded-t-3xl min-h-[400px] max-h-[85vh] flex flex-col p-0">
+          <SheetHeader className="px-6 pt-6 pb-4 border-b border-border/40">
+            <SheetTitle className="text-xl">Select a Lab</SheetTitle>
+            <SheetDescription>
+              Choose a lab that provides this test to continue
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-y-auto p-6">
+            {fetchingLabs ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <LoadingSpinner size="md" />
+                <p className="text-sm text-muted-foreground mt-4">Finding available labs...</p>
+              </div>
+            ) : availableLabs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <AlertCircle className="w-12 h-12 text-muted-foreground mb-3" />
+                <h3 className="text-lg font-semibold text-secondary">No labs available</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Unfortunately, none of our partner labs currently offer this specific test.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 pb-4">
+                {availableLabs.map((lab) => (
+                  <div key={lab.id} className="p-4 rounded-2xl border border-border/50 bg-card shadow-sm flex flex-col gap-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {lab.logo_url ? (
+                          <img src={lab.logo_url} alt={lab.name} className="w-10 h-10 rounded-full object-contain bg-white border" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border">
+                            <span className="font-bold text-muted-foreground text-sm">{lab.name.charAt(0)}</span>
+                          </div>
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-secondary line-clamp-1">{lab.name}</h4>
+                          {lab.rating && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs font-medium text-muted-foreground">{lab.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-base font-bold text-primary">₹{lab.testPrice}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => selectLabAndAdd(lab)}
+                      className="w-full rounded-xl"
+                      variant="outline"
+                    >
+                      Select & Add
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </SheetContent>
       </Sheet>
