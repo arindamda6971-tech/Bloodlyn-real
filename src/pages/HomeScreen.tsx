@@ -296,7 +296,7 @@ const HomeScreen = () => {
 
       <MobileLayout>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
-        <div className="px-5 pb-0" style={{ paddingTop: "calc(var(--sat) + 12px)" }}>
+        <div className="px-5 pb-0">
           <ZomatoStyleHeader
             unreadCount={unreadCount}
             onOpenCall={() => setShowCallSheet(true)}
@@ -433,7 +433,7 @@ const HomeScreen = () => {
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
                 <>
-                  <img src={action.bgImage} alt="Background" className="absolute inset-0 w-full h-full object-cover z-0 object-right" />
+                  <img loading="lazy" decoding="async" src={action.bgImage} alt="Background" className="absolute inset-0 w-full h-full object-cover z-0 object-right" />
                   <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/40 z-0" />
                 </>
               )}

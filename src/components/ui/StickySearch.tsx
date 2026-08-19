@@ -103,7 +103,6 @@ const StickySearch = ({
     <div
       ref={shellRef}
       className={`sticky top-0 z-40 bg-background/95 backdrop-blur-2xl rounded-b-2xl overflow-visible motion-safe:transition-shadow shadow-none ${className}`}
-      style={{ paddingTop: "calc(var(--sat))" }}
       data-testid="sticky-search-shell"
     >
       {/* Clean normal search shell without color gradients */}

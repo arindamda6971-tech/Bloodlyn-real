@@ -14,9 +14,8 @@ const SmoothRoutes = ({ children }: { children: (loc: ReturnType<typeof useLocat
   useEffect(() => {
     if (deferred.pathname === location.pathname && deferred.search === location.search) return;
 
-    // Swap immediately inside a transition: React keeps the old page painted
-    // while the next chunk resolves, so there is no timer latency and no
-    // extra frame spent waiting before navigation starts.
+    // Swap inside a transition: React keeps the old page painted
+    // while the next lazy chunk resolves.
     startTransition(() => {
       setDeferred(location);
     });
@@ -28,12 +27,14 @@ const SmoothRoutes = ({ children }: { children: (loc: ReturnType<typeof useLocat
         flex: 1,
         display: "flex",
         flexDirection: "column",
+        minHeight: "100dvh",
+        width: "100%",
+        position: "relative",
       }}
     >
       {children(deferred)}
     </div>
   );
-
 };
 
 export default SmoothRoutes;
