@@ -547,13 +547,13 @@ const LabDetailScreen = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           
           <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-safe">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white flex-shrink-0">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
             
             <div className="flex-1 mx-3">
-              <div className="relative flex items-center w-full h-10 rounded-full bg-white/20 backdrop-blur-xl border border-white/30 shadow-sm overflow-hidden">
-                <Search className="w-4 h-4 text-white ml-3" />
+              <div className="relative flex items-center w-full h-10 rounded-full bg-white border border-transparent shadow-sm overflow-hidden">
+                <Search className="w-4 h-4 text-muted-foreground ml-3" />
                 <input
                   type="text"
                   value={searchQuery}
@@ -562,15 +562,15 @@ const LabDetailScreen = () => {
                     if (selectedCategory) setSelectedCategory(null);
                   }}
                   placeholder="Search tests..."
-                  className="flex-1 bg-transparent border-none text-white text-sm px-2 py-2 placeholder:text-white/70 focus:outline-none focus:ring-0"
+                  className="flex-1 bg-transparent border-none text-foreground text-sm px-2 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-0"
                 />
               </div>
             </div>
 
-            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center transition-transform active:scale-90 text-white relative flex-shrink-0">
+            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm relative flex-shrink-0">
               <ShoppingCart className="w-5 h-5" />
               {items.length > 0 && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-transparent" />
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
               )}
             </button>
           </div>
