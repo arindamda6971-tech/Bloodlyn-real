@@ -152,7 +152,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
             {data.title}
           </motion.h2>
 
-          {serviceType === "doctor" && (
+          {(serviceType === "doctor" || serviceType === "physio") && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -163,7 +163,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
               <div className="flex-1">
                 <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>
                 <p className="text-[13px] text-amber-700/90 mt-1 leading-relaxed">
-                  Doctor consultancy services are currently not available in your area. We will notify you once we expand to your location.
+                  {serviceType === "doctor" ? "Doctor consultancy" : "Physiotherapist"} services are currently not available in your area. We will notify you once we expand to your location.
                 </p>
               </div>
             </motion.div>
@@ -211,11 +211,11 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           >
             <Button
               onClick={onProceed}
-              variant={serviceType === "doctor" ? "outline" : "hero"}
-              disabled={serviceType === "doctor"}
+              variant={(serviceType === "doctor" || serviceType === "physio") ? "outline" : "hero"}
+              disabled={(serviceType === "doctor" || serviceType === "physio")}
               className="w-full h-14 rounded-2xl text-[15px]"
             >
-              {serviceType === "doctor" ? "Currently Unavailable" : "Proceed to Booking"}
+              {(serviceType === "doctor" || serviceType === "physio") ? "Currently Unavailable" : "Proceed to Booking"}
             </Button>
           </motion.div>
 
