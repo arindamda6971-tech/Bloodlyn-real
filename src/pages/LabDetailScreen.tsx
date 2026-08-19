@@ -642,14 +642,20 @@ const LabDetailScreen = () => {
                  }
                });
              }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
-               <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] flex items-center justify-center mb-2">
-                 <Activity className="w-5 h-5 text-[#0284c7]" />
+               <div className="flex flex-col items-center justify-center">
+                 <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] flex items-center justify-center mb-2">
+                   <Activity className="w-5 h-5 text-[#0284c7]" />
+                 </div>
+                 <p className="text-[13px] font-black text-foreground">BP Check</p>
                </div>
-               <p className="text-[13px] font-black text-foreground">BP Check</p>
-               <div className="flex items-center gap-1 mt-0.5 justify-center">
-                 <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
-                 <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.home_bp_price || 199}</p>
-               </div>
+               {labFromDb && !labFromDb.offers_home_bp ? (
+                 <p className="text-[10px] font-bold text-rose-500 mt-0.5">Not Available</p>
+               ) : (
+                 <div className="flex items-center gap-1 mt-0.5 justify-center">
+                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
+                   <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.home_bp_price || 199}</p>
+                 </div>
+               )}
              </button>
              
              <button onClick={() => {
@@ -675,14 +681,20 @@ const LabDetailScreen = () => {
                  }
                });
              }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
-               <div className="w-10 h-10 rounded-xl bg-[#dcfce7] flex items-center justify-center mb-2">
-                 <HeartPulse className="w-5 h-5 text-[#16a34a]" />
+               <div className="flex flex-col items-center justify-center">
+                 <div className="w-10 h-10 rounded-xl bg-[#dcfce7] flex items-center justify-center mb-2">
+                   <HeartPulse className="w-5 h-5 text-[#16a34a]" />
+                 </div>
+                 <p className="text-[13px] font-black text-foreground">ECG</p>
                </div>
-               <p className="text-[13px] font-black text-foreground">ECG</p>
-               <div className="flex items-center gap-1 mt-0.5 justify-center">
-                 <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
-                 <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.ecg_price || 599}</p>
-               </div>
+               {labFromDb && !(labFromDb.offers_home_ecg || labFromDb.ecg_available) ? (
+                 <p className="text-[10px] font-bold text-rose-500 mt-0.5">Not Available</p>
+               ) : (
+                 <div className="flex items-center gap-1 mt-0.5 justify-center">
+                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
+                   <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.ecg_price || 599}</p>
+                 </div>
+               )}
              </button>
           </div>
         </div>
