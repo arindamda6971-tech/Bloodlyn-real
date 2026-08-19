@@ -75,7 +75,8 @@ const quickActions = [
     desc: "Connect with specialized doctors instantly via secure video call.",
     gradient: "from-[#10b981] to-[#0d9488]",
     glow: "bg-[#10b981]/20",
-    badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]"
+    badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]",
+    bgImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=800"
   },
   { 
     icon: HeartPulse, 
@@ -85,7 +86,8 @@ const quickActions = [
     desc: "Clinical-grade resting ECG test performed by certified technicians.",
     gradient: "from-[#f43f5e] to-[#dc2626]",
     glow: "bg-[#f43f5e]/20",
-    badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]"
+    badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]",
+    bgImage: "https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973?auto=format&fit=crop&w=800&q=80"
   },
   {
     icon: HeartPulse,
@@ -95,7 +97,8 @@ const quickActions = [
     desc: "Book a trained professional to measure your blood pressure accurately.",
     gradient: "from-[#f43f5e] to-[#3b82f6]",
     glow: "bg-[#3b82f6]/20",
-    badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]"
+    badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]",
+    bgImage: "https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2?auto=format&fit=crop&w=800&q=80"
   },
   { 
     icon: Activity, 
@@ -105,7 +108,8 @@ const quickActions = [
     desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
     gradient: "from-[#6366f1] to-[#2563eb]",
     glow: "bg-[#6366f1]/20",
-    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]"
+    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]",
+    bgImage: "https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198?auto=format&fit=crop&w=800&q=80"
   },
   { 
     icon: FileUp, 
@@ -115,7 +119,8 @@ const quickActions = [
     desc: "Simply upload your prescription and our experts will call you to arrange the tests.",
     gradient: "from-[#f59e0b] to-[#d97706]",
     glow: "bg-[#f59e0b]/20",
-    badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]"
+    badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
+    bgImage: "https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9?auto=format&fit=crop&w=800&q=80"
   },
 ];
 
@@ -425,9 +430,21 @@ const HomeScreen = () => {
               onClick={() => navigate(action.path)}
               className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
             >
+              {/* Custom background image for specific tiles */}
+              {action.bgImage && (
+                <>
+                  <img src={action.bgImage} alt="Background" className="absolute inset-0 w-full h-full object-cover z-0 object-right" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/40 z-0" />
+                </>
+              )}
+
               {/* Background glowing accent */}
-              <div className={`absolute -right-10 -bottom-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none`} />
-              <div className={`absolute -left-10 -top-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none`} />
+              {!action.bgImage && (
+                <>
+                  <div className={`absolute -right-10 -bottom-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none z-0`} />
+                  <div className={`absolute -left-10 -top-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none z-0`} />
+                </>
+              )}
 
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-3">
