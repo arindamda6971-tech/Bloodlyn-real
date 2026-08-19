@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw } from "lucide-react";
+import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw, AlertTriangle } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -308,51 +308,19 @@ const DoctorConsultScreen = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-32">
-        {/* Step 1: Choose Type (with fallback if state.type is missing) */}
-        {(state.currentStep === 1 || !state.type) && (
-          <ConsultationTypeStep 
-            onSelect={(type) => {
-              updateState({ 
-                type, 
-                currentStep: 2, 
-                totalSteps: type === "offline" ? 5 : 6 
-              });
-            }} 
-          />
-        )}
+      <div className="px-4 pb-32 pt-4">
+        {/* Service Not Available Banner */}
+        <div className="mb-6 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 backdrop-blur-sm shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>
+            <p className="text-[13px] text-amber-700/90 mt-1 leading-relaxed">
+              Doctor consultancy services are currently not available in your area. We will notify you once we expand to your location.
+            </p>
+          </div>
+        </div>
 
-        {/* Offline Flow Steps (2-5) */}
-        {state.type === "offline" && state.currentStep > 1 && (
-          <OfflineFlow 
-            state={state} 
-            updateState={updateState} 
-            updateOfflineState={updateOfflineState} 
-            doctors={doctors}
-            onBook={handleBook}
-            familyMembers={familyMembers}
-            selectedMemberId={selectedMemberId}
-            setSelectedMemberId={setSelectedMemberId}
-            selfProfile={selfProfile}
-            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
-          />
-        )}
-
-        {/* Online Flow Steps (2-6) */}
-        {state.type === "online" && state.currentStep > 1 && (
-          <OnlineFlow 
-            state={state} 
-            updateState={updateState} 
-            updateOnlineState={updateOnlineState} 
-            doctors={doctors}
-            onBook={handleBook}
-            familyMembers={familyMembers}
-            selectedMemberId={selectedMemberId}
-            setSelectedMemberId={setSelectedMemberId}
-            selfProfile={selfProfile}
-            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
-          />
-        )}
+        {/* Booking steps have been disabled as the service is unavailable */}
       </div>
 
       {/* Add Family Member Modal */}

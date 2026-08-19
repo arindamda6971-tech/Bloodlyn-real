@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, Stethoscope, Video, Languages, Activity, Calendar, FileText, HeartPulse, Home, FileHeart } from "lucide-react";
+import { ArrowLeft, Stethoscope, Video, Languages, Activity, Calendar, FileText, HeartPulse, Home, FileHeart, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -147,10 +147,27 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-2xl font-black tracking-tight text-center mb-8"
+            className="text-2xl font-black tracking-tight text-center mb-6"
           >
             {data.title}
           </motion.h2>
+
+          {serviceType === "doctor" && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 backdrop-blur-sm shadow-sm"
+            >
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>
+                <p className="text-[13px] text-amber-700/90 mt-1 leading-relaxed">
+                  Doctor consultancy services are currently not available in your area. We will notify you once we expand to your location.
+                </p>
+              </div>
+            </motion.div>
+          )}
 
           <div className="w-full space-y-6 flex-1">
             {data.steps.map((step, index) => {
@@ -194,10 +211,11 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           >
             <Button
               onClick={onProceed}
-              variant="hero"
+              variant={serviceType === "doctor" ? "outline" : "hero"}
+              disabled={serviceType === "doctor"}
               className="w-full h-14 rounded-2xl text-[15px]"
             >
-              Proceed to Booking
+              {serviceType === "doctor" ? "Currently Unavailable" : "Proceed to Booking"}
             </Button>
           </motion.div>
 
