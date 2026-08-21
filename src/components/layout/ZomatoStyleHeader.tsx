@@ -127,7 +127,7 @@ export const ZomatoStyleHeader = ({
   })();
 
   return (
-    <div className="flex flex-col pb-2">
+    <div className="flex flex-col pb-2 pt-1">
       {/* Top Header Row: Location Selector + Action Buttons */}
       <div className="flex items-start justify-between pb-3 gap-2">
         {/* Left: Premium Greeting & Location Selector */}

@@ -187,27 +187,32 @@ const LocationCheckScreen = () => {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("diagnostic_centers")
-        .select("pincode, service_pincodes, is_active")
-        .eq("is_active", true);
-      if (cancelled || !data) return;
-      const set = new Set<string>();
-      (data as any[]).forEach((lab) => {
-        if (Array.isArray(lab.service_pincodes)) {
-          lab.service_pincodes.forEach((p: any) => {
-            const v = String(p).trim();
+      try {
+        const { data } = await supabase
+          .from("diagnostic_centers")
+          .select("pincode, service_pincodes, is_active")
+          .eq("is_active", true);
+        if (cancelled || !data) return;
+        const set = new Set<string>();
+        (data as any[]).forEach((lab) => {
+          if (Array.isArray(lab.service_pincodes)) {
+            lab.service_pincodes.forEach((p: any) => {
+              const v = String(p).trim();
+              if (/^\d{6}$/.test(v)) set.add(v);
+            });
+          }
+          const raw = (lab.pincode || "").trim();
+          if (raw) raw.split(/[,;\s]+/).forEach((p: string) => {
+            const v = p.trim();
             if (/^\d{6}$/.test(v)) set.add(v);
           });
-        }
-        const raw = (lab.pincode || "").trim();
-        if (raw) raw.split(/[,;\s]+/).forEach((p: string) => {
-          const v = p.trim();
-          if (/^\d{6}$/.test(v)) set.add(v);
         });
-      });
-      setServiceableSet(set);
-      setIsServiceableLoading(false);
+        setServiceableSet(set);
+      } catch (err) {
+        console.error("Failed to load serviceable areas:", err);
+      } finally {
+        setIsServiceableLoading(false);
+      }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -266,6 +271,11 @@ const LocationCheckScreen = () => {
 
   const handleAllowLocation = async () => {
     setStep("detecting");
+    setLoading(true);
+
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Location timeout")), 8000)
+    );
 
     try {
       let coords;
@@ -274,49 +284,66 @@ const LocationCheckScreen = () => {
         const permission = await Geolocation.requestPermissions();
         if (permission.location !== 'granted') {
           setStep("manual");
+          setLoading(false);
           return;
         }
-        const position = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: false,
-          timeout: 10000,
-          maximumAge: 300000
-        });
+
+        // Race the geolocation against a timeout
+        const position = await Promise.race([
+          Geolocation.getCurrentPosition({
+            enableHighAccuracy: false,
+            timeout: 7000,
+            maximumAge: 300000
+          }),
+          timeoutPromise
+        ]) as any;
         coords = position.coords;
       } else {
         if (!navigator.geolocation) {
           setStep("manual");
+          setLoading(false);
           return;
         }
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 300000
-          });
-        });
+        const position = await Promise.race([
+          new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 7000,
+              maximumAge: 300000
+            });
+          }),
+          timeoutPromise
+        ]) as GeolocationPosition;
         coords = position.coords;
       }
 
       const { latitude, longitude } = coords;
-      const { pincode: pc, display } = await reverseGeocode(latitude, longitude);
+      const geoResult = await Promise.race([
+        reverseGeocode(latitude, longitude),
+        new Promise<{pincode: string, display: string}>(resolve => setTimeout(() => resolve({pincode: "", display: ""}), 3000))
+      ]) as {pincode: string, display: string};
 
-      if (!pc) {
+      if (!geoResult.pincode) {
         setStep("manual");
+        setLoading(false);
         return;
       }
 
-      setDetectedPincode(pc);
-      setLocationName(display);
+      setDetectedPincode(geoResult.pincode);
+      setLocationName(geoResult.display);
 
-      if (checkServiceability(pc)) {
+      if (checkServiceability(geoResult.pincode)) {
         setStep("serviceable");
-        setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 400);
+        saveAddressAndProceed(geoResult.pincode, geoResult.display, latitude, longitude);
       } else {
         setStep("not-serviceable");
       }
     } catch (error) {
       console.error("Location error:", error);
       setStep("manual");
+      toast({ title: "Location Error", description: "Could not detect your location. Please enter it manually.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -329,7 +356,7 @@ const LocationCheckScreen = () => {
     if (checkServiceability(pincode)) {
       setDetectedPincode(pincode);
       setStep("serviceable");
-      setTimeout(() => saveAddressAndProceed(pincode, `PIN ${pincode}`), 400);
+      saveAddressAndProceed(pincode, `PIN ${pincode}`);
     } else {
       setDetectedPincode(pincode);
       setStep("not-serviceable");
@@ -348,8 +375,20 @@ const LocationCheckScreen = () => {
   };
 
 
+  if (isServiceableLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground">Initializing service map…</h2>
+        <p className="text-sm text-muted-foreground mt-2 text-center">We're loading available service areas for you.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12">
+    <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12 pt-safe">
       {/* Aurora background */}
       <div className="absolute inset-0 pointer-events-none -z-0">
         <div className="absolute -top-32 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-3xl" />
@@ -477,7 +516,19 @@ const LocationCheckScreen = () => {
         <div className="grid grid-cols-4 gap-3">
           {LANDMARK_CITIES.map((city) => {
             const live = serviceableSet.has(city.pincode);
-            return (
+            if (isServiceableLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+        <h2 className="text-lg font-bold text-foreground">Initializing service map…</h2>
+        <p className="text-sm text-muted-foreground mt-2 text-center">We're loading available service areas for you.</p>
+      </div>
+    );
+  }
+
+  return (
               <motion.button
                 key={city.name}
                 whileTap={{ scale: 0.94 }}

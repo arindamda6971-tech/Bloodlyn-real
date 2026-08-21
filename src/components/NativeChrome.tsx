@@ -34,15 +34,19 @@ const NativeChrome = () => {
       try {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         if (cancelled) return;
+
+        // Ensure status bar is overlays the webview for a truly native look
+        await StatusBar.setOverlaysWebView({ overlay: true });
+
         await StatusBar.setStyle({ style: theme === "dark" ? Style.Dark : Style.Light });
+
         if (Capacitor.getPlatform() === "android") {
-          // Match the app surface so the bar blends with the screen.
           await StatusBar.setBackgroundColor({
-            color: theme === "dark" ? "#0B1220" : "#FFFFFF",
+            color: "#00000000", // Transparent to show the app background
           });
         }
       } catch {
-        // Plugin unavailable (web preview) — ignore.
+        // Plugin unavailable
       }
     })();
 
@@ -50,35 +54,6 @@ const NativeChrome = () => {
       cancelled = true;
     };
   }, [theme]);
-
-  // --- Haptic feedback on interactions ---
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    const onPointerDown = async (e: PointerEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (!target) return;
-
-      const isClickable =
-        target.tagName === "BUTTON" ||
-        target.tagName === "A" ||
-        target.closest("button") ||
-        target.closest("a") ||
-        target.getAttribute("role") === "button";
-
-      if (isClickable) {
-        try {
-          const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-          await Haptics.impact({ style: ImpactStyle.Light });
-        } catch {
-          // Plugin unavailable
-        }
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, []);
 
   // --- Keyboard: keep the focused field visible ---
   useEffect(() => {

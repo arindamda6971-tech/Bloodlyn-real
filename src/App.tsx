@@ -102,7 +102,7 @@ const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/Upl
  */
 const AnimatedRoutes = ({ location }: { location: any }) => {
   return (
-    <PageTransition>
+    <PageTransition location={location}>
       <Suspense fallback={<RouteFallback />}>
         <Routes location={location}>
           {/* Public Routes */}

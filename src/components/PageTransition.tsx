@@ -5,32 +5,22 @@ import { Capacitor } from "@capacitor/core";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
+interface PageTransitionProps {
+  children: ReactNode;
+  location?: any;
+}
+
 /**
  * Ultra-smooth, simultaneous dual-page transition mimicking iOS/Android native feel.
  * Optimized for performance: uses GPU-only properties.
  */
-const PageTransition = ({ children }: { children: ReactNode }) => {
-  const location = useLocation();
+const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
+  const currentLoc = useLocation();
+  const location = propLocation || currentLoc;
   const navType = useNavigationType();
 
   const isTab = TAB_PATHS.includes(location.pathname);
   const isBack = navType === "POP";
-
-  // Trigger haptic feedback on navigation
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    const triggerHaptic = async () => {
-      try {
-        const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
-        await Haptics.impact({ style: ImpactStyle.Light });
-      } catch (e) {
-        // Haptics not available
-      }
-    };
-
-    triggerHaptic();
-  }, [location.pathname]);
 
   const transition = {
     type: "spring",

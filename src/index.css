@@ -20,6 +20,9 @@
     --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
     --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 
+    /* Native-feel safe area tweaks */
+    --status-bar-height: 24px;
+
      /* BloodLyn Brand Colors */
 
     --background: 210 20% 98%;
@@ -230,8 +233,9 @@
     scroll-behavior: auto;
     scroll-snap-type: none; /* Removed proximity as it can feel stuck */
     /* Extreme performance layer promotion */
-    transform: translateZ(0);
+    transform: translate3d(0,0,0);
     backface-visibility: hidden;
+    perspective: 1000;
   }
 
   /* Professional "Slow-Momentum" Profile */
@@ -488,7 +492,15 @@
     padding-top: calc(var(--sat) + 8px);
   }
 
-  .pt-safe { padding-top: var(--sat); }
+  .pt-safe {
+    padding-top: var(--sat);
+  }
+
+  /* Fallback for Android where env() might fail */
+  html.native .pt-safe {
+    padding-top: max(var(--sat), 32px);
+  }
+
   .pb-safe { padding-bottom: var(--sab); }
   .mt-safe { margin-top: var(--sat); }
   .mb-safe { margin-bottom: var(--sab); }

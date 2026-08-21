@@ -6,26 +6,11 @@ import { Capacitor } from '@capacitor/core';
  * Safely checks if the platform is native before calling Capacitor plugins.
  */
 export const hapticImpact = async (style: ImpactStyle = ImpactStyle.Light) => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      await Haptics.impact({ style });
-    } catch (e) {
-      // Ignore haptic errors
-    }
-  }
+  return; // Disabled to save battery as per user request
 };
 
 export const hapticSelection = async () => {
-  if (Capacitor.isNativePlatform()) {
-    try {
-      await Haptics.selectionStart();
-      setTimeout(async () => {
-        await Haptics.selectionEnd();
-      }, 50);
-    } catch (e) {
-      // Ignore haptic errors
-    }
-  }
+  return; // Disabled to save battery as per user request
 };
 
 export const hapticNotification = async (type: 'SUCCESS' | 'WARNING' | 'ERROR') => {
