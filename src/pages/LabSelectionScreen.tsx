@@ -484,22 +484,24 @@ const LabSelectionScreen = () => {
           )}
 
         </motion.div>
-      </div>
-
-      {/* Confirm Button */}
-      <div
-        className="fixed left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 safe-area-bottom z-40"
-        style={{ bottom: 'calc(var(--sab) + 72px)' }}
-      >
-        <Button
-          variant="hero"
-          className="w-full"
-          size="lg"
-          disabled={(!hasVendorLab && !selectedLabId) || selectedTime === null}
-          onClick={handleConfirm}
+        {/* Confirm Button (Moved Inline) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.3 }}
+          className="mt-6 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"
         >
-          Confirm
-        </Button>
+          <Button
+            variant="hero"
+            className="w-full"
+            size="lg"
+            disabled={(!hasVendorLab && !selectedLabId) || selectedTime === null}
+            onClick={handleConfirm}
+          >
+            Confirm
+          </Button>
+        </motion.div>
+
       </div>
     </MobileLayout>
   );

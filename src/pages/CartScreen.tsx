@@ -335,7 +335,7 @@ const CartScreen = () => {
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-44 space-y-3.5">
+      <div className="px-4 pb-28 space-y-3.5">
         {/* Fasting Alert */}
         {requiresFasting && (
           <motion.div
@@ -698,42 +698,36 @@ const CartScreen = () => {
           )}
         </motion.div>
 
-        {/* HIPAA Banner */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-emerald-50 rounded-2xl border border-emerald-100 p-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-            <Lock className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div>
-            <h4 className="text-xs font-extrabold text-emerald-800 tracking-tight">Data Privacy Guaranteed</h4>
-            <p className="text-[11px] font-medium text-emerald-700/80 leading-relaxed mt-0.5">
-              Your health records are 256-bit encrypted and HIPAA compliant. We never share your data.
-            </p>
+
+        {/* Checkout Bar (Moved Inline) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.25 }}
+          className="mt-6 bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4"
+        >
+          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Total Amount</p>
+              <h2 className="text-2xl font-black text-foreground tabular-nums leading-none">
+                ₹{hasVendorLab ? subtotal : items.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0)}
+              </h2>
+            </div>
+            
+            <Button
+              size="lg"
+              className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-extrabold text-base shadow-md shadow-primary/20"
+              onClick={handleCheckout}
+              disabled={isCheckingOut || addressLoading || (items.length > 0 && items.some(i => i.labId) && !currentLabId)}
+            >
+              <span className="flex items-center gap-2">
+                Checkout
+                <ChevronRight className="w-4 h-4" />
+              </span>
+            </Button>
           </div>
         </motion.div>
-      </div>
 
-      {/* Sticky Checkout Bar */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-t border-border shadow-[0_-8px_30px_-15px_rgba(0,0,0,0.1)] p-4 pb-safe">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Total Amount</p>
-            <h2 className="text-2xl font-black text-foreground tabular-nums leading-none">
-              ₹{hasVendorLab ? subtotal : items.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0)}
-            </h2>
-          </div>
-          
-          <Button
-            size="lg"
-            className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-extrabold text-base shadow-lg shadow-primary/20"
-            onClick={handleCheckout}
-            disabled={isCheckingOut || addressLoading || (items.length > 0 && items.some(i => i.labId) && !currentLabId)}
-          >
-            <span className="flex items-center gap-2">
-              Checkout
-              <ChevronRight className="w-4 h-4" />
-            </span>
-          </Button>
-        </div>
       </div>
     </MobileLayout>
   );
