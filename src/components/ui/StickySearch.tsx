@@ -14,6 +14,8 @@ interface StickySearchProps {
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   rightSlot?: ReactNode;
+  /** Optional accent tint token (visual only). */
+  accent?: string;
 }
 
 /**
