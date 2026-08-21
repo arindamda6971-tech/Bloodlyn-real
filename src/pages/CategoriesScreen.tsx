@@ -31,7 +31,6 @@ import {
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
-import DoctorAdCarousel from "@/components/categories/DoctorAdCarousel";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useMemo, useState } from "react";
@@ -41,33 +40,50 @@ import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 
 
-// Large pool of icons so each category gets a unique one
+// Hand-picked icons and colors for specific known categories
+const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string }> = {
+  "cardiac": { icon: HeartPulse, color: "bg-rose-100 text-rose-600" },
+  "diabetes": { icon: Activity, color: "bg-sky-100 text-sky-600" },
+  "kidney": { icon: Droplets, color: "bg-amber-100 text-amber-600" },
+  "liver": { icon: Beaker, color: "bg-emerald-100 text-emerald-600" },
+  "thyroid": { icon: Activity, color: "bg-purple-100 text-purple-600" },
+  "fever": { icon: Thermometer, color: "bg-orange-100 text-orange-600" },
+  "full body": { icon: Scan, color: "bg-indigo-100 text-indigo-600" },
+  "vitamin": { icon: Pill, color: "bg-yellow-100 text-yellow-600" },
+  "bone": { icon: Bone, color: "bg-slate-100 text-slate-700" },
+  "pregnancy": { icon: Baby, color: "bg-pink-100 text-pink-600" },
+  "neurology": { icon: Brain, color: "bg-cyan-100 text-cyan-600" },
+  "infection": { icon: ShieldCheck, color: "bg-red-100 text-red-600" },
+  "immunity": { icon: ShieldCheck, color: "bg-teal-100 text-teal-600" },
+  "blood": { icon: Syringe, color: "bg-red-50 text-red-500" },
+};
+
 const iconPool: LucideIcon[] = [
-  Droplets, Activity, Pill, Sun, Heart, UserCheck, Stethoscope, Baby,
-  Brain, Bone, Microscope, Dna, ShieldCheck, Thermometer, Eye, Ear,
-  Syringe, Beaker, TestTubes, Scan, HeartPulse, Wind,
+  Stethoscope, Activity, Heart, Scan, Microscope, TestTubes, Dna, Eye, Ear, Wind
 ];
 
 const colorPool: string[] = [
-  "bg-destructive/10 text-destructive",
-  "bg-success/10 text-success",
   "bg-primary/10 text-primary",
-  "bg-warning/10 text-warning",
-  "bg-pink-100 text-pink-600",
   "bg-secondary/10 text-secondary",
-  "bg-purple-100 text-purple-600",
+  "bg-blue-100 text-blue-600",
   "bg-indigo-100 text-indigo-600",
-  "bg-orange-100 text-orange-600",
   "bg-teal-100 text-teal-600",
-  "bg-cyan-100 text-cyan-600",
-  "bg-emerald-100 text-emerald-600",
 ];
 
-// Simple hash to deterministically pick icon/color by name
-const hashStr = (s: string) => {
+const getCategoryStyle = (name: string, slug: string) => {
+  const key = name.toLowerCase();
+  for (const [k, v] of Object.entries(CATEGORY_MAP)) {
+    if (key.includes(k) || (slug && slug.includes(k))) return v;
+  }
+  
+  // Deterministic fallback
   let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return Math.abs(h);
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
+  h = Math.abs(h);
+  return {
+    icon: iconPool[h % iconPool.length],
+    color: colorPool[h % colorPool.length],
+  };
 };
 
 const CategoriesScreen = () => {
@@ -86,12 +102,12 @@ const CategoriesScreen = () => {
         testsByCategory[t.category] = (testsByCategory[t.category] || 0) + 1;
       });
       cats = bridgeData.categories.map((cat) => {
-        const h = hashStr(cat.slug || cat.name);
+        const style = getCategoryStyle(cat.name, cat.slug);
         return {
-          icon: iconPool[h % iconPool.length],
+          icon: style.icon,
           name: cat.name,
           tests: testsByCategory[cat.slug] || 0,
-          color: colorPool[h % colorPool.length],
+          color: style.color,
           slug: cat.slug,
         };
       });
@@ -210,41 +226,36 @@ const CategoriesScreen = () => {
         </div>
       )}
 
-      {/* Doctor Ad Banners */}
-      {!searchQuery.trim() && (
-        <div className="px-4 mt-4">
-          <DoctorAdCarousel categories={categories.map(c => ({ name: c.name, slug: c.slug, tests: c.tests }))} />
-        </div>
-      )}
-
       {/* Categories Grid */}
       {!searchQuery.trim() && (
-        <div className="px-4 mt-4 pb-6">
-          <h2 className="text-lg font-bold text-foreground mb-4">Browse by Category</h2>
+        <div className="px-5 mt-6 pb-12">
+          <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
           ) : filteredCategories.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No categories found</p>
+              <p className="text-muted-foreground font-medium">No categories found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               {filteredCategories.map((category, index) => (
                 <motion.div
                   key={category.slug || category.name}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04, type: "spring", stiffness: 300, damping: 24 }}
                   onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
-                  className="category-card"
+                  className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group"
                 >
-                  <div className={`w-12 h-12 rounded-2xl ${category.color} flex items-center justify-center mb-3`}>
-                    <category.icon className="w-6 h-6" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out`}>
+                    <category.icon className="w-7 h-7" />
                   </div>
-                  <h3 className="font-semibold text-foreground text-sm">{category.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">{category.tests} tests</p>
+                  <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
+                  <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.tests} {category.tests === 1 ? 'test' : 'tests'}</p>
                 </motion.div>
               ))}
             </div>

@@ -140,38 +140,7 @@ const CategoryTestsScreen = () => {
         </div>
       </div>
 
-      <section className="px-4 mt-8 mb-8">
-        <button className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform bg-gradient-to-br from-[#38bdf8] to-[#0284c7] shadow-lg shadow-sky-500/20 h-[190px]">
-          
-          {/* Background Glows */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/20 blur-3xl rounded-full translate-x-12 -translate-y-12" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/20 blur-3xl rounded-full -translate-x-12 translate-y-12" />
-          
-          {/* Faint Crosses */}
-          <div className="absolute text-white/30 bottom-10 right-16 text-2xl font-light leading-none">+</div>
-          <div className="absolute text-white/30 bottom-4 right-6 text-lg font-light leading-none">+</div>
 
-          {/* Heartbeat Line SVG */}
-          <div className="absolute bottom-6 left-0 right-0 opacity-30">
-            <svg viewBox="0 0 400 60" preserveAspectRatio="none" className="w-full h-16" stroke="white" strokeWidth="1.5" fill="none">
-              <path d="M0,40 L130,40 L150,10 L170,55 L190,25 L210,40 L400,40" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-
-          {/* Content */}
-          <div className="absolute inset-0 p-5 flex flex-col justify-between">
-            <div className="flex flex-col items-center justify-center pt-2">
-              <p className="text-white/90 text-[10px] font-black uppercase tracking-widest mb-1.5">Doctor Recommended</p>
-              <h3 className="text-white text-[22px] font-black leading-tight tracking-tight text-center">Full Body Health<br/>Checkup Today</h3>
-            </div>
-            <div className="flex items-end pb-1">
-              <span className="bg-white text-[#0284c7] text-sm font-black px-6 py-2.5 rounded-full shadow-lg shadow-black/10">
-                Book Now →
-              </span>
-            </div>
-          </div>
-        </button>
-      </section>
 
       <div className="px-4 mt-4 pb-32">
         {isLoading ? (
