@@ -153,12 +153,13 @@ const LANDMARK_CITIES: {
 const LocationCheckScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [step, setStep] = useState<"detecting" | "manual" | "serviceable" | "not-serviceable">("detecting");
+  const [step, setStep] = useState<"detecting" | "manual" | "serviceable" | "not-serviceable">("manual");
   const [pincode, setPincode] = useState("");
   const [detectedPincode, setDetectedPincode] = useState("");
   const [locationName, setLocationName] = useState("");
   const [loading, setLoading] = useState(false);
   const [serviceableSet, setServiceableSet] = useState<Set<string>>(new Set());
+  const [isServiceableLoading, setIsServiceableLoading] = useState(true);
 
   // Single-flight guards — prevent React StrictMode / double-tap from saving the address twice
   const savingRef = useRef(false);
@@ -206,6 +207,7 @@ const LocationCheckScreen = () => {
         });
       });
       setServiceableSet(set);
+      setIsServiceableLoading(false);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -275,8 +277,9 @@ const LocationCheckScreen = () => {
           return;
         }
         const position = await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 10000
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000
         });
         coords = position.coords;
       } else {
@@ -286,8 +289,9 @@ const LocationCheckScreen = () => {
         }
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000
+            enableHighAccuracy: false,
+            timeout: 10000,
+            maximumAge: 300000
           });
         });
         coords = position.coords;
@@ -306,7 +310,7 @@ const LocationCheckScreen = () => {
 
       if (checkServiceability(pc)) {
         setStep("serviceable");
-        setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 1200);
+        setTimeout(() => saveAddressAndProceed(pc, display, latitude, longitude), 400);
       } else {
         setStep("not-serviceable");
       }
@@ -325,7 +329,7 @@ const LocationCheckScreen = () => {
     if (checkServiceability(pincode)) {
       setDetectedPincode(pincode);
       setStep("serviceable");
-      setTimeout(() => saveAddressAndProceed(pincode, `PIN ${pincode}`), 1200);
+      setTimeout(() => saveAddressAndProceed(pincode, `PIN ${pincode}`), 400);
     } else {
       setDetectedPincode(pincode);
       setStep("not-serviceable");
@@ -340,14 +344,9 @@ const LocationCheckScreen = () => {
     }
     setDetectedPincode(city.pincode);
     setStep("serviceable");
-    setTimeout(() => saveAddressAndProceed(city.pincode, `${city.name}, ${city.state}`), 1000);
+    setTimeout(() => saveAddressAndProceed(city.pincode, `${city.name}, ${city.state}`), 400);
   };
 
-  useEffect(() => {
-    // Wait for serviceable set to load before auto-detecting
-    if (serviceableSet.size > 0) handleAllowLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceableSet.size > 0]);
 
   return (
     <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12">
@@ -417,7 +416,7 @@ const LocationCheckScreen = () => {
                   variant="hero"
                   className="w-full mt-3 h-12 rounded-2xl"
                   onClick={handleManualCheck}
-                  disabled={pincode.length !== 6 || loading}
+                  disabled={pincode.length !== 6 || loading || isServiceableLoading}
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <MapPin className="w-4 h-4 mr-2" />}
                   Check Availability
@@ -483,8 +482,9 @@ const LocationCheckScreen = () => {
                 key={city.name}
                 whileTap={{ scale: 0.94 }}
                 onClick={() => handleCityTap(city)}
+                disabled={isServiceableLoading}
                 className={`relative rounded-2xl border border-border/60 bg-card overflow-hidden text-left p-2.5 ${
-                  !live ? "opacity-55" : ""
+                  !live && !isServiceableLoading ? "opacity-55" : ""
                 }`}
               >
                 <div className={`relative h-14 rounded-xl bg-gradient-to-br ${city.gradient} flex items-center justify-center mb-2`}>
