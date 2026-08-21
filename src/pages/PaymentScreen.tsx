@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BookingStepper from "@/components/BookingStepper";
-import { TermsConsent } from "@/components/TermsConsent";
 import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,7 +62,7 @@ const PaymentScreen = () => {
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const idempotencyKeyRef = useRef<string | null>(null);
 
 
@@ -756,46 +755,47 @@ const PaymentScreen = () => {
             </div>
           </div>
         </motion.div>
-      </div>
 
-      {/* Split Pay Button - Select Mode + Pay Now */}
-      <div
-        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card border-t border-border px-4 py-3 pb-safe z-40"
-      >
-        <div className="pb-3 -mx-2">
-          <TermsConsent checked={acceptedTerms} onCheckedChange={setAcceptedTerms} />
-        </div>
-        <div className="flex items-center gap-0">
-          {/* Left: Select Payment Mode */}
-          <button
-            onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total } })}
-            className="flex items-center gap-2 py-3 pr-4 flex-shrink-0"
-          >
-            <Wallet className="w-5 h-5 text-muted-foreground" />
-            <div className="text-left">
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                PAY USING <ChevronUp className="w-3 h-3" />
-              </p>
-              <p className="text-sm font-bold text-foreground leading-tight">{selectedPaymentMethod.name}</p>
-            </div>
-          </button>
+        {/* Split Pay Button - Select Mode + Pay Now (Moved from fixed bottom) */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ delay: 0.25 }}
+          className="mt-4 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"
+        >
+          <div className="flex items-center gap-0">
+            {/* Left: Select Payment Mode */}
+            <button
+              onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total } })}
+              className="flex items-center gap-2 py-2 pr-4 flex-shrink-0"
+            >
+              <Wallet className="w-5 h-5 text-muted-foreground" />
+              <div className="text-left">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                  PAY USING <ChevronUp className="w-3 h-3" />
+                </p>
+                <p className="text-sm font-bold text-foreground leading-tight">{selectedPaymentMethod.name}</p>
+              </div>
+            </button>
 
-          {/* Right: Pay Now Button */}
-          <Button
-            variant="hero"
-            className="flex-1 h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
-            onClick={handlePayment}
-            disabled={!acceptedTerms || verifyingServiceability || isSubmittingOrder}
-          >
-            <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
-              <span className="text-sm font-bold">₹{total}</span>
-              <span className="text-[10px] font-semibold opacity-80 tracking-wide">TOTAL</span>
-            </span>
-            <span className="text-base font-bold">
-              {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
-            </span>
-          </Button>
-        </div>
+            {/* Right: Pay Now Button */}
+            <Button
+              variant="hero"
+              className="flex-1 h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
+              onClick={handlePayment}
+              disabled={verifyingServiceability || isSubmittingOrder}
+            >
+              <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
+                <span className="text-sm font-bold">₹{total}</span>
+                <span className="text-[10px] font-semibold opacity-80 tracking-wide">TOTAL</span>
+              </span>
+              <span className="text-base font-bold">
+                {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
+              </span>
+            </Button>
+          </div>
+        </motion.div>
+
       </div>
 
       {isSubmittingOrder && (
