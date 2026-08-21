@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -504,6 +504,16 @@ const LabDetailScreen = () => {
     return matchesSearch && matchesTab && matchesCategory;
   });
 
+  const availableCategories = useMemo(() => {
+    const isPackage = activeTab === "packages";
+    const baseTests = labTests.filter(t => {
+      if (!t || !t.name) return false;
+      const tIsPackage = t.category === "Health Packages";
+      return tIsPackage === isPackage;
+    });
+    return Array.from(new Set(baseTests.map(t => t.category).filter(Boolean)));
+  }, [labTests, activeTab]);
+
   const handleAddTest = (testId: string, testName: string) => {
     const test = lab.tests.find((t) => t.id === testId);
     if (test) {
@@ -791,7 +801,7 @@ const LabDetailScreen = () => {
         </div>
 
         <div className="px-5 py-2 space-y-4">
-          {/* Tests Count */}
+          {/* Tests Count and Filter */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -801,7 +811,18 @@ const LabDetailScreen = () => {
             <p className="text-xs font-extrabold text-muted-foreground tracking-tight">
               {filteredTests.length} {activeTab === "packages" ? "packages" : "tests"} available
             </p>
-
+            {availableCategories.length > 1 && (
+              <select
+                className="text-xs font-bold text-foreground bg-white border-2 border-border/80 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[150px] truncate shadow-sm cursor-pointer"
+                value={selectedCategory || ""}
+                onChange={(e) => setSelectedCategory(e.target.value || null)}
+              >
+                <option value="">All Categories</option>
+                {availableCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            )}
           </motion.div>
 
           {/* Tests List */}
@@ -842,14 +863,12 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
-                        <ChevronRight className={`w-4 h-4 text-muted-foreground/60 transition-transform ${expandedTest === test.id ? "rotate-90" : ""}`} />
                       </div>
-                      <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                        {test.category}
-                        {typeof test.testsCount === "number" && test.testsCount > 0 && (
-                          <span> · {test.testsCount} tests included</span>
-                        )}
-                      </p>
+                      {typeof test.testsCount === "number" && test.testsCount > 0 && (
+                        <p className="text-xs font-semibold text-muted-foreground mt-0.5">
+                          <span>{test.testsCount} tests included</span>
+                        </p>
+                      )}
                       {expandedTest === test.id && (
                         <motion.p
                           initial={{ opacity: 0, height: 0 }}

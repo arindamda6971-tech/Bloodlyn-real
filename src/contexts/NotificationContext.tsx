@@ -35,13 +35,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const [smartAlertsEnabled, setSmartAlertsEnabled] = useState<boolean>(() => {
-    const stored = localStorage.getItem("bloodlyn-smart-alerts");
-    return stored ? JSON.parse(stored) : true;
-  });
+  const [smartAlertsEnabled, setSmartAlertsEnabled] = useState<boolean>(false);
 
   useEffect(() => {
-    localStorage.setItem("bloodlyn-smart-alerts", JSON.stringify(smartAlertsEnabled));
+    localStorage.setItem("bloodlyn-smart-alerts", JSON.stringify(false));
   }, [smartAlertsEnabled]);
 
   // Auto-expire old notifications (7 days) and save to sessionStorage

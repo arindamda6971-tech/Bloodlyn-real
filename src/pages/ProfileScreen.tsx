@@ -34,10 +34,9 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 const menuItems = [
-  { icon: Crown, label: "Subscription Plans", path: "/subscription" },
   { icon: HelpCircle, label: "Help & Support", path: "/support" },
   { icon: FileText, label: "Terms & Conditions", path: "/terms" },
-            { icon: Shield, label: "Privacy Policy", path: "/privacy" },
+  { icon: Shield, label: "Privacy Policy", path: "/privacy" },
 ];
 
 const ProfileScreen = () => {
@@ -155,20 +154,6 @@ const ProfileScreen = () => {
           <div className="mt-4">
             <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{displayName}</h2>
             <p className="text-sm text-muted-foreground font-medium">{contactInfo}</p>
-
-            <div className="flex items-center justify-center mt-3">
-              {isActive ? (
-                <div className="px-5 py-2 rounded-full bg-gradient-to-r from-[#FFD700] via-[#FDB931] to-[#8A6424] text-white flex items-center gap-2 shadow-md">
-                  <Crown className="w-3.5 h-3.5 fill-white" />
-                  <span className="font-black tracking-[0.05em] text-[11px] uppercase">Gold Member</span>
-                </div>
-              ) : (
-                <div className="px-5 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5 fill-current" />
-                  <span className="font-bold tracking-tight text-[11px] uppercase">Plus Member</span>
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
@@ -258,7 +243,6 @@ const ProfileScreen = () => {
         {/* Menu list - WITHOUT duplicate Saved Addresses & Family Members */}
         <div className="mt-8 space-y-2.5">
           {[
-            { icon: Crown, label: "Subscription Plans", path: "/subscription" },
             { icon: HelpCircle, label: "Help & Support", path: "/support" },
             { icon: FileText, label: "Terms & Conditions", path: "/terms" },
             { icon: Shield, label: "Privacy Policy", path: "/privacy" },
@@ -277,40 +261,7 @@ const ProfileScreen = () => {
           ))}
         </div>
 
-        {/* App Preferences */}
-        <div className="mt-6 space-y-3">
-          <p className="px-2 text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/70">
-            Preferences & Settings
-          </p>
 
-          <div className="p-4 rounded-3xl bg-card border border-border/60 space-y-4 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9.5 h-9.5 rounded-xl bg-indigo-500/10 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Moon className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-foreground">Dark Aesthetic</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">Switch to dark mode interface</p>
-                </div>
-              </div>
-              <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
-            </div>
-
-            <div className="flex items-center justify-between pt-3 border-t border-border/50">
-              <div className="flex items-center gap-3">
-                <div className="w-9.5 h-9.5 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Bell className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-foreground">Smart Alerts</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">Receive test status & booking updates</p>
-                </div>
-              </div>
-              <Switch checked={smartAlertsEnabled} onCheckedChange={setSmartAlertsEnabled} />
-            </div>
-          </div>
-        </div>
 
         {/* Sign Out & Version */}
         <div className="mt-8 flex flex-col items-center gap-4">
