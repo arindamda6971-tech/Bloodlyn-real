@@ -83,7 +83,7 @@ const HealthPackagesSection = () => {
   }, [rows]);
 
   return (
-    <section className="px-4 mt-8 transform-gpu">
+    <section className="px-4 mt-8 transform-gpu section-defer">
       <div className="flex items-end justify-between mb-3">
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/80 mb-1">

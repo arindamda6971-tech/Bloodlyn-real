@@ -25,11 +25,13 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
 import AppointmentStatusListener from "@/components/AppointmentStatusListener";
+import { useNavigate } from "react-router-dom";
+import { Capacitor } from "@capacitor/core";
 
 // Core screens — eagerly loaded for instant navigation (no chunk-load delay)
 import SplashScreen from "./pages/SplashScreen";
@@ -97,111 +99,70 @@ const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/Upl
 
 /**
  * High-Performance Native Stack Navigator.
- * Keeps core pages in memory to eliminate re-renders and flashes.
  */
-const RouteStack = () => {
-  const location = useLocation();
-  const [visited, setVisited] = useState<Set<string>>(new Set([location.pathname]));
-
-  useEffect(() => {
-    setVisited(prev => new Set(prev).add(location.pathname));
-  }, [location.pathname]);
-
+const AnimatedRoutes = ({ location }: { location: any }) => {
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", width: "100%", height: "100%" }}>
-      {Array.from(visited).map(path => {
-        const isActive = location.pathname === path;
-        // Don't keep splash screen in the stack once moved past
-        if (path === "/" && !isActive) return null;
+    <PageTransition>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes location={location}>
+          {/* Public Routes */}
+          <Route path="/" element={<SplashScreen />} />
+          <Route path="/onboarding" element={<OnboardingScreen />} />
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/install" element={<InstallScreen />} />
 
-        return (
-          <div
-            key={path}
-            style={{
-              display: isActive ? "flex" : "none",
-              flexDirection: "column",
-              flex: 1,
-              width: "100%",
-              height: "100%",
-              position: isActive ? "relative" : "absolute",
-              top: 0,
-              left: 0,
-              visibility: isActive ? "visible" : "hidden",
-            }}
-          >
-             <PageTransition>
-               <Suspense fallback={<RouteFallback />}>
-                 <Routes location={isActive ? location : { pathname: path }}>
-                    {/* Public Routes */}
-                    <Route path="/" element={<SplashScreen />} />
-                    <Route path="/onboarding" element={<OnboardingScreen />} />
-                    <Route path="/login" element={<LoginScreen />} />
-                    <Route path="/install" element={<InstallScreen />} />
+          {/* Location Gate */}
+          <Route path="/location-check" element={<ProtectedRoute><LocationCheckScreen /></ProtectedRoute>} />
 
-                    {/* Location Gate */}
-                    <Route path="/location-check" element={<ProtectedRoute><LocationCheckScreen /></ProtectedRoute>} />
-
-                    {/* Protected Routes */}
-                    <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
-                    <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
-                    <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
-                    <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                    <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                    <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
-                    <Route path="/cart" element={<ProtectedRoute><CartScreen /></ProtectedRoute>} />
-                    <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
-                    <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
-                    <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
-                    <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
-                    <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                    <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                    <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
-                    <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
-                    <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
-                    <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
-                    <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
-                    <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
-                    <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
-                    <Route path="/family-members" element={<ProtectedRoute><FamilyMembersScreen /></ProtectedRoute>} />
-                    <Route path="/add-family-member" element={<ProtectedRoute><AddFamilyMemberScreen /></ProtectedRoute>} />
-                    <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
-                    <Route path="/partner-labs" element={<ProtectedRoute><PartnerLabsScreen /></ProtectedRoute>} />
-                    <Route path="/lab/:labId" element={<ProtectedRoute><LabDetailScreen /></ProtectedRoute>} />
-                    <Route path="/package/:packageId" element={<ProtectedRoute><PackageDetailScreen /></ProtectedRoute>} />
-                    <Route path="/packages" element={<ProtectedRoute><PackagesScreen /></ProtectedRoute>} />
-                    <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
-                    <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
-                    <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
-                    <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
-                    <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
-                    <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
-                    <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
-                    <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
-                    <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
-                    <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
-                    <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />
-                    <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
-                    <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-                    <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
-                    <Route path="/terms" element={<TermsScreen />} />
-                    <Route path="/privacy" element={<PrivacyPolicyScreen />} />
-                    <Route path="/unauthorized" element={<UnauthorizedScreen />} />
-                    <Route path="*" element={<NotFound />} />
-                 </Routes>
-               </Suspense>
-             </PageTransition>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-const AnimatedRoutes = () => {
-  return (
-    <SmoothRoutes>
-      {() => <RouteStack />}
-    </SmoothRoutes>
+          {/* Protected Routes */}
+          <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
+          <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
+          <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
+          <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+          <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+          <Route path="/test/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
+          <Route path="/cart" element={<ProtectedRoute><CartScreen /></ProtectedRoute>} />
+          <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
+          <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
+          <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
+          <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
+          <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+          <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
+          <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+          <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
+          <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
+          <Route path="/upload-prescription" element={<ProtectedRoute><UploadPrescriptionScreen /></ProtectedRoute>} />
+          <Route path="/family-members" element={<ProtectedRoute><FamilyMembersScreen /></ProtectedRoute>} />
+          <Route path="/add-family-member" element={<ProtectedRoute><AddFamilyMemberScreen /></ProtectedRoute>} />
+          <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethodsScreen /></ProtectedRoute>} />
+          <Route path="/partner-labs" element={<ProtectedRoute><PartnerLabsScreen /></ProtectedRoute>} />
+          <Route path="/lab/:labId" element={<ProtectedRoute><LabDetailScreen /></ProtectedRoute>} />
+          <Route path="/package/:packageId" element={<ProtectedRoute><PackageDetailScreen /></ProtectedRoute>} />
+          <Route path="/packages" element={<ProtectedRoute><PackagesScreen /></ProtectedRoute>} />
+          <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
+          <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
+          <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
+          <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
+          <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
+          <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
+          <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
+          <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
+          <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
+          <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
+          <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />
+          <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
+          <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+          <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+          <Route path="/terms" element={<TermsScreen />} />
+          <Route path="/privacy" element={<PrivacyPolicyScreen />} />
+          <Route path="/unauthorized" element={<UnauthorizedScreen />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
+    </PageTransition>
   );
 };
 
@@ -256,7 +217,7 @@ const App = () => {
                         <BootReadySignal />
                         <RoutePrefetcher />
                         <DataWarmup />
-                        <AnimatedRoutes />
+                        <AnimatedRoutesWrapper />
                         <InstallPrompt />
                       </BrowserRouter>
                   </TooltipProvider>
@@ -267,6 +228,49 @@ const App = () => {
         </ThemeProvider>
       </PersistQueryClientProvider>
     </ErrorBoundary>
+  );
+};
+
+const AnimatedRoutesWrapper = () => {
+  const navigate = useNavigate();
+
+  // Native Edge-Swipe Back Gesture
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let startX = 0;
+    let startY = 0;
+
+    const onTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+
+      const diffX = endX - startX;
+      const diffY = Math.abs(endY - startY);
+
+      // If swipe started from left edge (first 30px) and moved right
+      if (startX < 30 && diffX > 100 && diffY < 50) {
+        navigate(-1);
+      }
+    };
+
+    document.addEventListener("touchstart", onTouchStart);
+    document.addEventListener("touchend", onTouchEnd);
+    return () => {
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [navigate]);
+
+  return (
+    <SmoothRoutes>
+      {(loc) => <AnimatedRoutes location={loc} />}
+    </SmoothRoutes>
   );
 };
 

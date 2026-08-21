@@ -1,3 +1,4 @@
+import { memo, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -33,12 +34,10 @@ import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
-import { useMemo, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
-
 
 // Hand-picked icons and colors for specific known categories
 const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string }> = {
@@ -85,6 +84,27 @@ const getCategoryStyle = (name: string, slug: string) => {
     color: colorPool[h % colorPool.length],
   };
 };
+
+const CategoryTile = memo(({ category, index, onClick }: { category: any, index: number, onClick: () => void }) => (
+  <motion.div
+    whileTap={{ scale: 0.95 }}
+    initial={{ opacity: 0, y: 15 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.03, type: "spring", stiffness: 300, damping: 24 }}
+    onClick={onClick}
+    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group"
+    style={{ contain: 'content' }}
+  >
+    <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+    <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out`}>
+      <category.icon className="w-7 h-7" />
+    </div>
+    <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
+    <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.tests} {category.tests === 1 ? 'test' : 'tests'}</p>
+  </motion.div>
+));
+
+CategoryTile.displayName = "CategoryTile";
 
 const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
@@ -241,22 +261,12 @@ const CategoriesScreen = () => {
           ) : (
             <div className="grid grid-cols-2 gap-4">
               {filteredCategories.map((category, index) => (
-                <motion.div
+                <CategoryTile
                   key={category.slug || category.name}
-                  whileTap={{ scale: 0.95 }}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.04, type: "spring", stiffness: 300, damping: 24 }}
+                  category={category}
+                  index={index}
                   onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
-                  className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out`}>
-                    <category.icon className="w-7 h-7" />
-                  </div>
-                  <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
-                  <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.tests} {category.tests === 1 ? 'test' : 'tests'}</p>
-                </motion.div>
+                />
               ))}
             </div>
           )}

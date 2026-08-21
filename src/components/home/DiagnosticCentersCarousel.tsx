@@ -1,3 +1,4 @@
+import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Star, ChevronRight, MapPin, BadgeCheck } from "lucide-react";
 import LabBanner from "@/components/labs/LabBanner";
@@ -31,7 +32,83 @@ const fallbackMeta = [
   { distance: "3.2 km", tagline: "Your Health, Our Priority", trustBadge: "Quality Assured" },
 ];
 
-const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) => {
+const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: number }) => {
+  const isClosed = center.isActive === false;
+  const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
+
+  return (
+    <PredictiveLink
+      to={`/lab/${center.id}`}
+      prefetchKey={["lab-details", center.id]}
+      prefetchFn={async () => {
+        const { data } = await supabase
+          .from('diagnostic_centers')
+          .select('*')
+          .eq('id', center.id)
+          .maybeSingle();
+        return data;
+      }}
+      className="flex-shrink-0 w-[280px] snap-start"
+    >
+      <div
+        className={`relative rounded-3xl overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
+        style={{
+          height: '180px',
+          touchAction: 'pan-x pan-y',
+          contain: 'paint' // Native-level rendering isolation
+        }}
+      >
+        {/* Visual Banner */}
+        <div className="absolute inset-0 z-0">
+           <LabBanner labName={center.name} />
+           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        </div>
+
+        {/* Trust Badge */}
+        <div className="absolute top-3 left-3 z-10">
+           <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-full">
+              <BadgeCheck className="w-3 h-3 text-primary" />
+              <span className="text-[9px] font-bold text-white uppercase tracking-wider">{meta.trustBadge}</span>
+           </div>
+        </div>
+
+        {/* Closed Indicator */}
+        {isClosed && (
+          <div className="absolute top-3 right-3 z-10 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
+            Closed
+          </div>
+        )}
+
+        {/* Lab Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <h4 className="font-black text-white text-base leading-tight truncate drop-shadow-sm">{center.name}</h4>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                <span className="text-xs font-bold text-white/90">{center.rating}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-white/60" />
+                <span className="text-[11px] font-medium text-white/80">{meta.distance}</span>
+              </div>
+            </div>
+            <div className="bg-primary/20 backdrop-blur-sm border border-primary/30 px-2.5 py-1 rounded-full">
+              <p className="text-[10px] font-bold text-primary-foreground">{center.tests}+ Tests</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </PredictiveLink>
+  );
+});
+
+LabCard.displayName = "LabCard";
+
+const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselProps) => {
   const navigate = useNavigate();
 
   return (
@@ -59,87 +136,23 @@ const DiagnosticCentersCarousel = ({ centers }: DiagnosticCentersCarouselProps) 
           WebkitOverflowScrolling: 'touch',
           scrollPaddingLeft: '1.5rem',
           scrollPaddingRight: '1.5rem',
-          touchAction: 'pan-x pan-y'
+          touchAction: 'pan-x pan-y',
+          // Force layers for the entire carousel container
+          transform: 'translateZ(0)',
+          willChange: 'scroll-position'
         }}
       >
-        {centers.map((center, index) => {
-          const isClosed = center.isActive === false;
-          const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
-
-          return (
-            <PredictiveLink
-              key={center.id}
-              to={`/lab/${center.id}`}
-              prefetchKey={["lab-details", center.id]}
-              prefetchFn={async () => {
-                const { data } = await supabase
-                  .from('diagnostic_centers')
-                  .select('*')
-                  .eq('id', center.id)
-                  .maybeSingle();
-                return data;
-              }}
-              className="flex-shrink-0 w-[280px] snap-start"
-            >
-              <div
-                className={`relative rounded-3xl overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
-                style={{
-                  height: '180px',
-                  touchAction: 'pan-x pan-y'
-                }}
-              >
-                {/* Visual Banner */}
-                <div className="absolute inset-0 z-0">
-                   <LabBanner labName={center.name} />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                </div>
-
-                {/* Trust Badge */}
-                <div className="absolute top-3 left-3 z-10">
-                   <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-full">
-                      <BadgeCheck className="w-3 h-3 text-primary" />
-                      <span className="text-[9px] font-bold text-white uppercase tracking-wider">{meta.trustBadge}</span>
-                   </div>
-                </div>
-
-                {/* Closed Indicator */}
-                {isClosed && (
-                  <div className="absolute top-3 right-3 z-10 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
-                    Closed
-                  </div>
-                )}
-
-                {/* Lab Info */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <h4 className="font-black text-white text-base leading-tight truncate drop-shadow-sm">{center.name}</h4>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-xs font-bold text-white/90">{center.rating}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-white/60" />
-                        <span className="text-[11px] font-medium text-white/80">{meta.distance}</span>
-                      </div>
-                    </div>
-                    <div className="bg-primary/20 backdrop-blur-sm border border-primary/30 px-2.5 py-1 rounded-full">
-                      <p className="text-[10px] font-bold text-primary-foreground">{center.tests}+ Tests</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </PredictiveLink>
-          );
-        })}
+        {centers.map((center, index) => (
+          <LabCard key={center.id} center={center} index={index} />
+        ))}
         {/* Spacer at the end for padding */}
         <div className="flex-shrink-0 w-2 h-full" aria-hidden="true" />
       </div>
     </div>
   );
-};
+});
+
+DiagnosticCentersCarousel.displayName = "DiagnosticCentersCarousel";
 
 export default DiagnosticCentersCarousel;
+

@@ -19,6 +19,7 @@ interface StickySearchProps {
 /**
  * Standard Sticky Search Component.
  * Optimized for native safe-areas and smooth transitions.
+ * Purely CSS-driven stickiness for 60fps scroll performance.
  */
 const StickySearch = ({
   value,
@@ -33,40 +34,9 @@ const StickySearch = ({
   onKeyDown,
   rightSlot,
 }: StickySearchProps) => {
-  const shellRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = shellRef.current;
-    if (!el) return;
-
-    let parent: HTMLElement | null = el.parentElement;
-    while (parent) {
-      const style = window.getComputedStyle(parent);
-      const oy = style.overflowY;
-      if (oy === "auto" || oy === "scroll") break;
-      parent = parent.parentElement;
-    }
-    const scroller: HTMLElement | Window = parent || window;
-
-    const applyScroll = () => {
-      const y = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
-      if (el) {
-        if (y > 10) {
-          el.classList.add("shadow-md", "bg-background/95", "backdrop-blur-xl");
-        } else {
-          el.classList.remove("shadow-md", "bg-background/95", "backdrop-blur-xl");
-        }
-      }
-    };
-
-    scroller.addEventListener("scroll", applyScroll, { passive: true });
-    return () => scroller.removeEventListener("scroll", applyScroll);
-  }, []);
-
   return (
     <div
-      ref={shellRef}
-      className={`sticky top-0 z-40 transition-all duration-300 rounded-b-2xl overflow-visible ${className}`}
+      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-md shadow-sm rounded-b-2xl overflow-visible ${className}`}
       data-testid="sticky-search-shell"
     >
       {header && <div className="px-4 pt-2 pb-0">{header}</div>}

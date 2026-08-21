@@ -1,16 +1,13 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Capacitor } from "@capacitor/core";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
 /**
- * Ultra-smooth, simultaneous dual-page transition mimicking iOS native feel.
- *
- * To eliminate the "blank screen" flash:
- * 1. Uses popLayout to keep the EXITING page in the DOM while the ENTERING page slides in.
- * 2. Enforces a solid background color on the transition container.
- * 3. Uses GPU-only properties (transform, opacity) to avoid main-thread jank.
+ * Ultra-smooth, simultaneous dual-page transition mimicking iOS/Android native feel.
+ * Optimized for performance: uses GPU-only properties.
  */
 const PageTransition = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
@@ -19,12 +16,27 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
   const isTab = TAB_PATHS.includes(location.pathname);
   const isBack = navType === "POP";
 
+  // Trigger haptic feedback on navigation
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const triggerHaptic = async () => {
+      try {
+        const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
+        await Haptics.impact({ style: ImpactStyle.Light });
+      } catch (e) {
+        // Haptics not available
+      }
+    };
+
+    triggerHaptic();
+  }, [location.pathname]);
+
   const transition = {
     type: "spring",
-    stiffness: 380,
-    damping: 35,
-    mass: 1,
-    // Reduce duration slightly for a snappier feel while maintaining iOS curves
+    stiffness: 380, // Snappier
+    damping: 38,    // Less bounce, more control
+    mass: 1.2,      // Feels more "solid" like native
   };
 
   const variants = {
@@ -44,8 +56,7 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
       zIndex: direction === "forward" ? 10 : 20,
       transition: {
         ...transition,
-        // Exit can be slightly faster to clear the way for interaction
-        damping: 40
+        damping: 35
       },
     }),
   };
@@ -56,9 +67,8 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
     <div
       className="transition-container"
       style={{
-        position: "relative",
-        width: "100%",
-        height: "100dvh",
+        position: "fixed", // Lock the container to viewport
+        inset: 0,
         backgroundColor: "hsl(var(--background))",
         overflow: "hidden"
       }}
@@ -74,10 +84,12 @@ const PageTransition = ({ children }: { children: ReactNode }) => {
           style={{
             width: "100%",
             height: "100%",
-            position: "relative",
+            position: "absolute",
+            top: 0,
+            left: 0,
             backgroundColor: "hsl(var(--background))",
-            // iOS style shadow on the leading edge
-            boxShadow: isBack ? "none" : "-10px 0 30px -10px rgba(0,0,0,0.12)",
+            boxShadow: direction === "forward" ? "-10px 0 30px -10px rgba(0,0,0,0.1)" : "none",
+            willChange: "transform",
           }}
         >
           {children}

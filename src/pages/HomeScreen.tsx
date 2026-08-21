@@ -57,6 +57,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import OptimizedImage from "@/components/ui/OptimizedImage";
+
 // Optimized greeting
 const getGreeting = () => {
   const hour = new Date().getHours();
@@ -224,6 +226,19 @@ const HomeScreen = () => {
 
   const [currentTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
 
+  // Progressive rendering states to prevent CPU spikes
+  const [renderStage, setRenderStage] = useState(0);
+  useEffect(() => {
+    const timer1 = setTimeout(() => setRenderStage(1), 50);
+    const timer2 = setTimeout(() => setRenderStage(2), 150);
+    const timer3 = setTimeout(() => setRenderStage(3), 300);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, []);
+
   const previousOrders = ordersData || [];
   const diagnosticCenters = useMemo(() => {
     if (!centersData) return [];
@@ -324,10 +339,9 @@ const HomeScreen = () => {
                       return (
                         <button
                           key={test.id}
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            setSearchQuery("");
-                            setShowSearchResults(false);
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            // Aggressive prefetch on touch/down
                             navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
                           }}
                           className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center"
@@ -422,18 +436,26 @@ const HomeScreen = () => {
         )}
 
         {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 flex flex-col gap-4">
+        <section className="px-4 mt-8 flex flex-col gap-4 section-defer">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
-          {quickActions.map((action) => (
-            <div
+          {renderStage >= 1 && quickActions.map((action, idx) => (
+            <motion.div
               key={action.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
               onClick={() => navigate(action.path)}
               className="w-full relative overflow-hidden bg-white border border-border/50 rounded-3xl p-5 shadow-xl cursor-pointer group active:scale-[0.98] transition-all"
             >
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
                 <>
-                  <img loading="lazy" decoding="async" src={action.bgImage} alt="Background" className="absolute inset-0 w-full h-full object-cover z-0 object-right" />
+                  <OptimizedImage
+                    src={action.bgImage}
+                    alt="Background"
+                    containerClassName="absolute inset-0 w-full h-full z-0"
+                    className="w-full h-full object-cover object-right"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/40 z-0" />
                 </>
               )}
@@ -474,13 +496,13 @@ const HomeScreen = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </section>
 
         {/* Recent Orders */}
-        {previousOrders.length > 0 && (
-          <section className="mt-10">
+        {renderStage >= 2 && previousOrders.length > 0 && (
+          <section className="mt-10 section-defer">
             <div className="flex items-center justify-between px-6 mb-4">
               <h2 className="text-xl font-black text-foreground tracking-tight">Recent Orders 📦</h2>
               <button onClick={() => navigate('/bookings')} className="text-primary text-xs font-black bg-primary/10 px-3 py-1.5 rounded-full">
@@ -553,21 +575,22 @@ const HomeScreen = () => {
 
         {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
             never competes with the route transition / first paint. */}
-        <DeferredMount minHeight={280}>
-          <HealthPackagesSection />
-        </DeferredMount>
+        {renderStage >= 3 && (
+          <DeferredMount minHeight={280}>
+            <HealthPackagesSection />
+          </DeferredMount>
+        )}
 
         {/* Doctor Banner */}
-        <section className="px-4 mt-8 mb-8">
+        <section className="px-4 mt-8 mb-8 section-defer">
           <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
             
             {/* Background Image */}
-            <img 
+            <OptimizedImage
               src="https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&q=80&w=800" 
               alt="Health Checkup"
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 w-full h-full object-cover z-0 group-hover:scale-105 transition-transform duration-700"
+              containerClassName="absolute inset-0 w-full h-full z-0"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
 
             {/* Gradient Overlays for Readability */}

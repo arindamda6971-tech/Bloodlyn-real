@@ -51,6 +51,35 @@ const NativeChrome = () => {
     };
   }, [theme]);
 
+  // --- Haptic feedback on interactions ---
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    const onPointerDown = async (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      const isClickable =
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
+        target.closest("button") ||
+        target.closest("a") ||
+        target.getAttribute("role") === "button";
+
+      if (isClickable) {
+        try {
+          const { Haptics, ImpactStyle } = await import("@capacitor/haptics");
+          await Haptics.impact({ style: ImpactStyle.Light });
+        } catch {
+          // Plugin unavailable
+        }
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
   // --- Keyboard: keep the focused field visible ---
   useEffect(() => {
     const onFocusIn = (event: FocusEvent) => {

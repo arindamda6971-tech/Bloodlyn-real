@@ -6,11 +6,10 @@ const config: CapacitorConfig = {
   webDir: "dist",
   android: {
     allowMixedContent: false,
-    // Native-feel WebView tuning
     backgroundColor: "#f8fafc",
     webContentsDebuggingEnabled: false,
-    // Route key/touch input straight to the WebView (less input latency)
     captureInput: true,
+    useLegacyBridge: false,
     buildOptions: {
       releaseType: "APK",
     },
