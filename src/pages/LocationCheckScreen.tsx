@@ -188,10 +188,13 @@ const LocationCheckScreen = () => {
     let cancelled = false;
     (async () => {
       try {
-        const { data } = await supabase
-          .from("diagnostic_centers")
-          .select("pincode, service_pincodes, is_active")
-          .eq("is_active", true);
+        const { data } = (await Promise.race([
+          supabase
+            .from("diagnostic_centers")
+            .select("pincode, service_pincodes, is_active")
+            .eq("is_active", true),
+          new Promise((resolve) => setTimeout(() => resolve({ data: null }), 8000)),
+        ])) as { data: unknown };
         if (cancelled || !data) return;
         const set = new Set<string>();
         (data as any[]).forEach((lab) => {
@@ -217,7 +220,32 @@ const LocationCheckScreen = () => {
     return () => { cancelled = true; };
   }, []);
 
-  const checkServiceability = (pc: string): boolean => serviceableSet.has(pc.trim());
+  /**
+   * Serviceability check. Uses the preloaded set when available, and otherwise
+   * (slow/failed preload) asks the database directly so the screen can never
+   * reject every PIN because of a network hiccup.
+   */
+  const checkServiceability = async (pc: string): Promise<boolean> => {
+    const target = pc.trim();
+    if (serviceableSet.has(target)) return true;
+    if (serviceableSet.size > 0) return false;
+    try {
+      const { data } = await supabase
+        .from("diagnostic_centers")
+        .select("pincode, service_pincodes")
+        .eq("is_active", true);
+      return ((data as any[]) || []).some((lab) => {
+        const list = Array.isArray(lab.service_pincodes)
+          ? lab.service_pincodes.map((p: any) => String(p).trim())
+          : [];
+        if (list.includes(target)) return true;
+        const raw = (lab.pincode || "").trim();
+        return raw ? raw.split(/[,;\s]+/).map((p: string) => p.trim()).includes(target) : false;
+      });
+    } catch {
+      return false;
+    }
+  };
 
   /**
    * Save address (idempotent). Guarantees:
@@ -226,7 +254,15 @@ const LocationCheckScreen = () => {
    *  - When the address already exists, simply flips it to default.
    */
   const saveAddressAndProceed = async (pc: string, displayName: string, lat?: number, lon?: number) => {
-    if (!user) return;
+    if (!user) {
+      setStep("manual");
+      toast({
+        title: "Session not ready",
+        description: "Please wait a moment and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     const key = `${user.id}:${pc.trim()}`;
     if (savingRef.current || savedKeyRef.current === key) {
       navigate("/home", { replace: true });
@@ -248,7 +284,7 @@ const LocationCheckScreen = () => {
         }
       } else {
         await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-        await supabase.from("addresses").insert({
+        const { error: insertError } = await supabase.from("addresses").insert({
           user_id: user.id,
           address_line1: displayName || `Location - ${pc}`,
           city: displayName.split(",")[0]?.trim() || "",
@@ -259,6 +295,7 @@ const LocationCheckScreen = () => {
           is_default: true,
           type: "Home",
         });
+        if (insertError) throw insertError;
       }
       savedKeyRef.current = key;
       localStorage.setItem(`location_checked_${user.id}`, "true");
@@ -266,6 +303,12 @@ const LocationCheckScreen = () => {
     } catch (e) {
       console.error("Failed to save address:", e);
       savingRef.current = false;
+      setStep("manual");
+      toast({
+        title: "Couldn't save your location",
+        description: "Please check your connection and try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -332,7 +375,7 @@ const LocationCheckScreen = () => {
       setDetectedPincode(geoResult.pincode);
       setLocationName(geoResult.display);
 
-      if (checkServiceability(geoResult.pincode)) {
+      if (await checkServiceability(geoResult.pincode)) {
         setStep("serviceable");
         saveAddressAndProceed(geoResult.pincode, geoResult.display, latitude, longitude);
       } else {
@@ -353,7 +396,7 @@ const LocationCheckScreen = () => {
       return;
     }
     setLoading(true);
-    if (checkServiceability(pincode)) {
+    if (await checkServiceability(pincode)) {
       setDetectedPincode(pincode);
       setStep("serviceable");
       saveAddressAndProceed(pincode, `PIN ${pincode}`);
@@ -365,7 +408,7 @@ const LocationCheckScreen = () => {
   };
 
   const handleCityTap = (city: typeof LANDMARK_CITIES[number]) => {
-    if (!serviceableSet.has(city.pincode)) {
+    if (serviceableSet.size > 0 && !serviceableSet.has(city.pincode)) {
       toast({ title: `${city.name} coming soon`, description: "We'll launch here very soon!" });
       return;
     }
@@ -374,18 +417,6 @@ const LocationCheckScreen = () => {
     setTimeout(() => saveAddressAndProceed(city.pincode, `${city.name}, ${city.state}`), 400);
   };
 
-
-  if (isServiceableLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground">Initializing service map…</h2>
-        <p className="text-sm text-muted-foreground mt-2 text-center">We're loading available service areas for you.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12 pt-safe">
@@ -516,19 +547,7 @@ const LocationCheckScreen = () => {
         <div className="grid grid-cols-4 gap-3">
           {LANDMARK_CITIES.map((city) => {
             const live = serviceableSet.has(city.pincode);
-            if (isServiceableLoading) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-        <h2 className="text-lg font-bold text-foreground">Initializing service map…</h2>
-        <p className="text-sm text-muted-foreground mt-2 text-center">We're loading available service areas for you.</p>
-      </div>
-    );
-  }
-
-  return (
+            return (
               <motion.button
                 key={city.name}
                 whileTap={{ scale: 0.94 }}
