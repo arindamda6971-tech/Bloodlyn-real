@@ -23,7 +23,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const isBack = navType === "POP";
 
   const transition = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 380, // Snappier
     damping: 38,    // Less bounce, more control
     mass: 1.2,      // Feels more "solid" like native

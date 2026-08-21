@@ -312,10 +312,19 @@ const PaymentScreen = () => {
         resolvedVendorId = lab.vendor_id || resolvedVendorId;
       }
 
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
-      const accessToken = refreshed?.session?.access_token || (await supabase.auth.getSession()).data.session?.access_token;
+      // Use the existing session; only refresh when it is about to expire.
+      // Forcing a refresh on every tap made the first "Place Order" tap fail
+      // intermittently (refresh token races), which is why users had to tap twice.
+      const { data: sessionData } = await supabase.auth.getSession();
+      let accessToken = sessionData.session?.access_token || null;
+      const expiresAt = sessionData.session?.expires_at ?? 0;
+      const expiringSoon = !expiresAt || expiresAt * 1000 - Date.now() < 60_000;
+      if (!accessToken || expiringSoon) {
+        const { data: refreshed } = await supabase.auth.refreshSession();
+        accessToken = refreshed?.session?.access_token || accessToken;
+      }
 
-      if (refreshError || !accessToken) {
+      if (!accessToken) {
         toast.error("Your session expired. Please log in again.");
         navigate("/login");
         return;
