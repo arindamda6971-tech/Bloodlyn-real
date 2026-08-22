@@ -500,6 +500,9 @@ const PaymentScreen = () => {
       }
 
       clearCart();
+      } catch (postOrderError) {
+        console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
+      }
 
       navigate("/order-success", {
         replace: true,
