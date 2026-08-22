@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Loader2, ChevronRight, X } from "lucide-react";
@@ -117,13 +118,14 @@ const LocationChip = () => {
         <ChevronRight className="w-3.5 h-3.5 text-sky-500" />
       </button>
 
-      <AnimatePresence>
+      {createPortal(
+        <AnimatePresence>
         {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40"
+            className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/40"
             onClick={() => !saving && setOpen(false)}
           >
             <motion.div
@@ -169,7 +171,9 @@ const LocationChip = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 };

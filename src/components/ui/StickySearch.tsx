@@ -18,6 +18,10 @@ interface StickySearchProps {
   accent?: string;
 }
 
+const SHADOW_CLASS = "shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)]";
+const SHADOW_ON = 8;
+const SHADOW_OFF = 2;
+
 /**
  * Standard Sticky Search Component.
  * Optimized for native safe-areas and smooth transitions.
@@ -36,9 +40,58 @@ const StickySearch = ({
   onKeyDown,
   rightSlot,
 }: StickySearchProps) => {
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  // Elevation-on-scroll with hysteresis, written straight to the DOM inside a
+  // single rAF so scrolling never triggers a React re-render.
+  useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+
+    let scroller: HTMLElement | Window = window;
+    let node: HTMLElement | null = shell.parentElement;
+    while (node) {
+      const overflowY = getComputedStyle(node).overflowY;
+      if (overflowY === "auto" || overflowY === "scroll") {
+        scroller = node;
+        break;
+      }
+      node = node.parentElement;
+    }
+
+    let on = false;
+    let pending = false;
+    let frame = 0;
+
+    const apply = () => {
+      pending = false;
+      const y = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
+      if (!on && y > SHADOW_ON) {
+        on = true;
+        shell.classList.add(SHADOW_CLASS);
+      } else if (on && y <= SHADOW_OFF) {
+        on = false;
+        shell.classList.remove(SHADOW_CLASS);
+      }
+    };
+
+    const onScroll = () => {
+      if (pending) return;
+      pending = true;
+      frame = requestAnimationFrame(apply);
+    };
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <div
-      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-md shadow-sm rounded-b-2xl overflow-visible ${className}`}
+      ref={shellRef}
+      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-md rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
       data-testid="sticky-search-shell"
     >
       {header && <div className="px-4 pt-2 pb-0">{header}</div>}
