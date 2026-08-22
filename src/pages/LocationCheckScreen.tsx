@@ -185,6 +185,12 @@ const LocationCheckScreen = () => {
   // Load the full serviceable pincode set once on mount
   useEffect(() => {
     let cancelled = false;
+
+    // Safety timeout: don't block the screen forever
+    const timer = setTimeout(() => {
+      if (!cancelled) setIsServiceableLoading(false);
+    }, 4000);
+
     const fetchServiceable = async () => {
       try {
         const { data, error } = await supabase
@@ -212,12 +218,18 @@ const LocationCheckScreen = () => {
       } catch (err) {
         console.error("Failed to load serviceable areas:", err);
       } finally {
-        if (!cancelled) setIsServiceableLoading(false);
+        if (!cancelled) {
+          setIsServiceableLoading(false);
+          clearTimeout(timer);
+        }
       }
     };
 
     fetchServiceable();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   /**

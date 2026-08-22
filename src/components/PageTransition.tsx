@@ -57,31 +57,22 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
     <div
       className="transition-container"
       style={{
-        position: "fixed", // Lock the container to viewport
-        inset: 0,
-        overflow: "hidden",
-        zIndex: 1,
-        pointerEvents: "none", // Container itself doesn't block touches
+        width: "100%",
+        height: "100%",
+        backgroundColor: "hsl(var(--background))",
       }}
     >
-      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+      <AnimatePresence mode="wait">
         <motion.div
           key={location.pathname}
-          custom={direction}
-          variants={variants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           style={{
             width: "100%",
             height: "100%",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            backgroundColor: "hsl(var(--background))",
-            boxShadow: direction === "forward" ? "-5px 0 25px -5px rgba(0,0,0,0.1)" : "none",
-            willChange: "transform",
-            pointerEvents: "auto", // Children (pages) DO receive touches
+            position: "relative",
           }}
         >
           {children}

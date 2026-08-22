@@ -1,7 +1,8 @@
-import { ReactNode, useCallback } from "react";
+import { ReactNode, useCallback, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import BottomNavigation from "./BottomNavigation";
 import PullToRefresh from "@/components/ui/PullToRefresh";
+import RouteFallback from "@/components/RouteFallback";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -34,11 +35,13 @@ const MobileLayout = ({
       className={`${showNav ? "pb-24" : ""} ${className}`}
       style={{
         WebkitFontSmoothing: 'antialiased',
-        MozOsxFontSmoothing: 'grayscale',
+        MozOsxFontScrolling: 'touch',
         contain: 'layout style',
       }}
     >
-      {children}
+      <Suspense fallback={<RouteFallback />}>
+        {children}
+      </Suspense>
     </main>
   );
 

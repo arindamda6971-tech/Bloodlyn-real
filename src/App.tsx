@@ -102,15 +102,15 @@ const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/Upl
  * Standard Native-Feel Navigator.
  * Uses a single AnimatePresence to handle/**
  * Standard Native-Feel Navigator.
- * Uses a single AnimatePresence to handle high-performance page swaps.
+ * Uses a single AnimatePresence to handle/**
+ * High-Performance Native Stack Navigator.
  */
 const AnimatedRoutes = () => {
   const location = useLocation();
 
   return (
     <PageTransition>
-      <Suspense fallback={<RouteFallback />}>
-        <Routes location={location} key={location.pathname}>
+      <Routes location={location}>
           {/* Public Routes */}
           <Route path="/" element={<SplashScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -167,8 +167,7 @@ const AnimatedRoutes = () => {
           <Route path="/unauthorized" element={<UnauthorizedScreen />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Suspense>
-    </PageTransition>
+      </PageTransition>
   );
 };
 

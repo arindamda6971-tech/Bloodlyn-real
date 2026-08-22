@@ -177,12 +177,19 @@
     -webkit-user-select: text;
   }
 
+  html {
+    overscroll-behavior: none;
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     width: 100%;
     height: 100%;
-    height: 100dvh;
+    overflow: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
     overscroll-behavior: none;
@@ -200,10 +207,7 @@
   #root {
     width: 100%;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain; /* Stop nested-scroll bleed */
+    overflow: hidden;
     position: relative;
     /* Native Momentum & Weighted Scroll */
     scroll-behavior: auto;
@@ -800,6 +804,11 @@ html.native [class*="blur-2xl"],
 html.native .aurora-blob {
   filter: blur(28px) !important;
   opacity: 0.35 !important;
+}
+
+html.native .shadow-xl,
+html.native .shadow-2xl {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
 }
 
 /* Scrolling containers on native never composite a shadow-heavy backdrop. */
