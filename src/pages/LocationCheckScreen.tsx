@@ -168,7 +168,7 @@ const LocationCheckScreen = () => {
   const reverseGeocode = async (lat: number, lon: number) => {
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
+        `https://nominatimotion.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&addressdetails=1`,
         { headers: { "User-Agent": "BloodLyn-App" } }
       );
       const data = await res.json();
@@ -437,22 +437,22 @@ const LocationCheckScreen = () => {
 
       {/* Header */}
       <div className="relative z-10 px-6 pt-12 pb-6">
-        <m.div
+        <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           className="inline-flex items-center gap-2 rounded-full bg-primary/10 ring-1 ring-primary/20 px-3 py-1 text-[11px] font-semibold text-primary"
         >
           <Sparkles className="w-3.5 h-3.5" />
           BloodLyn at your doorstep
-        </m.div>
-        <m.h1
+        </motion.div>
+        <motion.h1
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           className="mt-3 text-[26px] font-extrabold text-foreground tracking-tight leading-tight"
         >
           Where would you like<br />samples collected?
-        </m.h1>
+        </motion.h1>
         <p className="mt-2 text-sm text-muted-foreground">
           We'll find labs serving your area in seconds.
         </p>
@@ -460,7 +460,7 @@ const LocationCheckScreen = () => {
 
       {/* Main card */}
       <div className="relative z-10 px-5">
-        <m.div
+        <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -468,17 +468,17 @@ const LocationCheckScreen = () => {
         >
           <AnimatePresence mode="wait">
             {step === "detecting" && (
-              <m.div key="d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-6 text-center">
-                <m.div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4" animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
+              <motion.div key="d" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center py-6 text-center">
+                <motion.div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mb-4" animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
                   <Navigation className="w-10 h-10 text-primary" />
-                </m.div>
+                </motion.div>
                 <h2 className="text-base font-bold text-foreground">Detecting your location…</h2>
                 <p className="text-xs text-muted-foreground mt-1">This only takes a moment</p>
-              </m.div>
+              </motion.div>
             )}
 
             {step === "manual" && (
-              <m.div key="m" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <motion.div key="m" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
                 <label className="text-[11px] uppercase tracking-[0.16em] font-semibold text-muted-foreground">PIN code</label>
                 <Input
                   type="text"
@@ -506,24 +506,24 @@ const LocationCheckScreen = () => {
                   <Navigation className="w-4 h-4" />
                   Use my current location
                 </button>
-              </m.div>
+              </motion.div>
             )}
 
             {step === "serviceable" && (
-              <m.div key="s" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center py-4 text-center">
-                <m.div className="w-20 h-20 rounded-2xl bg-success/10 flex items-center justify-center mb-3" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 220 }}>
+              <motion.div key="s" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center py-4 text-center">
+                <motion.div className="w-20 h-20 rounded-2xl bg-success/10 flex items-center justify-center mb-3" initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 220 }}>
                   <svg className="w-10 h-10 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <m.path d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
+                    <motion.path d="M5 13l4 4L19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5, delay: 0.15 }} />
                   </svg>
-                </m.div>
+                </motion.div>
                 <h2 className="text-lg font-bold text-foreground">We're available here!</h2>
                 <p className="text-xs text-muted-foreground mt-1">PIN {detectedPincode}{locationName ? ` · ${locationName}` : ""}</p>
                 <Loader2 className="w-4 h-4 animate-spin text-primary mt-3" />
-              </m.div>
+              </motion.div>
             )}
 
             {step === "not-serviceable" && (
-              <m.div key="n" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center py-2 text-center">
+              <motion.div key="n" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center py-2 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-3">
                   <AlertCircle className="w-8 h-8 text-destructive" />
                 </div>
@@ -537,10 +537,10 @@ const LocationCheckScreen = () => {
                 <Button variant="outline" className="w-full mt-2 h-11 rounded-2xl" onClick={() => { setStep("manual"); setPincode(""); }}>
                   Try Another PIN
                 </Button>
-              </m.div>
+              </motion.div>
             )}
           </AnimatePresence>
-        </m.div>
+        </motion.div>
       </div>
 
       {/* City rail */}
@@ -556,7 +556,7 @@ const LocationCheckScreen = () => {
           {LANDMARK_CITIES.map((city) => {
             const live = serviceableSet.has(city.pincode);
             return (
-              <m.button
+              <motion.button
                 key={city.name}
                 whileTap={{ scale: 0.94 }}
                 onClick={() => handleCityTap(city)}
@@ -573,7 +573,7 @@ const LocationCheckScreen = () => {
                 </div>
                 <p className="text-[12px] font-bold text-foreground leading-tight text-center">{city.name}</p>
 
-              </m.button>
+              </motion.button>
             );
           })}
         </div>

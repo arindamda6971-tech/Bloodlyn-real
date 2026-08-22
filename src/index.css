@@ -169,33 +169,16 @@
   * {
     @apply border-border;
     -webkit-tap-highlight-color: transparent;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    /* Remove click delay */
-    touch-action: manipulation;
   }
 
+  /* Allow selection for inputs only */
   input, textarea {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
     user-select: text;
-  }
-
-  html {
-    scroll-behavior: smooth;
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
-    overscroll-behavior: none;
-    background-color: hsl(var(--background)); /* Prevents white flash */
+    -webkit-user-select: text;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
     font-family: 'Manrope', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     overflow: hidden; /* Lock the body to prevent "page lifting" */
     width: 100%;
@@ -209,16 +192,12 @@
     background-color: hsl(var(--background)); /* Prevents white flash */
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeSpeed;
-    font-feature-settings: "kern", "liga", "calt", "ss01", "cv11";
-    font-variant-ligatures: common-ligatures contextual;
-    font-optical-sizing: auto;
-    letter-spacing: -0.011em;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
-    /* 120Hz Optimisation - Force GPU */
-    transform: translate3d(0,0,0);
-    backface-visibility: hidden;
-    perspective: 1000;
+
+    /* Native behavior: disable selection globally but enable for specific elements */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
   }
 
   #root {
@@ -496,9 +475,9 @@
     padding-top: var(--sat);
   }
 
-  /* Fallback for Android where env() might fail */
+  /* Robust fallback for Android status bar overlap */
   html.native .pt-safe {
-    padding-top: max(var(--sat), 32px);
+    padding-top: max(var(--sat), 40px);
   }
 
   .pb-safe { padding-bottom: var(--sab); }

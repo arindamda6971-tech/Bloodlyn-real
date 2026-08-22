@@ -3,7 +3,6 @@ import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
 import { onAppReady } from "./lib/boot";
-import { LazyMotion, domMax } from "framer-motion";
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
 // per browser. Guarded by localStorage so the workbox precache and font caches
@@ -67,11 +66,7 @@ function hideBootLoader() {
 }
 (window as unknown as { __blHideLoader?: () => void }).__blHideLoader = hideBootLoader;
 
-createRoot(document.getElementById("root")!).render(
-  <LazyMotion features={domMax} strict>
-    <App />
-  </LazyMotion>
-);
+createRoot(document.getElementById("root")!).render(<App />);
 
 // Hide the HTML loader when the first real screen is ready (splash/auth gate has
 // decided what to show), or after a short cap so a slow session lookup can never

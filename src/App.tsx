@@ -25,7 +25,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -98,13 +98,16 @@ const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/Unauthori
 const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 
 /**
- * High-Performance Native Stack Navigator.
+ * Standard Native-Feel Navigator.
+ * Uses a single AnimatePresence to handle high-performance page swaps.
  */
-const AnimatedRoutes = ({ location }: { location: any }) => {
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
   return (
-    <PageTransition location={location}>
+    <PageTransition>
       <Suspense fallback={<RouteFallback />}>
-        <Routes location={location}>
+        <Routes location={location} key={location.pathname}>
           {/* Public Routes */}
           <Route path="/" element={<SplashScreen />} />
           <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -267,11 +270,7 @@ const AnimatedRoutesWrapper = () => {
     };
   }, [navigate]);
 
-  return (
-    <SmoothRoutes>
-      {(loc) => <AnimatedRoutes location={loc} />}
-    </SmoothRoutes>
-  );
+  return <AnimatedRoutes />;
 };
 
 export default App;

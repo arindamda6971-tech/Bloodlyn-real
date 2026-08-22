@@ -195,7 +195,7 @@ const HomeScreen = () => {
     const testNamesFromOrder = splitTestNames(order.test_name);
 
     const newCartItems = orderItems.map((item, index) => {
-      const refId = item.test_id || item.package_id || item.id;
+      const refId = itemotion.test_id || itemotion.package_id || itemotion.id;
       let resolvedName = "Lab Test";
       
       if (namesMap[refId]) {
@@ -207,7 +207,7 @@ const HomeScreen = () => {
       return {
         id: refId,
         name: resolvedName,
-        price: Number(item.price) || 0,
+        price: Number(itemotion.price) || 0,
         labId: (item as any).lab_id || undefined,
         labName: (item as any).lab_name || undefined,
       };
@@ -225,19 +225,6 @@ const HomeScreen = () => {
   const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
 
   const [currentTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
-
-  // Progressive rendering states to prevent CPU spikes
-  const [renderStage, setRenderStage] = useState(0);
-  useEffect(() => {
-    const timer1 = setTimeout(() => setRenderStage(1), 50);
-    const timer2 = setTimeout(() => setRenderStage(2), 150);
-    const timer3 = setTimeout(() => setRenderStage(3), 300);
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, []);
 
   const previousOrders = ordersData || [];
   const diagnosticCenters = useMemo(() => {
@@ -438,8 +425,8 @@ const HomeScreen = () => {
         {/* Quick Actions (Premium Banners) */}
         <section className="px-4 mt-8 flex flex-col gap-4 section-defer">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
-          {renderStage >= 1 && quickActions.map((action, idx) => (
-            <m.div
+          {quickActions.map((action, idx) => (
+            <motion.div
               key={action.label}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -496,12 +483,12 @@ const HomeScreen = () => {
                   </div>
                 </div>
               </div>
-            </m.div>
+            </motion.div>
           ))}
         </section>
 
         {/* Recent Orders */}
-        {renderStage >= 2 && previousOrders.length > 0 && (
+        {previousOrders.length > 0 && (
           <section className="mt-10 section-defer">
             <div className="flex items-center justify-between px-6 mb-4">
               <h2 className="text-xl font-black text-foreground tracking-tight">Recent Orders 📦</h2>
@@ -575,7 +562,7 @@ const HomeScreen = () => {
 
         {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
             never competes with the route transition / first paint. */}
-        {renderStage >= 3 && (
+        {(
           <DeferredMount minHeight={280}>
             <HealthPackagesSection />
           </DeferredMount>
@@ -623,8 +610,8 @@ const HomeScreen = () => {
           <AnimatePresence>
             {showCallSheet && (
               <>
-                <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setShowCallSheet(false)} />
-                <m.div
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setShowCallSheet(false)} />
+                <motion.div
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
@@ -649,7 +636,7 @@ const HomeScreen = () => {
                       </a>
                     </div>
                   </div>
-                </m.div>
+                </motion.div>
               </>
             )}
           </AnimatePresence>,
