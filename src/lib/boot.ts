@@ -16,6 +16,7 @@ export const isAppReady = () => ready;
 
 export const markAppReady = () => {
   if (ready) return;
+  console.log("App signaling readiness to hide boot loader");
   ready = true;
   listeners.forEach((fn) => {
     try {

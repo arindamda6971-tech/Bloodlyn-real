@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { m, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Navigation, Loader2, AlertCircle, Bell, Sparkles, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -217,15 +217,7 @@ const LocationCheckScreen = () => {
     };
 
     fetchServiceable();
-    // Safety timeout: don't block the screen forever
-    const timeout = setTimeout(() => {
-      if (!cancelled) setIsServiceableLoading(false);
-    }, 5000);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-    };
+    return () => { cancelled = true; };
   }, []);
 
   /**

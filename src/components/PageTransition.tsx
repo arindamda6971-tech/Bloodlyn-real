@@ -59,10 +59,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
       style={{
         position: "fixed", // Lock the container to viewport
         inset: 0,
-        backgroundColor: "hsl(var(--background))",
         overflow: "hidden",
-        zIndex: 10,
-        pointerEvents: "none", // Allow clicks to pass through to the active animated content
+        zIndex: 1,
+        pointerEvents: "none", // Container itself doesn't block touches
       }}
     >
       <AnimatePresence mode="popLayout" initial={false} custom={direction}>
@@ -80,9 +79,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             top: 0,
             left: 0,
             backgroundColor: "hsl(var(--background))",
-            boxShadow: direction === "forward" ? "-5px 0 25px -5px rgba(0,0,0,0.08)" : "none",
-            willChange: "transform, opacity",
-            pointerEvents: "auto", // Ensure touch is active
+            boxShadow: direction === "forward" ? "-5px 0 25px -5px rgba(0,0,0,0.1)" : "none",
+            willChange: "transform",
+            pointerEvents: "auto", // Children (pages) DO receive touches
           }}
         >
           {children}

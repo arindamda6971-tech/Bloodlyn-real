@@ -25,7 +25,7 @@ const NativeChrome = () => {
 
 
 
-  // --- Status bar theming (native only) ---
+  // --- Status bar theming & Safe Area injection (native only) ---
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let cancelled = false;
@@ -44,6 +44,10 @@ const NativeChrome = () => {
           await StatusBar.setBackgroundColor({
             color: "#00000000", // Transparent to show the app background
           });
+
+          // Inject a standard Android status bar height as the default inset.
+          // This ensures headers clear the battery/clock on most modern devices.
+          document.documentElement.style.setProperty('--safe-area-inset-top', '38px');
         }
       } catch {
         // Plugin unavailable

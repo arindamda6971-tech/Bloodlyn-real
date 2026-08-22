@@ -37,13 +37,6 @@ import { Capacitor } from "@capacitor/core";
 import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
-import HomeScreen from "./pages/HomeScreen";
-import CategoriesScreen from "./pages/CategoriesScreen";
-import ProfileScreen from "./pages/ProfileScreen";
-import BookingsScreen from "./pages/BookingsScreen";
-import LocationCheckScreen from "./pages/LocationCheckScreen";
-import TestDetailScreen from "./pages/TestDetailScreen";
-import CartScreen from "./pages/CartScreen";
 
 // All other screens — lazily loaded with auto-reload fallback
 const safeImport = <T,>(importFn: () => Promise<T>): Promise<T> => {
@@ -55,6 +48,14 @@ const safeImport = <T,>(importFn: () => Promise<T>): Promise<T> => {
     throw error;
   });
 };
+
+const HomeScreen = lazy(() => safeImport(() => import("./pages/HomeScreen")));
+const CategoriesScreen = lazy(() => safeImport(() => import("./pages/CategoriesScreen")));
+const ProfileScreen = lazy(() => safeImport(() => import("./pages/ProfileScreen")));
+const BookingsScreen = lazy(() => safeImport(() => import("./pages/BookingsScreen")));
+const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
+const TestDetailScreen = lazy(() => safeImport(() => import("./pages/TestDetailScreen")));
+const CartScreen = lazy(() => safeImport(() => import("./pages/CartScreen")));
 
 const CapacitorInitializer = () => {
   useEffect(() => {
@@ -98,6 +99,8 @@ const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/Unauthori
 const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 
 /**
+ * Standard Native-Feel Navigator.
+ * Uses a single AnimatePresence to handle/**
  * Standard Native-Feel Navigator.
  * Uses a single AnimatePresence to handle high-performance page swaps.
  */
@@ -235,41 +238,6 @@ const App = () => {
 };
 
 const AnimatedRoutesWrapper = () => {
-  const navigate = useNavigate();
-
-  // Native Edge-Swipe Back Gesture
-  useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    let startX = 0;
-    let startY = 0;
-
-    const onTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    };
-
-    const onTouchEnd = (e: TouchEvent) => {
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
-
-      const diffX = endX - startX;
-      const diffY = Math.abs(endY - startY);
-
-      // If swipe started from left edge (first 30px) and moved right
-      if (startX < 30 && diffX > 100 && diffY < 50) {
-        navigate(-1);
-      }
-    };
-
-    document.addEventListener("touchstart", onTouchStart);
-    document.addEventListener("touchend", onTouchEnd);
-    return () => {
-      document.removeEventListener("touchstart", onTouchStart);
-      document.removeEventListener("touchend", onTouchEnd);
-    };
-  }, [navigate]);
-
   return <AnimatedRoutes />;
 };
 
