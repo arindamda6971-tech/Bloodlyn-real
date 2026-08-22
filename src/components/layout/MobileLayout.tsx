@@ -35,7 +35,7 @@ const MobileLayout = ({
       className={`${showNav ? "pb-24" : ""} ${className}`}
       style={{
         WebkitFontSmoothing: 'antialiased',
-        MozOsxFontScrolling: 'touch',
+        WebkitOverflowScrolling: 'touch',
         contain: 'layout style',
       }}
     >

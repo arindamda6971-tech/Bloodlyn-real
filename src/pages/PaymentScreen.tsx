@@ -363,47 +363,72 @@ const PaymentScreen = () => {
         return `dc-${safe}`;
       };
 
-      const { data: fnData, error: fnError } = await supabase.functions.invoke("create-order", {
-        headers: { "Idempotency-Key": idempotencyKey },
-        body: {
-          cartItems: cartItems.map((item) => {
-            const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
-            const derivedPackageId = item.packageId || (item.kind === "package" && isUuid ? item.id : null);
-            return {
-              id: normalizeItemId(item.id, item),
-              name: item.name,
-              price: Number(item.price) || 0,
-              quantity: Number(item.quantity) || 1,
-              familyMemberId: item.familyMemberId || null,
-              packageId: derivedPackageId,
-              category: item.category || undefined,
-              labId: (item.labId && UUID_RE.test(item.labId)) ? item.labId : (labId || null),
-              labName: item.labName || labName,
-              vendorId: (item.vendorId && UUID_RE.test(item.vendorId)) ? item.vendorId : resolvedVendorId,
-            };
-          }),
+      const orderPayload = {
+        cartItems: cartItems.map((item) => {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+          const derivedPackageId = item.packageId || (item.kind === "package" && isUuid ? item.id : null);
+          return {
+            id: normalizeItemId(item.id, item),
+            name: item.name,
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1,
+            familyMemberId: item.familyMemberId || null,
+            packageId: derivedPackageId,
+            category: item.category || undefined,
+            labId: (item.labId && UUID_RE.test(item.labId)) ? item.labId : (labId || null),
+            labName: item.labName || labName,
+            vendorId: (item.vendorId && UUID_RE.test(item.vendorId)) ? item.vendorId : resolvedVendorId,
+          };
+        }),
 
-          addressId: paymentState?.addressId || null,
-          scheduledDate: paymentState?.scheduledDate || null,
-          scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
-          subtotal: effectiveSubtotal,
-          discount,
-          total,
-          paymentMethod: selectedPaymentMethod.id,
-          couponCode: couponApplied ? "HEALTH100" : null,
-          patientName: paymentState?.patientName,
-          patientAge: paymentState?.patientAge,
-          patientGender: paymentState?.patientGender,
-          patientPhone: paymentState?.patientPhone,
-          labId: labId || null,
-          labName,
-          vendorId: resolvedVendorId,
-        },
-      });
+        addressId: paymentState?.addressId || null,
+        scheduledDate: paymentState?.scheduledDate || null,
+        scheduledTimeSlot: paymentState?.scheduledTimeSlot || null,
+        subtotal: effectiveSubtotal,
+        discount,
+        total,
+        paymentMethod: selectedPaymentMethod.id,
+        couponCode: couponApplied ? "HEALTH100" : null,
+        patientName: paymentState?.patientName,
+        patientAge: paymentState?.patientAge,
+        patientGender: paymentState?.patientGender,
+        patientPhone: paymentState?.patientPhone,
+        labId: labId || null,
+        labName,
+        vendorId: resolvedVendorId,
+      };
+
+      // Transport-level hiccups (WebView fetch abort, cold start, 5xx) used to
+      // surface as an error even though the order was already created — the user
+      // then had to tap "Place Order" a second time to reach the success screen.
+      // The Idempotency-Key makes retries safe, so retry automatically here and
+      // let the server return the already-created order.
+      let fnData: any = null;
+      let fnError: any = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await supabase.functions.invoke("create-order", {
+          headers: { "Idempotency-Key": idempotencyKey },
+          body: orderPayload,
+        });
+        fnData = res.data;
+        fnError = res.error;
+
+        if (!fnError) break;
+
+        // Only retry when there is no application-level response body
+        // (i.e. a network/transport failure or a 5xx), never on validation errors.
+        const status = fnError?.context?.response?.status;
+        const retriable = !status || status >= 500;
+        if (!retriable || attempt === 2) break;
+        await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
+      }
 
       if (fnError) throw fnError;
       if (fnData?.error) throw new Error(fnData.error);
 
+
+      // Post-order bookkeeping must never block the success screen.
+      try {
       // Insert appointment into Supabase appointments table for doctor services
       for (const rawItem of cartItems) {
         const item = rawItem as any;
@@ -475,6 +500,9 @@ const PaymentScreen = () => {
       }
 
       clearCart();
+      } catch (postOrderError) {
+        console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
+      }
 
       navigate("/order-success", {
         replace: true,
