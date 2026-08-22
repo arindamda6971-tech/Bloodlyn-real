@@ -427,6 +427,8 @@ const PaymentScreen = () => {
       if (fnData?.error) throw new Error(fnData.error);
 
 
+      // Post-order bookkeeping must never block the success screen.
+      try {
       // Insert appointment into Supabase appointments table for doctor services
       for (const rawItem of cartItems) {
         const item = rawItem as any;
