@@ -11,51 +11,38 @@ interface PageTransitionProps {
 }
 
 /**
- * Ultra-smooth, simultaneous dual-page transition mimicking iOS/Android native feel.
- * Optimized for performance: uses GPU-only properties and popLayout for overlap.
+ * High-Performance "Scale & Fade" transition.
+ * More efficient on mobile GPUs than full-screen slide translations.
+ * Eliminates lag by using only transform: scale and opacity.
  */
 const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
-  const navType = useNavigationType();
 
-  const isTab = TAB_PATHS.includes(location.pathname);
-  const isBack = navType === "POP";
-
-  // Use fixed spring for consistent native feel
   const transition = {
-    type: "spring" as const,
-    stiffness: 380,
-    damping: 38,
-    mass: 1,
+    duration: 0.3,
+    ease: [0.33, 1, 0.68, 1], // Custom cubic-bezier for a "Native Zoom" feel
   };
 
   const variants = {
-    initial: (direction: string) => ({
-      x: direction === "forward" ? "100%" : direction === "back" ? "-30%" : 0,
-      opacity: direction === "tab" ? 0 : 1,
-      scale: direction === "tab" ? 0.98 : 1,
-      zIndex: direction === "forward" ? 20 : 10,
-    }),
+    initial: {
+      scale: 0.95,
+      opacity: 0,
+    },
     animate: {
-      x: 0,
-      opacity: 1,
       scale: 1,
+      opacity: 1,
       transition,
     },
-    exit: (direction: string) => ({
-      x: direction === "forward" ? "-30%" : direction === "back" ? "100%" : 0,
-      opacity: direction === "tab" ? 0 : 1,
-      scale: direction === "tab" ? 0.98 : 1,
-      zIndex: direction === "forward" ? 10 : 20,
+    exit: {
+      scale: 1.05,
+      opacity: 0,
       transition: {
-        ...transition,
-        damping: 40 // Slightly more damped exit
+        duration: 0.25,
+        ease: "easeInOut"
       },
-    }),
+    },
   };
-
-  const direction = isTab ? "tab" : isBack ? "back" : "forward";
 
   return (
     <div
@@ -69,10 +56,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         overflow: "hidden",
       }}
     >
-      <AnimatePresence mode="popLayout" initial={false} custom={direction}>
+      <AnimatePresence mode="popLayout" initial={false}>
         <motion.div
           key={location.pathname}
-          custom={direction}
           variants={variants}
           initial="initial"
           animate="animate"
@@ -84,8 +70,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             top: 0,
             left: 0,
             backgroundColor: "hsl(var(--background))",
-            boxShadow: direction === "forward" ? "-10px 0 30px -10px rgba(0,0,0,0.15)" : "none",
-            willChange: "transform",
+            willChange: "transform, opacity",
           }}
         >
           <Suspense fallback={<RouteFallback />}>
