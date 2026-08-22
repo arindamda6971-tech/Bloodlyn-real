@@ -60,10 +60,11 @@ const StickySearch = ({
     }
 
     let on = false;
-    let frame: number | null = null;
+    let pending = false;
+    let frame = 0;
 
     const apply = () => {
-      frame = null;
+      pending = false;
       const y = scroller === window ? window.scrollY : (scroller as HTMLElement).scrollTop;
       if (!on && y > SHADOW_ON) {
         on = true;
@@ -75,14 +76,15 @@ const StickySearch = ({
     };
 
     const onScroll = () => {
-      if (frame !== null) return;
+      if (pending) return;
+      pending = true;
       frame = requestAnimationFrame(apply);
     };
 
     scroller.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       scroller.removeEventListener("scroll", onScroll);
-      if (frame !== null) cancelAnimationFrame(frame);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, []);
 
