@@ -195,7 +195,7 @@ const HomeScreen = () => {
     const testNamesFromOrder = splitTestNames(order.test_name);
 
     const newCartItems = orderItems.map((item, index) => {
-      const refId = itemotion.test_id || itemotion.package_id || itemotion.id;
+      const refId = item.test_id || item.package_id || item.id;
       let resolvedName = "Lab Test";
       
       if (namesMap[refId]) {
@@ -207,7 +207,7 @@ const HomeScreen = () => {
       return {
         id: refId,
         name: resolvedName,
-        price: Number(itemotion.price) || 0,
+        price: Number(item.price) || 0,
         labId: (item as any).lab_id || undefined,
         labName: (item as any).lab_name || undefined,
       };
