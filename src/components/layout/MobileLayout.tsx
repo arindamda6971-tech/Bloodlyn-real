@@ -39,9 +39,7 @@ const MobileLayout = ({
         contain: 'layout style',
       }}
     >
-      <Suspense fallback={<RouteFallback />}>
-        {children}
-      </Suspense>
+      {children}
     </main>
   );
 
