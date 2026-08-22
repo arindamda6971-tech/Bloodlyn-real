@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import {
   Droplets,
   Activity,
@@ -86,7 +86,7 @@ const getCategoryStyle = (name: string, slug: string) => {
 };
 
 const CategoryTile = memo(({ category, index, onClick }: { category: any, index: number, onClick: () => void }) => (
-  <motion.div
+  <m.div
     whileTap={{ scale: 0.95 }}
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
@@ -101,7 +101,7 @@ const CategoryTile = memo(({ category, index, onClick }: { category: any, index:
     </div>
     <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
     <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.tests} {category.tests === 1 ? 'test' : 'tests'}</p>
-  </motion.div>
+  </m.div>
 ));
 
 CategoryTile.displayName = "CategoryTile";
@@ -213,7 +213,7 @@ const CategoriesScreen = () => {
             {searchResults.map((test, index) => {
               const alreadyInCart = isInCart(test.id, test.test_name);
               return (
-                <motion.div
+                <m.div
                   key={test.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -239,7 +239,7 @@ const CategoriesScreen = () => {
                       </Button>
                     )}
                   </div>
-                </motion.div>
+                </m.div>
               );
             })}
           </div>

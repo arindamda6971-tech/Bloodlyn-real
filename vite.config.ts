@@ -124,6 +124,13 @@ export default defineConfig(({ mode }) => ({
   build: {
     // Keep chunks smaller to improve first-load and parallel caching.
     chunkSizeWarningLimit: 350,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

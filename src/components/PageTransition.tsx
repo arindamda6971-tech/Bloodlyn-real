@@ -1,6 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import { Capacitor } from "@capacitor/core";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
@@ -60,11 +60,12 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         position: "fixed", // Lock the container to viewport
         inset: 0,
         backgroundColor: "hsl(var(--background))",
-        overflow: "hidden"
+        overflow: "hidden",
+        zIndex: 10
       }}
     >
       <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-        <motion.div
+        <m.div
           key={location.pathname}
           custom={direction}
           variants={variants}
@@ -78,12 +79,12 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             top: 0,
             left: 0,
             backgroundColor: "hsl(var(--background))",
-            boxShadow: direction === "forward" ? "-10px 0 30px -10px rgba(0,0,0,0.1)" : "none",
-            willChange: "transform",
+            boxShadow: direction === "forward" ? "-5px 0 25px -5px rgba(0,0,0,0.08)" : "none",
+            willChange: "transform, opacity",
           }}
         >
           {children}
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     </div>
   );

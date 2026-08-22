@@ -5,7 +5,7 @@ import BannerGraphic from "@/components/BannerGraphic";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
 import {
   Search,
   Bell,
@@ -439,7 +439,7 @@ const HomeScreen = () => {
         <section className="px-4 mt-8 flex flex-col gap-4 section-defer">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {renderStage >= 1 && quickActions.map((action, idx) => (
-            <motion.div
+            <m.div
               key={action.label}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -496,7 +496,7 @@ const HomeScreen = () => {
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </section>
 
@@ -623,8 +623,8 @@ const HomeScreen = () => {
           <AnimatePresence>
             {showCallSheet && (
               <>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setShowCallSheet(false)} />
-                <motion.div
+                <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setShowCallSheet(false)} />
+                <m.div
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
@@ -649,7 +649,7 @@ const HomeScreen = () => {
                       </a>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               </>
             )}
           </AnimatePresence>,
