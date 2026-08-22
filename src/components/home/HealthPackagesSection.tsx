@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Building2, Package, Sparkles, ChevronRight, HeartPulse } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 type PkgRow = {
   id: string;
@@ -22,6 +23,65 @@ type LabGroup = {
   fromPrice: number;
   maxDiscount: number;
 };
+
+const LabPackageCard = memo(({ lab, idx, onClick }: { lab: LabGroup, idx: number, onClick: () => void }) => (
+  <motion.button
+    type="button"
+    onClick={onClick}
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: idx * 0.04 }}
+    className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:scale-[0.98] transition-transform"
+    style={{ contain: 'content' }}
+  >
+    <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+    <div className="relative z-10 flex items-center gap-3">
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
+        {lab.logo ? (
+          <OptimizedImage
+            src={lab.logo}
+            alt={lab.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Building2 className="w-7 h-7 text-primary" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[14px] font-extrabold text-foreground truncate leading-tight">
+          {lab.name}
+        </p>
+        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10">
+            <Package className="w-3 h-3 text-primary" />
+            <span className="text-[10px] font-black text-primary">
+              {lab.count} {lab.count === 1 ? "package" : "packages"}
+            </span>
+          </span>
+          {lab.maxDiscount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10">
+              <Sparkles className="w-3 h-3 text-destructive" />
+              <span className="text-[10px] font-black text-destructive">
+                Up to {lab.maxDiscount}% off
+              </span>
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1 shrink-0">
+        <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+          From
+        </span>
+        <span className="text-base font-black text-foreground leading-none">
+          ₹{Math.round(lab.fromPrice)}
+        </span>
+        <ChevronRight className="w-4 h-4 text-muted-foreground mt-0.5 group-active:translate-x-0.5 transition-transform" />
+      </div>
+    </div>
+  </motion.button>
+));
+
+LabPackageCard.displayName = "LabPackageCard";
 
 const HealthPackagesSection = () => {
   const navigate = useNavigate();
@@ -130,63 +190,14 @@ const HealthPackagesSection = () => {
           </div>
         </motion.div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-3 list-virtual">
           {labs.slice(0, 4).map((lab, idx) => (
-            <motion.button
+            <LabPackageCard
               key={lab.id}
-              type="button"
+              lab={lab}
+              idx={idx}
               onClick={() => navigate(`/lab/${lab.id}`)}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04 }}
-              className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:scale-[0.98] transition-transform"
-            >
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-              <div className="relative z-10 flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
-                  {lab.logo ? (
-                    <img
-                      src={lab.logo}
-                      alt={lab.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Building2 className="w-7 h-7 text-primary" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-extrabold text-foreground truncate leading-tight">
-                    {lab.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10">
-                      <Package className="w-3 h-3 text-primary" />
-                      <span className="text-[10px] font-black text-primary">
-                        {lab.count} {lab.count === 1 ? "package" : "packages"}
-                      </span>
-                    </span>
-                    {lab.maxDiscount > 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10">
-                        <Sparkles className="w-3 h-3 text-destructive" />
-                        <span className="text-[10px] font-black text-destructive">
-                          Up to {lab.maxDiscount}% off
-                        </span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
-                    From
-                  </span>
-                  <span className="text-base font-black text-foreground leading-none">
-                    ₹{Math.round(lab.fromPrice)}
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground mt-0.5 group-active:translate-x-0.5 transition-transform" />
-                </div>
-              </div>
-            </motion.button>
+            />
           ))}
         </div>
       )}

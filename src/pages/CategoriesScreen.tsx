@@ -106,6 +106,38 @@ const CategoryTile = memo(({ category, index, onClick }: { category: any, index:
 
 CategoryTile.displayName = "CategoryTile";
 
+const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: index * 0.03 }}
+    onClick={onNavigate}
+    className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
+    style={{ contain: 'content' }}
+  >
+    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+      <Beaker className="w-5 h-5 text-primary" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{test.test_name}</h3>
+      <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
+    </div>
+    <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+      {alreadyInCart ? (
+        <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => window.location.href = "/cart"}>
+          <Plus className="w-4 h-4" />
+        </Button>
+      ) : (
+        <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={onAddToCart}>
+          <Plus className="w-4 h-4" />
+        </Button>
+      )}
+    </div>
+  </motion.div>
+));
+
+TestResultCard.displayName = "TestResultCard";
+
 const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
@@ -209,39 +241,17 @@ const CategoriesScreen = () => {
           <h2 className="text-sm font-semibold text-muted-foreground mb-3">
             {searchResults.length > 0 ? `${searchResults.length} tests found` : "No tests found"}
           </h2>
-          <div className="space-y-2">
-            {searchResults.map((test, index) => {
-              const alreadyInCart = isInCart(test.id, test.test_name);
-              return (
-                <motion.div
-                  key={test.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => navigate(`/test/${test.id}`, { state: { bridgeTest: test } })}
-                  className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Beaker className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{test.test_name}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
-                  </div>
-                  <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                    {alreadyInCart ? (
-                      <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/cart")}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    ) : (
-                      <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); handleAddToCart(test); }}>
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
+          <div className="space-y-2 list-virtual">
+            {searchResults.map((test, index) => (
+              <TestResultCard
+                key={test.id}
+                test={test}
+                index={index}
+                alreadyInCart={isInCart(test.id, test.test_name)}
+                onNavigate={() => navigate(`/test/${test.id}`, { state: { bridgeTest: test } })}
+                onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(test); }}
+              />
+            ))}
           </div>
         </div>
       )}

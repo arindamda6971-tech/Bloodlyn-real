@@ -78,7 +78,7 @@ const quickActions = [
     gradient: "from-[#10b981] to-[#0d9488]",
     glow: "bg-[#10b981]/20",
     badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]",
-    bgImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=800"
+    bgImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format,webp&q=80&w=800"
   },
   { 
     icon: HeartPulse, 
@@ -89,7 +89,7 @@ const quickActions = [
     gradient: "from-[#f43f5e] to-[#dc2626]",
     glow: "bg-[#f43f5e]/20",
     badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973?auto=format&fit=crop&w=800&q=80"
+    bgImage: "https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973?auto=format,webp&w=800&q=80"
   },
   {
     icon: HeartPulse,
@@ -100,7 +100,7 @@ const quickActions = [
     gradient: "from-[#f43f5e] to-[#3b82f6]",
     glow: "bg-[#3b82f6]/20",
     badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2?auto=format&fit=crop&w=800&q=80"
+    bgImage: "https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2?auto=format,webp&w=800&q=80"
   },
   { 
     icon: Activity, 
@@ -111,7 +111,7 @@ const quickActions = [
     gradient: "from-[#6366f1] to-[#2563eb]",
     glow: "bg-[#6366f1]/20",
     badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198?auto=format&fit=crop&w=800&q=80"
+    bgImage: "https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198?auto=format,webp&w=800&q=80"
   },
   { 
     icon: FileUp, 
@@ -122,7 +122,7 @@ const quickActions = [
     gradient: "from-[#f59e0b] to-[#d97706]",
     glow: "bg-[#f59e0b]/20",
     badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9?auto=format&fit=crop&w=800&q=80"
+    bgImage: "https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9?auto=format,webp&w=800&q=80"
   },
 ];
 
@@ -417,13 +417,13 @@ const HomeScreen = () => {
             <LabSkeleton />
           </div>
         ) : diagnosticCenters.length > 0 && (
-          <div className="mt-4 transform-gpu">
+          <div className="mt-4 transform-gpu list-virtual-lg">
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
         )}
 
         {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 flex flex-col gap-4 section-defer">
+        <section className="px-4 mt-8 flex flex-col gap-4 section-defer list-virtual-lg">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {quickActions.map((action, idx) => (
             <motion.div

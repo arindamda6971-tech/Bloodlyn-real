@@ -16,7 +16,7 @@ const DoctorAdCarousel = ({ categories }: Props) => {
       <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-600" />
       {/* Background Graphic or Image */}
       <img
-        src="https://images.unsplash.com/photo-1582719478250-c894e4dc929e?auto=format&fit=crop&q=80&w=800"
+        src="https://images.unsplash.com/photo-1582719478250-c894e4dc929e?auto=format,webp&q=80&w=800"
         alt="Featured"
         className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-40 group-hover:scale-105 transition-transform duration-700"
         loading="lazy"

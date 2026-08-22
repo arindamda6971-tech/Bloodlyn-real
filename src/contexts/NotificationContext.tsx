@@ -131,17 +131,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAsRead = (id: string) => {
+  const markAsRead = useCallback((id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
-  };
+  }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
+  }, []);
 
-  const playChime = (type: Notification["type"]) => {
+  const playChime = useCallback((type: Notification["type"]) => {
     if (type !== "order" && type !== "report") return;
     try {
       const AudioCtx =
@@ -165,7 +165,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
       setTimeout(() => ctx.close().catch(() => {}), 800);
     } catch { /* silently ignore — autoplay may be blocked until first gesture */ }
-  };
+  }, []);
 
   // Request permission on mount for native devices
   useEffect(() => {
@@ -174,7 +174,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const addNotification = async (notification: Omit<Notification, "id" | "read" | "created_at">) => {
+  const addNotification = useCallback(async (notification: Omit<Notification, "id" | "read" | "created_at">) => {
     if (!smartAlertsEnabled && notification.type !== "order") {
       return;
     }
@@ -213,11 +213,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         console.error("Failed to show native notification:", err);
       }
     }
-  };
+  }, [smartAlertsEnabled, playChime]);
 
-  const clearNotifications = () => {
+  const clearNotifications = useCallback(() => {
     setNotifications([]);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({

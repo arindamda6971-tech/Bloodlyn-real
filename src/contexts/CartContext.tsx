@@ -265,9 +265,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return items.some((i) => i.id === testId || (testName && i.name === testName));
   }, [items]);
 
-  const addToCart = (item: Omit<CartItem, "quantity">): boolean => {
+  const addToCart = useCallback((item: Omit<CartItem, "quantity">): boolean => {
     if (import.meta.env.DEV) console.log("CartContext.addToCart called with:", item);
-    triggerHaptic('light');
 
     // Prevent duplicate adds — same test cannot be added twice
     if (hasItem(item.id, item.name)) {
@@ -280,7 +279,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       i.labId === "ecg-service" || i.labId === "physio-service" || i.labId === "doctor-service" ||
       i.name.includes(" with ");
 
-    // "but when i will try to booking 2ecg or (1ecg and 1physio ) then show me a alert for replace do it for doctor, ecg, physio dont change any thing on lab"
     // If the cart already has items, and the user is trying to add an ECG, Doctor, or Physio service,
     // OR if the cart already has an ECG, Doctor, or Physio service and the user is trying to add anything else:
     if (items.length > 0 && (isServiceItem(item as any) || items.some((i) => isServiceItem(i as any)))) {
@@ -304,9 +302,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return updated;
     });
     return true;
-  };
+  }, [items, currentLabId, currentLabName, hasItem, syncCartToSupabase]);
 
-  const confirmReplace = (callback?: () => void) => {
+  const confirmReplace = useCallback((callback?: () => void) => {
     if (pendingItem) {
       const newItems = [{ ...pendingItem.item, quantity: 1 }];
       setItems(newItems);
@@ -315,22 +313,22 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       setPendingItem(null);
       if (callback) callback();
     }
-  };
+  }, [pendingItem, syncCartToSupabase]);
 
-  const cancelReplace = () => {
+  const cancelReplace = useCallback(() => {
     setPendingItem(null);
-  };
+  }, []);
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = useCallback((id: string) => {
     setItems((prev) => {
       const updated = prev.filter((item) => item.id !== id);
       setLocalCart(updated);
       syncCartToSupabase(updated);
       return updated;
     });
-  };
+  }, [syncCartToSupabase]);
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = useCallback((id: string, delta: number) => {
     setItems((prev) => {
       const updated = prev.map((item) =>
         item.id === id
@@ -341,9 +339,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       syncCartToSupabase(updated);
       return updated;
     });
-  };
+  }, [syncCartToSupabase]);
 
-  const updateFamilyMember = (id: string, familyMemberId: string | undefined) => {
+  const updateFamilyMember = useCallback((id: string, familyMemberId: string | undefined) => {
     setItems((prev) => {
       const updated = prev.map((item) =>
         item.id === id
@@ -354,9 +352,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       syncCartToSupabase(updated);
       return updated;
     });
-  };
+  }, [syncCartToSupabase]);
 
-  const updateLabForItems = (labId: string, labName: string, itemPrices?: Record<string, number>) => {
+  const updateLabForItems = useCallback((labId: string, labName: string, itemPrices?: Record<string, number>) => {
     setItems((prev) => {
       const updated = prev.map((item) => {
         const key = item.id;
@@ -372,16 +370,15 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       syncCartToSupabase(updated);
       return updated;
     });
-  };
+  }, [syncCartToSupabase]);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setItems([]);
     setLocalCart([]);
     syncCartToSupabase([]);
-  };
+  }, [syncCartToSupabase]);
 
-  const replaceCart = (newItems: Omit<CartItem, "quantity">[]) => {
-    triggerHaptic('light');
+  const replaceCart = useCallback((newItems: Omit<CartItem, "quantity">[]) => {
     const updated = newItems.map((item) => ({ ...item, quantity: 1 }));
     setItems(updated);
     setLocalCart(updated);
@@ -389,7 +386,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setTimeout(() => {
       syncCartToSupabase(updated);
     }, 50);
-  };
+  }, [syncCartToSupabase]);
 
   const validateFamilyMember = useCallback((activeMemberIds: string[]) => {
     setItems((prev) => {

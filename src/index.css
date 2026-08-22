@@ -720,9 +720,6 @@
   }
 }
 
-/* ------------------------------------------------------------------
- * Rendering pipeline: keep animations on the compositor (60 fps)
- * ------------------------------------------------------------------ */
 @layer utilities {
   .gpu {
     transform: translateZ(0);
@@ -730,19 +727,18 @@
   }
 
   /* ----------------------------------------------------------------
-   * Long-list scrolling
-   * `content-visibility: auto` lets the browser skip layout/paint for
-   * rows outside the viewport — the cheap, non-invasive alternative to
-   * virtualisation. `contain-intrinsic-size` supplies a placeholder
-   * height so the scrollbar and scroll position stay stable.
+   * Extreme List Optimization
+   * Using content-visibility to skip rendering of off-screen items.
+   * This is a "Zero-JS" virtualization technique.
    * ---------------------------------------------------------------- */
   .list-virtual > * {
     content-visibility: auto;
-    contain-intrinsic-size: auto 92px;
+    contain-intrinsic-size: auto 100px;
   }
+
   .list-virtual-lg > * {
     content-visibility: auto;
-    contain-intrinsic-size: auto 148px;
+    contain-intrinsic-size: auto 200px;
   }
 
   /* Off-screen page sections skip rendering work entirely. */
