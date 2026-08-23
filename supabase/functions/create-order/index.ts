@@ -400,7 +400,34 @@ Deno.serve(async (req) => {
       serverDiscount = 100;
     }
 
-    const serverTotal = Math.max(0, serverSubtotal - serverDiscount);
+    // Platform charge for Lab Tests (Home Collection) — percentage controlled from
+    // the Admin app's Finance & Revenue → Commission Engine. Falls back to 10% when
+    // the admin settings endpoint is unavailable so checkout never breaks.
+    const DEFAULT_PLATFORM_FEE_PERCENT = 10;
+    let platformFeePercent = DEFAULT_PLATFORM_FEE_PERCENT;
+    try {
+      const bridgeKey = Deno.env.get("BRIDGE_API_KEY");
+      if (bridgeKey) {
+        const settingsRes = await fetch(
+          "https://uivexkxdhcubjcdxmjuu.supabase.co/functions/v1/bridge-settings",
+          { headers: { "x-bridge-key": bridgeKey } },
+        );
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          const raw = Number(
+            settings?.lab_test_commission_percent ?? settings?.labTestCommissionPercent,
+          );
+          if (Number.isFinite(raw) && raw >= 0 && raw <= 50) platformFeePercent = raw;
+        }
+      }
+    } catch (e) {
+      console.warn("Platform fee lookup failed, using default:", String(e));
+    }
+
+    const netAmount = Math.max(0, serverSubtotal - serverDiscount);
+    const platformFee = Math.max(0, Math.round((netAmount * platformFeePercent) / 100));
+    const serverTotal = netAmount + platformFee;
+    console.log(`Platform fee: ${platformFeePercent}% => ₹${platformFee}; total ₹${serverTotal}`);
 
     // Accept all payment methods from the client
     // In production, online methods would be verified via a payment gateway callback

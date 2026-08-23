@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
     const { endpoint, method = "GET", params, payload } = body;
 
     // Validate endpoint whitelist
-    const allowedEndpoints = ["bridge-tests", "bridge-tickets", "bridge-tickets/status", "bridge-tickets/details"];
+    const allowedEndpoints = ["bridge-tests", "bridge-tickets", "bridge-tickets/status", "bridge-tickets/details", "bridge-settings"];
     const baseEndpoint = endpoint?.split("?")[0];
     if (!allowedEndpoints.includes(baseEndpoint)) {
       return new Response(JSON.stringify({ error: "Invalid endpoint" }), {

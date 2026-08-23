@@ -1,6 +1,6 @@
 import { ReactNode, Suspense, useState, useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import RouteFallback from "./RouteFallback";
 import { useHaptics } from "@/hooks/useHaptics";
 
@@ -31,13 +31,13 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   }, [location.pathname, impactLight]);
 
   const springTransition = {
-    type: "spring",
+    type: "spring" as const,
     stiffness: 380,
     damping: 35,
     mass: 1,
   };
 
-  const variants = {
+  const variants: Variants = {
     initial: {
       scale: 0.98,
       opacity: 0,
@@ -52,7 +52,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
       opacity: 0,
       transition: {
         duration: 0.2,
-        ease: "easeOut"
+        ease: "easeOut" as const
       },
     },
   };

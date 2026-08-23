@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
+import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
 
 interface PaymentState {
   cartItems: Array<{
@@ -143,7 +144,9 @@ const PaymentScreen = () => {
     + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
 
   const discount = couponApplied ? 100 : 0;
-  const total = effectiveSubtotal - discount;
+  const platformFeePercent = usePlatformFeePercent();
+  const platformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
+  const total = effectiveSubtotal - discount + platformFee;
 
 
   const applyCoupon = () => {
@@ -784,6 +787,14 @@ const PaymentScreen = () => {
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Coupon Discount</span>
                 <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
+              </div>
+            )}
+            {platformFee > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Platform Charge <span className="text-xs">({platformFeePercent}%)</span>
+                </span>
+                <span className="text-foreground font-semibold tabular-nums">₹ {platformFee}.00</span>
               </div>
             )}
             <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
