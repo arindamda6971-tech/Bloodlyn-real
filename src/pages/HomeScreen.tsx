@@ -18,10 +18,6 @@ import {
   Stethoscope,
   Plus,
   Phone,
-  RotateCw,
-  Wallet,
-  Zap,
-  TrendingUp,
   MessageCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -37,8 +33,7 @@ import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import DeferredMount from "@/components/DeferredMount";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
-import { usePreviousOrders } from "@/hooks/usePreviousOrders";
-import { LabSkeleton, OrderSkeleton, ChipSkeleton } from "@/components/ui/SkeletonCard";
+import { LabSkeleton, ChipSkeleton } from "@/components/ui/SkeletonCard";
 import { intelligentSearch } from "@/utils/search-intelligence";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
@@ -46,16 +41,7 @@ import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import StickySearch from "@/components/ui/StickySearch";
 import { ZomatoStyleHeader } from "@/components/layout/ZomatoStyleHeader";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
 
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
@@ -156,77 +142,13 @@ const HomeScreen = () => {
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
-  const [reorderConfirm, setReorderConfirm] = useState<any | null>(null);
-
-  const handleReorder = async (order: any) => {
-    const toastId = toast.loading("Adding items to cart...");
-    
-    const { data: orderItems, error } = await supabase
-      .from("order_items")
-      .select("*")
-      .eq("order_id", order.id);
-
-    if (error || !orderItems || orderItems.length === 0) {
-      toast.error("Failed to load order items.", { id: toastId });
-      // Fallback
-      replaceCart([{
-        id: `reorder-${order.id}`,
-        name: order.test_name || "Lab Test",
-        price: order.total,
-      }]);
-      navigate('/cart');
-      return;
-    }
-
-    const testIds = orderItems.map((i) => i.test_id).filter(Boolean) as string[];
-    const packageIds = orderItems.map((i) => i.package_id).filter(Boolean) as string[];
-
-    const namesMap: Record<string, string> = {};
-    
-    if (testIds.length > 0) {
-      const { data: tests } = await supabase.from("tests").select("id, name").in("id", testIds);
-      tests?.forEach((t) => (namesMap[t.id] = t.name));
-    }
-    if (packageIds.length > 0) {
-      const { data: packages } = await supabase.from("test_packages").select("id, name").in("id", packageIds);
-      packages?.forEach((p) => (namesMap[p.id] = p.name));
-    }
-
-    const testNamesFromOrder = splitTestNames(order.test_name);
-
-    const newCartItems = orderItems.map((item, index) => {
-      const refId = item.test_id || item.package_id || item.id;
-      let resolvedName = "Lab Test";
-      
-      if (namesMap[refId]) {
-        resolvedName = namesMap[refId];
-      } else if (testNamesFromOrder[index]) {
-        resolvedName = testNamesFromOrder[index];
-      }
-
-      return {
-        id: refId,
-        name: resolvedName,
-        price: Number(item.price) || 0,
-        labId: (item as any).lab_id || undefined,
-        labName: (item as any).lab_name || undefined,
-      };
-    });
-
-    replaceCart(newCartItems);
-    toast.success("Items added to cart!", { id: toastId });
-    navigate('/cart');
-  };
 
   const { data: bridgeData } = useBridgeTests();
   const { pincode: userPincode } = useUserPincode();
 
-  const { data: ordersData, isLoading: ordersLoading } = usePreviousOrders(3);
   const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
 
   const [currentTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
-
-  const previousOrders = ordersData || [];
   const diagnosticCenters = useMemo(() => {
     if (!centersData) return [];
     return centersData.slice(0, 8).map(center => ({
@@ -487,78 +409,7 @@ const HomeScreen = () => {
           ))}
         </section>
 
-        {/* Recent Orders */}
-        {previousOrders.length > 0 && (
-          <section className="mt-10 section-defer">
-            <div className="flex items-center justify-between px-6 mb-4">
-              <h2 className="text-xl font-black text-foreground tracking-tight">Recent Orders 📦</h2>
-              <button onClick={() => navigate('/bookings')} className="text-primary text-xs font-black bg-primary/10 px-3 py-1.5 rounded-full">
-                View all
-              </button>
-            </div>
-            {ordersLoading ? (
-              <div className="flex gap-4 px-6 overflow-hidden">
-                <OrderSkeleton />
-                <OrderSkeleton />
-              </div>
-            ) : (
-              <div className="overflow-x-auto scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch', overscrollBehaviorX: 'contain', touchAction: 'pan-x pan-y' }}>
-                <div className="flex gap-4 px-6 pb-4" style={{ width: 'max-content' }}>
-                  {previousOrders.map((order) => {
-                    const names = splitTestNames(order.test_name);
-                    const label = formatTestsLabel(names, "Lab Test");
-                    return (
-                      <PredictiveLink
-                        key={order.id}
-                        to={`/bookings`}
-                        prefetchKey={["order-details", order.id]}
-                        prefetchFn={async () => {
-                          const { data } = await supabase
-                            .from("orders")
-                            .select("*")
-                            .eq("id", order.id)
-                            .maybeSingle();
-                          return data;
-                        }}
-                        className="bg-card border border-border/40 rounded-3xl p-4 flex flex-col justify-between shadow-sm hover:shadow-md w-56 relative overflow-hidden z-0"
-                      >
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-bl-full -z-10 transition-colors" />
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1 min-w-0 pr-2">
-                            <h3 className="font-extrabold text-foreground text-[15px] line-clamp-2 leading-tight">{label}</h3>
-                            <p className="text-[10px] font-bold text-muted-foreground/60 mt-1 uppercase tracking-wider">{new Date(order.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className={order.status === 'completed' ? 'status-success' : 'status-warning'}>
-                            {order.status || "pending"}
-                          </div>
-                        </div>
-                        <div className="flex items-end justify-between mt-2 pt-3 border-t border-border/40">
-                          <div className="flex flex-col">
-                            <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">Total</span>
-                            <span className="text-lg font-black text-foreground leading-none mt-1">₹{order.total}</span>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (items.length > 0) {
-                                setReorderConfirm(order);
-                              } else {
-                                handleReorder(order);
-                              }
-                            }}
-                            className="w-9 h-9 bg-primary text-primary-foreground rounded-xl flex items-center justify-center active:scale-90 transition-transform shadow-md shadow-primary/20 shrink-0"
-                          >
-                            <RotateCw className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </PredictiveLink>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </section>
-        )}
+
 
         {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
             never competes with the route transition / first paint. */}
@@ -643,31 +494,7 @@ const HomeScreen = () => {
           document.body
         )}
 
-        {/* Reorder Confirmation Dialog */}
-        <AlertDialog open={!!reorderConfirm} onOpenChange={(open) => !open && setReorderConfirm(null)}>
-          <AlertDialogContent className="w-[90vw] max-w-[400px] rounded-[2rem]">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl font-black">Clear Cart?</AlertDialogTitle>
-              <AlertDialogDescription className="text-[13px] font-medium text-muted-foreground leading-relaxed">
-                Reordering these tests will clear out the tests currently in your cart. Do you want to proceed?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-6 flex-row gap-3">
-              <AlertDialogCancel className="mt-0 flex-1 rounded-[1.5rem] h-12 text-sm font-bold border-border/50">Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="flex-1 rounded-[1.5rem] h-12 text-sm font-bold bg-primary text-white"
-                onClick={() => {
-                  if (reorderConfirm) {
-                    handleReorder(reorderConfirm);
-                    setReorderConfirm(null);
-                  }
-                }}
-              >
-                Clear & Reorder
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+
 
       </MobileLayout>
     </div>
