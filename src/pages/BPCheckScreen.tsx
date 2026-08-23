@@ -5,13 +5,14 @@ import {
   ArrowLeft, HeartPulse, MapPin, Calendar, Clock, User, CheckCircle2,
   ChevronRight, AlertTriangle, Search, CreditCard, Building2, Star, Loader2,
   Users, Plus, Heart, CheckCircle, Home, Package, Sparkles, Phone, Beaker, Receipt,
-  Tag, ChevronDown, ChevronUp, Wallet, Banknote,
+  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Lock,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
@@ -76,9 +77,7 @@ type FlowStep =
   | "LAB"
   | "APPOINTMENT"
   | "DETAILS"
-  | "PAYMENT"
-  | "SUMMARY"
-  | "SUCCESS";
+  | "PAYMENT";
 
 interface Address {
   id: string;
@@ -167,6 +166,7 @@ const BPCheckScreen = () => {
   const [showIntro, setShowIntro] = useState(true);
 
   const [step, setStep] = useState<FlowStep>("ADDRESS");
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [bootLoading, setBootLoading] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -413,8 +413,6 @@ const BPCheckScreen = () => {
       case "APPOINTMENT": setStep("LAB"); break;
       case "DETAILS": setStep("APPOINTMENT"); break;
       case "PAYMENT": setStep("DETAILS"); break;
-      case "SUMMARY": setStep("DETAILS"); break;
-      case "SUCCESS": navigate("/"); break;
     }
   };
 
@@ -557,9 +555,30 @@ const BPCheckScreen = () => {
         return;
       }
 
-      setOrderNumber(data.orderNumber || data.orderId);
-      setShowConfetti(true);
-      setStep("SUCCESS");
+      navigate("/order-success", {
+        replace: true,
+        state: {
+          cartItems,
+          addressId: validAddressId,
+          scheduledDate: getIsoDate(appointment.date),
+          scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
+          subtotal: rawPrice,
+          couponApplied,
+          discount,
+          total: price,
+          selectedPayment: selectedPaymentMethod.id,
+          selectedPaymentName: selectedPaymentMethod.name,
+          paymentVerified: true,
+          patientName: patient.name || "Patient",
+          patientAge: validAge,
+          patientGender: patient.gender || "Other",
+          patientPhone: validPhone,
+          orderId: data.orderId,
+          orderNumber: data.orderNumber || data.orderId,
+          selectedLabName: selectedLab.name,
+          selectedLabId: safeLabId || selectedLab.id,
+        }
+      });
     } catch (e: any) {
       console.error("BP booking exception:", e);
       toast.error(e?.message || "Something went wrong. Please try again.");
@@ -605,6 +624,12 @@ const BPCheckScreen = () => {
                 {step === "SUMMARY" && "Review Booking"}
               </p>
             </div>
+            <button 
+              onClick={() => setShowPrivacyDialog(true)}
+              className="w-9 h-9 rounded-full border border-emerald-100 flex items-center justify-center shrink-0"
+            >
+              <Lock className="w-4 h-4 text-emerald-600" />
+            </button>
           </div>
           <div className="px-4 mt-2">
             <div className="flex gap-1 h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
@@ -960,7 +985,7 @@ const BPCheckScreen = () => {
           )}
 
           {step === "PAYMENT" && (
-            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 pb-36">
+            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 pb-4">
               <h2 className="text-xl font-black mb-4">Check Out</h2>
 
               {/* Appointment Details */}
@@ -1064,8 +1089,8 @@ const BPCheckScreen = () => {
                 </div>
               </div>
 
-              {/* Bottom Payment Bar */}
-              <div className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card/95 backdrop-blur-xl border-t border-border/50 px-4 py-3 z-40 shadow-2xl">
+              {/* Checkout Bar (Moved Inline) */}
+              <div className="mt-4 bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4">
                 <div className="flex items-center gap-3">
                   {/* Payment Method Selector button */}
                   <button
@@ -1148,208 +1173,9 @@ const BPCheckScreen = () => {
                   <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-blue-600 text-lg">₹{price}</span></div>
                 </div>
               </div>
-
-              <div className="mt-8">
-                <button
-                  onClick={handlePayment}
-                  disabled={placing}
-                  className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {placing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                  {placing ? "Placing…" : `Proceed to Pay ₹${price}`}
-                </button>
-              </div>
             </motion.div>
           )}
 
-          {step === "SUCCESS" && (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative flex flex-col items-center justify-center min-h-[85vh] px-4 py-6 text-center overflow-hidden"
-            >
-              {/* Confetti */}
-              <AnimatePresence>
-                {showConfetti && (
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-                    {Array.from({ length: 40 }).map((_, i) => (
-                      <ConfettiPiece key={i} index={i} />
-                    ))}
-                  </div>
-                )}
-              </AnimatePresence>
-
-              {/* Radiating rings behind checkmark */}
-              <div className="relative mb-6">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute inset-0 rounded-full border border-primary/20"
-                    initial={{ scale: 0.8, opacity: 0.6 }}
-                    animate={{ scale: 2 + i * 0.8, opacity: 0 }}
-                    transition={{
-                      duration: 2,
-                      delay: 0.5 + i * 0.3,
-                      repeat: Infinity,
-                      ease: "easeOut",
-                    }}
-                    style={{ width: 96, height: 96, top: 0, left: 0 }}
-                  />
-                ))}
-
-                {/* Glow */}
-                <motion.div
-                  className="absolute -inset-4 rounded-full bg-primary/10 blur-xl"
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: [0, 0.6, 0.3], scale: [0.5, 1.2, 1] }}
-                  transition={{ duration: 1.2, delay: 0.2 }}
-                />
-
-                {/* Checkmark circle */}
-                <motion.div
-                  className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg mx-auto"
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
-                  style={{ boxShadow: "0 8px 40px -8px hsl(var(--primary) / 0.5)" }}
-                >
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
-                  >
-                    <CheckCircle className="w-12 h-12 text-white" strokeWidth={2.5} />
-                  </motion.div>
-                </motion.div>
-              </div>
-
-              {/* Title & Subtitle */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="mb-2"
-              >
-                <h1 className="text-2xl font-black text-foreground">Booking Confirmed!</h1>
-              </motion.div>
-
-              <motion.p
-                className="text-muted-foreground text-xs font-medium max-w-xs mb-6"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-              >
-                {selectedLab?.name ?? "Our partner lab"} will visit you for Home BP Check {appointment.date.toLowerCase()}.
-              </motion.p>
-
-              {/* Booking details card */}
-              <motion.div
-                className="w-full max-w-sm bg-card border border-border/50 rounded-3xl p-5 mb-6 text-left shadow-sm space-y-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.6 }}
-              >
-                {/* Booking ID */}
-                <div className="flex items-center gap-3 pb-3 border-b border-border/40">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Package className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1 flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Booking ID</p>
-                      <p className="text-sm font-black text-foreground truncate">{orderNumber ?? "HS20260728-BP"}</p>
-                    </div>
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/60 text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
-                      Confirmed
-                    </span>
-                  </div>
-                </div>
-
-                {/* Expected Arrival */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                    <Calendar className="w-4 h-4 text-blue-600" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Expected Arrival</p>
-                    <p className="text-xs font-bold text-foreground">{appointment.date}, {appointment.timeSlot}</p>
-                  </div>
-                </div>
-
-                {/* Patient info */}
-                {patient.name && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                      <User className="w-4 h-4 text-slate-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Patient</p>
-                      <p className="text-xs font-bold text-foreground truncate">{patient.name} ({patient.age} yrs • {patient.gender})</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Assigned Lab */}
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Assigned Lab</p>
-                    <p className="text-xs font-bold text-foreground truncate">{selectedLab?.name ?? "Partner Diagnostic Center"}</p>
-                  </div>
-                </div>
-
-                {/* Visit Address */}
-                {selectedAddress && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
-                      <MapPin className="w-4 h-4 text-slate-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Visit Address</p>
-                      <p className="text-xs font-medium text-foreground truncate">{selectedAddress.fullAddress}</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Bill Amount */}
-                <div className="flex items-center justify-between pt-3 border-t border-border/40">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-bold text-muted-foreground">Amount Paid</span>
-                  </div>
-                  <span className="text-base font-black text-blue-600">₹{price}</span>
-                </div>
-              </motion.div>
-
-              {/* Actions */}
-              <motion.div
-                className="w-full max-w-sm space-y-3"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <Button
-                  className="w-full h-12 rounded-2xl text-sm font-bold gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20"
-                  onClick={() => navigate("/bookings")}
-                >
-                  <Package className="w-4 h-4" />
-                  View My Bookings
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="w-full h-12 rounded-2xl text-sm font-bold gap-2 border-border/60 text-foreground"
-                  onClick={() => navigate("/")}
-                >
-                  <Home className="w-4 h-4" />
-                  Back to Home
-                </Button>
-              </motion.div>
-            </motion.div>
-          )}
         </AnimatePresence>
         )}
       </div>
@@ -1360,6 +1186,19 @@ const BPCheckScreen = () => {
         onAdd={handleAddFamilyMember}
         existingMembers={familyMembers}
       />
+
+      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+        <DialogContent className="w-[85vw] max-w-sm rounded-3xl p-8 pt-10 text-center gap-3">
+          <DialogTitle className="sr-only">Data Privacy Guaranteed</DialogTitle>
+          <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-1">
+            <Lock className="w-8 h-8 text-emerald-600" strokeWidth={2} />
+          </div>
+          <h2 className="text-xl font-extrabold text-[#1a2b3c] tracking-tight">Data Privacy Guaranteed</h2>
+          <p className="text-[13px] text-slate-500 font-medium px-4">
+            Your data is secure and it's fully encrypted.
+          </p>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };
