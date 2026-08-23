@@ -77,6 +77,8 @@ type FlowStep =
   | "LAB"
   | "APPOINTMENT"
   | "DETAILS"
+  | "SUMMARY"
+  | "SUCCESS"
   | "PAYMENT";
 
 interface Address {

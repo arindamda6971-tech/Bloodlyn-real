@@ -5,7 +5,7 @@ import {
   ArrowLeft, Activity, MapPin, Calendar, Clock, User, CheckCircle2,
   ChevronRight, AlertTriangle, Search, CreditCard, Building2, Star, Loader2,
   Users, Plus, Heart, CheckCircle, Home, Package, Sparkles, Phone, Beaker, Receipt,
-  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope, Lock
+  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope, Lock, HeartPulse
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Input } from "@/components/ui/input";
