@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
+import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
 
 interface PaymentState {
   cartItems: Array<{
