@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { triggerHaptic } from "@/utils/haptics";
+import { useHaptics } from "@/hooks/useHaptics";
 import { toast } from "sonner";
 
 interface CartItem {
@@ -83,6 +84,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { impactMedium, notificationSuccess, impactLight } = useHaptics();
   const [items, setItems] = useState<CartItem[]>(getLocalCart);
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -299,6 +301,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const updated = [...prev, { ...item, quantity: 1 }];
       setLocalCart(updated);
       syncCartToSupabase(updated);
+      impactMedium();
       return updated;
     });
     return true;
@@ -324,9 +327,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const updated = prev.filter((item) => item.id !== id);
       setLocalCart(updated);
       syncCartToSupabase(updated);
+      impactLight();
       return updated;
     });
-  }, [syncCartToSupabase]);
+  }, [syncCartToSupabase, impactLight]);
 
   const updateQuantity = useCallback((id: string, delta: number) => {
     setItems((prev) => {

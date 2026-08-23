@@ -33,7 +33,7 @@ import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import DeferredMount from "@/components/DeferredMount";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
-import { LabSkeleton, ChipSkeleton } from "@/components/ui/SkeletonCard";
+import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
 import { intelligentSearch } from "@/utils/search-intelligence";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
@@ -334,9 +334,8 @@ const HomeScreen = () => {
 
         {/* Diagnostic Centers */}
         {centersLoading ? (
-          <div className="flex gap-4 px-6 mt-6 overflow-hidden">
-            <LabSkeleton />
-            <LabSkeleton />
+          <div className="px-4 mt-6">
+            <AdvancedSkeleton type="lab-card" count={2} />
           </div>
         ) : diagnosticCenters.length > 0 && (
           <div className="mt-4 transform-gpu list-virtual-lg">

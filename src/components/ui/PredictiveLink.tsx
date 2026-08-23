@@ -1,7 +1,7 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { hapticImpact } from "@/utils/haptics";
+import { useHaptics } from "@/hooks/useHaptics";
 
 interface PredictiveLinkProps {
   to: string;
@@ -24,8 +24,9 @@ export const PredictiveLink = ({
 }: PredictiveLinkProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { impactLight, impactMedium } = useHaptics();
 
-  const triggerPrefetch = () => {
+  const triggerPrefetch = useCallback(() => {
     if (prefetchKey && prefetchFn) {
       queryClient.prefetchQuery({
         queryKey: prefetchKey,
@@ -33,15 +34,16 @@ export const PredictiveLink = ({
         staleTime: 5 * 60 * 1000,
       });
     }
-  };
+  }, [prefetchKey, prefetchFn, queryClient]);
 
   const handleStart = () => {
     triggerPrefetch();
+    impactLight(); // Tactile confirmation that interaction has started
   };
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    hapticImpact();
+    impactMedium(); // Stronger feedback on actual click/navigate
     navigate(to);
   };
 
