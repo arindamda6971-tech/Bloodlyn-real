@@ -143,7 +143,9 @@ const PaymentScreen = () => {
     + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
 
   const discount = couponApplied ? 100 : 0;
-  const total = effectiveSubtotal - discount;
+  const platformFeePercent = usePlatformFeePercent();
+  const platformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
+  const total = effectiveSubtotal - discount + platformFee;
 
 
   const applyCoupon = () => {
