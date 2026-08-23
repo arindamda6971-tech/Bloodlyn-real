@@ -5,12 +5,13 @@ import {
   ArrowLeft, Activity, MapPin, Calendar, Clock, User, CheckCircle2,
   ChevronRight, AlertTriangle, Search, CreditCard, Building2, Star, Loader2,
   Users, Plus, Heart, CheckCircle, Home, Package, Sparkles, Phone, Beaker, Receipt,
-  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope
+  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope, Lock
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -180,6 +181,7 @@ const ECGTestScreen = () => {
   const [showIntro, setShowIntro] = useState(true);
 
   const [step, setStep] = useState<FlowStep>("ADDRESS");
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [bootLoading, setBootLoading] = useState(true);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
@@ -606,6 +608,12 @@ const ECGTestScreen = () => {
                 {step === "PAYMENT" && "Payment & Review"}
               </p>
             </div>
+            <button 
+                onClick={() => setShowPrivacyDialog(true)}
+                className="w-9 h-9 rounded-full border border-emerald-100 flex items-center justify-center shrink-0"
+              >
+                <Lock className="w-4 h-4 text-emerald-600" />
+              </button>
           </div>
           <div className="px-4 mt-2">
             <div className="flex gap-1 h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
@@ -721,370 +729,463 @@ const ECGTestScreen = () => {
             )}
 
             {step === "LAB" && (
-              <motion.div key="lab" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-black text-foreground">Select Diagnostic Lab</h2>
-                    <p className="text-xs font-semibold text-muted-foreground">Certified 12-lead ECG technicians & digital reports</p>
-                  </div>
-                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-bold">
-                    Pincode: {pincode}
-                  </Badge>
-                </div>
+            <motion.div key="lab" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+              <h2 className="text-xl font-black mb-1">Pick a lab</h2>
+              <p className="text-xs text-muted-foreground font-medium mb-3">
+                Only labs offering At-Home ECG Test for pincode <span className="font-bold text-foreground">{pincode}</span>
+              </p>
 
-                {labsLoading ? (
-                  <div className="space-y-3 py-6">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="h-32 bg-muted/40 rounded-3xl animate-pulse" />
-                    ))}
+              {selectedAddress && (
+                <div className="mb-5 bg-rose-50/60 border border-rose-100 rounded-2xl p-3 flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
+                    <MapPin className="w-4 h-4 text-rose-600" />
                   </div>
-                ) : labs.length === 0 ? (
-                  <div className="bg-muted/30 border border-border/60 rounded-3xl p-8 text-center space-y-3">
-                    <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto" />
-                    <p className="text-sm font-bold text-foreground">No Labs Found for Pincode {pincode}</p>
-                    <p className="text-xs text-muted-foreground">Try changing your location or pincode to check nearby diagnostic partners.</p>
-                    <Button variant="outline" size="sm" onClick={() => setStep("ADDRESS")} className="rounded-xl">
-                      Change Location
-                    </Button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black uppercase tracking-widest text-rose-700/80">Visit at</p>
+                    <p className="text-xs font-bold text-foreground leading-snug truncate">{selectedAddress.fullAddress}</p>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {labs.map((lab) => (
+                  <button
+                    onClick={() => setStep("ADDRESS")}
+                    className="text-[11px] font-black text-rose-600 uppercase tracking-wider px-2 py-1 rounded-lg active:bg-rose-100 shrink-0"
+                  >
+                    Change
+                  </button>
+                </div>
+              )}
+
+              {labsLoading ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 text-rose-500 animate-spin mb-3" />
+                  <p className="text-xs text-muted-foreground font-semibold">Finding available labs…</p>
+                </div>
+              ) : labs.length === 0 ? (
+                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5 flex gap-3 items-start">
+                  <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-bold text-rose-900">No labs available</p>
+                    <p className="text-xs font-medium text-rose-700/80 mt-1">
+                      No partner lab is currently offering At-Home ECG Test in your pincode. We're expanding fast — please try again soon.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {labs.map((lab) => {
+                    const isSelected = selectedLab?.id === lab.id;
+                    return (
                       <button
                         key={lab.id}
-                        onClick={() => {
-                          setSelectedLab(lab);
-                          setStep("APPOINTMENT");
-                        }}
-                        className={`w-full bg-card border rounded-3xl p-5 text-left transition-all relative overflow-hidden active:scale-[0.98] ${
-                          selectedLab?.id === lab.id
-                            ? "border-rose-500 bg-rose-50/10 shadow-lg shadow-rose-500/10"
-                            : "border-border/60 hover:border-rose-500/40 shadow-sm"
+                        onClick={() => setSelectedLab(lab)}
+                        className={`w-full text-left rounded-2xl p-4 border transition-all shadow-sm active:scale-[0.98] flex gap-3 items-center ${
+                          isSelected ? "bg-rose-50 border-rose-500" : "bg-card border-border/50"
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center font-black text-lg shrink-0">
-                              <Activity className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <h3 className="text-base font-black text-foreground tracking-tight">{lab.name}</h3>
-                              <div className="flex items-center gap-2 mt-1 text-xs">
-                                <span className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full text-[10px]">
-                                  <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                  {lab.rating || 4.8}
-                                </span>
-                                <span className="text-muted-foreground text-[11px]">NABL Accredited Lab</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="text-lg font-black text-emerald-600">₹{lab.home_ecg_price}</span>
-                            <span className="block text-[10px] font-bold text-muted-foreground">All Inclusive</span>
+                        <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center shrink-0 overflow-hidden">
+                          {lab.logo_url ? (
+                            <img loading="lazy" decoding="async" src={lab.logo_url} alt={lab.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Building2 className="w-6 h-6 text-rose-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-foreground truncate">{lab.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            {lab.rating != null && (
+                              <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600">
+                                <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                {Number(lab.rating).toFixed(1)}
+                              </span>
+                            )}
+                            <span className="text-[11px] font-semibold text-muted-foreground">
+                              Home visit
+                            </span>
                           </div>
                         </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Fee</p>
+                          <p className="text-base font-black text-rose-600">₹{lab.home_ecg_price}</p>
+                        </div>
                       </button>
-                    ))}
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {step === "APPOINTMENT" && (
-              <motion.div key="appointment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-6">
-                <div>
-                  <h2 className="text-xl font-black text-foreground">Choose Date & Time Slot</h2>
-                  <p className="text-xs font-semibold text-muted-foreground">Select when our technician should arrive for the ECG test</p>
+                    );
+                  })}
                 </div>
+              )}
 
-                <CollectionSlotPicker
-                  dates={labDays.dates}
-                  dateIds={["Today", "Tomorrow", "DayAfter"]}
-                  selectedDateId={appointment.date}
-                  onSelectDate={(id) => setAppointment((a) => ({ ...a, date: id }))}
-                  openByOffset={labDays.openByOffset}
-                  isLoading={labDays.isLoading}
-                  hasLab={!!selectedLab}
-                  selectedSlot={appointment.timeSlot}
-                  onSelectSlot={(display) => setAppointment((a) => ({ ...a, timeSlot: display }))}
-                />
+              <div className="mt-8">
+                <button
+                  onClick={() => setStep("APPOINTMENT")}
+                  disabled={!selectedLab}
+                  className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-rose-600/20 disabled:opacity-50"
+                >
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === "APPOINTMENT" && (
+            <motion.div key="appointment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+              <h2 className="text-xl font-black mb-6">When should we visit?</h2>
+              <CollectionSlotPicker
+                dates={labDays.dates}
+                dateIds={["Today", "Tomorrow", "DayAfter"]}
+                selectedDateId={appointment.date}
+                onSelectDate={(id) => setAppointment((a) => ({ ...a, date: id }))}
+                openByOffset={labDays.openByOffset}
+                isLoading={labDays.isLoading}
+                hasLab={!!selectedLab}
+                selectedSlot={appointment.timeSlot}
+                onSelectSlot={(display) => setAppointment((a) => ({ ...a, timeSlot: display }))}
+              />
 
 
-                <Button
-                  disabled={!appointment.timeSlot}
+              <div className="mt-10">
+                <button
                   onClick={() => setStep("DETAILS")}
-                  className="w-full h-14 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-600/20"
+                  disabled={!appointment.timeSlot}
+                  className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-rose-600/20 disabled:opacity-50"
                 >
                   Continue to Patient Details
-                </Button>
-              </motion.div>
-            )}
+                </button>
+              </div>
+            </motion.div>
+          )}
 
-            {step === "DETAILS" && (
-              <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-6">
-                <div>
-                  <h2 className="text-xl font-black text-foreground">Patient Information</h2>
-                  <p className="text-xs font-semibold text-muted-foreground">Who is taking the At-Home 12-Lead ECG Test?</p>
+          {step === "DETAILS" && (
+            <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+              <h2 className="text-xl font-black mb-4">Patient Information</h2>
+
+              {/* Family Member Selection */}
+              <div className="mb-6 bg-muted/30 border border-border/40 rounded-2xl p-3.5">
+                <div className="flex items-center justify-between mb-3 px-0.5">
+                  <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-rose-600" /> Who is this ECG test for?
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setAddMemberOpen(true)}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1 bg-rose-50 active:bg-rose-100 px-2.5 py-1 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add Member
+                  </button>
                 </div>
 
-                {/* Family member quick selection */}
-                <div className="space-y-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-muted-foreground px-1">Select Patient</span>
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                    <button
-                      onClick={() => {
-                        setSelectedMemberId("self");
-                        setPatient({
+                <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+                  {/* Self Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMemberId("self");
+                      if (selfProfile) {
+                        setPatient((p) => ({
+                          ...p,
                           name: selfProfile.name,
                           age: selfProfile.age,
                           gender: selfProfile.gender,
                           mobile: selfProfile.mobile,
-                          notes: "",
-                        });
-                      }}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-                        selectedMemberId === "self"
-                          ? "bg-rose-600 text-white shadow-xs"
-                          : "bg-muted/40 text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      Myself ({selfProfile.name || "Self"})
-                    </button>
-                    {(familyMembers || []).map((m) => (
+                        }));
+                      }
+                    }}
+                    className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+                      selectedMemberId === "self"
+                        ? "bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/20"
+                        : "bg-card border-border/50 text-foreground hover:border-rose-300"
+                    }`}
+                  >
+                    <User className="w-3.5 h-3.5" />
+                    <span>Self {selfProfile?.name ? `(${selfProfile.name})` : ""}</span>
+                  </button>
+
+                  {/* Family Members List */}
+                  {familyMembers.map((m) => {
+                    const isSelected = selectedMemberId === m.id;
+                    return (
                       <button
                         key={m.id}
                         type="button"
                         onClick={() => {
                           setSelectedMemberId(m.id);
-                          setPatient({
-                            name: m.fullName || "",
-                            age: String(m.age || ""),
-                            gender: m.gender || "Male",
-                            mobile: m.phone || selfProfile.mobile || "",
-                            notes: "",
-                          });
+                          setPatient((p) => ({
+                            ...p,
+                            name: m.fullName,
+                            age: m.age,
+                            gender: m.gender,
+                            mobile: m.phone || p.mobile,
+                          }));
                         }}
-                        className={`px-4 py-2.5 rounded-xl text-xs font-bold shrink-0 transition-all ${
-                          selectedMemberId === m.id
-                            ? "bg-rose-600 text-white shadow-xs"
-                            : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 border transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-rose-600 text-white border-rose-600 shadow-sm shadow-rose-600/20"
+                            : "bg-card border-border/50 text-foreground hover:border-rose-300"
                         }`}
                       >
-                        {m.fullName} ({m.relationship || "Family"})
+                        <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+                        <span>{m.relationship === "Other" ? m.customRelationship || "Relative" : m.relationship} ({m.fullName})</span>
                       </button>
-                    ))}
-
-                    <button
-                      onClick={() => setAddMemberOpen(true)}
-                      className="px-3 py-2.5 rounded-xl text-xs font-bold shrink-0 border border-dashed border-rose-300 text-rose-600 flex items-center gap-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add Member
-                    </button>
-                  </div>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div className="space-y-4 bg-card border border-border/60 p-5 rounded-3xl shadow-xs">
-                  <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-1">Full Name</label>
-                    <Input
-                      value={patient.name}
-                      onChange={(e) => setPatient((p) => ({ ...p, name: e.target.value }))}
-                      placeholder="Enter patient full name"
-                      className="h-11 rounded-xl bg-muted/30"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-muted-foreground mb-1">Age (Years)</label>
-                      <Input
-                        type="number"
-                        value={patient.age}
-                        onChange={(e) => setPatient((p) => ({ ...p, age: sanitizeAge(e.target.value) }))}
-                        placeholder="Age"
-                        className="h-11 rounded-xl bg-muted/30"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-muted-foreground mb-1">Gender</label>
-                      <select
-                        value={patient.gender}
-                        onChange={(e) => setPatient((p) => ({ ...p, gender: e.target.value }))}
-                        className="w-full h-11 rounded-xl bg-muted/30 border border-input px-3 text-xs font-bold"
-                      >
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-1">Mobile Number</label>
-                    <Input
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="tel"
-                      enterKeyHint="done"
-                      maxLength={10}
-                      value={patient.mobile}
-                      onChange={(e) => setPatient((p) => ({ ...p, mobile: sanitizePhone(e.target.value) }))}
-                      placeholder="10-digit mobile number"
-                      className="h-11 rounded-xl bg-muted/30 font-semibold"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-muted-foreground mb-1">Special Symptoms / Instructions (Optional)</label>
-                    <Textarea
-                      value={patient.notes}
-                      onChange={(e) => setPatient((p) => ({ ...p, notes: e.target.value }))}
-                      placeholder="Chest discomfort, routine cardiac check, etc."
-                      className="rounded-xl bg-muted/30 text-xs min-h-[70px]"
-                    />
-                  </div>
-                </div>
-
-                <Button
-                  onClick={progressToPayment}
-                  className="w-full h-14 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-600/20"
-                >
-                  Proceed to Payment & Review
-                </Button>
-              </motion.div>
-            )}
-
-            {step === "PAYMENT" && (
-              <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 space-y-6">
+              <div className="space-y-5">
                 <div>
-                  <h2 className="text-xl font-black text-foreground">Review & Payment</h2>
-                  <p className="text-xs font-semibold text-muted-foreground">Complete your booking for At-Home 12-Lead ECG Test</p>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Full Name</label>
+                  <Input placeholder="Enter patient's name" value={patient.name} onChange={(e) => setPatient({ ...patient, name: e.target.value })} className="h-14 bg-card rounded-2xl" />
                 </div>
-
-                {/* Booking Summary Card */}
-                <div className="bg-card border border-border/60 p-5 rounded-3xl space-y-3.5 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center shrink-0">
-                        <Activity className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-black text-foreground">{selectedLab?.name}</h3>
-                        <p className="text-[11px] text-muted-foreground font-semibold">12-Lead ECG Test At Home</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-[10px] font-bold">
-                      Certified Lab
-                    </Badge>
+                <div className="flex gap-4">
+                  <div className="flex-1">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Age</label>
+                    <Input type="text" inputMode="numeric" maxLength={3} placeholder="e.g. 45" value={patient.age} onChange={(e) => setPatient({ ...patient, age: sanitizeAge(e.target.value) })} className="h-14 bg-card rounded-2xl" />
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="block text-[10px] font-bold text-muted-foreground uppercase">Patient</span>
-                      <span className="font-bold text-foreground">{patient.name} ({patient.age}y, {patient.gender})</span>
+                  <div className="flex-[2]">
+                    <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Gender</label>
+                    <div className="flex gap-2">
+                      {["Male", "Female"].map((g) => (
+                        <button key={g} onClick={() => setPatient({ ...patient, gender: g })} className={`flex-1 h-14 rounded-2xl font-bold text-sm border ${patient.gender === g ? "bg-rose-600 text-white border-rose-600" : "bg-card border-border/50 text-foreground"}`}>{g}</button>
+                      ))}
                     </div>
-                    <div>
-                      <span className="block text-[10px] font-bold text-muted-foreground uppercase">Scheduled Slot</span>
-                      <span className="font-bold text-foreground">{appointment.date} • {appointment.timeSlot.split(" ")[0]}</span>
-                    </div>
-                  </div>
-
-                  <div className="text-xs border-t border-border/40 pt-3">
-                    <span className="block text-[10px] font-bold text-muted-foreground uppercase mb-0.5">Visit Location</span>
-                    <span className="text-muted-foreground font-medium">{selectedAddress?.fullAddress}</span>
                   </div>
                 </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Mobile Number</label>
+                  <Input type="tel" inputMode="numeric" maxLength={10} placeholder="10-digit mobile" value={patient.mobile} onChange={(e) => setPatient({ ...patient, mobile: sanitizePhone(e.target.value) })} className="h-14 bg-card rounded-2xl" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Optional Notes</label>
+                  <Textarea placeholder="e.g., High BP history, feels dizzy" value={patient.notes} onChange={(e) => setPatient({ ...patient, notes: e.target.value })} className="min-h-[100px] bg-card rounded-2xl resize-none" />
+                </div>
+              </div>
+              <div className="mt-8">
+                <button
+                  onClick={progressToPayment}
+                  disabled={!patient.name || !patient.age || !patient.gender || patient.mobile.length !== 10}
+                  className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-rose-600/20 disabled:opacity-50"
+                >
+                  Proceed to Check Out
+                </button>
+              </div>
+            </motion.div>
+          )}
 
-                {/* Coupon Code Section */}
-                <div className="bg-card border border-border/60 p-4 rounded-2xl flex gap-2 items-center">
-                  <Tag className="w-4 h-4 text-rose-500 shrink-0" />
+          {step === "PAYMENT" && (
+            <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 pb-4">
+              <h2 className="text-xl font-black mb-4">Check Out</h2>
+
+              {/* Appointment Details */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
+                  <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-rose-600" /> Appointment Details
+                  </h3>
+                  {appointmentOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+                {appointmentOpen && (
+                  <div className="mt-3 pt-3 border-t border-border/40 space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-foreground font-semibold">
+                      <Building2 className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{selectedLab?.name ?? "Partner Diagnostic Lab"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-foreground">
+                      <Clock className="w-3.5 h-3.5 text-rose-600" />
+                      <span>{(dateOptions.find(o => o.id === appointment.date)?.label || appointment.date)} • {appointment.timeSlot}</span>
+                    </div>
+                    {selectedAddress && (
+                      <div className="flex items-start gap-2 text-muted-foreground">
+                        <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                        <span className="leading-snug">{selectedAddress.fullAddress}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Order & Patient Details */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
+                  <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <User className="w-4 h-4 text-rose-600" /> Order & Patient Details
+                  </h3>
+                  {orderOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+                {orderOpen && (
+                  <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-foreground">{patient.name}</span>
+                      <span className="text-muted-foreground font-medium">{patient.age} yrs • {patient.gender} • +91 {patient.mobile}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs pt-2 border-t border-border/30">
+                      <span className="font-medium text-foreground">At-Home ECG Test — {selectedLab?.name}</span>
+                      <span className="font-bold text-foreground">₹{rawPrice}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Offers & Benefits */}
+              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-rose-600" /> Offers & Benefits
+                </h3>
+                <div className="flex gap-2">
                   <Input
-                    placeholder="Enter coupon code (e.g. ECG100)"
+                    placeholder="Apply Coupon (e.g. HEALTH100)"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    className="h-9 text-xs bg-muted/30 border-0 uppercase font-bold"
+                    disabled={couponApplied}
+                    className="h-11 bg-muted/50 rounded-xl text-xs font-semibold uppercase tracking-wider"
                   />
-                  <Button size="sm" onClick={applyCoupon} className="h-9 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white">
-                    Apply
+                  <Button
+                    onClick={applyCoupon}
+                    disabled={couponApplied || !couponCode.trim()}
+                    className="h-11 px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
+                  >
+                    {couponApplied ? "Applied" : "Apply"}
                   </Button>
                 </div>
-
-                {/* Price Breakdown */}
-                <div className="bg-card border border-border/60 p-5 rounded-3xl space-y-2.5 text-xs">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>12-Lead ECG Test Fee</span>
-                    <span>₹{rawPrice}</span>
-                  </div>
-                  {couponApplied && (
-                    <div className="flex justify-between text-emerald-600 font-bold">
-                      <span>Coupon Discount</span>
-                      <span>-₹100</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-base font-black text-foreground pt-2 border-t border-border/40">
-                    <span>Total Payable</span>
-                    <span className="text-emerald-600">₹{price}</span>
-                  </div>
-                </div>
-
-                <TermsConsent checked={acceptedTerms} onCheckedChange={setAcceptedTerms} className="mb-4" />
-                <Button
-                  onClick={handlePlaceOrder}
-                  disabled={!acceptedTerms || placing}
-                  className="w-full h-14 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 hover:opacity-95 text-white font-bold shadow-lg shadow-rose-600/25"
-                >
-                  {placing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <CheckCircle2 className="w-5 h-5 mr-2" />}
-                  {placing ? "Placing Booking..." : `Confirm ECG Booking • ₹${price}`}
-                </Button>
-              </motion.div>
-            )}
-
-            {step === "SUCCESS" && (
-              <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-6 text-center space-y-6 min-h-[70vh] flex flex-col justify-center items-center relative">
-                {showConfetti && Array.from({ length: 40 }).map((_, i) => <ConfettiPiece key={i} index={i} />)}
-
-                <div className="w-20 h-20 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shadow-xl shadow-rose-500/20">
-                  <Activity className="w-10 h-10 animate-bounce" />
-                </div>
-
-                <div>
-                  <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 font-bold px-3 py-1 mb-2">
-                    Booking Confirmed 🎉
+                {couponApplied && (
+                  <Badge variant="softSuccess" className="mt-2.5 text-[11px] font-bold">
+                    HEALTH100 applied — ₹100 off
                   </Badge>
-                  <h2 className="text-2xl font-black text-foreground tracking-tight">At-Home ECG Test Booked!</h2>
-                  <p className="text-xs text-muted-foreground font-semibold mt-1">
-                    Booking ID: <span className="font-bold text-foreground">{orderNumber || "ECG-CONFIRMED"}</span>
-                  </p>
-                </div>
+                )}
+              </div>
 
-                <div className="bg-card border border-border/60 rounded-3xl p-5 w-full max-w-sm text-left space-y-3 shadow-sm text-xs">
-                  <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                    <span className="font-bold text-foreground">{selectedLab?.name}</span>
-                    <span className="font-black text-emerald-600">₹{price}</span>
+              {/* Bill Summary */}
+              <div className="bg-card border border-border/50 rounded-3xl p-5 shadow-sm space-y-3">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-1">Bill Summary</h3>
+                <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+                  <span>MRP Total</span>
+                  <span className="text-foreground">₹{rawPrice}.00</span>
+                </div>
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Home Visit Fee</span>
+                  <span className="text-emerald-600 font-bold">FREE</span>
+                </div>
+                {couponApplied && (
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-muted-foreground">Coupon Discount</span>
+                    <span className="text-emerald-600 font-bold">- ₹{discount}.00</span>
+                  </div>
+                )}
+                <div className="pt-3 border-t border-border/40 flex justify-between items-center">
+                  <span className="text-sm font-black text-foreground">Payable Amount</span>
+                  <span className="text-lg font-black text-rose-600">₹{price}.00</span>
+                </div>
+              </div>
+
+              {/* Checkout Bar (Moved Inline) */}
+              <div className="mt-4 bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4">
+                <div className="flex items-center gap-3">
+                  {/* Payment Method Selector button */}
+                  <button
+                    onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total: price } })}
+                    className="flex items-center gap-2 text-left shrink-0 active:scale-95 transition-transform"
+                  >
+                    <div className="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center">
+                      <Wallet className="w-5 h-5 text-rose-600" />
+                    </div>
+                    <div>
+                      <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground">Pay Using</span>
+                      <span className="block text-xs font-bold text-foreground flex items-center gap-0.5">
+                        {selectedPaymentMethod.name} <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Place Order Button */}
+                  <Button
+                    onClick={handlePlaceOrder}
+                    disabled={placing}
+                    className="flex-1 h-13 rounded-2xl text-sm font-black bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 disabled:opacity-60"
+                  >
+                    {placing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CreditCard className="w-4 h-4" />
+                    )}
+                    <span>{placing ? "Placing Order…" : `Place Order • ₹${price}`}</span>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step === "SUMMARY" && (
+            <motion.div key="summary" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+              <h2 className="text-xl font-black mb-6">Booking Summary</h2>
+
+              <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
+                <div className="flex items-start gap-4 mb-5 pb-5 border-b border-border/40">
+                  <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
+                    <HeartPulse className="w-6 h-6 text-rose-600" />
                   </div>
                   <div>
-                    <span className="block text-[10px] font-bold text-muted-foreground uppercase">Patient</span>
-                    <span className="font-bold text-foreground">{patient.name}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[10px] font-bold text-muted-foreground uppercase">Scheduled Visit</span>
-                    <span className="font-bold text-foreground">{appointment.date} • {appointment.timeSlot}</span>
+                    <h3 className="text-[15px] font-black text-foreground mb-1">At-Home ECG Test</h3>
+                    <p className="text-xs font-medium text-muted-foreground">{selectedLab?.name}</p>
                   </div>
                 </div>
+                <div className="space-y-4">
+                  <div className="flex gap-3 items-start">
+                    <User className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <span className="block text-xs font-bold text-foreground">{patient.name}</span>
+                      <span className="block text-[11px] font-medium text-muted-foreground">{patient.age} yrs • {patient.gender} • +91 {patient.mobile}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <span className="block text-xs font-bold text-foreground">{appointment.date}</span>
+                      <span className="block text-[11px] font-medium text-muted-foreground">{appointment.timeSlot}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <span className="block text-xs font-bold text-foreground">Visit Address</span>
+                      <span className="block text-[11px] font-medium text-muted-foreground leading-relaxed">{selectedAddress?.fullAddress}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                <div className="flex flex-col w-full max-w-sm gap-3">
-                  <Button onClick={() => navigate("/bookings")} className="h-14 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold shadow-lg shadow-rose-600/20">
-                    View My Bookings
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate("/")} className="h-12 rounded-2xl font-bold">
-                    Return to Home
-                  </Button>
+              <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
+                <h3 className="text-[13px] font-black uppercase tracking-widest text-muted-foreground mb-4">Payment Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{price}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Convenience Fee</span><span className="font-bold text-success">Free</span></div>
+                  <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-rose-600 text-lg">₹{price}</span></div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+            </motion.div>
+          )}
+
+        </AnimatePresence>
         )}
       </div>
 
       <AddFamilyMemberDialog open={addMemberOpen} onOpenChange={setAddMemberOpen} onAdd={() => setAddMemberOpen(false)} />
-    </MobileLayout>
+    
+      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+        <DialogContent className="w-[85vw] max-w-sm rounded-3xl p-8 pt-10 text-center gap-3">
+          <DialogTitle className="sr-only">Data Privacy Guaranteed</DialogTitle>
+          <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mb-1">
+            <Lock className="w-8 h-8 text-emerald-600" strokeWidth={2} />
+          </div>
+          <h2 className="text-xl font-extrabold text-[#1a2b3c] tracking-tight">Data Privacy Guaranteed</h2>
+          <p className="text-[13px] text-slate-500 font-medium px-4">
+            Your data is secure and it's fully encrypted.
+          </p>
+          
+          <Button 
+            onClick={() => setShowPrivacyDialog(false)}
+            className="w-full mt-4 h-12 rounded-2xl bg-[#1a2b3c] text-white font-bold hover:bg-[#2a3b4c]"
+          >
+            Okay, got it
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      </MobileLayout>
   );
 };
 
