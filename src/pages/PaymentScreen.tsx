@@ -789,6 +789,14 @@ const PaymentScreen = () => {
                 <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
               </div>
             )}
+            {platformFee > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Platform Charge <span className="text-xs">({platformFeePercent}%)</span>
+                </span>
+                <span className="text-foreground font-semibold tabular-nums">₹ {platformFee}.00</span>
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
               <span className="font-bold text-foreground">Payable Amount</span>
               <span className="font-black text-lg text-primary tabular-nums">₹ {total}.00</span>
