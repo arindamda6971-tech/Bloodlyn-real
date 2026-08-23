@@ -359,13 +359,15 @@ const HomeScreen = () => {
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
                 <>
-                  <OptimizedImage
-                    src={action.bgImage}
-                    alt="Background"
-                    containerClassName="absolute inset-0 w-full h-full z-0"
-                    className="w-full h-full object-cover object-right"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-white/40 z-0" />
+                  <div className="absolute right-0 top-0 bottom-0 w-[45%] z-0">
+                    <OptimizedImage
+                      src={action.bgImage}
+                      alt="Background"
+                      containerClassName="absolute inset-0 w-full h-full"
+                      className="w-full h-full object-cover object-center"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent z-10 pointer-events-none" />
+                  </div>
                 </>
               )}
 
