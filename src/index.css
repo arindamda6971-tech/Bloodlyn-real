@@ -218,19 +218,24 @@
     perspective: 1000;
   }
 
-  /* Professional "Slow-Momentum" Profile */
-  .overflow-y-auto, .overflow-auto, [data-scroll-area] {
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: auto;
-  }
-  .overflow-x-auto {
-    overscroll-behavior-x: contain;
-    -webkit-overflow-scrolling: touch;
+  /* Professional "Native-Feel" Interaction Profiles */
+  button,
+  a,
+  [role="button"],
+  .clickable-tile {
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
+  button:active,
+  a:active,
+  [role="button"]:active,
+  .clickable-tile:active {
+    transform: scale(0.96) !important;
+    opacity: 0.8;
+  }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* Extreme List Optimization
     letter-spacing: -0.022em;
     font-feature-settings: "kern", "liga", "calt", "ss01";
     text-wrap: balance;
@@ -278,6 +283,8 @@
   * {
     scrollbar-width: none;
     -ms-overflow-style: none;
+    /* Force 60fps scrolling on all containers */
+    -webkit-overflow-scrolling: touch;
   }
 
   *::-webkit-scrollbar {

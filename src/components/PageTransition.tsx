@@ -1,7 +1,8 @@
-import { ReactNode, Suspense } from "react";
+import { ReactNode, Suspense, useState, useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import RouteFallback from "./RouteFallback";
+import { useHaptics } from "@/hooks/useHaptics";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
@@ -14,32 +15,44 @@ interface PageTransitionProps {
  * High-Performance "Scale & Fade" transition.
  * More efficient on mobile GPUs than full-screen slide translations.
  * Eliminates lag by using only transform: scale and opacity.
+ *
+ * LOCKING MECHANISM: Uses a nested component to freeze the route content
+ * during exit, preventing the "Flash" where an exiting page suddenly
+ * shows the new page's content.
  */
 const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
+  const { impactLight } = useHaptics();
 
-  const transition = {
-    duration: 0.3,
-    ease: [0.33, 1, 0.68, 1], // Custom cubic-bezier for a "Native Zoom" feel
+  // Trigger subtle haptic on navigation
+  useEffect(() => {
+    impactLight();
+  }, [location.pathname, impactLight]);
+
+  const springTransition = {
+    type: "spring",
+    stiffness: 380,
+    damping: 35,
+    mass: 1,
   };
 
   const variants = {
     initial: {
-      scale: 0.95,
+      scale: 0.98,
       opacity: 0,
     },
     animate: {
       scale: 1,
       opacity: 1,
-      transition,
+      transition: springTransition,
     },
     exit: {
-      scale: 1.05,
+      scale: 1.02,
       opacity: 0,
       transition: {
-        duration: 0.25,
-        ease: "easeInOut"
+        duration: 0.2,
+        ease: "easeOut"
       },
     },
   };
@@ -54,6 +67,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         height: "100%",
         backgroundColor: "hsl(var(--background))",
         overflow: "hidden",
+        contain: "paint size layout",
       }}
     >
       <AnimatePresence mode="popLayout" initial={false}>
@@ -71,15 +85,25 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             left: 0,
             backgroundColor: "hsl(var(--background))",
             willChange: "transform, opacity",
+            zIndex: 1,
           }}
         >
           <Suspense fallback={<RouteFallback />}>
-            {children}
+            <FrozenRoute children={children} />
           </Suspense>
         </motion.div>
       </AnimatePresence>
     </div>
   );
+};
+
+/**
+ * Ensures the route content is captured at the moment of transition start.
+ * Prevents exiting pages from re-rendering with new route data.
+ */
+const FrozenRoute = ({ children }: { children: ReactNode }) => {
+  const [frozen] = useState(children);
+  return <>{frozen}</>;
 };
 
 export default PageTransition;

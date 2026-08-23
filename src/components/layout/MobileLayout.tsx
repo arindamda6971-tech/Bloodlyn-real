@@ -45,10 +45,11 @@ const MobileLayout = ({
 
   return (
     <div
-      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden pt-safe"
+      className="min-h-[100dvh] h-[100dvh] bg-background w-full md:max-w-[430px] mx-auto relative overflow-hidden"
       style={{
         touchAction: 'pan-y',
         WebkitTapHighlightColor: 'transparent',
+        paddingTop: 'var(--sat)',
       }}
     >
       {enablePullToRefresh ? (

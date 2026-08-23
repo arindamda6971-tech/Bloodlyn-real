@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useHaptics } from "@/hooks/useHaptics";
 
 /**
  * Step 7 — native chrome integration.
@@ -15,6 +16,7 @@ import { useTheme } from "@/contexts/ThemeContext";
  */
 const NativeChrome = () => {
   const { theme } = useTheme();
+  const { impactLight } = useHaptics();
 
   // Flag the document so CSS can drop WebView-expensive effects on native.
   useEffect(() => {
@@ -66,6 +68,8 @@ const NativeChrome = () => {
       if (!target) return;
       const tag = target.tagName;
       if (tag !== "INPUT" && tag !== "TEXTAREA" && tag !== "SELECT") return;
+
+      impactLight();
 
       // Wait for the keyboard/resize to settle, then reveal the field.
       window.setTimeout(() => {

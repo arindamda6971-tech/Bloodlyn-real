@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { onAppReady } from "./lib/boot";
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
@@ -56,20 +57,22 @@ runOneTimeCacheMigration();
 setupMemoryManagement();
 
 // Remove the static HTML loader the moment React has painted its first frame.
-// (Previously it waited for window.load + 500ms, which added visible startup lag.)
 function hideBootLoader() {
   const loader = document.getElementById("app-loading-screen");
   if (!loader) return;
-  loader.style.transition = "opacity 200ms ease";
+  loader.style.transition = "opacity 220ms ease";
   loader.style.opacity = "0";
-  setTimeout(() => loader.remove(), 220);
+  setTimeout(() => {
+    if (loader.parentNode) loader.remove();
+    // Also hide the native splash screen if it's still up
+    SplashScreen.hide().catch(() => {});
+  }, 230);
 }
 (window as unknown as { __blHideLoader?: () => void }).__blHideLoader = hideBootLoader;
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Hide the HTML loader when the first real screen is ready (splash/auth gate has
-// decided what to show), or after a short cap so a slow session lookup can never
-// strand the loader on screen.
+// Hide the HTML loader when the first real screen is ready.
 onAppReady(() => requestAnimationFrame(() => requestAnimationFrame(hideBootLoader)));
-setTimeout(hideBootLoader, 1200);
+// Safety cap: never leave the user stranded on the loader.
+setTimeout(hideBootLoader, 3500);
