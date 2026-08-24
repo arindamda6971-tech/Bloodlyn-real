@@ -63,6 +63,8 @@ const PaymentScreen = () => {
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
+  const [labOffers, setLabOffers] = useState<any[]>([]);
+  const [appliedOffer, setAppliedOffer] = useState<any | null>(null);
 
   const idempotencyKeyRef = useRef<string | null>(null);
 
@@ -137,20 +139,67 @@ const PaymentScreen = () => {
     };
   }, [orderLabId, alreadyHasBpItem, alreadyHasEcgItem]);
 
+  const orderVendorId = (() => {
+    const raw = paymentState?.labVendorId || paymentState?.cartItems?.[0]?.vendorId || "";
+    return UUID_MATCH.test(raw) ? raw : null;
+  })();
+
+  useEffect(() => {
+    if (!orderVendorId) return;
+    let cancelled = false;
+    const fetchOffers = async () => {
+      const { data, error } = await supabase
+        .from('lab_offers')
+        .select('*')
+        .eq('lab_id', orderVendorId)
+        .eq('is_active', true)
+        .gte('end_date', new Date().toISOString().split('T')[0])
+        .order('created_at', { ascending: false });
+      if (!cancelled && data) {
+        setLabOffers(data);
+      }
+    };
+    fetchOffers();
+    return () => { cancelled = true; };
+  }, [orderVendorId]);
+
   const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
   const ecgAddonActive = ecgAddonPrice !== null && ecgAddonSelected;
   const effectiveSubtotal = stateSubtotal 
     + (bpAddonActive ? (bpAddonPrice || 0) : 0)
     + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
 
-  const discount = couponApplied ? 100 : 0;
+  let appliedDiscount = 0;
+  let isFreeDelivery = false;
+  
+  if (appliedOffer) {
+    if (appliedOffer.type === 'flat_discount') {
+      appliedDiscount = appliedOffer.discount_value || 0;
+    } else if (appliedOffer.type === 'percentage_discount') {
+      let calc = (stateSubtotal * (appliedOffer.discount_value || 0)) / 100;
+      if (appliedOffer.max_discount_cap) {
+        calc = Math.min(calc, appliedOffer.max_discount_cap);
+      }
+      appliedDiscount = calc;
+    } else if (appliedOffer.type === 'free_delivery') {
+      isFreeDelivery = true;
+    }
+  } else if (couponApplied) {
+    appliedDiscount = 100;
+  }
+
+  const discount = Math.round(appliedDiscount);
   const platformFeePercent = usePlatformFeePercent();
-  const platformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
+  const basePlatformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
+  const platformFee = isFreeDelivery ? 0 : basePlatformFee;
   const total = effectiveSubtotal - discount + platformFee;
 
 
   const applyCoupon = () => {
-    if (couponCode.toUpperCase() === "HEALTH100") setCouponApplied(true);
+    if (couponCode.toUpperCase() === "HEALTH100") {
+      setCouponApplied(true);
+      setAppliedOffer(null);
+    }
   };
 
   const formatDate = (dateStr: string | null | undefined) => {
@@ -728,6 +777,84 @@ const PaymentScreen = () => {
           </motion.button>
         )}
 
+        {/* Lab Offers */}
+        {labOffers.length > 0 && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="mb-4 space-y-3">
+            <h3 className="text-base font-bold text-foreground tracking-tight px-1">Offers for you</h3>
+            <div className="flex flex-col gap-3">
+              {labOffers.map((offer) => {
+                const isApplicable = stateSubtotal >= offer.min_order_amount;
+                const isSelected = appliedOffer?.id === offer.id;
+                
+                let title = "";
+                let desc = "";
+                if (offer.type === 'free_delivery') {
+                  title = `Free delivery on orders above ₹${offer.min_order_amount}`;
+                  desc = "Waives platform and home collection fees";
+                } else if (offer.type === 'percentage_discount') {
+                  title = `${offer.discount_value}% off on orders above ₹${offer.min_order_amount}`;
+                  desc = offer.max_discount_cap ? `Up to ₹${offer.max_discount_cap}` : "";
+                } else if (offer.type === 'flat_discount') {
+                  title = `Flat ₹${offer.discount_value} off on orders above ₹${offer.min_order_amount}`;
+                }
+                
+                return (
+                  <div 
+                    key={offer.id} 
+                    className={`relative rounded-2xl border p-4 transition-colors overflow-hidden ${
+                      !isApplicable ? "border-border/50 bg-muted/30 grayscale-[50%] opacity-80" 
+                      : isSelected ? "border-primary bg-primary/5" 
+                      : "border-border/70 bg-card"
+                    }`}
+                  >
+                    {!isApplicable && <div className="absolute inset-0 bg-background/40 z-0 pointer-events-none" />}
+                    <div className="relative z-10 flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        offer.type === 'free_delivery' ? "bg-emerald-500/10" : "bg-primary/10"
+                      }`}>
+                        {offer.type === 'percentage_discount' ? (
+                           <span className="font-bold text-primary">%</span>
+                        ) : (
+                           <Tag className={`w-5 h-5 ${offer.type === 'free_delivery' ? "text-emerald-600" : "text-primary"}`} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0 pr-16">
+                        <p className="text-sm font-bold text-foreground">{title}</p>
+                        {desc && <p className="text-xs text-muted-foreground mt-1">{desc}</p>}
+                        {!isApplicable && (
+                          <p className="text-[10px] font-semibold text-destructive mt-1.5">
+                            Add items worth ₹{offer.min_order_amount - stateSubtotal} more to apply
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {isApplicable && (
+                      <Button
+                        variant={isSelected ? "ghost" : "soft"}
+                        size="sm"
+                        className={`relative z-10 absolute right-4 top-4 h-8 px-4 font-bold ${
+                          isSelected ? "text-destructive hover:bg-destructive/10 hover:text-destructive" : "text-primary"
+                        }`}
+                        onClick={() => {
+                          if (isSelected) {
+                            setAppliedOffer(null);
+                          } else {
+                            setAppliedOffer(offer);
+                            setCouponCode("");
+                            setCouponApplied(false);
+                          }
+                        }}
+                      >
+                        {isSelected ? "Remove" : "Apply"}
+                      </Button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* Offers & Benefits */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
           <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Offers &amp; Benefits</h3>
@@ -783,13 +910,20 @@ const PaymentScreen = () => {
               <span className="text-muted-foreground">Home Collection</span>
               <span className="text-success font-bold">FREE</span>
             </div>
-            {couponApplied && (
+            {discount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Coupon Discount</span>
+                <span className="text-muted-foreground">{appliedOffer ? "Offer Discount" : "Coupon Discount"}</span>
                 <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
               </div>
             )}
-            {platformFee > 0 && (
+            {isFreeDelivery ? (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Platform Charge <span className="text-xs line-through ml-1">₹{basePlatformFee}</span>
+                </span>
+                <span className="text-success font-bold tabular-nums">FREE</span>
+              </div>
+            ) : platformFee > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">
                   Platform Charge <span className="text-xs">({platformFeePercent}%)</span>

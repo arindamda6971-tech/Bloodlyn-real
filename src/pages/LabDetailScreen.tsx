@@ -808,20 +808,7 @@ const LabDetailScreen = () => {
           </div>
         )}
 
-        {/* About Section */}
-        <div className="px-5 mt-6 mb-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[17px] font-black text-foreground tracking-tight">About</h2>
-            {lab.homeCollection && (
-              <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
-                Home Collection
-              </span>
-            )}
-          </div>
-          <p className="text-[13px] font-medium text-muted-foreground leading-relaxed line-clamp-2">
-            {labName} is a state-of-the-art diagnostic center providing accurate, fast, and reliable health tests. With our highly trained staff and advanced equipment, we ensure a premium healthcare experience. We specialize in pathology, wellness checkups, and specialized clinical diagnostics.
-          </p>
-        </div>
+
 
         {/* Active Offers Section */}
         <ActiveOffers centerId={labFromDb?.vendor_id} />
