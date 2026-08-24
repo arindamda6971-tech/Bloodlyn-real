@@ -228,6 +228,16 @@ const TestDetailScreen = () => {
       const targetTestName = test.name.trim().toLowerCase();
       
       const matchedLabs = pincodeFiltered.map((lab: any) => {
+        // Lab-specific pricing map: { "Test Name": price }
+        const labPricing: Record<string, number> = {};
+        if (lab.pricing && typeof lab.pricing === "object" && !Array.isArray(lab.pricing)) {
+          for (const [k, v] of Object.entries(lab.pricing as Record<string, any>)) {
+            const key = String(k).trim().toLowerCase();
+            const val = Number(v);
+            if (key && Number.isFinite(val) && val > 0) labPricing[key] = val;
+          }
+        }
+
         const baseTests = Array.isArray(lab.available_tests) ? lab.available_tests : [];
         const additionalTests = (lab.vendor_id && vendorProducts[lab.vendor_id])
           ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, price: vp.price }))
@@ -235,22 +245,34 @@ const TestDetailScreen = () => {
         
         const allTests = [...baseTests, ...additionalTests];
         
-        const matchingTest = allTests.find((t: any) => {
-          const tNameRaw = typeof t === 'string' ? t : (t.test_name || t.name || t.product_name || "");
-          const tName = String(tNameRaw).trim().toLowerCase();
-          return tName && (tName.includes(targetTestName) || targetTestName.includes(tName));
-        });
+        const nameOf = (t: any) =>
+          String(typeof t === 'string' ? t : (t.test_name || t.name || t.product_name || ""))
+            .trim()
+            .toLowerCase();
+
+        // Prefer an exact name match, then fall back to a partial match
+        const matchingTest =
+          allTests.find((t: any) => nameOf(t) === targetTestName) ??
+          allTests.find((t: any) => {
+            const tName = nameOf(t);
+            return tName && (tName.includes(targetTestName) || targetTestName.includes(tName));
+          });
         
         if (!matchingTest) return null;
         
-        // Ensure we always have a valid number for price
-        const foundPrice = typeof matchingTest === 'string' ? test.price : (matchingTest.price || test.price);
+        const matchedName = nameOf(matchingTest);
+        // Price priority: lab pricing map -> vendor product price -> catalog price
+        const labPrice =
+          labPricing[matchedName] ??
+          labPricing[targetTestName] ??
+          (typeof matchingTest === 'string' ? undefined : Number(matchingTest.price) || undefined);
         
         return {
           ...lab,
-          testPrice: foundPrice > 0 ? foundPrice : (test.price || 0),
+          testPrice: labPrice && labPrice > 0 ? labPrice : (Number(test.price) || 0),
         };
       }).filter(Boolean);
+
       
       setAvailableLabs(matchedLabs);
     } catch (e) {
