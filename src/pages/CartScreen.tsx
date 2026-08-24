@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,6 +95,7 @@ const CartScreen = () => {
 
   // Validation highlight
   const [showValidation, setShowValidation] = useState(false);
+  const [isMemberDetailsExpanded, setIsMemberDetailsExpanded] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
 
@@ -369,12 +370,83 @@ const CartScreen = () => {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Collection Point</p>
               <h3 className="text-sm font-extrabold text-foreground truncate">{currentLabName}</h3>
             </div>
-            <Badge variant="softSuccess" className="text-[10px] font-bold px-2.5 py-0.5 shrink-0">
-              Open
-            </Badge>
+            
           </motion.div>
         )}
 
+        {/* Connector Line */}
+        {currentLabName && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
+            className="flex justify-start pl-[37px] -my-3.5 relative z-0"
+          >
+            <div className="flex flex-col items-center">
+              <div className="h-7 w-0.5 border-l-2 border-dashed border-primary/40"></div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary/40 -mt-2"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+          </motion.div>
+        )}
+
+{/* Collection Address */}
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
+          <div className="flex items-center justify-between mb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-extrabold text-foreground text-sm tracking-tight">Collection Address</h3>
+                
+              </div>
+            </div>
+            
+          </div>
+
+          {addressLoading ? (
+            <Skeleton className="h-16 w-full rounded-2xl" />
+          ) : savedAddresses.length === 0 ? (
+            <button
+              onClick={() => navigate("/saved-addresses")}
+              className={`w-full rounded-2xl border-2 border-dashed transition-all p-5 ${showValidation && !selectedAddressId ? "border-destructive bg-destructive/5" : "border-primary/30 hover:border-primary/50 bg-primary/5"}`}
+            >
+              <div className="flex flex-col items-center py-2 text-center">
+                <MapPin className="w-8 h-8 text-primary mb-2" />
+                <p className="text-xs font-black text-foreground">Add Sample Collection Address</p>
+                <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">Tap here to select or create your address</p>
+              </div>
+            </button>
+          ) : (
+            (() => {
+              const addr =
+                savedAddresses.find((a) => a.id === selectedAddressId) ??
+                savedAddresses.find((a) => a.is_default) ??
+                savedAddresses[0];
+              if (!addr) return null;
+              return (
+                <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3.5">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-foreground">{addr.type || "Home"}</span>
+                        {addr.is_default && (
+                          <Badge variant="soft" className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0">Default</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
+                    </div>
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-1" />
+                  </div>
+                </div>
+              );
+            })()
+          )}
+        </motion.div>
+
+
+        
         {/* Booking for — member selector + patient details */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -384,11 +456,9 @@ const CartScreen = () => {
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Booking For</p>
+              
               <h3 className="text-sm font-extrabold text-foreground">Select family member</h3>
-              <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
-                Choose a family member to add tests for them.
-              </p>
+              
             </div>
           </div>
 
@@ -396,7 +466,10 @@ const CartScreen = () => {
           <div className="mt-3.5 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
             <button
               type="button"
-              onClick={() => setSelectedMemberId("self")}
+              onClick={() => {
+                if (selectedMemberId === "self") setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
+                else { setSelectedMemberId("self"); setIsMemberDetailsExpanded(true); }
+              }}
               className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
                 selectedMemberId === "self"
                   ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -419,7 +492,10 @@ const CartScreen = () => {
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setSelectedMemberId(m.id)}
+                  onClick={() => {
+                    if (selectedMemberId === m.id) setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
+                    else { setSelectedMemberId(m.id); setIsMemberDetailsExpanded(true); }
+                  }}
                   className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
                     active
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -522,20 +598,7 @@ const CartScreen = () => {
 
         {/* Selected tests */}
         <div className="pt-1">
-          <div className="flex items-end justify-between mb-2.5">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {hasService ? "Services" : "Test Packages"}
-              </p>
-              <h2 className="text-base font-extrabold text-foreground tracking-tight">{totalQty} selected</h2>
-            </div>
-            {hasVendorLab && (
-              <span className="flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[11px] font-extrabold text-primary">
-                Subtotal
-                <span className="rounded-full bg-primary text-primary-foreground px-2 py-0.5 tabular-nums">₹{subtotal}</span>
-              </span>
-            )}
-          </div>
+          
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             
@@ -599,7 +662,7 @@ const CartScreen = () => {
             {/* Lab Tests Group */}
             {items.some(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))) && (
               <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Tests & Profiles</h3>
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Tests & Packages ({items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).length})</h3>
                 {items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).map((item, index) => (
                   <motion.div
                     key={item.id}
@@ -609,9 +672,7 @@ const CartScreen = () => {
                     className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all p-4 flex items-start justify-between gap-3"
                   >
                     <div className="flex-1 min-w-0">
-                      <span className="inline-block text-[9px] font-black uppercase tracking-widest text-success bg-success/10 px-2 py-0.5 rounded-full mb-2">
-                        Included
-                      </span>
+                      
                       <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
                       {item.price > 0 && !!item.labId && (
                         <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
@@ -637,67 +698,6 @@ const CartScreen = () => {
             {hasService ? "Add more services or tests" : "Add more tests"}
           </button>
         </div>
-
-        {/* Collection Address */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <MapPin className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-extrabold text-foreground text-sm tracking-tight">Collection Address *</h3>
-                <p className="text-[11px] font-semibold text-muted-foreground">Sample pickup location</p>
-              </div>
-            </div>
-            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted px-2.5 py-1.5 rounded-full shrink-0">
-              Fixed
-            </span>
-          </div>
-
-          {addressLoading ? (
-            <Skeleton className="h-16 w-full rounded-2xl" />
-          ) : savedAddresses.length === 0 ? (
-            <button
-              onClick={() => navigate("/saved-addresses")}
-              className={`w-full rounded-2xl border-2 border-dashed transition-all p-5 ${showValidation && !selectedAddressId ? "border-destructive bg-destructive/5" : "border-primary/30 hover:border-primary/50 bg-primary/5"}`}
-            >
-              <div className="flex flex-col items-center py-2 text-center">
-                <MapPin className="w-8 h-8 text-primary mb-2" />
-                <p className="text-xs font-black text-foreground">Add Sample Collection Address</p>
-                <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">Tap here to select or create your address</p>
-              </div>
-            </button>
-          ) : (
-            (() => {
-              const addr =
-                savedAddresses.find((a) => a.id === selectedAddressId) ??
-                savedAddresses.find((a) => a.is_default) ??
-                savedAddresses[0];
-              if (!addr) return null;
-              return (
-                <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3.5">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-foreground">{addr.type || "Home"}</span>
-                        {addr.is_default && (
-                          <Badge variant="soft" className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0">Default</Badge>
-                        )}
-                      </div>
-                      <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
-                    </div>
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-1" />
-                  </div>
-                </div>
-              );
-            })()
-          )}
-        </motion.div>
-
 
         {/* Checkout Bar (Moved Inline) */}
         <motion.div 
