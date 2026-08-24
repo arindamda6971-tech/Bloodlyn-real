@@ -26,6 +26,10 @@ import {
   Activity,
   HeartPulse,
   Tag,
+  IndianRupee,
+  Truck,
+  Percent,
+  Gift,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -322,6 +326,88 @@ interface DynamicTest {
   testsCount?: number;
   discountPercent?: number;
 }
+
+// ─── Active Offers Component ───
+const ActiveOffers = ({ centerId }: { centerId?: string }) => {
+  const [offers, setOffers] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!centerId) return;
+    
+    const loadOffers = async () => {
+      const { data, error } = await supabase
+        .from('lab_offers')
+        .select('*')
+        .eq('lab_id', centerId)
+        .eq('is_active', true)
+        .gte('end_date', new Date().toISOString().split('T')[0])
+        .order('created_at', { ascending: false });
+        
+      if (!error && data) {
+        setOffers(data);
+      }
+    };
+    
+    loadOffers();
+  }, [centerId]);
+
+  if (offers.length === 0) return null;
+
+  const generateDescription = (offer: any) => {
+    const min = `₹${offer.min_order_amount.toLocaleString("en-IN")}`;
+    switch (offer.type) {
+      case "free_delivery":
+        return `Free delivery on orders above ${min}`;
+      case "percentage_discount":
+        return `${offer.discount_value}% off on orders above ${min}${offer.max_discount_cap ? ` (up to ₹${offer.max_discount_cap.toLocaleString("en-IN")})` : ""}`;
+      case "flat_discount":
+        return `₹${offer.discount_value.toLocaleString("en-IN")} off on orders above ${min}`;
+    }
+    return "";
+  };
+
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <div className="px-5 mb-6">
+      <h2 className="text-[17px] font-black text-foreground tracking-tight mb-3">Offers for you</h2>
+      <div className="flex overflow-x-auto gap-3 pb-2 -mx-5 px-5 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
+        {offers.map((offer) => {
+          const isFreeDelivery = offer.type === "free_delivery";
+          const Icon = isFreeDelivery ? Truck : (offer.type === "percentage_discount" ? Percent : IndianRupee);
+          const colorClass = isFreeDelivery ? "bg-emerald-50 border-emerald-200" : "bg-violet-50 border-violet-200";
+          const iconColorClass = isFreeDelivery ? "text-emerald-600 bg-emerald-100" : "text-violet-600 bg-violet-100";
+          const badgeColorClass = isFreeDelivery ? "bg-emerald-100 text-emerald-700" : "bg-violet-100 text-violet-700";
+
+          return (
+            <div key={offer.id} className={`flex-shrink-0 w-[280px] border rounded-2xl p-4 flex flex-col gap-3 ${colorClass}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColorClass}`}>
+                      <Icon className="w-4 h-4" />
+                   </div>
+                   <Badge variant="outline" className={`border-transparent font-bold ${badgeColorClass}`}>
+                     {isFreeDelivery ? "Free Delivery" : "Discount"}
+                   </Badge>
+                </div>
+              </div>
+              <div>
+                <p className="text-[14px] font-bold text-foreground leading-snug">{generateDescription(offer)}</p>
+                <p className="text-[11px] font-medium text-muted-foreground mt-1">Valid till {formatDate(offer.end_date)}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
@@ -736,6 +822,9 @@ const LabDetailScreen = () => {
             {labName} is a state-of-the-art diagnostic center providing accurate, fast, and reliable health tests. With our highly trained staff and advanced equipment, we ensure a premium healthcare experience. We specialize in pathology, wellness checkups, and specialized clinical diagnostics.
           </p>
         </div>
+
+        {/* Active Offers Section */}
+        <ActiveOffers centerId={labFromDb?.vendor_id} />
 
         {/* Schedule Section */}
         <div className="px-5 mb-4">
