@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -374,18 +374,7 @@ const CartScreen = () => {
           </motion.div>
         )}
 
-        {/* Connector Line */}
-        {currentLabName && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
-            className="flex justify-start pl-[37px] -my-3.5 relative z-0"
-          >
-            <div className="flex flex-col items-center">
-              <div className="h-7 w-0.5 border-l-2 border-dashed border-primary/40"></div>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-primary/40 -mt-2"><path d="m6 9 6 6 6-6"/></svg>
-            </div>
-          </motion.div>
-        )}
+
 
 {/* Collection Address */}
         <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
@@ -454,116 +443,81 @@ const CartScreen = () => {
           transition={{ delay: 0.05 }}
           className="bg-card rounded-2xl border border-border/70 shadow-sm p-4"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              
-              <h3 className="text-sm font-extrabold text-foreground">Select family member</h3>
-              
-            </div>
+          <div className="flex items-center justify-between mb-3.5">
+            <h3 className="text-sm font-extrabold text-foreground">Select family member</h3>
           </div>
 
-          {/* Member chips */}
-          <div className="mt-3.5 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
+          {/* Member pills (compact) */}
+          <div className="flex flex-wrap gap-2 mb-4">
             <button
               type="button"
               onClick={() => {
                 if (selectedMemberId === "self") setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
                 else { setSelectedMemberId("self"); setIsMemberDetailsExpanded(true); }
               }}
-              className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
                 selectedMemberId === "self"
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "border-border/70 bg-muted/40 hover:border-primary/40"
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-muted-foreground border-border/70 hover:border-primary/50"
               }`}
             >
-              <span className="w-8 h-8 rounded-full bg-primary/15 text-primary text-[11px] font-black flex items-center justify-center">
-                <UserIcon className="w-4 h-4" />
-              </span>
-              <span className="text-left">
-                <span className="block text-xs font-extrabold text-foreground leading-tight">You</span>
-                <span className="block text-[10px] font-semibold text-muted-foreground leading-tight">Self</span>
-              </span>
-              {selectedMemberId === "self" && <Check className="w-4 h-4 text-primary" />}
+              You
             </button>
-
-            {familyMembers.map((m) => {
-              const active = selectedMemberId === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    if (selectedMemberId === m.id) setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
-                    else { setSelectedMemberId(m.id); setIsMemberDetailsExpanded(true); }
-                  }}
-                  className={`shrink-0 flex items-center gap-2 rounded-2xl border px-3 py-2.5 transition-all active:scale-95 ${
-                    active
-                      ? "border-primary bg-primary/5 ring-1 ring-primary"
-                      : "border-border/70 bg-muted/40 hover:border-primary/40"
-                  }`}
-                >
-                  <span className="w-8 h-8 rounded-full bg-primary/15 text-primary text-[11px] font-black flex items-center justify-center">
-                    {initials(m.fullName)}
-                  </span>
-                  <span className="text-left max-w-[104px]">
-                    <span className="block text-xs font-extrabold text-foreground leading-tight truncate">{m.fullName}</span>
-                    <span className="block text-[10px] font-semibold text-muted-foreground leading-tight truncate">
-                      {m.relationship === "Other" ? m.customRelationship : m.relationship}
-                    </span>
-                  </span>
-                  {active && <Check className="w-4 h-4 text-primary" />}
-                </button>
-              );
-            })}
-
+            {familyMembers.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                onClick={() => {
+                  if (selectedMemberId === m.id) setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
+                  else { setSelectedMemberId(m.id); setIsMemberDetailsExpanded(true); }
+                }}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
+                  selectedMemberId === m.id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border/70 hover:border-primary/50"
+                }`}
+              >
+                {m.fullName}
+              </button>
+            ))}
             <button
               type="button"
               onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })}
-              className="shrink-0 flex flex-col items-center justify-center gap-0.5 rounded-2xl border border-dashed border-primary/40 bg-primary/5 px-4 py-2.5 text-primary active:scale-95 transition-all"
+              className="rounded-full px-3.5 py-1.5 text-xs font-bold border border-dashed border-primary/50 text-primary flex items-center gap-1.5 hover:bg-primary/5 transition-all"
             >
-              <UserPlus className="w-4 h-4" />
-              <span className="text-[10px] font-extrabold">Add new</span>
+              <UserPlus className="w-3 h-3" /> Add new
             </button>
           </div>
 
-          <div className="mt-3 flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2.5">
-            <div className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-              <Info className="w-3 h-3" />
-            </div>
-            <p className="text-[11px] font-semibold text-muted-foreground">
-              Tests will be added for <span className="text-foreground font-extrabold">{activeMemberName}</span>
-            </p>
-          </div>
-
           {/* Patient details */}
-          <div className="mt-4 pt-4 border-t border-dashed border-border space-y-3.5">
+          <div className="space-y-4 pt-1">
             <div className="space-y-1">
-              <Label htmlFor="patient_name" className="text-xs font-bold text-foreground">Full Name *</Label>
+              <Label htmlFor="patient_name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Full Name *</Label>
               <Input
                 id="patient_name"
                 placeholder="Enter full name"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                className={`bg-muted/60 border-0 rounded-2xl h-11 text-xs font-medium ${validationBorder(patientName.trim().length > 0)}`}
+                className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus-visible:ring-0 focus-visible:border-primary transition-colors ${showValidation && !patientName.trim() ? "!border-destructive" : ""}`}
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-5">
               <div className="space-y-1">
-                <Label htmlFor="patient_age" className="text-xs font-bold text-foreground">Age *</Label>
+                <Label htmlFor="patient_age" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Age *</Label>
                 <Input
                   id="patient_age"
                   placeholder="Age"
                   value={patientAge}
                   onChange={(e) => setPatientAge(sanitizeAge(e.target.value))}
-                  className={`bg-muted/60 border-0 rounded-2xl h-11 text-xs font-medium ${validationBorder(/^\d{1,3}$/.test(patientAge) && Number(patientAge) > 0 && Number(patientAge) <= 120)}`}
+                  className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus-visible:ring-0 focus-visible:border-primary transition-colors ${showValidation && (!/^\d{1,3}$/.test(patientAge) || Number(patientAge) <= 0) ? "!border-destructive" : ""}`}
                   maxLength={3}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="patient_gender" className="text-xs font-bold text-foreground">Gender *</Label>
+                <Label htmlFor="patient_gender" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Gender *</Label>
                 <Select value={patientGender} onValueChange={setPatientGender}>
-                  <SelectTrigger className={`bg-muted/60 border-0 rounded-2xl h-11 text-xs font-medium ${validationBorder(patientGender.trim().length > 0)}`}>
+                  <SelectTrigger className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus:ring-0 focus:border-primary transition-colors ${showValidation && !patientGender ? "!border-destructive" : ""}`}>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
@@ -576,21 +530,21 @@ const CartScreen = () => {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="patient_phone" className="text-xs font-bold text-foreground">Patient Phone *</Label>
-              <div className="flex items-center gap-2">
-                <span className="flex h-11 items-center rounded-2xl bg-muted/60 px-3.5 text-xs font-bold text-muted-foreground select-none">+91</span>
+              <Label htmlFor="patient_phone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Patient Phone *</Label>
+              <div className={`flex items-center gap-2 border-b-2 border-border/60 focus-within:border-primary transition-colors ${showValidation && !/^\d{10}$/.test(patientPhone) ? "!border-destructive" : ""}`}>
+                <span className="text-xs font-extrabold text-muted-foreground pl-1">+91</span>
                 <Input
                   id="patient_phone"
                   placeholder="10-digit number"
                   value={patientPhone}
                   onChange={(e) => setPatientPhone(sanitizePhone(e.target.value))}
-                  className={`bg-muted/60 border-0 rounded-2xl h-11 flex-1 text-xs font-medium ${validationBorder(/^\d{10}$/.test(patientPhone))}`}
+                  className="bg-transparent border-0 rounded-none h-9 px-1 flex-1 text-sm font-semibold shadow-none focus-visible:ring-0"
                   maxLength={10}
                   inputMode="numeric"
                 />
               </div>
               {patientPhone.length > 0 && !/^\d{10}$/.test(patientPhone) && (
-                <p className="text-[11px] font-bold text-destructive mt-1">Phone must be exactly 10 digits</p>
+                <p className="text-[10px] font-bold text-destructive pl-1">Must be exactly 10 digits</p>
               )}
             </div>
           </div>
@@ -697,6 +651,24 @@ const CartScreen = () => {
             <Plus className="w-4 h-4" />
             {hasService ? "Add more services or tests" : "Add more tests"}
           </button>
+
+          {/* Upload Prescription Tile */}
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+          >
+            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <UploadCloud className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Optional</p>
+              <h3 className="text-sm font-extrabold text-foreground truncate">Upload Prescription</h3>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center">
+              <Plus className="w-4 h-4" />
+            </div>
+          </motion.div>
         </div>
 
         {/* Checkout Bar (Moved Inline) */}
