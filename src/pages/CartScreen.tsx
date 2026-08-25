@@ -1,7 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText } from "lucide-react";
+import {
+  getStoredPrescription,
+  setStoredPrescription,
+  clearStoredPrescription,
+  uploadPrescription,
+  validatePrescriptionFile,
+  deletePrescription,
+  type StoredPrescription,
+} from "@/lib/order-prescription";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
