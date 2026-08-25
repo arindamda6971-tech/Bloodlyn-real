@@ -114,6 +114,46 @@ const CartScreen = () => {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(saved?.selectedAddressId || null);
   const [addressLoading, setAddressLoading] = useState(true);
 
+  // Prescription attachment (optional) — travels to the lab with the order
+  const prescriptionInputRef = useRef<HTMLInputElement>(null);
+  const [prescription, setPrescription] = useState<StoredPrescription | null>(() => getStoredPrescription());
+  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
+
+  const handlePrescriptionChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!supabaseUserId) {
+      toast.error("Please login to attach a prescription");
+      return;
+    }
+    const validationError = validatePrescriptionFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    setPrescriptionUploading(true);
+    try {
+      const uploaded = await uploadPrescription(file, supabaseUserId);
+      setPrescription(uploaded);
+      setStoredPrescription(uploaded);
+      toast.success("Prescription attached");
+    } catch (err: any) {
+      console.error("Prescription upload failed:", err);
+      toast.error(err?.message || "Could not upload the prescription. Please try again.");
+    } finally {
+      setPrescriptionUploading(false);
+    }
+  };
+
+  const handleRemovePrescription = () => {
+    if (prescription?.path) deletePrescription(prescription.path);
+    setPrescription(null);
+    clearStoredPrescription();
+  };
+
+
+
   const isPatientInfoValid =
     patientName.trim().length > 0 &&
     /^\d{1,3}$/.test(patientAge) &&
