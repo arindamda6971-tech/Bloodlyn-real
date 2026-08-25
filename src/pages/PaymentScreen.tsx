@@ -450,7 +450,10 @@ const PaymentScreen = () => {
         labId: labId || null,
         labName,
         vendorId: resolvedVendorId,
+        // Optional prescription attached in the cart — shared with the lab
+        prescriptionUrl: getStoredPrescription()?.url || null,
       };
+
 
       // Transport-level hiccups (WebView fetch abort, cold start, 5xx) used to
       // surface as an error even though the order was already created — the user
