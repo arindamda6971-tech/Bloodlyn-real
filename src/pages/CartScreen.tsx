@@ -179,6 +179,9 @@ const CartScreen = () => {
   useEffect(() => {
     if (!isLoading && items.length === 0) {
       clearPatientDetails();
+      clearStoredPrescription();
+      setPrescription(null);
+
     }
   }, [items.length, isLoading]);
 
