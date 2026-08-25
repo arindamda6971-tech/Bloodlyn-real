@@ -37,6 +37,7 @@ interface CreateOrderRequest {
   labId?: string | null;
   labName?: string | null;
   vendorId?: string | null;
+  prescriptionUrl?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -119,6 +120,7 @@ Deno.serve(async (req) => {
       labId: z.string().uuid().nullable().optional(),
       labName: z.string().max(200).nullable().optional(),
       vendorId: z.string().uuid().nullable().optional(),
+      prescriptionUrl: z.string().url().max(2000).nullable().optional(),
     });
 
     const rawBody = await req.json();
@@ -131,7 +133,7 @@ Deno.serve(async (req) => {
     }
 
     const body = parsed.data as CreateOrderRequest;
-    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId } = body;
+    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -435,17 +437,39 @@ Deno.serve(async (req) => {
     const paymentStatus = "completed";
     const orderStatus = "confirmed";
 
-    // Fetch latest prescription URL for this user (if any)
+    // Prescription attached to THIS order in the cart takes priority. It must be a
+    // link to this project's own storage (no arbitrary external URLs) and must live
+    // in the caller's own folder so one user cannot attach another user's file.
     let prescriptionUrl: string | null = null;
-    const { data: prescriptionData } = await adminClient
-      .from("user_prescriptions")
-      .select("image_url")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (prescriptionData?.image_url) {
-      prescriptionUrl = prescriptionData.image_url;
+    if (clientPrescriptionUrl) {
+      try {
+        const parsed = new URL(clientPrescriptionUrl);
+        const expectedHost = new URL(supabaseUrl).host;
+        const ownsPath =
+          parsed.pathname.includes("/order-prescriptions/") &&
+          parsed.pathname.includes(`/${userId}/`);
+        if (parsed.host === expectedHost && parsed.pathname.includes("/storage/v1/") && ownsPath) {
+          prescriptionUrl = clientPrescriptionUrl;
+        } else {
+          console.warn("Rejected prescription URL (host/path mismatch):", parsed.host, parsed.pathname);
+        }
+      } catch (e) {
+        console.warn("Rejected malformed prescription URL:", String(e));
+      }
+    }
+
+    // Fallback: most recent AI-analysed prescription for this user
+    if (!prescriptionUrl) {
+      const { data: prescriptionData } = await adminClient
+        .from("user_prescriptions")
+        .select("image_url")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (prescriptionData?.image_url) {
+        prescriptionUrl = prescriptionData.image_url;
+      }
     }
 
     // Build special instructions
