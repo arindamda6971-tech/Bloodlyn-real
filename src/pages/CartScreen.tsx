@@ -653,22 +653,56 @@ const CartScreen = () => {
           </button>
 
           {/* Upload Prescription Tile */}
-          <motion.div 
+          <input
+            ref={prescriptionInputRef}
+            type="file"
+            accept="image/*,application/pdf,.pdf"
+            className="hidden"
+            onChange={handlePrescriptionChange}
+          />
+          <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={() => { if (!prescription && !prescriptionUploading) prescriptionInputRef.current?.click(); }}
             className="mt-4 bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
           >
             <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <UploadCloud className="w-5 h-5 text-primary" />
+              {prescriptionUploading ? (
+                <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+              ) : prescription ? (
+                <FileText className="w-5 h-5 text-primary" />
+              ) : (
+                <UploadCloud className="w-5 h-5 text-primary" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Optional</p>
-              <h3 className="text-sm font-extrabold text-foreground truncate">Upload Prescription</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {prescription ? "Attached" : "Optional"}
+              </p>
+              <h3 className="text-sm font-extrabold text-foreground truncate">
+                {prescriptionUploading ? "Uploading…" : prescription ? prescription.name : "Upload Prescription"}
+              </h3>
+              {prescription && (
+                <p className="text-[11px] font-semibold text-muted-foreground">
+                  {(prescription.size / 1024 / 1024).toFixed(2)} MB · shared with the lab
+                </p>
+              )}
             </div>
-            <div className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center">
-              <Plus className="w-4 h-4" />
-            </div>
+            {prescription ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleRemovePrescription(); }}
+                className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 active:scale-90 transition-all"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center">
+                <Plus className="w-4 h-4" />
+              </div>
+            )}
           </motion.div>
+
         </div>
 
         {/* Checkout Bar (Moved Inline) */}
