@@ -290,6 +290,45 @@ export type Database = {
         }
         Relationships: []
       }
+      lab_offers: {
+        Row: {
+          created_at: string
+          discount_value: number
+          end_date: string
+          id: string
+          is_active: boolean
+          lab_id: string
+          max_discount_cap: number | null
+          min_order_amount: number
+          start_date: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          discount_value?: number
+          end_date: string
+          id?: string
+          is_active?: boolean
+          lab_id: string
+          max_discount_cap?: number | null
+          min_order_amount?: number
+          start_date: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          discount_value?: number
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          lab_id?: string
+          max_discount_cap?: number | null
+          min_order_amount?: number
+          start_date?: string
+          type?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string
