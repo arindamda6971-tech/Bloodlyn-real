@@ -557,6 +557,8 @@ const PaymentScreen = () => {
       }
 
       clearCart();
+      clearStoredPrescription();
+
       } catch (postOrderError) {
         console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
       }
