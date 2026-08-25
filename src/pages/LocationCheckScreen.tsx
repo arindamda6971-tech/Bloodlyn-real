@@ -431,13 +431,8 @@ const LocationCheckScreen = () => {
 
 
   return (
-    <div className="min-h-screen bg-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12 pt-safe">
-      {/* Aurora background */}
-      <div className="absolute inset-0 pointer-events-none -z-0">
-        <div className="absolute -top-32 -right-24 w-72 h-72 rounded-full bg-primary/15 blur-3xl" />
-        <div className="absolute top-40 -left-20 w-72 h-72 rounded-full bg-success/10 blur-3xl" />
-        <div className="absolute bottom-0 right-10 w-56 h-56 rounded-full bg-accent/10 blur-3xl" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-background w-full md:max-w-[430px] mx-auto relative overflow-x-hidden pb-12 pt-safe">
+      {/* Aurora background removed for performance */}
 
       {/* Header */}
       <div className="relative z-10 px-6 pt-12 pb-6">
@@ -468,7 +463,7 @@ const LocationCheckScreen = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-3xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-lg p-5"
+          className="rounded-3xl border border-border/50 bg-card shadow-xl p-5"
         >
           <AnimatePresence mode="wait">
             {step === "detecting" && (

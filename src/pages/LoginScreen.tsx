@@ -158,26 +158,14 @@ const LoginScreen = () => {
   };
 
   return (
-    <div className="h-[100dvh] w-full md:max-w-[430px] mx-auto flex flex-col relative overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #4338ca 0%, #5b50e6 100%)' }}
-    >
-      {/* ── PURPLE HEADER AREA ── */}
-      <div className="shrink-0">
-        <div className="pt-12 pb-5 px-5 flex items-center relative">
-          {/* Brand - centered */}
-          <div className="flex items-center gap-2 absolute left-1/2 -translate-x-1/2">
-            <Droplet className="w-6 h-6 text-white fill-white" />
-            <span className="text-[22px] font-bold text-white tracking-tight">BloodLyn</span>
-          </div>
-          {/* Headset icon - right */}
-          <button
-            onClick={() => setShowHelp(true)}
-            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/15 transition-colors ml-auto"
-          >
-            <Headset className="w-5 h-5 text-white" />
-          </button>
-        </div>
-      </div>
+    <div className="h-[100dvh] w-full md:max-w-[430px] mx-auto relative overflow-y-auto bg-white" style={{ WebkitOverflowScrolling: 'touch' }}>
+      {/* Headset icon - top right */}
+      <button
+        onClick={() => setShowHelp(true)}
+        className="absolute top-6 right-5 z-20 w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+      >
+        <Headset className="w-5 h-5 text-gray-700" />
+      </button>
 
       {/* ── HELP & SUPPORT BOTTOM SHEET ── */}
       <AnimatePresence>
@@ -246,18 +234,19 @@ const LoginScreen = () => {
         )}
       </AnimatePresence>
 
-      {/* ── WHITE CARD ── */}
-      <div
-        className="flex-1 bg-white rounded-t-[2rem] overflow-y-auto overscroll-y-none min-h-0 shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <div className="px-7 pt-8 pb-8">
+      {/* ── MAIN CONTENT ── */}
+      <div className="px-7 pt-16 pb-8 min-h-full flex flex-col justify-center">
+          
+          {/* Main Logo */}
+          <div className="flex justify-center mb-6">
+            <img src="/assets/images/logo-full.png" alt="BloodLyn" className="h-16 w-auto object-contain" />
+          </div>
 
           {/* Title */}
-          <h2 className="text-[22px] font-extrabold text-gray-900 text-center">
+          <h2 className="text-[20px] font-extrabold text-gray-900 text-center tracking-tight">
             {isSignUp ? "Create your account" : "Log in to your account"}
           </h2>
-          <p className="text-[13px] text-gray-400 text-center mt-1.5 mb-7">
+          <p className="text-[12px] text-gray-400 text-center mt-1 mb-6">
             {isSignUp ? "Let's get you started with BloodLyn." : "Welcome back! Please enter your details."}
           </p>
 
@@ -271,22 +260,22 @@ const LoginScreen = () => {
             >
               {/* ════════ LOGIN MODE ════════ */}
               {!isSignUp && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {/* Email */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Email Address</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Email Address</label>
                     <Input
                       type="email"
                       placeholder="nicholas@ergemlia.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-[50px] rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                     />
                   </div>
 
                   {/* Password */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Password</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
@@ -294,12 +283,12 @@ const LoginScreen = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEmailAuth(); } }}
-                        className="h-[50px] pr-11 rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                       </button>
@@ -325,14 +314,16 @@ const LoginScreen = () => {
                   </div>
 
                   {/* Log In Button */}
-                  <Button
-                    onClick={handleEmailAuth}
-                    className="w-full h-[52px] rounded-2xl text-white font-bold text-[16px] shadow-lg transition-all active:scale-[0.98]"
-                    style={{ background: 'linear-gradient(90deg, #4338ca 0%, #c084fc 100%)' }}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
-                  </Button>
+                  <div className="pt-2">
+                    <Button
+                      onClick={handleEmailAuth}
+                      className="w-full h-[46px] rounded-full text-white font-bold text-[15px] shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                      style={{ background: 'linear-gradient(90deg, #4338ca 0%, #c084fc 100%)' }}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
+                    </Button>
+                  </div>
 
                   {/* Divider */}
                   <div className="flex items-center gap-3 py-1">
@@ -346,24 +337,24 @@ const LoginScreen = () => {
                     <button
                       onClick={handleGoogleAuth}
                       disabled={isLoading}
-                      className="h-[48px] rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="h-11 rounded-full border border-gray-200 bg-white flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                       </svg>
-                      <span className="text-[14px] font-semibold text-gray-700">Google</span>
+                      <span className="text-[13px] font-bold text-gray-700">Google</span>
                     </button>
                     <button
                       disabled={isLoading}
-                      className="h-[48px] rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="h-11 rounded-full border border-gray-200 bg-white flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
                     >
-                      <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="#1877F2">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#1877F2">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                       </svg>
-                      <span className="text-[14px] font-semibold text-gray-700">Facebook</span>
+                      <span className="text-[13px] font-bold text-gray-700">Facebook</span>
                     </button>
                   </div>
 
@@ -382,31 +373,31 @@ const LoginScreen = () => {
                 <div className="space-y-4">
                   {/* Full Name */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Full Name</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Full Name</label>
                     <Input
                       type="text"
                       placeholder="Nicholas Ergemlia"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="h-[50px] rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                     />
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Email Address</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Email Address</label>
                     <Input
                       type="email"
                       placeholder="nicholas@ergemlia.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-[50px] rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                     />
                   </div>
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Phone Number</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Phone Number</label>
                     <Input
                       type="tel"
                       inputMode="tel"
@@ -414,29 +405,29 @@ const LoginScreen = () => {
                       placeholder="+91 98765 43210"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(sanitizeInternationalPhone(e.target.value))}
-                      className="h-[50px] rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                     />
                   </div>
 
                   {/* Password with strength */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Password</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
                     <div className="relative">
                       <Input
                         type="password"
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-[50px] pr-28 rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-32 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                       />
                       {password.length > 0 && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                           <div className="flex gap-[3px]">
-                            <div className={`w-4 h-[5px] rounded-full ${strength.bars >= 1 ? strength.color : 'bg-gray-200'}`} />
-                            <div className={`w-4 h-[5px] rounded-full ${strength.bars >= 2 ? strength.color : 'bg-gray-200'}`} />
-                            <div className={`w-4 h-[5px] rounded-full ${strength.bars >= 3 ? strength.color : 'bg-gray-200'}`} />
+                            <div className={`w-3 h-1.5 rounded-full ${strength.bars >= 1 ? strength.color : 'bg-gray-200'}`} />
+                            <div className={`w-3 h-1.5 rounded-full ${strength.bars >= 2 ? strength.color : 'bg-gray-200'}`} />
+                            <div className={`w-3 h-1.5 rounded-full ${strength.bars >= 3 ? strength.color : 'bg-gray-200'}`} />
                           </div>
-                          <span className={`text-[11px] font-bold ${strength.textClass}`}>{strength.label}</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-wider ${strength.textClass}`}>{strength.label}</span>
                         </div>
                       )}
                     </div>
@@ -444,7 +435,7 @@ const LoginScreen = () => {
 
                   {/* Confirm Password */}
                   <div>
-                    <label className="block text-[13px] font-semibold text-gray-600 mb-1.5">Confirm Password</label>
+                    <label className="block text-[13px] font-semibold text-gray-700 mb-1.5 ml-1">Confirm Password</label>
                     <div className="relative">
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
@@ -452,12 +443,12 @@ const LoginScreen = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEmailAuth(); } }}
-                        className="h-[50px] pr-11 rounded-xl border-gray-200 bg-white text-[15px] placeholder:text-gray-300 focus-visible:ring-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       >
                         {showConfirmPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                       </button>
@@ -465,10 +456,11 @@ const LoginScreen = () => {
                   </div>
 
                   {/* Create Account Button */}
-                  <div className="pt-2">
+                  {/* Sign Up Button */}
+                  <div className="pt-3">
                     <Button
                       onClick={handleEmailAuth}
-                      className="w-full h-[52px] rounded-2xl text-white font-bold text-[16px] shadow-lg transition-all active:scale-[0.98]"
+                      className="w-full h-[46px] rounded-full text-white font-bold text-[15px] shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
                       style={{ background: 'linear-gradient(90deg, #4338ca 0%, #c084fc 100%)' }}
                       disabled={isLoading}
                     >
@@ -487,7 +479,6 @@ const LoginScreen = () => {
               )}
             </motion.div>
           </AnimatePresence>
-        </div>
       </div>
     </div>
   );
