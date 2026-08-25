@@ -811,7 +811,7 @@ const LabDetailScreen = () => {
 
 
         {/* Active Offers Section */}
-        <ActiveOffers centerId={labFromDb?.vendor_id} />
+        <ActiveOffers centerId={labFromDb?.vendor_id ?? undefined} />
 
         {/* Schedule Section */}
         <div className="px-5 mb-4">

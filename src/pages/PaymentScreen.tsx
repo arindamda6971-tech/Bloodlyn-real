@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
+import { getStoredPrescription, clearStoredPrescription } from "@/lib/order-prescription";
+
 
 interface PaymentState {
   cartItems: Array<{
@@ -448,7 +450,10 @@ const PaymentScreen = () => {
         labId: labId || null,
         labName,
         vendorId: resolvedVendorId,
+        // Optional prescription attached in the cart — shared with the lab
+        prescriptionUrl: getStoredPrescription()?.url || null,
       };
+
 
       // Transport-level hiccups (WebView fetch abort, cold start, 5xx) used to
       // surface as an error even though the order was already created — the user
@@ -552,6 +557,8 @@ const PaymentScreen = () => {
       }
 
       clearCart();
+      clearStoredPrescription();
+
       } catch (postOrderError) {
         console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
       }
