@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
+import { getStoredPrescription, clearStoredPrescription } from "@/lib/order-prescription";
+
 
 interface PaymentState {
   cartItems: Array<{
