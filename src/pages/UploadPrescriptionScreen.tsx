@@ -5,25 +5,40 @@ import { ArrowLeft, UploadCloud, File, X, PhoneCall, CheckCircle2 } from "lucide
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { TermsConsent } from "@/components/TermsConsent";
+import { useAuth } from "@/hooks/useAuth";
+import { useSubmitTicket } from "@/hooks/useBridgeTickets";
+import {
+  uploadSupportPrescription,
+  validateSupportPrescription,
+} from "@/lib/support-prescription";
 
 const UploadPrescriptionScreen = () => {
   const navigate = useNavigate();
+  const { supabaseUserId } = useAuth();
+  const submitTicket = useSubmitTicket();
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    const picked = e.target.files?.[0];
+    e.target.value = "";
+    if (!picked) return;
+    const error = validateSupportPrescription(picked);
+    if (error) {
+      toast.error(error);
+      return;
     }
+    setFile(picked);
   };
 
   const removeFile = () => setFile(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       toast.error("Please upload a prescription image or PDF first.");
@@ -37,15 +52,42 @@ const UploadPrescriptionScreen = () => {
       toast.error("Please enter a valid phone number.");
       return;
     }
+    if (!supabaseUserId) {
+      toast.error("Please log in to send your prescription to our support team.");
+      return;
+    }
 
     setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      // 1. Store the file privately and mint a shareable link for the support desk.
+      const uploaded = await uploadSupportPrescription(file, supabaseUserId);
+
+      // 2. Raise a Help & Support ticket in the Admin portal (never a lab order).
+      const result: any = await submitTicket.mutateAsync({
+        category: "other",
+        priority: "high",
+        subject: "Prescription upload — call back requested",
+        description: [
+          "Source: BloodLyn app — Home screen \"Upload Prescription & Get a Call\"",
+          `Patient name: ${name.trim()}`,
+          `Callback number: +91 ${phone.replace(/\D/g, "").slice(-10)}`,
+          `Prescription file: ${uploaded.name}`,
+          `Prescription link (valid 1 year): ${uploaded.url}`,
+          "Action needed: review the prescription and call the patient to arrange the tests.",
+        ].join("\n"),
+      });
+
+      setTicketNumber(result?.ticket_number || result?.ticket?.ticket_number || null);
       setIsSuccess(true);
-      toast.success("Request submitted successfully!");
-    }, 1500);
+      toast.success("Request sent to our support team!");
+    } catch (err: any) {
+      console.error("Prescription call request failed:", err);
+      toast.error(err?.message || "Could not send your request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   if (isSuccess) {
     return (
@@ -61,9 +103,16 @@ const UploadPrescriptionScreen = () => {
               <CheckCircle2 className="w-12 h-12 text-success" />
             </motion.div>
             <h2 className="text-2xl font-black text-foreground mb-3">Request Received!</h2>
-            <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
-              We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">{phone}</span> to arrange the tests.
+            <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
+              We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">+91 {phone.replace(/\D/g, "").slice(-10)}</span> to arrange the tests.
             </p>
+            {ticketNumber && (
+              <p className="text-xs font-bold text-muted-foreground mb-8">
+                Reference: <span className="text-foreground">{ticketNumber}</span>
+              </p>
+            )}
+            {!ticketNumber && <div className="mb-8" />}
+
             <button
               onClick={() => navigate("/home")}
               className="w-full bg-primary text-white font-bold h-14 rounded-2xl active:scale-95 transition-transform"

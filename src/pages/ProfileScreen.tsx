@@ -91,14 +91,25 @@ const ProfileScreen = () => {
   }, []);
 
   const handleLogout = async () => {
+    // Never let a failed network call trap the user in a signed-in shell:
+        // clear the local session first, then navigate regardless of outcome.
     try {
       await signOut();
-      toast.success("Logged out successfully");
-      navigate("/login", { replace: true });
     } catch (error) {
-      toast.error("Failed to log out");
+      console.warn("Sign out request failed, clearing local session:", error);
     }
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch { /* ignore */ }
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("sb-") || k.startsWith("location_checked_"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* ignore */ }
+    toast.success("Logged out successfully");
+    navigate("/login", { replace: true });
   };
+
 
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const contactInfo = profileContact || user?.phone || user?.email || "";
