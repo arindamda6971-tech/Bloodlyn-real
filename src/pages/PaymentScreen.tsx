@@ -65,6 +65,7 @@ const PaymentScreen = () => {
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
+  const [labCollectionFee, setLabCollectionFee] = useState<number>(0);
   const [labOffers, setLabOffers] = useState<any[]>([]);
   const [appliedOffer, setAppliedOffer] = useState<any | null>(null);
 
@@ -115,7 +116,7 @@ const PaymentScreen = () => {
     (async () => {
       const { data } = await supabase
         .from("diagnostic_centers")
-        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price")
+        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price, blood_collection_fee, home_collection_fee, collection_fee")
         .eq("id", orderLabId)
         .maybeSingle();
       if (cancelled) return;
@@ -135,6 +136,9 @@ const PaymentScreen = () => {
         setEcgAddonPrice(null);
         setEcgAddonSelected(false);
       }
+
+      const fee = Number((data as any)?.blood_collection_fee) || Number((data as any)?.home_collection_fee) || Number((data as any)?.collection_fee) || 0;
+      setLabCollectionFee(fee);
     })();
     return () => {
       cancelled = true;
@@ -167,9 +171,19 @@ const PaymentScreen = () => {
 
   const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
   const ecgAddonActive = ecgAddonPrice !== null && ecgAddonSelected;
+  const activeCartItems = paymentState?.cartItems || cartItemsState;
+  
+  const cartMaxFee = activeCartItems && activeCartItems.length > 0 
+    ? Math.max(...activeCartItems.map(item => item.collectionFee || 0), 0) 
+    : 0;
+  
+  // Use cart max fee, but if 0 (e.g. legacy items or missing test-level fee), fallback to the lab's general collection fee
+  const homeCollectionFee = cartMaxFee > 0 ? cartMaxFee : labCollectionFee;
+
   const effectiveSubtotal = stateSubtotal 
     + (bpAddonActive ? (bpAddonPrice || 0) : 0)
-    + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
+    + (ecgAddonActive ? (ecgAddonPrice || 0) : 0)
+    + homeCollectionFee;
 
   let appliedDiscount = 0;
   let isFreeDelivery = false;
@@ -708,7 +722,6 @@ const PaymentScreen = () => {
           )}
         </motion.div>
 
-        {/* Home BP Check add-on — only when the selected lab offers it */}
         {bpAddonPrice !== null && (
           <motion.button
             type="button"
@@ -717,28 +730,27 @@ const PaymentScreen = () => {
             transition={{ delay: 0.12 }}
             onClick={() => setBpAddonSelected((v) => !v)}
             aria-pressed={bpAddonSelected}
-            className={`w-full text-left mb-3 rounded-2xl border p-4 transition-colors ${
+            className={`w-full text-left mb-3 rounded-2xl border p-3 transition-colors ${
               bpAddonSelected ? "border-primary bg-primary/5" : "border-border/70 bg-primary/[0.03]"
             }`}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <HeartPulse className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground">Add Home BP Check</p>
-                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                  <Star className="w-2.5 h-2.5" /> Recommended
-                </span>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Blood pressure measured at home using digital device.
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-foreground">Add Home BP Check</p>
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                    <Star className="w-2 h-2" /> Recommended
+                  </span>
+                </div>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className="text-right flex-shrink-0 flex flex-col items-end">
                 <p className="text-sm font-bold text-foreground">
                   {bpAddonPrice > 0 ? `₹ ${bpAddonPrice}` : "FREE"}
                 </p>
-                <p className={`text-xs font-bold mt-1 ${bpAddonSelected ? "text-primary" : "text-primary/80"}`}>
+                <p className={`text-[10px] font-bold ${bpAddonSelected ? "text-primary" : "text-primary/80"}`}>
                   {bpAddonSelected ? "Added" : "Add"}
                 </p>
               </div>
@@ -746,7 +758,6 @@ const PaymentScreen = () => {
           </motion.button>
         )}
 
-        {/* Home ECG Check add-on — only when the selected lab offers it */}
         {ecgAddonPrice !== null && (
           <motion.button
             type="button"
@@ -755,28 +766,27 @@ const PaymentScreen = () => {
             transition={{ delay: 0.13 }}
             onClick={() => setEcgAddonSelected((v) => !v)}
             aria-pressed={ecgAddonSelected}
-            className={`w-full text-left mb-4 rounded-2xl border p-4 transition-colors ${
+            className={`w-full text-left mb-4 rounded-2xl border p-3 transition-colors ${
               ecgAddonSelected ? "border-primary bg-primary/5" : "border-border/70 bg-primary/[0.03]"
             }`}
           >
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Activity className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-foreground">Add Home ECG Check</p>
-                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                  <Star className="w-2.5 h-2.5" /> Recommended
-                </span>
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  12-lead ECG recorded at home &amp; analysis by expert.
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-foreground">Add Home ECG Check</p>
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                    <Star className="w-2 h-2" /> Recommended
+                  </span>
+                </div>
               </div>
-              <div className="text-right flex-shrink-0">
+              <div className="text-right flex-shrink-0 flex flex-col items-end">
                 <p className="text-sm font-bold text-foreground">
                   {ecgAddonPrice > 0 ? `₹ ${ecgAddonPrice}` : "FREE"}
                 </p>
-                <p className={`text-xs font-bold mt-1 ${ecgAddonSelected ? "text-primary" : "text-primary/80"}`}>
+                <p className={`text-[10px] font-bold ${ecgAddonSelected ? "text-primary" : "text-primary/80"}`}>
                   {ecgAddonSelected ? "Added" : "Add"}
                 </p>
               </div>
@@ -915,7 +925,11 @@ const PaymentScreen = () => {
             )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success font-bold">FREE</span>
+              {homeCollectionFee > 0 ? (
+                <span className="text-foreground font-semibold tabular-nums">₹ {homeCollectionFee}.00</span>
+              ) : (
+                <span className="text-success font-bold">FREE</span>
+              )}
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm">

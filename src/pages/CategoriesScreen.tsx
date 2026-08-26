@@ -206,7 +206,10 @@ const CategoriesScreen = () => {
     const success = addToCart({
       id: test.id,
       name: test.test_name,
-      price,
+      price: price,
+      category: test.category,
+      kind: "test",
+      collectionFee: test.collection_fee || 0
     });
     if (success) {
       toast.success(`${test.test_name} added to cart`);

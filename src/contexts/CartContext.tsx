@@ -16,6 +16,7 @@ interface CartItem {
   familyMemberId?: string;
   category?: string;
   kind?: "test" | "package";
+  collectionFee?: number;
 }
 
 
@@ -37,6 +38,7 @@ type CartItemDBRow = {
   vendor_id?: string | null;
   quantity: number | null;
   family_member_id: string | null;
+  collection_fee?: number | null;
   created_at?: string;
 };
 

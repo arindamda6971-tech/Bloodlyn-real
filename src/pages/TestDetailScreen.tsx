@@ -65,6 +65,7 @@ interface UnifiedTest {
   description?: string | null;
   prerequisites?: string | null;
   category?: string;
+  collectionFee?: number;
 }
 
 const whyBookItems = [
@@ -93,6 +94,7 @@ const TestDetailScreen = () => {
         reportTime: bridgeTest.report_delivery_time || bridgeTest.reportTime,
         prerequisites: bridgeTest.prerequisites,
         category: bridgeTest.category,
+        collectionFee: bridgeTest.collection_fee || 0,
       };
     }
     return null;
@@ -141,6 +143,7 @@ const TestDetailScreen = () => {
               reportTime: match.report_delivery_time,
               prerequisites: match.prerequisites,
               category: match.category,
+              collectionFee: match.collection_fee || 0,
             });
             return;
           }
@@ -295,6 +298,7 @@ const TestDetailScreen = () => {
       vendorId: lab.vendor_id,
       category: test.category || "Blood Tests",
       kind: "test",
+      collectionFee: test.collectionFee || 0,
     });
     
     if (ok) {
