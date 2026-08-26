@@ -68,22 +68,41 @@ const SplashScreen = () => {
         <motion.div
           animate={{
             boxShadow: [
-              "0 0 20px hsl(201 88% 62% / 0.0)",
-              "0 0 40px hsl(201 88% 62% / 0.1)",
-              "0 0 20px hsl(201 88% 62% / 0.0)",
+              "0 0 20px hsl(201 88% 62% / 0.2)",
+              "0 0 40px hsl(201 88% 62% / 0.4)",
+              "0 0 20px hsl(201 88% 62% / 0.2)",
             ],
           }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="flex items-center justify-center mb-6 mt-12"
+          className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center mb-6"
         >
-          <img src="/assets/images/logo-full.png" alt="BloodLyn" className="h-28 w-auto object-contain" />
+          <div className="relative">
+            <Droplet className="w-12 h-12 text-primary-foreground fill-primary-foreground" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.5, type: "spring" }}
+              className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center"
+            >
+              <Zap className="w-3 h-3 text-success-foreground" />
+            </motion.div>
+          </div>
         </motion.div>
+
+        <motion.h1
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-3xl font-bold text-secondary mb-2"
+        >
+          Blood<span className="text-primary">Lyn</span>
+        </motion.h1>
 
         <motion.p
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-muted-foreground text-center font-medium mt-4"
+          className="text-muted-foreground text-center font-medium"
         >
           Diagnostics. Faster. Smarter.
         </motion.p>
