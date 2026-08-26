@@ -103,9 +103,16 @@ const UploadPrescriptionScreen = () => {
               <CheckCircle2 className="w-12 h-12 text-success" />
             </motion.div>
             <h2 className="text-2xl font-black text-foreground mb-3">Request Received!</h2>
-            <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
-              We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">{phone}</span> to arrange the tests.
+            <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
+              We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">+91 {phone.replace(/\D/g, "").slice(-10)}</span> to arrange the tests.
             </p>
+            {ticketNumber && (
+              <p className="text-xs font-bold text-muted-foreground mb-8">
+                Reference: <span className="text-foreground">{ticketNumber}</span>
+              </p>
+            )}
+            {!ticketNumber && <div className="mb-8" />}
+
             <button
               onClick={() => navigate("/home")}
               className="w-full bg-primary text-white font-bold h-14 rounded-2xl active:scale-95 transition-transform"
