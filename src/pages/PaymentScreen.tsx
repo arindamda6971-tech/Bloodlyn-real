@@ -531,7 +531,7 @@ const PaymentScreen = () => {
         patient_name: paymentState?.patientName || "Patient",
         patient_age: paymentState?.patientAge || "30",
         patient_gender: paymentState?.patientGender || "Male",
-        test_name: cartItems.map((c: any) => c.name).join(", ") || "Lab Diagnostic Test",
+        test_name: cartItems.map((c: any) => c.name).join(" | ") || "Lab Diagnostic Test",
         total_amount: total,
         payment_status: "Paid",
         payment_method: selectedPaymentMethod.name || "UPI / Online",

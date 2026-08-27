@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { splitTestNames } from "@/lib/format-tests";
 import { useAuth } from "@/hooks/useAuth";
 
 export interface OrderData {
@@ -81,7 +82,7 @@ export const useOrderDetails = (orderId?: string) => {
 
       // Fallback to order.test_name
       if (testNames.length === 0 && orderRes.data.test_name) {
-        testNames.push(...orderRes.data.test_name.split(",").map((n: string) => n.trim()).filter(Boolean));
+        testNames.push(...splitTestNames(orderRes.data.test_name));
       }
 
       return {

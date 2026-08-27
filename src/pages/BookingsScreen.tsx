@@ -25,7 +25,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
-import { formatTestsLabel } from "@/lib/format-tests";
+import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import OrderStatusTimeline from "@/components/orders/OrderStatusTimeline";
 import { useOrders, Order } from "@/hooks/useOrders";
 
@@ -130,7 +130,7 @@ const BookingsScreen = () => {
 
   const renderOrderCard = (order: Order, index: number) => {
     const BP_RE = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
-    const bpParts = (order.test_name || "").split(",").map((s) => s.trim()).filter(Boolean);
+    const bpParts = splitTestNames(order.test_name);
     // Only a pure BP booking counts as a BP order; a BP add-on on a lab order stays a lab order.
     const isBp = bpParts.length > 0
       ? bpParts.every((p) => BP_RE.test(p))
