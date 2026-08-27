@@ -35,37 +35,39 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
-  { key: "processing", label: "Processing", icon: FlaskConical },
+  { key: "collection", label: "Sample Collection", icon: FlaskConical },
   { key: "report", label: "Reports Ready", icon: FileText },
 ];
 
-function getCompletedIndex(status: string | null, partnerName?: string | null): number {
-  const s = status?.toLowerCase();
-  switch (s) {
-    case "pending":
-      return -1;
-    case "confirmed":
-    case "accepted":
-      return 0;
-    case "processing":
-    case "assigned":
-    case "partner_assigned":
-    case "out_for_collection":
-    case "sample_collected":
-    case "in_progress":
-    case "collection_complete":
-    case "sample_received":
-    case "lab_processing":
-      return 1;
-    case "report_ready":
-    case "report_delivered":
-    case "completed":
-      return 2;
-    default:
-      if (partnerName) return 1;
-      return -1;
+const REPORT_STATUSES = ["report_ready", "report_delivered", "completed"];
+const COLLECTED_STATUSES = [
+  "sample_collected",
+  "in_progress",
+  "collection_complete",
+  "sample_received",
+  "processing",
+  "lab_processing",
+];
+const ASSIGNED_STATUSES = ["assigned", "partner_assigned", "out_for_collection"];
+
+/** Lab has explicitly accepted the order in the Partner dashboard. */
+function isLabAccepted(status: string | null, partnerName?: string | null): boolean {
+  const s = status?.toLowerCase() || "";
+  if (["accepted", "collection_pending", ...ASSIGNED_STATUSES, ...COLLECTED_STATUSES, ...REPORT_STATUSES].includes(s)) {
+    return true;
   }
+  // Legacy orders: a partner was assigned, so the lab clearly accepted it.
+  return !!partnerName && s !== "pending" && s !== "confirmed" ? true : false;
 }
+
+function getCompletedIndex(status: string | null, partnerName?: string | null): number {
+  const s = status?.toLowerCase() || "";
+  if (REPORT_STATUSES.includes(s)) return 2;
+  if (COLLECTED_STATUSES.includes(s)) return 1;
+  if (isLabAccepted(status, partnerName)) return 0;
+  return -1;
+}
+
 
 const getDisplayStatus = (status: string | null) => {
   switch (status) {
