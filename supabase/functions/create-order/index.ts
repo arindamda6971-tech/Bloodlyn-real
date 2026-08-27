@@ -881,7 +881,12 @@ Deno.serve(async (req) => {
             source: "main_app",
             external_booking_id: orderData.id,
           };
-          await adminClient.from("appointments").insert([apptPayload]).catch(e => console.error("appointments edge insert error:", e));
+          try {
+            const { error: apptErr } = await adminClient.from("appointments").insert([apptPayload]);
+            if (apptErr) console.error("appointments edge insert error:", apptErr);
+          } catch (e) {
+            console.error("appointments edge insert error:", e);
+          }
         }
       }
     }
