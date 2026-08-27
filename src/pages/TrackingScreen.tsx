@@ -451,6 +451,44 @@ const TrackingScreen = () => {
                           </p>
                         )}
 
+                        {/* Awaiting the lab's acceptance in the Partner dashboard */}
+                        {step.key === "accepted" && !isCompleted && !isCancelled && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                            Your order will be accepted by the lab shortly.
+                          </p>
+                        )}
+
+                        {/* Customer-driven collection confirmation */}
+                        {step.key === "collection" && !isCancelled && (
+                          <>
+                            {collectionDone ? null : showCollectionPrompt ? (
+                              <CollectionConfirmPrompt
+                                orderId={order.id}
+                                scheduledDate={order.scheduled_date}
+                                scheduledTimeSlot={order.scheduled_time_slot}
+                                onConfirmed={(status) => {
+                                  queryClient.setQueryData(
+                                    ["order", order.id, supabaseUserId],
+                                    (old: any) => (old ? { ...old, order: { ...old.order, status } } : old)
+                                  );
+                                  queryClient.invalidateQueries({ queryKey: ["order", order.id] });
+                                  queryClient.invalidateQueries({ queryKey: ["orders"] });
+                                }}
+                              />
+                            ) : statusLower === "collection_pending" ? (
+                              <p className="text-[11px] text-amber-600 mt-0.5 leading-relaxed">
+                                You reported that your sample wasn’t collected. The lab has been notified.
+                              </p>
+                            ) : labAccepted ? (
+                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                                The lab is assigning a collection partner for your sample.
+                              </p>
+                            ) : null}
+                          </>
+                        )}
+
+
+
                         {/* Report actions */}
                         {(step.key === "report" || step.key === "completed") && isCompleted && order.report_url && (
                           <div className="flex gap-2 mt-2">
