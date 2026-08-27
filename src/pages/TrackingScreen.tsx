@@ -29,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
+import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt";
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
@@ -88,6 +89,8 @@ const getDisplayStatus = (status: string | null) => {
       return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
     case "confirmed":
       return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
+    case "collection_pending":
+      return { label: "Collection Pending", color: "bg-warning text-warning-foreground", pulse: true };
     case "pending":
       return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
     case "cancelled":
@@ -591,7 +594,7 @@ const TrackingScreen = () => {
             </Button>
           )}
 
-          {!isCancelled && completedIndex < 1 && (
+          {!isCancelled && !partnerAssigned && completedIndex < 1 && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -601,7 +604,7 @@ const TrackingScreen = () => {
               Cancel or Reschedule Order
             </Button>
           )}
-          {!isCancelled && completedIndex >= 1 && completedIndex < 3 && (
+          {!isCancelled && (partnerAssigned || completedIndex >= 1) && completedIndex < 3 && (
             <p className="text-xs text-muted-foreground text-center px-4">
               Cancellation is unavailable — a collection partner has been assigned to your order.
             </p>
