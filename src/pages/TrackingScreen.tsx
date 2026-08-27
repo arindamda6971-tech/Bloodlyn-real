@@ -165,6 +165,16 @@ const TrackingScreen = () => {
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
 
+  const statusLower = order.status?.toLowerCase() || "";
+  const labAccepted = !isBpOrder && isLabAccepted(order.status, order.delivery_partner_name);
+  const partnerAssigned =
+    !isBpOrder && (ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name);
+  const collectionDone =
+    !isBpOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
+  const showCollectionPrompt =
+    !isCancelled && labAccepted && partnerAssigned && !collectionDone;
+
+
   let patientName = order.patient_name || order.family_members?.full_name;
   if (!patientName && order.special_instructions) {
     const match = order.special_instructions.match(/Patient:\s*([^(|]+)/);
