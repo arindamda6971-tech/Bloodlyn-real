@@ -853,7 +853,12 @@ Deno.serve(async (req) => {
       scheduled_time_slot: scheduledTimeSlot || "Morning Slot",
       test_items: cartItems.map(c => c.name || "Diagnostic Test"),
     };
-    await adminClient.from("blood_lyn_orders").insert([newRealOrder]).catch(e => console.error("blood_lyn_orders edge insert error:", e));
+    try {
+      const { error: mirrorErr } = await adminClient.from("blood_lyn_orders").insert([newRealOrder]);
+      if (mirrorErr) console.error("blood_lyn_orders edge insert error:", mirrorErr);
+    } catch (e) {
+      console.error("blood_lyn_orders edge insert error:", e);
+    }
 
     // 2. appointments insertion
     for (const item of cartItems) {
