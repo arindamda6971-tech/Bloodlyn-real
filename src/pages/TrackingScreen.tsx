@@ -29,43 +29,46 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
+import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt";
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
 
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
-  { key: "processing", label: "Processing", icon: FlaskConical },
+  { key: "collection", label: "Sample Collection", icon: FlaskConical },
   { key: "report", label: "Reports Ready", icon: FileText },
 ];
 
-function getCompletedIndex(status: string | null, partnerName?: string | null): number {
-  const s = status?.toLowerCase();
-  switch (s) {
-    case "pending":
-      return -1;
-    case "confirmed":
-    case "accepted":
-      return 0;
-    case "processing":
-    case "assigned":
-    case "partner_assigned":
-    case "out_for_collection":
-    case "sample_collected":
-    case "in_progress":
-    case "collection_complete":
-    case "sample_received":
-    case "lab_processing":
-      return 1;
-    case "report_ready":
-    case "report_delivered":
-    case "completed":
-      return 2;
-    default:
-      if (partnerName) return 1;
-      return -1;
+const REPORT_STATUSES = ["report_ready", "report_delivered", "completed"];
+const COLLECTED_STATUSES = [
+  "sample_collected",
+  "in_progress",
+  "collection_complete",
+  "sample_received",
+  "processing",
+  "lab_processing",
+];
+const ASSIGNED_STATUSES = ["assigned", "partner_assigned", "out_for_collection"];
+
+/** Lab has explicitly accepted the order in the Partner dashboard. */
+function isLabAccepted(status: string | null, partnerName?: string | null): boolean {
+  const s = status?.toLowerCase() || "";
+  if (["accepted", "collection_pending", ...ASSIGNED_STATUSES, ...COLLECTED_STATUSES, ...REPORT_STATUSES].includes(s)) {
+    return true;
   }
+  // Legacy orders: a partner was assigned, so the lab clearly accepted it.
+  return !!partnerName && s !== "pending" && s !== "confirmed" ? true : false;
 }
+
+function getCompletedIndex(status: string | null, partnerName?: string | null): number {
+  const s = status?.toLowerCase() || "";
+  if (REPORT_STATUSES.includes(s)) return 2;
+  if (COLLECTED_STATUSES.includes(s)) return 1;
+  if (isLabAccepted(status, partnerName)) return 0;
+  return -1;
+}
+
 
 const getDisplayStatus = (status: string | null) => {
   switch (status) {
@@ -86,6 +89,8 @@ const getDisplayStatus = (status: string | null) => {
       return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
     case "confirmed":
       return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
+    case "collection_pending":
+      return { label: "Collection Pending", color: "bg-warning text-warning-foreground", pulse: true };
     case "pending":
       return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
     case "cancelled":
@@ -162,6 +167,16 @@ const TrackingScreen = () => {
     : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
+
+  const statusLower = order.status?.toLowerCase() || "";
+  const labAccepted = !isBpOrder && isLabAccepted(order.status, order.delivery_partner_name);
+  const partnerAssigned =
+    !isBpOrder && (ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name);
+  const collectionDone =
+    !isBpOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
+  const showCollectionPrompt =
+    !isCancelled && labAccepted && partnerAssigned && !collectionDone;
+
 
   let patientName = order.patient_name || order.family_members?.full_name;
   if (!patientName && order.special_instructions) {
@@ -439,6 +454,44 @@ const TrackingScreen = () => {
                           </p>
                         )}
 
+                        {/* Awaiting the lab's acceptance in the Partner dashboard */}
+                        {step.key === "accepted" && !isCompleted && !isCancelled && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                            Your order will be accepted by the lab shortly.
+                          </p>
+                        )}
+
+                        {/* Customer-driven collection confirmation */}
+                        {step.key === "collection" && !isCancelled && (
+                          <>
+                            {collectionDone ? null : showCollectionPrompt ? (
+                              <CollectionConfirmPrompt
+                                orderId={order.id}
+                                scheduledDate={order.scheduled_date}
+                                scheduledTimeSlot={order.scheduled_time_slot}
+                                onConfirmed={(status) => {
+                                  queryClient.setQueryData(
+                                    ["order", order.id, supabaseUserId],
+                                    (old: any) => (old ? { ...old, order: { ...old.order, status } } : old)
+                                  );
+                                  queryClient.invalidateQueries({ queryKey: ["order", order.id] });
+                                  queryClient.invalidateQueries({ queryKey: ["orders"] });
+                                }}
+                              />
+                            ) : statusLower === "collection_pending" ? (
+                              <p className="text-[11px] text-amber-600 mt-0.5 leading-relaxed">
+                                You reported that your sample wasn’t collected. The lab has been notified.
+                              </p>
+                            ) : labAccepted ? (
+                              <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                                The lab is assigning a collection partner for your sample.
+                              </p>
+                            ) : null}
+                          </>
+                        )}
+
+
+
                         {/* Report actions */}
                         {(step.key === "report" || step.key === "completed") && isCompleted && order.report_url && (
                           <div className="flex gap-2 mt-2">
@@ -541,7 +594,7 @@ const TrackingScreen = () => {
             </Button>
           )}
 
-          {!isCancelled && completedIndex < 1 && (
+          {!isCancelled && !partnerAssigned && completedIndex < 1 && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -551,7 +604,7 @@ const TrackingScreen = () => {
               Cancel or Reschedule Order
             </Button>
           )}
-          {!isCancelled && completedIndex >= 1 && completedIndex < 3 && (
+          {!isCancelled && (partnerAssigned || completedIndex >= 1) && completedIndex < 3 && (
             <p className="text-xs text-muted-foreground text-center px-4">
               Cancellation is unavailable — a collection partner has been assigned to your order.
             </p>

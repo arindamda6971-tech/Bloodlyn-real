@@ -52,8 +52,8 @@ const BookingsScreen = () => {
     if (activeFilter !== "all") {
       if (activeFilter === "confirmed") {
         result = result.filter((o) => [
-          "confirmed", "pending", "accepted", "assigned", "out_for_collection",
-          "in_progress", "sample_collected", "processing", "lab_processing"
+          "confirmed", "pending", "accepted", "assigned", "partner_assigned", "out_for_collection",
+          "collection_pending", "in_progress", "sample_collected", "processing", "lab_processing"
         ].includes(o.status || ""));
       } else if (activeFilter === "completed") {
         result = result.filter((o) => ["completed", "report_ready", "report_delivered"].includes(o.status || ""));
@@ -95,6 +95,8 @@ const BookingsScreen = () => {
         return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
       case "confirmed":
         return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
+      case "collection_pending":
+        return { label: "Collection Pending", color: "bg-warning text-warning-foreground", pulse: true };
       case "pending":
         return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
       case "cancelled":

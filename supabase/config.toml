@@ -39,3 +39,7 @@ verify_jwt = false
 
 
 
+
+[functions.confirm-collection]
+verify_jwt = false
+# JWT validated in code via getClaims(); uses service role key to update order status

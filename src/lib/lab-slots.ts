@@ -218,3 +218,37 @@ export function isLabOpenOnDayOffset(
   if (!target) return false;
   return !!byDay[target.dayOfWeek]?.is_open;
 }
+
+/* ------------------------------------------------------------------
+ * Collection window helpers (used by the tracking "was your blood
+ * collected?" prompt — the "No" answer only unlocks after the slot ends)
+ * ------------------------------------------------------------------ */
+
+/** IST calendar date (yyyy-mm-dd) for a given instant. */
+export function getLabSlotDateKey(now: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: LAB_SLOT_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/**
+ * True when the booked collection window has fully elapsed.
+ * Orders without a schedule (ASAP) are treated as elapsed.
+ */
+export function hasCollectionWindowEnded(
+  scheduledDate: string | null | undefined,
+  scheduledTimeSlot: string | null | undefined,
+  now: Date = new Date()
+): boolean {
+  if (!scheduledDate) return true;
+  const today = getLabSlotDateKey(now);
+  const day = scheduledDate.slice(0, 10);
+  if (day < today) return true;
+  if (day > today) return false;
+  const slot = findFixedSlot(scheduledTimeSlot);
+  if (!slot) return true;
+  return getCurrentLabSlotMinutes(now) >= slot.endMinutes;
+}
