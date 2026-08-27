@@ -393,17 +393,14 @@ const HomeScreen = () => {
                   </span>
                 </div>
                 
-                <p className="text-[11px] text-muted-foreground font-semibold leading-relaxed mb-4 pr-2">
-                  {action.desc}
-                </p>
-
-                <div className="flex items-center justify-end gap-2 mt-2">
+                <div className="flex items-center justify-start gap-1 mt-2 group/btn">
                   <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient}`}>
                     Book Now
                   </span>
-                  <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${action.gradient} flex items-center justify-center shadow-md group-hover:opacity-90 transition-opacity`}>
-                    <ChevronRight className="w-4 h-4 text-white" />
-                  </div>
+                  <ChevronRight 
+                    className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" 
+                    color={action.gradient.match(/from-\[([^\]]+)\]/)?.[1] || 'currentColor'} 
+                  />
                 </div>
               </div>
             </motion.div>

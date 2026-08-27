@@ -23,8 +23,11 @@ const OnboardingScreen = () => {
           alt="BloodLyn"
           width={260}
           height={70}
-          className="h-[64px] w-auto object-contain mb-6"
+          className="h-[64px] w-auto object-contain"
         />
+
+        {/* Spacer to push content lower */}
+        <div className="flex-1 min-h-[40px] max-h-[100px]" />
 
         {/* ── GRAPHIC AREA ── */}
         <div className="relative w-[280px] h-[250px] mx-auto">
@@ -100,7 +103,7 @@ const OnboardingScreen = () => {
         </div>
 
         {/* ── TEXT ── */}
-        <p className="text-[13px] text-gray-400 font-medium mt-4 mb-1">Welcome to BloodLyn</p>
+        <p className="text-[13px] text-gray-400 font-medium mt-8 mb-1">Welcome to BloodLyn</p>
         <h1 className="text-[22px] font-extrabold text-gray-900 text-center mb-3">
           Your Health, Our Priority
         </h1>
