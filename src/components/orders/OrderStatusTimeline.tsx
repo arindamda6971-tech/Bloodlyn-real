@@ -83,8 +83,8 @@ const OrderStatusTimeline = ({ status, className, isBp }: OrderStatusTimelinePro
       case "partner_assigned":
       case "collection_pending":
       case "out_for_collection":
-        return 1;
       case "processing":
+        return 1;
       case "sample_collected":
       case "in_progress":
       case "collection_complete":
