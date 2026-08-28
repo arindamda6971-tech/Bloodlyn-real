@@ -86,9 +86,10 @@ const BookingsScreen = () => {
       case "sample_collected":
         return { label: "Sample Collected", color: "bg-primary text-primary-foreground", pulse: true };
       case "assigned":
+      case "partner_assigned":
       case "out_for_collection":
-        return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
       case "processing":
+        return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
       case "lab_processing":
         return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
       case "accepted":

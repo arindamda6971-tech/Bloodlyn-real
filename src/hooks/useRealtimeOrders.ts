@@ -4,7 +4,24 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 
-type OrderStatus = "pending" | "confirmed" | "accepted" | "processing" | "in_progress" | "sample_collected" | "report_ready" | "completed" | "cancelled";
+type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "accepted"
+  | "assigned"
+  | "partner_assigned"
+  | "out_for_collection"
+  | "collection_pending"
+  | "processing"
+  | "in_progress"
+  | "sample_collected"
+  | "collection_complete"
+  | "sample_received"
+  | "lab_processing"
+  | "report_ready"
+  | "report_delivered"
+  | "completed"
+  | "cancelled";
 
 interface OrderUpdate {
   id: string;
@@ -48,6 +65,16 @@ export const useRealtimeOrders = (orderId?: string) => {
           // Update local state
           setLatestStatus(newData.status);
 
+          // Update the exact detail cache immediately. The tracking query key
+          // includes the authenticated user id, so updating ["order", id]
+          // alone would create a separate cache entry and leave the UI stale.
+          queryClient.setQueryData(
+            ["order", newData.id, user.id],
+            (current: { order?: OrderUpdate } | undefined) => current
+              ? { ...current, order: { ...current.order, ...newData } }
+              : current,
+          );
+
           // Invalidate queries to refresh UI
           queryClient.invalidateQueries({ queryKey: ["orders"] });
           queryClient.invalidateQueries({ queryKey: ["order", newData.id] });
@@ -59,17 +86,25 @@ export const useRealtimeOrders = (orderId?: string) => {
               pending: "Your order is pending confirmation",
               confirmed: "Your order has been confirmed! 🎉",
               accepted: "Your order has been accepted! 🎉",
+              assigned: "Collection partner has been assigned",
+              partner_assigned: "Collection partner has been assigned",
+              out_for_collection: "Collection partner has been assigned",
               processing: "Collection partner has been assigned",
+              collection_pending: "The lab has been notified that collection is pending",
               in_progress: "Sample collection is in progress",
               sample_collected: "Sample has been collected! 🧪",
+              collection_complete: "Sample has been collected! 🧪",
+              sample_received: "Your sample has reached the lab",
+              lab_processing: "Your sample is being processed by the lab",
               report_ready: "Your report is ready! 📋",
+              report_delivered: "Your report is ready! 📋",
               completed: "Your order has been completed! ✅",
               cancelled: "Your order has been cancelled",
             };
 
             const message = statusMessages[newData.status];
             if (message) {
-              if (newData.status === "completed" || newData.status === "report_ready") {
+              if (["completed", "report_ready", "report_delivered"].includes(newData.status)) {
                 toast.success(message);
               } else if (newData.status === "cancelled") {
                 toast.error(message);

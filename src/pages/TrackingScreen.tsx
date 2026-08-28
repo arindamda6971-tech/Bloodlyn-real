@@ -46,10 +46,11 @@ const COLLECTED_STATUSES = [
   "in_progress",
   "collection_complete",
   "sample_received",
-  "processing",
   "lab_processing",
 ];
-const ASSIGNED_STATUSES = ["assigned", "partner_assigned", "out_for_collection"];
+// `processing` is the legacy value currently emitted by the Partner app when
+// it assigns a collection partner. It must not advance collection completion.
+const ASSIGNED_STATUSES = ["assigned", "partner_assigned", "out_for_collection", "processing"];
 
 /** Lab has explicitly accepted the order in the Partner dashboard. */
 function isLabAccepted(status: string | null, partnerName?: string | null): boolean {
@@ -80,9 +81,10 @@ const getDisplayStatus = (status: string | null) => {
     case "sample_collected":
       return { label: "Sample Collected", color: "bg-primary text-primary-foreground", pulse: true };
     case "assigned":
+    case "partner_assigned":
     case "out_for_collection":
-      return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
     case "processing":
+      return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
     case "lab_processing":
       return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
     case "accepted":
@@ -175,7 +177,11 @@ const TrackingScreen = () => {
   const collectionDone =
     !isBpOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
   const showCollectionPrompt =
-    !isCancelled && labAccepted && partnerAssigned && !collectionDone;
+    !isCancelled &&
+    statusLower !== "collection_pending" &&
+    labAccepted &&
+    partnerAssigned &&
+    !collectionDone;
 
 
   let patientName = order.patient_name || order.family_members?.full_name;
@@ -398,7 +404,9 @@ const TrackingScreen = () => {
               <div className="relative pl-1">
                 {activeWorkflowSteps.map((step, index) => {
                   const isCompleted = index <= completedIndex;
-                  const isCurrent = index === completedIndex;
+                  const isCurrent = completedIndex >= activeWorkflowSteps.length - 1
+                    ? index === completedIndex
+                    : index === completedIndex + 1;
                   const isLast = index === activeWorkflowSteps.length - 1;
                   const StepIcon = step.icon;
 

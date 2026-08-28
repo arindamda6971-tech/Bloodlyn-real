@@ -46,7 +46,7 @@ const ReportsScreen = () => {
         .from("orders")
         .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id, special_instructions")
         .eq("user_id", user.id)
-        .in("status", ["report_ready", "completed"])
+        .in("status", ["report_ready", "report_delivered", "completed"])
         .order("updated_at", { ascending: false });
 
       if (error) {
