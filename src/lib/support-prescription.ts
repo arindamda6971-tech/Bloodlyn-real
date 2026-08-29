@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
  * the Admin project's Help & Support desk as a support ticket — never to a lab.
  */
 
-export const SUPPORT_PRESCRIPTION_BUCKET = "prescriptions";
+export const SUPPORT_PRESCRIPTION_BUCKET = "order-prescriptions";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365;
 export const MAX_SUPPORT_PRESCRIPTION_BYTES = 10 * 1024 * 1024;
 
