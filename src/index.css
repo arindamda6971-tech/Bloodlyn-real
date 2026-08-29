@@ -822,3 +822,60 @@ html.native .shadow-2xl {
 html.native [data-scroll-container] {
   will-change: scroll-position;
 }
+
+/* ------------------------------------------------------------------
+ * Ultra-Smooth GPU-Composited Native Page Transitions
+ * Uses 100% compositor CSS animations (transform3d) to guarantee
+ * buttery 60-120 FPS transitions without JS main-thread locking.
+ * ------------------------------------------------------------------ */
+@keyframes pagePushEnter {
+  0% {
+    transform: translate3d(100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pagePopEnter {
+  0% {
+    transform: translate3d(-10%, 0, 0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes pageFadeEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.page-anim-push {
+  animation: pagePushEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.page-anim-pop {
+  animation: pagePopEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.page-anim-fade {
+  animation: pageFadeEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}

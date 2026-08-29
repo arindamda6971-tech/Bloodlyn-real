@@ -355,11 +355,11 @@ const CartScreen = () => {
           <p className="text-[15px] font-medium text-muted-foreground mb-8 leading-relaxed max-w-[260px]">
             Explore our comprehensive health packages and individual tests to stay on top of your well-being.
           </p>
-          <motion.div whileTap={{ scale: 0.95 }} className="w-full max-w-[240px]">
+          <div className="w-full max-w-[240px] active:scale-95 transition-transform duration-100 ease-out press">
             <Button onClick={() => navigate("/categories")} className="w-full h-14 rounded-2xl text-base font-bold shadow-lg shadow-primary/25 bg-gradient-to-r from-primary to-blue-600">
               Browse Health Packages
             </Button>
-          </motion.div>
+          </div>
         </div>
       </MobileLayout>
     );

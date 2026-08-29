@@ -971,8 +971,7 @@ const LabDetailScreen = () => {
                         )}
                       </div>
                     </button>
-                    <motion.button
-                      whileTap={{ scale: 0.85 }}
+                    <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -983,14 +982,14 @@ const LabDetailScreen = () => {
                         }
                       }}
                       disabled={isClosed}
-                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all ${
+                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 duration-100 ease-out press ${
                         isAdded
                           ? "bg-success text-white shadow-md"
                           : "bg-[#38bdf8] text-white shadow-md"
                       }`}
                     >
                       {isAdded ? <ShoppingCart className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               );

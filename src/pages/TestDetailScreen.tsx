@@ -497,7 +497,7 @@ const TestDetailScreen = () => {
               {itemCount} {itemCount === 1 ? "test" : "tests"} already in cart · ₹{subtotal}
             </p>
           )}
-          <motion.div whileTap={{ scale: 0.95 }}>
+          <div className="active:scale-95 transition-transform duration-100 ease-out press">
             <Button
               onClick={handleAddToCart}
               className="w-full h-14 rounded-2xl text-base font-semibold bg-gradient-to-r from-[#2196F3] to-[#1565C0] text-white shadow-xl transition-all"
@@ -505,7 +505,7 @@ const TestDetailScreen = () => {
               <ShoppingCart className="w-5 h-5 mr-2" />
               {isInCart ? "Go to Cart" : "Add to Cart"}
             </Button>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
 

@@ -29,14 +29,13 @@ const variantClasses = {
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ className, variant = "default", size = "md", children, onClick, disabled, type = "button", ...props }, ref) => {
     return (
-      <motion.button
+      <button
         ref={ref}
         type={type}
         disabled={disabled}
-        whileTap={{ scale: 0.95 }}
         onClick={onClick}
         className={cn(
-          "rounded-full flex items-center justify-center transition-colors tap-target disabled:opacity-50 disabled:pointer-events-none",
+          "rounded-full flex items-center justify-center transition-all duration-100 ease-out active:scale-95 press tap-target disabled:opacity-50 disabled:pointer-events-none",
           sizeClasses[size],
           variantClasses[variant],
           className
@@ -44,7 +43,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-label={props["aria-label"]}
       >
         {children}
-      </motion.button>
+      </button>
     );
   }
 );

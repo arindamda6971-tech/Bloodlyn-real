@@ -33,29 +33,50 @@ import AppointmentStatusListener from "@/components/AppointmentStatusListener";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 
-// Core screens — eagerly loaded for instant navigation (no chunk-load delay)
+// All screens — eagerly loaded for instant 0ms navigation without blank/white flashes
 import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
-
-// All other screens — lazily loaded with auto-reload fallback
-const safeImport = <T,>(importFn: () => Promise<T>): Promise<T> => {
-  return importFn().catch((error) => {
-    console.error("Critical: Failed to load module. Auto-reloading...", error);
-    if (typeof window !== "undefined") {
-      window.location.reload();
-    }
-    throw error;
-  });
-};
-
-const HomeScreen = lazy(() => safeImport(() => import("./pages/HomeScreen")));
-const CategoriesScreen = lazy(() => safeImport(() => import("./pages/CategoriesScreen")));
-const ProfileScreen = lazy(() => safeImport(() => import("./pages/ProfileScreen")));
-const BookingsScreen = lazy(() => safeImport(() => import("./pages/BookingsScreen")));
-const LocationCheckScreen = lazy(() => safeImport(() => import("./pages/LocationCheckScreen")));
-const TestDetailScreen = lazy(() => safeImport(() => import("./pages/TestDetailScreen")));
-const CartScreen = lazy(() => safeImport(() => import("./pages/CartScreen")));
+import HomeScreen from "./pages/HomeScreen";
+import CategoriesScreen from "./pages/CategoriesScreen";
+import ProfileScreen from "./pages/ProfileScreen";
+import BookingsScreen from "./pages/BookingsScreen";
+import LocationCheckScreen from "./pages/LocationCheckScreen";
+import TestDetailScreen from "./pages/TestDetailScreen";
+import CartScreen from "./pages/CartScreen";
+import InstallScreen from "./pages/InstallScreen";
+import CategoryTestsScreen from "./pages/CategoryTestsScreen";
+import TestSelectionScreen from "./pages/TestSelectionScreen";
+import LabSelectionScreen from "./pages/LabSelectionScreen";
+import PaymentScreen from "./pages/PaymentScreen";
+import ReportsScreen from "./pages/ReportsScreen";
+import ReportDetailScreen from "./pages/ReportDetailScreen";
+import EditProfileScreen from "./pages/EditProfileScreen";
+import NotificationsScreen from "./pages/NotificationsScreen";
+import SubscriptionScreen from "./pages/SubscriptionScreen";
+import SavedAddressesScreen from "./pages/SavedAddressesScreen";
+import DoctorConsultScreen from "./pages/DoctorConsultScreen";
+import PartnerLabsScreen from "./pages/PartnerLabsScreen";
+import LabDetailScreen from "./pages/LabDetailScreen";
+import PackagesScreen from "./pages/PackagesScreen";
+import PackageDetailScreen from "./pages/PackageDetailScreen";
+import SupportScreen from "./pages/SupportScreen";
+import PhysioConsultScreen from "./pages/PhysioConsultScreen";
+import ECGTestScreen from "./pages/ECGTestScreen";
+import BPCheckScreen from "./pages/BPCheckScreen";
+import ConsultationCallScreen from "./pages/ConsultationCallScreen";
+import EmbeddedCallScreen from "./pages/EmbeddedCallScreen";
+import OrderSuccessScreen from "./pages/OrderSuccessScreen";
+import TrackingScreen from "./pages/TrackingScreen";
+import FamilyMembersScreen from "./pages/FamilyMembersScreen";
+import AddFamilyMemberScreen from "./pages/AddFamilyMemberScreen";
+import PaymentMethodsScreen from "./pages/PaymentMethodsScreen";
+import TermsScreen from "./pages/TermsScreen";
+import PrivacyPolicyScreen from "./pages/PrivacyPolicyScreen";
+import ECGDoctorsScreen from "./pages/ECGDoctorsScreen";
+import NotFound from "./pages/NotFound";
+import UnauthorizedScreen from "./pages/UnauthorizedScreen";
+import UploadPrescriptionScreen from "./pages/UploadPrescriptionScreen";
 
 const CapacitorInitializer = () => {
   useEffect(() => {
@@ -63,40 +84,6 @@ const CapacitorInitializer = () => {
   }, []);
   return null;
 };
-
-const InstallScreen = lazy(() => safeImport(() => import("./pages/InstallScreen")));
-const CategoryTestsScreen = lazy(() => safeImport(() => import("./pages/CategoryTestsScreen")));
-const TestSelectionScreen = lazy(() => safeImport(() => import("./pages/TestSelectionScreen")));
-const LabSelectionScreen = lazy(() => safeImport(() => import("./pages/LabSelectionScreen")));
-const PaymentScreen = lazy(() => safeImport(() => import("./pages/PaymentScreen")));
-const ReportsScreen = lazy(() => safeImport(() => import("./pages/ReportsScreen")));
-const ReportDetailScreen = lazy(() => safeImport(() => import("./pages/ReportDetailScreen")));
-const EditProfileScreen = lazy(() => safeImport(() => import("./pages/EditProfileScreen")));
-const NotificationsScreen = lazy(() => safeImport(() => import("./pages/NotificationsScreen")));
-const SubscriptionScreen = lazy(() => safeImport(() => import("./pages/SubscriptionScreen")));
-const SavedAddressesScreen = lazy(() => safeImport(() => import("./pages/SavedAddressesScreen")));
-const DoctorConsultScreen = lazy(() => safeImport(() => import("./pages/DoctorConsultScreen")));
-const PartnerLabsScreen = lazy(() => safeImport(() => import("./pages/PartnerLabsScreen")));
-const LabDetailScreen = lazy(() => safeImport(() => import("./pages/LabDetailScreen")));
-const PackagesScreen = lazy(() => safeImport(() => import("./pages/PackagesScreen")));
-const PackageDetailScreen = lazy(() => safeImport(() => import("./pages/PackageDetailScreen")));
-const SupportScreen = lazy(() => safeImport(() => import("./pages/SupportScreen")));
-const PhysioConsultScreen = lazy(() => safeImport(() => import("./pages/PhysioConsultScreen")));
-const ECGTestScreen = lazy(() => safeImport(() => import("./pages/ECGTestScreen")));
-const BPCheckScreen = lazy(() => safeImport(() => import("./pages/BPCheckScreen")));
-const ConsultationCallScreen = lazy(() => safeImport(() => import("./pages/ConsultationCallScreen")));
-const EmbeddedCallScreen = lazy(() => safeImport(() => import("./pages/EmbeddedCallScreen")));
-const OrderSuccessScreen = lazy(() => safeImport(() => import("./pages/OrderSuccessScreen")));
-const TrackingScreen = lazy(() => safeImport(() => import("./pages/TrackingScreen")));
-const FamilyMembersScreen = lazy(() => safeImport(() => import("./pages/FamilyMembersScreen")));
-const AddFamilyMemberScreen = lazy(() => safeImport(() => import("./pages/AddFamilyMemberScreen")));
-const PaymentMethodsScreen = lazy(() => safeImport(() => import("./pages/PaymentMethodsScreen")));
-const TermsScreen = lazy(() => safeImport(() => import("./pages/TermsScreen")));
-const PrivacyPolicyScreen = lazy(() => safeImport(() => import("./pages/PrivacyPolicyScreen")));
-const ECGDoctorsScreen = lazy(() => safeImport(() => import("./pages/ECGDoctorsScreen")));
-const NotFound = lazy(() => safeImport(() => import("./pages/NotFound")));
-const UnauthorizedScreen = lazy(() => safeImport(() => import("./pages/UnauthorizedScreen")));
-const UploadPrescriptionScreen = lazy(() => safeImport(() => import("./pages/UploadPrescriptionScreen")));
 
 /**
  * High-Performance Native Stack Navigator.

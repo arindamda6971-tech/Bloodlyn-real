@@ -29,12 +29,14 @@ public class MainActivity extends BridgeActivity {
 
                 // Inject into WebView once the bridge is ready
                 if (getBridge() != null && getBridge().getWebView() != null) {
+                    android.webkit.WebView webView = getBridge().getWebView();
+
                     String js = "document.documentElement.style.setProperty('--safe-area-inset-top','" + top + "px');"
                         + "document.documentElement.style.setProperty('--safe-area-inset-bottom','" + bottom + "px');"
                         + "document.documentElement.style.setProperty('--safe-area-inset-left','" + left + "px');"
                         + "document.documentElement.style.setProperty('--safe-area-inset-right','" + right + "px');";
-                    getBridge().getWebView().post(() ->
-                        getBridge().getWebView().evaluateJavascript(js, null)
+                    webView.post(() ->
+                        webView.evaluateJavascript(js, null)
                     );
                 }
 

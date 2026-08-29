@@ -86,13 +86,9 @@ const getCategoryStyle = (name: string, slug: string) => {
 };
 
 const CategoryTile = memo(({ category, index, onClick }: { category: any, index: number, onClick: () => void }) => (
-  <motion.div
-    whileTap={{ scale: 0.95 }}
-    initial={{ opacity: 0, y: 15 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: index * 0.03, type: "spring", stiffness: 300, damping: 24 }}
+  <div
     onClick={onClick}
-    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group"
+    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press"
     style={{ contain: 'content' }}
   >
     <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -101,7 +97,7 @@ const CategoryTile = memo(({ category, index, onClick }: { category: any, index:
     </div>
     <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
     <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.tests} {category.tests === 1 ? 'test' : 'tests'}</p>
-  </motion.div>
+  </div>
 ));
 
 CategoryTile.displayName = "CategoryTile";
