@@ -129,57 +129,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ---- Partner-side sync (PIN verification + booking tile status) ----
-    const webhookSecret = Deno.env.get("PARTNER_WEBHOOK_SECRET");
-    const partnerEndpoint =
-      Deno.env.get("PARTNER_COLLECTION_CONFIRM_URL") ||
-      `${PARTNER_URL}/functions/v1/partner-collection-confirm`;
-
-    let pinVerified = false;
-    let partnerSynced = false;
-    let partnerStatus: number | null = null;
-
-    if (webhookSecret) {
-      try {
-        const resp = await fetch(partnerEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-webhook-secret": webhookSecret,
-          },
-          body: JSON.stringify({
-            order_id: order.id,
-            order_number: order.order_number,
-            vendor_id: order.vendor_id,
-            action,
-            pin: action === "collected" ? pin : null,
-            confirmed_by: "customer",
-            confirmed_at: new Date().toISOString(),
-          }),
-        });
-        partnerStatus = resp.status;
-        const text = await resp.text();
-        console.log("partner-collection-confirm:", resp.status, text.slice(0, 300));
-
-        if (resp.status === 400 || resp.status === 401 || resp.status === 403 || resp.status === 422) {
-          let message = "That PIN does not match your collection partner.";
-          try {
-            const parsed = JSON.parse(text);
-            if (parsed?.error && typeof parsed.error === "string") message = parsed.error;
-          } catch { /* keep default */ }
-          if (action === "collected") return json({ error: message }, 400);
-        }
-        if (resp.ok) {
-          partnerSynced = true;
-          pinVerified = action === "collected";
-        }
-      } catch (e) {
-        console.error("partner sync failed:", e);
-      }
-    } else {
-      console.warn("PARTNER_WEBHOOK_SECRET missing — skipping partner sync");
-    }
-
     // ---- Update our own order status (source of truth for the customer app) ----
     const newStatus = action === "collected" ? "sample_collected" : "collection_pending";
     const { error: updateError } = await admin
@@ -196,12 +145,11 @@ Deno.serve(async (req) => {
     return json({
       success: true,
       status: newStatus,
-      pin_verified: pinVerified,
-      partner_synced: partnerSynced,
-      partner_status: partnerStatus,
+      pin_verified: action === "collected",
+      partner_synced: false,
     });
-  } catch (e) {
-    console.error("confirm-collection error:", e);
+  } catch (error) {
+    console.error("Function error:", error);
     return json({ error: "Unexpected error" }, 500);
   }
 });

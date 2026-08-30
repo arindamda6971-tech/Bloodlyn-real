@@ -116,18 +116,7 @@ const TrackingScreen = () => {
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
-  // Optimistically update order status in real-time
-  useEffect(() => {
-    if (latestStatus && paramOrderId) {
-      queryClient.setQueryData(["order", paramOrderId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          order: { ...old.order, status: latestStatus }
-        };
-      });
-    }
-  }, [latestStatus, paramOrderId, queryClient]);
+
 
   if (loading) {
     return (
