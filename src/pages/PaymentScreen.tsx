@@ -325,7 +325,7 @@ const PaymentScreen = () => {
           paymentState?.addressId
             ? supabase
                 .from("addresses")
-                .select("pincode, latitude, longitude")
+                .select("pincode, latitude, longitude, address_line1, address_line2, city, state")
                 .eq("id", paymentState.addressId)
                 .maybeSingle()
             : Promise.resolve({ data: null, error: null }),
@@ -528,6 +528,7 @@ const PaymentScreen = () => {
         created_at: new Date().toISOString(),
         customer_name: paymentState?.patientName || "Patient",
         customer_phone: paymentState?.patientPhone || "9876543210",
+        customer_address: address ? [address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ") : "Address not available locally",
         patient_name: paymentState?.patientName || "Patient",
         patient_age: paymentState?.patientAge || "30",
         patient_gender: paymentState?.patientGender || "Male",
