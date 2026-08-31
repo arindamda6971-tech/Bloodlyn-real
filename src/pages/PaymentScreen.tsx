@@ -443,7 +443,9 @@ const PaymentScreen = () => {
         total,
         paymentMethod: selectedPaymentMethod.id,
         couponCode: couponApplied ? "HEALTH100" : null,
-        patientName: paymentState?.patientName,
+        patientName: paymentState?.patientName 
+          ? (paymentState.patientName + (address ? ` | Address: ${[address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ")}` : ""))
+          : "Patient",
         patientAge: paymentState?.patientAge,
         patientGender: paymentState?.patientGender,
         patientPhone: paymentState?.patientPhone,
