@@ -158,6 +158,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fetch address for payload
+    let formattedAddress = null;
+    if (addressId) {
+      const { data: addressRow } = await adminClient.from("addresses").select("*").eq("id", addressId).maybeSingle();
+      if (addressRow) {
+        formattedAddress = [addressRow.address_line1, addressRow.address_line2, addressRow.city, addressRow.state, addressRow.pincode].filter(Boolean).join(", ");
+      }
+    }
+
     const regularItemIds = cartItems
       .filter((i) => !i.id.startsWith("ecg-") && !i.id.startsWith("ai-") && !i.id.startsWith("dc-") && !i.id.startsWith("reorder-") && !i.id.startsWith("doc-") && !i.id.startsWith("physio-") && !i.id.startsWith("bp-"))
       .map((i) => i.id);
@@ -633,6 +642,13 @@ Deno.serve(async (req) => {
         payment_method: paymentMethod || null,
         status: orderStatus,
         payment_status: paymentStatus,
+        order_details: {
+          customer_address: formattedAddress,
+          patient_name: patientName,
+          patient_age: patientAge,
+          patient_gender: patientGender,
+          patient_phone: patientPhone
+        },
         coupon_code: couponCode || null,
         special_instructions: specialInstructions,
         vendor_id: orderVendorId,
@@ -842,6 +858,7 @@ Deno.serve(async (req) => {
       created_at: new Date().toISOString(),
       customer_name: patientName || "Patient",
       customer_phone: patientPhone || "9876543210",
+      customer_address: formattedAddress || "Address not available locally",
       patient_name: patientName || "Patient",
       patient_age: String(patientAge || "30"),
       patient_gender: patientGender || "Male",
