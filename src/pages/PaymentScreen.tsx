@@ -466,9 +466,10 @@ const PaymentScreen = () => {
         total,
         paymentMethod: selectedPaymentMethod.id,
         couponCode: couponApplied ? "HEALTH100" : null,
-        patientName: paymentState?.patientName 
-          ? (paymentState.patientName + (address ? ` | Address: ${[address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ")}` : ""))
-          : "Patient",
+        // Keep the patient name clean — the collection address travels to the
+        // partner via the order's address_id / partner webhook payload.
+        patientName: paymentState?.patientName || "Patient",
+
         patientAge: paymentState?.patientAge,
         patientGender: paymentState?.patientGender,
         patientPhone: paymentState?.patientPhone,
