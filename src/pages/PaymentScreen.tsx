@@ -554,7 +554,7 @@ const PaymentScreen = () => {
         created_at: new Date().toISOString(),
         customer_name: paymentState?.patientName || "Patient",
         customer_phone: paymentState?.patientPhone || "9876543210",
-        customer_address: address ? [address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ") : "Address not available locally",
+        customer_address: orderAddress ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ") : "Address not available locally",
         patient_name: paymentState?.patientName || "Patient",
         patient_age: paymentState?.patientAge || "30",
         patient_gender: paymentState?.patientGender || "Male",
