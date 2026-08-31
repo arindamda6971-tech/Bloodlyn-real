@@ -228,9 +228,24 @@ Deno.serve(async (req) => {
         patient_age: patient?.age ?? null,
         patient_gender: patient?.gender ?? null,
         patient_phone: patient?.phone ?? null,
+        // Collection address (string) for partner UIs reading order_details
+        customer_address: formattedAddress,
+        delivery_address: formattedAddress,
+        address_pincode: addressPincode,
       },
-      customer_address: addressDetails,
+      // Collection / delivery address — string form first (what the partner
+      // booking tile renders), structured form kept alongside.
+      customer_address: formattedAddress,
+      delivery_address: formattedAddress,
+      address_line1: addressDetails?.address_line1 ?? null,
+      address_line2: addressDetails?.address_line2 ?? null,
+      city: addressDetails?.city ?? null,
+      state: addressDetails?.state ?? null,
+      pincode: addressPincode,
+      address_phone: addressDetails?.phone ?? null,
+      customer_address_details: addressDetails,
       created_at: order.created_at,
+
     };
 
     console.log("Vendor notification prepared:", JSON.stringify(vendorNotification, null, 2));
