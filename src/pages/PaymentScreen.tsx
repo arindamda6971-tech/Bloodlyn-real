@@ -315,8 +315,18 @@ const PaymentScreen = () => {
 
       const rawVendorId = paymentState?.cartItems?.[0]?.vendorId || paymentState?.labVendorId || null;
       let resolvedVendorId = rawVendorId && UUID_RE.test(rawVendorId) ? rawVendorId : null;
+      // Collection address of the booking user — hoisted so it can be attached
+      // to the order payload / partner mirror below.
+      let orderAddress: {
+        address_line1?: string | null;
+        address_line2?: string | null;
+        city?: string | null;
+        state?: string | null;
+        pincode?: string | null;
+      } | null = null;
       if (labId && !isServiceOnlyOrder) {
         const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
+
           supabase
             .from("diagnostic_centers")
             .select("pincode, service_pincodes, is_active, latitude, longitude, vendor_id")
