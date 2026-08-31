@@ -374,7 +374,20 @@ const PaymentScreen = () => {
         }
 
         resolvedVendorId = lab.vendor_id || resolvedVendorId;
+        orderAddress = address ?? null;
       }
+
+      // Ensure the collection address is available even for service-only orders.
+      if (!orderAddress && paymentState?.addressId) {
+        const { data: addr } = await supabase
+          .from("addresses")
+          .select("address_line1, address_line2, city, state, pincode")
+          .eq("id", paymentState.addressId)
+          .maybeSingle();
+        orderAddress = addr ?? null;
+      }
+
+
 
       // Use the existing session; only refresh when it is about to expire.
       // Forcing a refresh on every tap made the first "Place Order" tap fail
