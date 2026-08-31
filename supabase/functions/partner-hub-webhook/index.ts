@@ -91,15 +91,49 @@ Deno.serve(async (req) => {
     }
 
     // Fetch address details if available
-    let addressDetails = null;
+    let addressDetails: {
+      address_line1?: string | null;
+      address_line2?: string | null;
+      city?: string | null;
+      state?: string | null;
+      pincode?: string | null;
+      phone?: string | null;
+    } | null = null;
+    let formattedAddress: string | null = null;
+    let addressPincode: string | null = null;
     if (order.address_id) {
       const { data: address } = await adminClient
         .from("addresses")
-        .select("address_line1, address_line2, city, state, pincode")
+        .select("address_line1, address_line2, city, state, pincode, phone")
         .eq("id", order.address_id)
-        .single();
-      addressDetails = address;
+        .maybeSingle();
+      addressDetails = address ?? null;
+      if (address) {
+        // De-duplicate repeated fragments (address_line2 often already
+        // contains city/state/pincode from the geocoder).
+        const parts = [
+          address.address_line1,
+          address.address_line2,
+          address.city,
+          address.state,
+          address.pincode,
+        ]
+          .map((p) => (p ? String(p).trim() : ""))
+          .filter(Boolean);
+        const seen = new Set<string>();
+        const unique: string[] = [];
+        for (const p of parts) {
+          const key = p.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          unique.push(p);
+        }
+        formattedAddress = unique.join(", ") || null;
+        addressPincode = address.pincode ? String(address.pincode) : null;
+      }
     }
+
+
 
     // Parse structured patient fields out of special_instructions so the
     // Partner project can display the *selected family member* (not the
@@ -194,9 +228,24 @@ Deno.serve(async (req) => {
         patient_age: patient?.age ?? null,
         patient_gender: patient?.gender ?? null,
         patient_phone: patient?.phone ?? null,
+        // Collection address (string) for partner UIs reading order_details
+        customer_address: formattedAddress,
+        delivery_address: formattedAddress,
+        address_pincode: addressPincode,
       },
-      customer_address: addressDetails,
+      // Collection / delivery address — string form first (what the partner
+      // booking tile renders), structured form kept alongside.
+      customer_address: formattedAddress,
+      delivery_address: formattedAddress,
+      address_line1: addressDetails?.address_line1 ?? null,
+      address_line2: addressDetails?.address_line2 ?? null,
+      city: addressDetails?.city ?? null,
+      state: addressDetails?.state ?? null,
+      pincode: addressPincode,
+      address_phone: addressDetails?.phone ?? null,
+      customer_address_details: addressDetails,
       created_at: order.created_at,
+
     };
 
     console.log("Vendor notification prepared:", JSON.stringify(vendorNotification, null, 2));

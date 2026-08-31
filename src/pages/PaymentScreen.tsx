@@ -315,8 +315,18 @@ const PaymentScreen = () => {
 
       const rawVendorId = paymentState?.cartItems?.[0]?.vendorId || paymentState?.labVendorId || null;
       let resolvedVendorId = rawVendorId && UUID_RE.test(rawVendorId) ? rawVendorId : null;
+      // Collection address of the booking user — hoisted so it can be attached
+      // to the order payload / partner mirror below.
+      let orderAddress: {
+        address_line1?: string | null;
+        address_line2?: string | null;
+        city?: string | null;
+        state?: string | null;
+        pincode?: string | null;
+      } | null = null;
       if (labId && !isServiceOnlyOrder) {
         const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
+
           supabase
             .from("diagnostic_centers")
             .select("pincode, service_pincodes, is_active, latitude, longitude, vendor_id")
@@ -364,7 +374,20 @@ const PaymentScreen = () => {
         }
 
         resolvedVendorId = lab.vendor_id || resolvedVendorId;
+        orderAddress = address ?? null;
       }
+
+      // Ensure the collection address is available even for service-only orders.
+      if (!orderAddress && paymentState?.addressId) {
+        const { data: addr } = await supabase
+          .from("addresses")
+          .select("address_line1, address_line2, city, state, pincode")
+          .eq("id", paymentState.addressId)
+          .maybeSingle();
+        orderAddress = addr ?? null;
+      }
+
+
 
       // Use the existing session; only refresh when it is about to expire.
       // Forcing a refresh on every tap made the first "Place Order" tap fail
@@ -443,9 +466,10 @@ const PaymentScreen = () => {
         total,
         paymentMethod: selectedPaymentMethod.id,
         couponCode: couponApplied ? "HEALTH100" : null,
-        patientName: paymentState?.patientName 
-          ? (paymentState.patientName + (address ? ` | Address: ${[address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ")}` : ""))
-          : "Patient",
+        // Keep the patient name clean — the collection address travels to the
+        // partner via the order's address_id / partner webhook payload.
+        patientName: paymentState?.patientName || "Patient",
+
         patientAge: paymentState?.patientAge,
         patientGender: paymentState?.patientGender,
         patientPhone: paymentState?.patientPhone,
@@ -530,7 +554,7 @@ const PaymentScreen = () => {
         created_at: new Date().toISOString(),
         customer_name: paymentState?.patientName || "Patient",
         customer_phone: paymentState?.patientPhone || "9876543210",
-        customer_address: address ? [address.address_line1, address.address_line2, address.city, address.state, address.pincode].filter(Boolean).join(", ") : "Address not available locally",
+        customer_address: orderAddress ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ") : "Address not available locally",
         patient_name: paymentState?.patientName || "Patient",
         patient_age: paymentState?.patientAge || "30",
         patient_gender: paymentState?.patientGender || "Male",
