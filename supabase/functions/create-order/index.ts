@@ -642,13 +642,6 @@ Deno.serve(async (req) => {
         payment_method: paymentMethod || null,
         status: orderStatus,
         payment_status: paymentStatus,
-        order_details: {
-          customer_address: formattedAddress,
-          patient_name: patientName,
-          patient_age: patientAge,
-          patient_gender: patientGender,
-          patient_phone: patientPhone
-        },
         coupon_code: couponCode || null,
         special_instructions: specialInstructions,
         vendor_id: orderVendorId,
@@ -755,15 +748,18 @@ Deno.serve(async (req) => {
           record: orderData,
           old_record: null,
         };
-        // Fire-and-forget: don't block order response on webhook
-        fetch(`${supabaseUrl}/functions/v1/partner-hub-webhook`, {
+        // Await (with timeout) so the isolate isn't torn down before the
+        // partner hub receives the order. Never fatal for the order.
+        const resp = await fetch(`${supabaseUrl}/functions/v1/partner-hub-webhook`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${supabaseServiceKey}`,
           },
           body: JSON.stringify(webhookPayload),
-        }).catch((e) => console.error("Partner webhook fire-and-forget error:", e));
+          signal: AbortSignal.timeout(8000),
+        });
+        console.log("Partner hub webhook status:", resp.status);
       } catch (e) {
         console.error("Partner notification error (non-blocking):", e);
       }
