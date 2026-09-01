@@ -642,13 +642,6 @@ Deno.serve(async (req) => {
         payment_method: paymentMethod || null,
         status: orderStatus,
         payment_status: paymentStatus,
-        order_details: {
-          customer_address: formattedAddress,
-          patient_name: patientName,
-          patient_age: patientAge,
-          patient_gender: patientGender,
-          patient_phone: patientPhone
-        },
         coupon_code: couponCode || null,
         special_instructions: specialInstructions,
         vendor_id: orderVendorId,
