@@ -784,9 +784,12 @@ const BPCheckScreen = () => {
                 <div className="bg-rose-50 border border-rose-100 rounded-2xl p-5 flex gap-3 items-start">
                   <AlertTriangle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-bold text-rose-900">No labs available</p>
+                    <p className="text-sm font-bold text-rose-900">
+                      {pincode ? `No Labs Found for Pincode ${pincode}` : "No labs available"}
+                    </p>
                     <p className="text-xs font-medium text-rose-700/80 mt-1">
                       No partner lab is currently offering Home BP Check in your pincode. We're expanding fast — please try again soon.
+
                     </p>
                   </div>
                 </div>
