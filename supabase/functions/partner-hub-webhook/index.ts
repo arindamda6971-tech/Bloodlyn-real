@@ -214,8 +214,10 @@ Deno.serve(async (req) => {
       has_bp_addon: orderType === "lab_test" ? hasBpAddon : false,
       bp_addon_items: orderType === "lab_test" && hasBpAddon ? bpItems : [],
       test_items: orderType === "bp_check" ? [] : testItems,
-      // Backward compat: full raw line-item list
+      // One object per test: { name, price, quantity }
       items: lineItems,
+      item_names: lineItemNames,
+
       diagnostic_center: vendorCenter ? {
         id: vendorCenter.id,
         name: vendorCenter.name,
