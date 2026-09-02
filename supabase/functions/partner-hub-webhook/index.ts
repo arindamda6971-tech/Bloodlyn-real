@@ -101,37 +101,77 @@ Deno.serve(async (req) => {
     } | null = null;
     let formattedAddress: string | null = null;
     let addressPincode: string | null = null;
+    // `addresses` has no phone column — the contact number lives on profiles.
+    const ADDRESS_COLS = "address_line1, address_line2, city, state, pincode";
+
+    let address: {
+      address_line1?: string | null;
+      address_line2?: string | null;
+      city?: string | null;
+      state?: string | null;
+      pincode?: string | null;
+    } | null = null;
+
     if (order.address_id) {
-      const { data: address } = await adminClient
+      const { data, error: addrError } = await adminClient
         .from("addresses")
-        .select("address_line1, address_line2, city, state, pincode, phone")
+        .select(ADDRESS_COLS)
         .eq("id", order.address_id)
         .maybeSingle();
-      addressDetails = address ?? null;
-      if (address) {
-        // De-duplicate repeated fragments (address_line2 often already
-        // contains city/state/pincode from the geocoder).
-        const parts = [
-          address.address_line1,
-          address.address_line2,
-          address.city,
-          address.state,
-          address.pincode,
-        ]
-          .map((p) => (p ? String(p).trim() : ""))
-          .filter(Boolean);
-        const seen = new Set<string>();
-        const unique: string[] = [];
-        for (const p of parts) {
-          const key = p.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          unique.push(p);
-        }
-        formattedAddress = unique.join(", ") || null;
-        addressPincode = address.pincode ? String(address.pincode) : null;
-      }
+      if (addrError) console.error("Error fetching order address:", addrError);
+      address = data ?? null;
     }
+
+    // Fallback: order placed without an address_id (service-only flows) —
+    // use the customer's default/most-recent saved address so the partner
+    // tile always shows a collection address.
+    if (!address && order.user_id) {
+      const { data } = await adminClient
+        .from("addresses")
+        .select(ADDRESS_COLS)
+        .eq("user_id", order.user_id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1);
+      address = data?.[0] ?? null;
+    }
+
+    // Contact phone for the collection visit.
+    let contactPhone: string | null = null;
+    if (order.user_id) {
+      const { data: profile } = await adminClient
+        .from("profiles")
+        .select("phone")
+        .eq("id", order.user_id)
+        .maybeSingle();
+      contactPhone = profile?.phone ?? null;
+    }
+
+    if (address) {
+      // De-duplicate repeated fragments (address_line2 often already
+      // contains city/state/pincode from the geocoder).
+      const parts = [
+        address.address_line1,
+        address.address_line2,
+        address.city,
+        address.state,
+        address.pincode,
+      ]
+        .map((p) => (p ? String(p).trim() : ""))
+        .filter(Boolean);
+      const seen = new Set<string>();
+      const unique: string[] = [];
+      for (const p of parts) {
+        const key = p.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(p);
+      }
+      formattedAddress = unique.join(", ") || null;
+      addressPincode = address.pincode ? String(address.pincode) : null;
+      addressDetails = { ...address, phone: contactPhone };
+    }
+
 
 
 
@@ -171,16 +211,38 @@ Deno.serve(async (req) => {
     // A "bp_check" order is ONLY one where EVERY line item is a BP check.
     // If a BP check rides along with real lab tests, it is a normal lab order
     // (with a BP add-on) and must land on the blood-test booking page.
-    const lineItems = (order.test_name || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    //
+    // Line items come from create-order as structured objects. Legacy/trigger
+    // callers only have the aggregated `test_name`, which we split on "|"
+    // (new format) or "," (legacy format).
+    const providedLineItems = Array.isArray((payload as any).line_items)
+      ? ((payload as any).line_items as Array<{ name?: string; price?: number; quantity?: number }>)
+      : null;
+
+    const splitNames = (raw: string): string[] => {
+      const value = (raw || "").trim();
+      if (!value) return [];
+      const delimiter = value.includes("|") ? "|" : ",";
+      return value.split(delimiter).map((s) => s.trim()).filter(Boolean);
+    };
+
+    const lineItems: Array<{ name: string; price: number | null; quantity: number }> =
+      providedLineItems && providedLineItems.length > 0
+        ? providedLineItems.map((i) => ({
+            name: String(i.name || "Diagnostic Test").trim(),
+            price: typeof i.price === "number" ? i.price : null,
+            quantity: typeof i.quantity === "number" && i.quantity > 0 ? i.quantity : 1,
+          }))
+        : splitNames(order.test_name || "").map((name) => ({ name, price: null, quantity: 1 }));
+
+    const lineItemNames = lineItems.map((i) => i.name);
     const BP_RE = /(home\s*bp|bp\s*check|blood\s*pressure)/i;
-    const bpItems = lineItems.filter((n) => BP_RE.test(n));
-    const testItems = lineItems.filter((n) => !BP_RE.test(n));
+    const bpItems = lineItemNames.filter((n) => BP_RE.test(n));
+    const testItems = lineItemNames.filter((n) => !BP_RE.test(n));
     const hasBpAddon = bpItems.length > 0 && testItems.length > 0;
     const orderType: "bp_check" | "lab_test" =
       bpItems.length > 0 && testItems.length === 0 ? "bp_check" : "lab_test";
+
 
     // Prepare the notification payload for the vendor
     const vendorNotification = {
@@ -192,8 +254,10 @@ Deno.serve(async (req) => {
       has_bp_addon: orderType === "lab_test" ? hasBpAddon : false,
       bp_addon_items: orderType === "lab_test" && hasBpAddon ? bpItems : [],
       test_items: orderType === "bp_check" ? [] : testItems,
-      // Backward compat: full raw line-item list
+      // One object per test: { name, price, quantity }
       items: lineItems,
+      item_names: lineItemNames,
+
       diagnostic_center: vendorCenter ? {
         id: vendorCenter.id,
         name: vendorCenter.name,
@@ -232,6 +296,8 @@ Deno.serve(async (req) => {
         customer_address: formattedAddress,
         delivery_address: formattedAddress,
         address_pincode: addressPincode,
+        customer_pincode: addressPincode,
+        address_phone: addressDetails?.phone ?? null,
       },
       // Collection / delivery address — string form first (what the partner
       // booking tile renders), structured form kept alongside.
@@ -242,9 +308,11 @@ Deno.serve(async (req) => {
       city: addressDetails?.city ?? null,
       state: addressDetails?.state ?? null,
       pincode: addressPincode,
+      customer_pincode: addressPincode,
       address_phone: addressDetails?.phone ?? null,
       customer_address_details: addressDetails,
       created_at: order.created_at,
+
 
     };
 
