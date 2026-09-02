@@ -747,7 +747,15 @@ Deno.serve(async (req) => {
           schema: "public",
           record: orderData,
           old_record: null,
+          // Authoritative per-test line items (one object per test) so the
+          // partner hub never has to split a concatenated test_name string.
+          line_items: cartItems.map((item) => ({
+            name: item.name || "Diagnostic Test",
+            price: priceMap[item.id] !== undefined ? priceMap[item.id] : item.price,
+            quantity: item.quantity ?? 1,
+          })),
         };
+
         // Await (with timeout) so the isolate isn't torn down before the
         // partner hub receives the order. Never fatal for the order.
         const resp = await fetch(`${supabaseUrl}/functions/v1/partner-hub-webhook`, {
