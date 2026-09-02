@@ -256,6 +256,8 @@ Deno.serve(async (req) => {
         customer_address: formattedAddress,
         delivery_address: formattedAddress,
         address_pincode: addressPincode,
+        customer_pincode: addressPincode,
+        address_phone: addressDetails?.phone ?? null,
       },
       // Collection / delivery address — string form first (what the partner
       // booking tile renders), structured form kept alongside.
@@ -266,9 +268,11 @@ Deno.serve(async (req) => {
       city: addressDetails?.city ?? null,
       state: addressDetails?.state ?? null,
       pincode: addressPincode,
+      customer_pincode: addressPincode,
       address_phone: addressDetails?.phone ?? null,
       customer_address_details: addressDetails,
       created_at: order.created_at,
+
 
     };
 
