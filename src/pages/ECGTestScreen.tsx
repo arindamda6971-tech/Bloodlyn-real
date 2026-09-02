@@ -337,33 +337,35 @@ const ECGTestScreen = () => {
     const loadLabs = async () => {
       setLabsLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from("diagnostic_centers")
           .select("*")
-          .order("rating", { ascending: false });
+          .eq("is_active", true)
+          .eq("offers_home_ecg", true);
+
+        if (pincode && /^\d{6}$/.test(pincode)) {
+          query = query.contains("service_pincodes", [pincode]);
+        }
+
+        const { data, error } = await query.order("rating", { ascending: false });
 
         if (cancelled) return;
 
-        let dbLabs: EcgLab[] = [];
-        if (data && !error && data.length > 0) {
-          dbLabs = data
-            .filter((l: any) => l.is_active !== false && l.offers_home_ecg !== false && l.ecg_available !== false)
-            .map((l: any) => ({
-              ...l,
-              home_ecg_price: l.home_ecg_price || l.ecg_price || 599,
-            }));
+        if (error) {
+          console.warn("Error loading ECG labs:", error);
+          setLabs([]);
+          return;
         }
 
-        let matchingDb = dbLabs;
-        if (pincode && dbLabs.length > 0) {
-          const matched = dbLabs.filter((l: any) => labServesPincode(l, pincode));
-          if (matched.length > 0) {
-            matchingDb = matched;
-          }
-        }
+        // Strict pincode gate — never fall back to an unfiltered list.
+        const dbLabs: EcgLab[] = (data || [])
+          .filter((l: any) => !pincode || labServesPincode(l, pincode))
+          .map((l: any) => ({
+            ...l,
+            home_ecg_price: l.home_ecg_price || l.ecg_price || 599,
+          }));
 
-        // Only show live database labs from Supabase
-        setLabs(matchingDb);
+        setLabs(dbLabs);
       } catch (err) {
         console.warn("Error loading ECG labs:", err);
         setLabs([]);
@@ -371,6 +373,7 @@ const ECGTestScreen = () => {
         if (!cancelled) setLabsLoading(false);
       }
     };
+
 
     loadLabs();
 
