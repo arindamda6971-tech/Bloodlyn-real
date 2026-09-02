@@ -101,37 +101,77 @@ Deno.serve(async (req) => {
     } | null = null;
     let formattedAddress: string | null = null;
     let addressPincode: string | null = null;
+    // `addresses` has no phone column — the contact number lives on profiles.
+    const ADDRESS_COLS = "address_line1, address_line2, city, state, pincode";
+
+    let address: {
+      address_line1?: string | null;
+      address_line2?: string | null;
+      city?: string | null;
+      state?: string | null;
+      pincode?: string | null;
+    } | null = null;
+
     if (order.address_id) {
-      const { data: address } = await adminClient
+      const { data, error: addrError } = await adminClient
         .from("addresses")
-        .select("address_line1, address_line2, city, state, pincode, phone")
+        .select(ADDRESS_COLS)
         .eq("id", order.address_id)
         .maybeSingle();
-      addressDetails = address ?? null;
-      if (address) {
-        // De-duplicate repeated fragments (address_line2 often already
-        // contains city/state/pincode from the geocoder).
-        const parts = [
-          address.address_line1,
-          address.address_line2,
-          address.city,
-          address.state,
-          address.pincode,
-        ]
-          .map((p) => (p ? String(p).trim() : ""))
-          .filter(Boolean);
-        const seen = new Set<string>();
-        const unique: string[] = [];
-        for (const p of parts) {
-          const key = p.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          unique.push(p);
-        }
-        formattedAddress = unique.join(", ") || null;
-        addressPincode = address.pincode ? String(address.pincode) : null;
-      }
+      if (addrError) console.error("Error fetching order address:", addrError);
+      address = data ?? null;
     }
+
+    // Fallback: order placed without an address_id (service-only flows) —
+    // use the customer's default/most-recent saved address so the partner
+    // tile always shows a collection address.
+    if (!address && order.user_id) {
+      const { data } = await adminClient
+        .from("addresses")
+        .select(ADDRESS_COLS)
+        .eq("user_id", order.user_id)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(1);
+      address = data?.[0] ?? null;
+    }
+
+    // Contact phone for the collection visit.
+    let contactPhone: string | null = null;
+    if (order.user_id) {
+      const { data: profile } = await adminClient
+        .from("profiles")
+        .select("phone")
+        .eq("id", order.user_id)
+        .maybeSingle();
+      contactPhone = profile?.phone ?? null;
+    }
+
+    if (address) {
+      // De-duplicate repeated fragments (address_line2 often already
+      // contains city/state/pincode from the geocoder).
+      const parts = [
+        address.address_line1,
+        address.address_line2,
+        address.city,
+        address.state,
+        address.pincode,
+      ]
+        .map((p) => (p ? String(p).trim() : ""))
+        .filter(Boolean);
+      const seen = new Set<string>();
+      const unique: string[] = [];
+      for (const p of parts) {
+        const key = p.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push(p);
+      }
+      formattedAddress = unique.join(", ") || null;
+      addressPincode = address.pincode ? String(address.pincode) : null;
+      addressDetails = { ...address, phone: contactPhone };
+    }
+
 
 
 
