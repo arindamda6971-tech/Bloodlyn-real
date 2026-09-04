@@ -81,12 +81,11 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <RouteFallback />;
   }
 
-  // Guard against a redirect loop: SmoothRoutes/PageTransition keep the
-  // outgoing route mounted for a frame after navigation, so this component can
-  // re-render with a stale router location. Comparing against the real browser
-  // path makes each redirect a one-shot instead of an endless replace loop.
-  const currentPath =
-    typeof window !== "undefined" ? window.location.pathname : location.pathname;
+  // Guard against a redirect loop during SmoothRoutes transitions.
+  // useLocation() provides the most up-to-date state from React Router.
+  // Using window.location.pathname causes an infinite render loop because it
+  // can lag behind React's synchronous render cycle when <Navigate> is used.
+  const currentPath = location.pathname;
 
   if (!user) {
     if (currentPath === "/login") return null;

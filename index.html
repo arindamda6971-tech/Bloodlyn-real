@@ -47,6 +47,16 @@
       /* Ensure text remains visible during font load (font-display: swap override) */
       body { font-family: system-ui, sans-serif; }
     </style>
+    <script>
+      (function() {
+        try {
+          var isDark = localStorage.getItem('vite-ui-theme') === 'dark' || (!('vite-ui-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
     
   
   
@@ -70,7 +80,7 @@
   <meta name="twitter:description" content="Book home health tests in 60 minutes. NABL-certified labs, AI-powered reports, and live tracking. Your trusted health diagnostics partner.">
 </head>
 
-  <body style="margin: 0; background: #f8fafc; overscroll-behavior: none;">
+  <body style="margin: 0; overscroll-behavior: none;">
     <div id="root">
       <!-- Fast-loading skeleton to prevent blank screen -->
       <div id="app-loading-screen" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; background: #f8fafc; z-index: 9999; font-family: system-ui, sans-serif;">

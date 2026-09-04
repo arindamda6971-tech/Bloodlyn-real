@@ -40,6 +40,8 @@ jobs:
         run: npm run build
         env:
           CI: true
+          VITE_SUPABASE_URL: "https://mock.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "mock-key"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -48,6 +50,8 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
+          VITE_SUPABASE_URL: "https://mock.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "mock-key"
 
       - name: Upload Playwright report
         if: always()
