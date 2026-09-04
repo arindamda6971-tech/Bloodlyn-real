@@ -1,6 +1,6 @@
-import { ReactNode, Suspense } from "react";
+import { ReactNode } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import RouteFallback from "./RouteFallback";
+import { AnimatePresence, motion } from "framer-motion";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
@@ -10,9 +10,9 @@ interface PageTransitionProps {
 }
 
 /**
- * Ultra-Smooth GPU Compositor Page Transition.
- * Executes 100% on Chromium's Hardware Compositor Thread via CSS transform3d.
- * Zero JS main thread locking, zero frame drops, zero blank screen flashes.
+ * Ultra-Smooth Native App Page Transition.
+ * Uses Framer Motion's AnimatePresence to slide pages in and out
+ * exactly like an iOS/Android native navigation stack.
  */
 const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
   const currentLoc = useLocation();
@@ -22,11 +22,24 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const isTab = TAB_PATHS.includes(location.pathname);
   const isPop = navType === "POP";
 
-  const animClass = isTab
-    ? "page-anim-fade"
+  // Native iOS-style transition variants
+  const variants = isTab
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+      }
     : isPop
-      ? "page-anim-pop"
-      : "page-anim-push";
+    ? {
+        initial: { x: "-30%", opacity: 0.8 }, // Slide in slightly from left
+        animate: { x: 0, opacity: 1 },
+        exit: { x: "100%", opacity: 1, zIndex: 10 }, // Slide out completely to right
+      }
+    : {
+        initial: { x: "100%", opacity: 1, zIndex: 10 }, // New page slides in from right
+        animate: { x: 0, opacity: 1 },
+        exit: { x: "-30%", opacity: 0.8 }, // Old page pushes slightly to the left
+      };
 
   return (
     <div
@@ -41,16 +54,30 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         contain: "paint size layout",
       }}
     >
-      <div
-        key={location.pathname}
-        className={`w-full h-full absolute top-0 left-0 bg-background ${animClass}`}
-        style={{
-          contain: "paint size layout",
-          boxShadow: isTab ? "none" : "-10px 0 30px rgba(0,0,0,0.08)",
-        }}
-      >
-        {children}
-      </div>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={location.pathname}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          variants={variants}
+          transition={{
+            type: "spring",
+            stiffness: 350,
+            damping: 35,
+            mass: 0.8,
+            restDelta: 0.01
+          }}
+          className="w-full h-full absolute top-0 left-0 bg-background"
+          style={{
+            contain: "paint size layout",
+            boxShadow: isTab ? "none" : (isPop ? "none" : "-10px 0 30px rgba(0,0,0,0.15)"),
+            willChange: "transform, opacity",
+          }}
+        >
+          {children}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
