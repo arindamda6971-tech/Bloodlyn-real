@@ -39,6 +39,9 @@ jobs:
 
       - name: Build web assets
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: "https://mock.supabase.co"
+          VITE_SUPABASE_PUBLISHABLE_KEY: "mock-key"
 
       - name: Sync Capacitor (Android)
         run: npx cap sync android
