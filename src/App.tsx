@@ -26,6 +26,7 @@ import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import ScreenLoader from "@/components/ScreenLoader";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -95,9 +96,10 @@ const AnimatedRoutes = () => {
     <SmoothRoutes>
       {(deferredLocation) => (
         <PageTransition location={deferredLocation}>
-          <Routes location={deferredLocation}>
-            {/* Public Routes */}
-            <Route path="/" element={<SplashScreen />} />
+          <Suspense fallback={<ScreenLoader />}>
+            <Routes location={deferredLocation}>
+              {/* Public Routes */}
+              <Route path="/" element={<SplashScreen />} />
             <Route path="/onboarding" element={<OnboardingScreen />} />
             <Route path="/login" element={<LoginScreen />} />
             <Route path="/install" element={<InstallScreen />} />
@@ -151,7 +153,8 @@ const AnimatedRoutes = () => {
             <Route path="/privacy" element={<PrivacyPolicyScreen />} />
             <Route path="/unauthorized" element={<UnauthorizedScreen />} />
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </PageTransition>
       )}
     </SmoothRoutes>
@@ -224,11 +227,7 @@ const App = () => {
 };
 
 const AnimatedRoutesWrapper = () => {
-  return (
-    <Suspense fallback={null}>
-      <AnimatedRoutes />
-    </Suspense>
-  );
+  return <AnimatedRoutes />;
 };
 
 export default App;
