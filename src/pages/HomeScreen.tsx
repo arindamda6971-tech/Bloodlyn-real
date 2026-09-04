@@ -454,18 +454,20 @@ const HomeScreen = () => {
           </button>
         </section>
 
-        {/* Contact Bottom Sheet - portaled to body so fixed positioning isn't broken by transformed ancestors */}
+      {/* Contact Bottom Sheet - portaled to body so fixed positioning isn't broken by transformed ancestors */}
         {createPortal(
           <AnimatePresence>
             {showCallSheet && (
-              <>
+              <motion.div key="call-sheet-overlay" className="fixed inset-0 z-[100]">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-[100]" onClick={() => setShowCallSheet(false)} />
                 <motion.div
+                  key="call-sheet-content"
                   initial={{ y: "100%" }}
                   animate={{ y: 0 }}
                   exit={{ y: "100%" }}
                   transition={{ type: "spring", damping: 30, stiffness: 400 }}
                   className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-card rounded-t-[2.5rem] z-[110] pb-10 pt-4"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   <div className="w-12 h-1.5 bg-muted rounded-full mx-auto mb-6" />
                   <div className="px-6">
@@ -486,7 +488,7 @@ const HomeScreen = () => {
                     </div>
                   </div>
                 </motion.div>
-              </>
+              </motion.div>
             )}
           </AnimatePresence>,
           document.body

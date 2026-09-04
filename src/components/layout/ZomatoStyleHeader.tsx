@@ -192,13 +192,22 @@ export const ZomatoStyleHeader = ({
       {createPortal(
         <AnimatePresence>
           {showLocationModal && (
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md px-5">
+            <motion.div
+              key="location-modal-overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md px-5"
+              onClick={() => setShowLocationModal(false)}
+            >
               <motion.div
+                key="location-modal-content"
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 20, scale: 0.95 }}
                 transition={{ type: "spring", damping: 28, stiffness: 350 }}
                 className="w-full max-w-sm bg-card/95 backdrop-blur-2xl rounded-[2rem] p-6 border border-border/80 shadow-2xl space-y-4"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -261,7 +270,7 @@ export const ZomatoStyleHeader = ({
                   Add New Address
                 </button>
               </motion.div>
-            </div>
+            </motion.div>
           )}
         </AnimatePresence>,
         document.body
