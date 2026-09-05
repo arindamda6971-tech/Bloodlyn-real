@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -189,89 +190,61 @@ export const ZomatoStyleHeader = ({
       </div>
 
       {/* Location Picker Bottom Sheet Modal */}
-      <AnimatePresence>
-        {showLocationModal && (
-          <motion.div
-            key="location-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md px-5"
-            onClick={() => setShowLocationModal(false)}
-          >
-            <motion.div
-              key="location-modal-content"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              transition={{ type: "spring", damping: 28, stiffness: 350 }}
-              className="w-full max-w-sm bg-card/95 backdrop-blur-2xl rounded-[2rem] p-6 border border-border/80 shadow-2xl space-y-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-foreground tracking-tight">Select Delivery Location</h3>
-                  <p className="text-xs font-medium text-muted-foreground mt-0.5">Select sample pickup address for instant home collection</p>
-                </div>
+      <Drawer open={showLocationModal} onOpenChange={setShowLocationModal}>
+        <DrawerContent className="px-6 pb-8 bg-card/95 backdrop-blur-xl border-border/80 rounded-t-[2rem]">
+          <DrawerHeader className="px-0 pt-6 text-left">
+            <DrawerTitle className="text-xl font-black text-foreground tracking-tight">Select Delivery Location</DrawerTitle>
+            <DrawerDescription className="text-xs font-medium mt-1">Select sample pickup address for instant home collection</DrawerDescription>
+          </DrawerHeader>
+
+          <div className="space-y-2.5 max-h-[50vh] overflow-y-auto mt-2">
+            {savedAddresses.map((loc) => {
+              const title = loc.type || "Home";
+              const addrLine = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''} (${loc.pincode})`;
+              const isCurrent = currentAddress.startsWith(title) || loc.is_default;
+              const isBusy = switching === loc.id;
+              return (
                 <button
+                  key={loc.id}
                   type="button"
-                  onClick={() => setShowLocationModal(false)}
-                  className="w-8.5 h-8.5 rounded-full bg-muted/80 flex items-center justify-center text-muted-foreground font-bold hover:bg-accent hover:text-foreground transition-colors"
+                  disabled={isBusy}
+                  onClick={() => handleSelectAddress(loc)}
+                  className={`w-full text-left p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                    isCurrent
+                      ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                      : "border-border/60 hover:bg-accent/40"
+                  }`}
                 >
-                  ✕
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                      isCurrent ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-bold text-foreground">{title}</h4>
+                      <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{addrLine}</p>
+                    </div>
+                  </div>
+                  {isCurrent && <Check className="w-5 h-5 text-primary shrink-0 mt-2" />}
                 </button>
-              </div>
+              );
+            })}
+          </div>
 
-              <div className="space-y-2.5 pt-1 max-h-[50vh] overflow-y-auto pr-1">
-                {savedAddresses.map((loc) => {
-                  const title = loc.type || "Home";
-                  const addrLine = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''} (${loc.pincode})`;
-                  const isCurrent = currentAddress.startsWith(title) || loc.is_default;
-                  const isBusy = switching === loc.id;
-                  return (
-                    <button
-                      key={loc.id}
-                      type="button"
-                      disabled={isBusy}
-                      onClick={() => handleSelectAddress(loc)}
-                      className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
-                        isCurrent
-                          ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/30"
-                          : "border-border/60 hover:bg-accent/40"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                          isCurrent ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
-                        }`}>
-                          {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="text-sm font-bold text-foreground">{title}</h4>
-                          <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{addrLine}</p>
-                        </div>
-                      </div>
-                      {isCurrent && <Check className="w-4.5 h-4.5 text-primary shrink-0 mt-2" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLocationModal(false);
-                  navigate("/saved-addresses");
-                }}
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-primary to-indigo-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all hover:brightness-105 mt-2"
-              >
-                <Crosshair className="w-4.5 h-4.5" />
-                Add New Address
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <button
+            type="button"
+            onClick={() => {
+              setShowLocationModal(false);
+              navigate("/saved-addresses");
+            }}
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-primary to-indigo-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all hover:brightness-105 mt-6"
+          >
+            <Crosshair className="w-5 h-5" />
+            Add New Address
+          </button>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
