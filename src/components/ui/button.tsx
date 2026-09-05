@@ -9,7 +9,7 @@ const buttonVariants = cva(
   // Press feedback is intentionally fast (110ms) and limited to compositor-only
   // properties (transform/opacity/colors) so taps feel native instead of
   // animating every property for 300ms.
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-[transform,opacity,background-color,border-color,color,box-shadow] duration-[110ms] ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 tap-target active:scale-[0.97]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold ring-offset-background transition-[transform,opacity,background-color,border-color,color,box-shadow] duration-[110ms] ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 tap-target active:opacity-70",
   {
     variants: {
       variant: {
@@ -23,7 +23,7 @@ const buttonVariants = cva(
         hero: "btn-primary-gradient",
         soft: "bg-primary/10 text-primary hover:bg-primary/20",
         softSuccess: "bg-success/10 text-success hover:bg-success/20",
-        glass: "bg-/98 border border-border/50 text-foreground hover:bg-card",
+        glass: "bg-card/98 border border-border/50 text-foreground hover:bg-card",
       },
       size: {
         default: "h-12 px-6 py-3",

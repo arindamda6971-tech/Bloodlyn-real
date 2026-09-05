@@ -62,11 +62,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
           exit="exit"
           variants={variants}
           transition={{
-            type: "spring",
-            stiffness: 350,
-            damping: 35,
-            mass: 0.8,
-            restDelta: 0.01
+            type: "tween",
+            ease: [0.32, 0.72, 0, 1], // Native iOS-like ease-out cubic bezier
+            duration: 0.35
           }}
           className="w-full h-full absolute top-0 left-0 bg-background"
           style={{
