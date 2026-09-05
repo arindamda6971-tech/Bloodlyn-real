@@ -64,7 +64,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
           transition={{
             type: "tween",
             ease: [0.32, 0.72, 0, 1], // Native iOS-like ease-out cubic bezier
-            duration: 0.35
+            duration: 0.65 // Slightly increased from 0.55s for maximum grace
           }}
           className="w-full h-full absolute top-0 left-0 bg-background"
           style={{
