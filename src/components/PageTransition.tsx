@@ -72,7 +72,6 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             willChange: "transform, opacity",
             backfaceVisibility: "hidden", // Forces dedicated GPU layer on Android
             WebkitBackfaceVisibility: "hidden",
-            transform: "translateZ(0)", // Prevents z-fighting flicker
           }}
         >
           {children}
