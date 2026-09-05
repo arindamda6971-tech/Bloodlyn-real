@@ -54,7 +54,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         contain: "paint size layout",
       }}
     >
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence initial={false}>
         <motion.div
           key={location.pathname}
           initial="initial"
@@ -69,8 +69,10 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
           className="w-full h-full absolute top-0 left-0 bg-background"
           style={{
             contain: "paint size layout",
-            boxShadow: isTab ? "none" : (isPop ? "none" : "-10px 0 30px rgba(0,0,0,0.15)"),
             willChange: "transform, opacity",
+            backfaceVisibility: "hidden", // Forces dedicated GPU layer on Android
+            WebkitBackfaceVisibility: "hidden",
+            transform: "translateZ(0)", // Prevents z-fighting flicker
           }}
         >
           {children}

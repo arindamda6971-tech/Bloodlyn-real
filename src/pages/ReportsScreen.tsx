@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, FileText, Loader2, Calendar, Activity, User, Hash, Clock, ChevronDown, FlaskConical, Building2, CreditCard, IndianRupee } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { saveReportOffline, getOfflineReport, checkReportOffline } from "@/lib/offline-storage";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Badge } from "@/components/ui/badge";
@@ -33,15 +35,14 @@ interface ReportOrder {
 const ReportsScreen = () => {
   useSEO({ title: "Health Reports | BloodLyn", description: "Access your lab reports with AI-powered insights, trend analysis and easy sharing." });
   const { user } = useAuth();
-  const [orders, setOrders] = useState<ReportOrder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    const fetchReports = async () => {
-      setLoading(true);
+  
+  const queryClient = useQueryClient();
+  const { data: orders = [], isLoading: loading } = useQuery({
+    queryKey: ["reports", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       const { data, error } = await supabase
         .from("orders")
         .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id, special_instructions")
@@ -51,6 +52,7 @@ const ReportsScreen = () => {
 
       if (error) {
         console.error("Reports fetch error:", error);
+        return [];
       }
       
       const { data: familyMembers } = await supabase
@@ -66,7 +68,7 @@ const ReportsScreen = () => {
         return m ? m[1].trim() : null;
       };
 
-      const mappedOrders = (data || []).map((o: any) => {
+      return (data || []).map((o: any) => {
         const memberName = o.family_member_id && membersMap.has(o.family_member_id)
           ? membersMap.get(o.family_member_id)
           : parsePatientName(o.special_instructions);
@@ -74,23 +76,21 @@ const ReportsScreen = () => {
           ...o,
           family_members: memberName ? { full_name: memberName } : null,
         };
-      });
+      }) as ReportOrder[];
+    },
+    enabled: !!user,
+  });
 
-
-      if (!error && data) setOrders(mappedOrders as any);
-      setLoading(false);
-    };
-    fetchReports();
-
+  useEffect(() => {
+    if (!user) return;
     const channel = supabase
       .channel("reports-orders-rt")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
-        fetchReports();
+        queryClient.invalidateQueries({ queryKey: ["reports", user.id] });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
-  }, [user]);
+  }, [user, queryClient]);
 
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true;
@@ -122,10 +122,43 @@ const ReportsScreen = () => {
     const ext = getExtension(order.report_url);
     const filename = `report-${order.order_number || order.id.slice(0, 8)}${ext}`;
 
+    // Try offline first
+    try {
+      const offlineBlob = await getOfflineReport(order.id);
+      if (offlineBlob) {
+        toast.success("Opening offline report");
+        const url = window.URL.createObjectURL(offlineBlob);
+        if (Capacitor.isNativePlatform()) {
+          // Native apps can't easily open ObjectURLs securely in external viewers,
+          // but we can try opening it in a new window or fallback
+          window.open(url, "_blank");
+        } else {
+          const link = document.createElement("a");
+          link.href = url;
+          link.target = "_blank";
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+        return;
+      }
+    } catch (e) {
+      console.warn("Offline check failed", e);
+    }
+
+    if (!navigator.onLine) {
+       toast.error("You are offline. Please connect to internet to download this report for the first time.");
+       return;
+    }
+
     // Native mobile app webviews cannot download blobs via standard 'a' tags securely.
     // Let the native OS handle the PDF URL directly.
     if (Capacitor.isNativePlatform()) {
-      // Opening it in a new window triggers the system browser or native PDF viewer
+      // Background download for next time
+      fetch(order.report_url).then(res => res.blob()).then(blob => saveReportOffline(order.id, blob)).catch(e => console.error(e));
+      
       const opened = window.open(order.report_url, "_system");
       if (!opened) {
         window.open(order.report_url, "_blank");
@@ -137,6 +170,9 @@ const ReportsScreen = () => {
     try {
       const response = await fetch(order.report_url);
       const blob = await response.blob();
+      
+      // Save for offline
+      await saveReportOffline(order.id, blob);
       
       // If we didn't find an extension in URL, try to guess from blob type
       let finalExt = ext;
@@ -153,7 +189,7 @@ const ReportsScreen = () => {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      toast.success("Download started");
+      toast.success("Download complete and saved for offline access");
     } catch (error) {
       console.error("Download failed:", error);
       // Fallback if fetch fails (e.g., CORS)
