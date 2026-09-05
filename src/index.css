@@ -319,7 +319,7 @@
   /* Glass morphism card — blur kept at 16px (blur-xl); larger radii force
      costly full-surface repaints while looking near-identical. */
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20;
+    @apply bg-white/70 border border-white/20;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
     backface-visibility: hidden;
     transform: translateZ(0);
@@ -462,7 +462,7 @@
 
   /* Bottom navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border;
+    @apply fixed bottom-0 left-0 right-0 bg-/98 border-t border-border;
     padding-bottom: calc(var(--sab) + 4px);
     /* No margin — padding already accounts for safe area */
     margin-bottom: 0;
@@ -475,7 +475,7 @@
 
   /* Header styles */
   .screen-header {
-    @apply sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 px-4 pb-3;
+    @apply sticky top-0 z-50 bg-/98 border-b border-border/40 px-4 pb-3;
     padding-top: calc(var(--sat) + 8px);
   }
 

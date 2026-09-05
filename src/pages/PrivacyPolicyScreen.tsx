@@ -83,7 +83,7 @@ const PrivacyPolicyScreen = () => {
         >
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/25 rounded-full blur-2xl pointer-events-none" />
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3">
               <Lock className="w-3.5 h-3.5 text-emerald-400" />
               <span>Health Data Protection</span>
             </div>
@@ -104,7 +104,7 @@ const PrivacyPolicyScreen = () => {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.08 + index * 0.06 }}
-              className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] transition-all duration-300 group"
+              className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] transition-all duration-300 group"
             >
               <div className="flex items-start gap-3.5 mb-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center flex-shrink-0 border border-border">

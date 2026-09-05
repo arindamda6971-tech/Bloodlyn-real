@@ -41,7 +41,7 @@ const DoctorAdCarousel = ({ categories }: Props) => {
         </div>
         
         <div className="flex items-center mt-3">
-          <span className="bg-white/20 backdrop-blur-md text-white text-[12px] font-bold px-4 py-2 rounded-full flex items-center gap-1.5 group-hover:bg-white/30 transition-colors border border-white/20 shadow-sm">
+          <span className="bg-white/20 text-white text-[12px] font-bold px-4 py-2 rounded-full flex items-center gap-1.5 group-hover:bg-white/30 transition-colors border border-white/20 shadow-sm">
             Explore Now <ChevronRight className="w-3.5 h-3.5" />
           </span>
         </div>

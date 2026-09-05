@@ -109,7 +109,7 @@ const SupportScreen = () => {
           <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
           
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
               <Sparkles className="w-3.5 h-3.5 text-teal-400" />
               <span>Direct Concierge</span>
             </div>
@@ -124,7 +124,7 @@ const SupportScreen = () => {
 
         <div className="mt-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 mb-6 p-1 bg-muted/60 backdrop-blur-md rounded-2xl border border-border/60 shadow-inner">
+            <TabsList className="grid w-full grid-cols-4 mb-6 p-1 bg-muted/60 rounded-2xl border border-border/60 shadow-inner">
               <TabsTrigger value="contact" className="text-xs rounded-xl transition-all font-semibold py-2.5">Contact</TabsTrigger>
               <TabsTrigger value="new" className="text-xs rounded-xl transition-all font-semibold py-2.5">New</TabsTrigger>
               <TabsTrigger value="tickets" className="text-xs rounded-xl transition-all font-semibold py-2.5">My Tickets</TabsTrigger>
@@ -136,7 +136,7 @@ const SupportScreen = () => {
               <motion.div
                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
                 onClick={() => { window.location.href = `tel:+91${SUPPORT_PHONE}`; }}
-                className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
+                className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
                 <div className="w-13 h-13 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0 border border-primary/20 group-hover:scale-105 transition-transform duration-300">
                   <Phone className="w-6 h-6 text-primary" />
@@ -151,7 +151,7 @@ const SupportScreen = () => {
               <motion.div
                 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
                 onClick={() => { window.location.href = `https://wa.me/91${SUPPORT_PHONE}`; }}
-                className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-green-500/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
+                className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-green-500/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
                 <div className="w-13 h-13 rounded-2xl bg-green-500/10 flex items-center justify-center flex-shrink-0 border border-green-500/20 group-hover:scale-105 transition-transform duration-300">
                   <MessageCircle className="w-6 h-6 text-green-500" />
@@ -171,7 +171,7 @@ const SupportScreen = () => {
 
             {/* New Ticket Tab */}
             <TabsContent value="new">
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] space-y-5">
+              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] space-y-5">
                 <h3 className="text-base font-bold text-foreground tracking-tight">Submit a Formal Ticket</h3>
 
                 <div>
@@ -227,7 +227,7 @@ const SupportScreen = () => {
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
                   </div>
                 ) : tickets.length === 0 ? (
-                  <div className="p-8 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 text-center py-12 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+                  <div className="p-8 rounded-3xl bg-/98 border border-border/60 text-center py-12 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
                     <div className="w-16 h-16 rounded-3xl bg-muted mx-auto flex items-center justify-center mb-4 border border-border">
                       <ListFilter className="w-8 h-8 text-muted-foreground" />
                     </div>
@@ -242,7 +242,7 @@ const SupportScreen = () => {
                     {tickets.map((ticket: any) => (
                       <button
                         key={ticket.id || ticket.ticket_number}
-                        className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 w-full text-left active:scale-[0.98] transition-all duration-300 group block"
+                        className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 w-full text-left active:scale-[0.98] transition-all duration-300 group block"
                         onClick={() => setSelectedTicket(ticket)}
                       >
                         <div className="flex items-start justify-between mb-2.5">
@@ -272,7 +272,7 @@ const SupportScreen = () => {
             {/* Track Ticket Tab */}
             <TabsContent value="track">
               <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <div className="p-6 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+                <div className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
                   <h3 className="text-base font-bold text-foreground tracking-tight mb-3">Track Ticket Status</h3>
                   <div className="flex gap-2.5">
                     <Input
@@ -298,7 +298,7 @@ const SupportScreen = () => {
                     </div>
                   )}
                   {trackedTicket && !trackLoading && (
-                    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+                    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
                       {trackedTicket.success === false ? (
                         <div className="text-center py-6">
                           <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-3" />

@@ -588,7 +588,7 @@ const ECGTestScreen = () => {
   return (
     <MobileLayout showNav={false}>
       {step !== "SUCCESS" && (
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40 pb-2">
+        <div className="sticky top-0 z-50 bg-/98 border-b border-border/40 pb-2">
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
             <button
               onClick={handleBack}

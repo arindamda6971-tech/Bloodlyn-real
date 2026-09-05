@@ -157,7 +157,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 backdrop-blur-sm shadow-sm"
+              className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm"
             >
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <div className="flex-1">

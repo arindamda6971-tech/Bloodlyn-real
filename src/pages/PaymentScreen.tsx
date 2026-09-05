@@ -1015,7 +1015,7 @@ const PaymentScreen = () => {
       </div>
 
       {isSubmittingOrder && (
-        <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center px-6">
+        <div className="fixed inset-0 z-50 bg-/98 flex items-center justify-center px-6">
           <div className="w-full max-w-xs rounded-2xl border border-border bg-card p-6 text-center shadow-lg">
             <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
             <h3 className="text-base font-bold text-foreground">Placing your order…</h3>

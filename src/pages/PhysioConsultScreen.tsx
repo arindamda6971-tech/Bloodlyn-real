@@ -200,7 +200,7 @@ const PhysioConsultScreen = () => {
           <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
           
           <div className="relative z-10">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
               <Sparkles className="w-3.5 h-3.5 text-blue-400 animate-pulse" />
               <span>Premium Rehabilitation</span>
             </div>
@@ -211,11 +211,11 @@ const PhysioConsultScreen = () => {
               Experience one-on-one tailored physical therapy with NABL &amp; IAP certified specialists.
             </p>
             <div className="flex flex-wrap items-center gap-2 mt-4">
-              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 font-medium">
                 <Shield className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Verified Experts</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 backdrop-blur-sm font-medium">
+              <div className="flex items-center gap-1.5 text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 font-medium">
                 <MapPin className="w-3.5 h-3.5 text-blue-400" />
                 <span>Home Visits</span>
               </div>
@@ -265,7 +265,7 @@ const PhysioConsultScreen = () => {
                   className={`py-3.5 px-2 rounded-2xl flex flex-col items-center gap-2.5 border transition-all duration-300 active:scale-95 ${
                     isSelected
                       ? "bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] scale-[1.02]"
-                      : `${spec.color} bg-card/80 backdrop-blur-sm hover:border-primary/40 hover:shadow-sm`
+                      : `${spec.color} bg-/98 hover:border-primary/40 hover:shadow-sm`
                   }`}
                 >
                   <div className={`p-2 rounded-xl ${isSelected ? 'bg-white/20' : 'bg-background/80 shadow-sm'}`}>
@@ -307,7 +307,7 @@ const PhysioConsultScreen = () => {
                   initial={{ opacity: 0, x: -15 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + index * 0.08 }}
-                  className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
+                  className="p-5 rounded-3xl bg-/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
                   {/* Therapist Header */}
                   <div className="flex items-start gap-4 mb-4">

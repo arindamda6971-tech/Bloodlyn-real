@@ -15,7 +15,7 @@ export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="p-5 rounded-3xl bg-card/90 backdrop-blur-md border border-border/50 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
+      className="p-5 rounded-3xl bg-/98 border border-border/50 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
     >
       {/* Doctor Header */}
       <div className="flex items-start gap-4 mb-4">

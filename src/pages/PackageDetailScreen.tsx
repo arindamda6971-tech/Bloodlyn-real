@@ -345,7 +345,7 @@ const PackageDetailScreen = () => {
             )}
 
             {/* Price Section - Modern Design */}
-            <div className="mt-6 bg-white/50 dark:bg-secondary/20 backdrop-blur-sm rounded-2xl p-4 border border-border/40">
+            <div className="mt-6 bg-white/50 dark:bg-secondary/20 rounded-2xl p-4 border border-border/40">
               <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Total Price</p>
               <div className="flex items-baseline gap-2">
                 <p className="text-3xl font-bold text-primary">₹{displayPrice}</p>

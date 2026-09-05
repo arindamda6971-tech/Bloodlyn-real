@@ -221,7 +221,7 @@ const ConsultationCallScreen = () => {
         </AnimatePresence>
 
         {/* Control buttons */}
-        <div className="flex items-center gap-4 bg-black/60 backdrop-blur-2xl px-6 py-4 rounded-[2rem] border border-white/10 shadow-2xl">
+        <div className="flex items-center gap-4 bg-black/60 px-6 py-4 rounded-[2rem] border border-white/10 shadow-2xl">
           {/* Mute */}
           <button
             onClick={() => {

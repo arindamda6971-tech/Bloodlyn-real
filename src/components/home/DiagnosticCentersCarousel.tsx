@@ -66,7 +66,7 @@ const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: numb
 
         {/* Trust Badge */}
         <div className="absolute top-3 left-3 z-10">
-           <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded-full">
+           <div className="flex items-center gap-1 bg-white/10 border border-white/10 px-2 py-1 rounded-full">
               <BadgeCheck className="w-3 h-3 text-primary" />
               <span className="text-[9px] font-bold text-white uppercase tracking-wider">{meta.trustBadge}</span>
            </div>
@@ -96,7 +96,7 @@ const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: numb
                 <span className="text-[11px] font-medium text-white/80">{meta.distance}</span>
               </div>
             </div>
-            <div className="bg-primary/20 backdrop-blur-sm border border-primary/30 px-2.5 py-1 rounded-full">
+            <div className="bg-primary/20 border border-primary/30 px-2.5 py-1 rounded-full">
               <p className="text-[10px] font-bold text-primary-foreground">{center.tests}+ Tests</p>
             </div>
           </div>

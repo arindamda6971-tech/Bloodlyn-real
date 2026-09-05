@@ -38,7 +38,7 @@ const RouteFallback = () => {
       </div>
 
       {/* Bottom Nav Skeleton */}
-      <div className="fixed bottom-0 left-0 right-0 p-5 pb-safe bg-card/80 backdrop-blur-xl border-t flex justify-around">
+      <div className="fixed bottom-0 left-0 right-0 p-5 pb-safe bg-/98 border-t flex justify-around">
         {[1, 2, 3, 4, 5].map((i) => (
           <Skeleton key={i} className="h-12 w-12 rounded-2xl" />
         ))}

@@ -445,7 +445,7 @@ const HomeScreen = () => {
               </div>
               <div className="flex items-end pb-1 justify-between w-full">
                 <p className="text-slate-300 text-[11px] font-semibold max-w-[120px] leading-tight">Comprehensive blood analysis & review</p>
-                <span className="bg-white/10 backdrop-blur-md text-white border border-white/20 text-sm font-black px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 group-hover:bg-white/20 transition-colors">
+                <span className="bg-white/10 text-white border border-white/20 text-sm font-black px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2 group-hover:bg-white/20 transition-colors">
                   Book Now <ChevronRight className="w-4 h-4" />
                 </span>
               </div>
@@ -455,7 +455,7 @@ const HomeScreen = () => {
 
       {/* Contact Bottom Sheet - using native-feel Drawer */}
       <Drawer open={showCallSheet} onOpenChange={setShowCallSheet}>
-        <DrawerContent className="px-6 pb-10 bg-card/95 backdrop-blur-xl border-border/80 rounded-t-[2.5rem]">
+        <DrawerContent className="px-6 pb-10 bg-/98 border-border/80 rounded-t-[2.5rem]">
           <DrawerHeader className="px-0 pt-6 text-left">
             <DrawerTitle className="text-xl font-black text-foreground mb-4">Contact BloodLyn</DrawerTitle>
             <DrawerDescription className="sr-only">Choose a method to contact our support team</DrawerDescription>

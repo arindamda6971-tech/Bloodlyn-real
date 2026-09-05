@@ -23,7 +23,7 @@ const buttonVariants = cva(
         hero: "btn-primary-gradient",
         soft: "bg-primary/10 text-primary hover:bg-primary/20",
         softSuccess: "bg-success/10 text-success hover:bg-success/20",
-        glass: "bg-card/80 backdrop-blur-xl border border-border/50 text-foreground hover:bg-card",
+        glass: "bg-/98 border border-border/50 text-foreground hover:bg-card",
       },
       size: {
         default: "h-12 px-6 py-3",

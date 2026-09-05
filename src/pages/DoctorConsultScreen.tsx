@@ -277,7 +277,7 @@ const DoctorConsultScreen = () => {
   return (
     <MobileLayout showNav={false}>
       {/* Dynamic Header */}
-      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-xl border-b border-border/40 pb-2">
+      <div className="sticky top-0 z-50 bg-/98 border-b border-border/40 pb-2">
         <div className="flex items-center justify-between p-4 pb-2">
           <button onClick={handleBack} className="p-2 -ml-2 rounded-xl active:bg-muted/50 transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />
@@ -310,7 +310,7 @@ const DoctorConsultScreen = () => {
 
       <div className="px-4 pb-32 pt-4">
         {/* Service Not Available Banner */}
-        <div className="mb-6 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 backdrop-blur-sm shadow-sm">
+        <div className="mb-6 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>

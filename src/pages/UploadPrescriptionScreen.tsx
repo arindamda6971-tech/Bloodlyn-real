@@ -129,7 +129,7 @@ const UploadPrescriptionScreen = () => {
     <div className="relative bg-background min-h-screen flex flex-col">
       <MobileLayout>
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-40 bg-/98 border-b border-border/50 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted active:scale-95 transition-all"

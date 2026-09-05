@@ -91,7 +91,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-md rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
+      className={`sticky top-0 z-40 bg-/98 rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
       data-testid="sticky-search-shell"
     >
       {header && <div className="px-4 pt-2 pb-0">{header}</div>}
