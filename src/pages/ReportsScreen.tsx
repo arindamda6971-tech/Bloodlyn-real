@@ -6,6 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { saveReportOffline, getOfflineReport, checkReportOffline } from "@/lib/offline-storage";
+import { downloadReport } from "@/lib/download-report";
+
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Badge } from "@/components/ui/badge";
