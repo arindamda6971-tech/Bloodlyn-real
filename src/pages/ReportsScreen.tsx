@@ -6,6 +6,8 @@ import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { saveReportOffline, getOfflineReport, checkReportOffline } from "@/lib/offline-storage";
+import { downloadReport } from "@/lib/download-report";
+
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Badge } from "@/components/ui/badge";
@@ -107,99 +109,12 @@ const ReportsScreen = () => {
 
   const handleDownload = async (order: ReportOrder) => {
     if (!order.report_url) return;
-
-    // Extract file extension from URL, fallback to .pdf
-    const getExtension = (url: string) => {
-      const match = url.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
-      if (match && ['pdf', 'jpg', 'jpeg', 'png'].includes(match[1].toLowerCase())) {
-        return `.${match[1].toLowerCase()}`;
-      }
-      return '.pdf'; // Default fallback
-    };
-    
-    const ext = getExtension(order.report_url);
-    const filename = `report-${order.order_number || order.id.slice(0, 8)}${ext}`;
-
-    // Try offline first
-    try {
-      const offlineBlob = await getOfflineReport(order.id);
-      if (offlineBlob) {
-        toast.success("Opening offline report");
-        const url = window.URL.createObjectURL(offlineBlob);
-        if (Capacitor.isNativePlatform()) {
-          // Native apps can't easily open ObjectURLs securely in external viewers,
-          // but we can try opening it in a new window or fallback
-          window.open(url, "_blank");
-        } else {
-          const link = document.createElement("a");
-          link.href = url;
-          link.target = "_blank";
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-        return;
-      }
-    } catch (e) {
-      console.warn("Offline check failed", e);
-    }
-
-    if (!navigator.onLine) {
-       toast.error("You are offline. Please connect to internet to download this report for the first time.");
-       return;
-    }
-
-    // Native mobile app webviews cannot download blobs via standard 'a' tags securely.
-    // Let the native OS handle the PDF URL directly.
-    if (Capacitor.isNativePlatform()) {
-      // Background download for next time
-      fetch(order.report_url).then(res => res.blob()).then(blob => saveReportOffline(order.id, blob)).catch(e => console.error(e));
-      
-      const opened = window.open(order.report_url, "_system");
-      if (!opened) {
-        window.open(order.report_url, "_blank");
-      }
-      toast.success("Opening report...");
-      return;
-    }
-
-    try {
-      const response = await fetch(order.report_url);
-      const blob = await response.blob();
-      
-      // Save for offline
-      await saveReportOffline(order.id, blob);
-      
-      // If we didn't find an extension in URL, try to guess from blob type
-      let finalExt = ext;
-      if (ext === '.pdf' && blob.type.includes('image/jpeg')) finalExt = '.jpg';
-      else if (ext === '.pdf' && blob.type.includes('image/png')) finalExt = '.png';
-      
-      const finalFilename = `report-${order.order_number || order.id.slice(0, 8)}${finalExt}`;
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = finalFilename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      toast.success("Download complete and saved for offline access");
-    } catch (error) {
-      console.error("Download failed:", error);
-      // Fallback if fetch fails (e.g., CORS)
-      const link = document.createElement("a");
-      link.href = order.report_url;
-      link.target = "_blank";
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    const base = `report-${order.order_number || order.id.slice(0, 8)}`;
+    const result = await downloadReport(order.report_url, base, order.id);
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
   };
+
 
   return (
     <MobileLayout>
