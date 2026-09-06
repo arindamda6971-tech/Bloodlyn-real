@@ -36,6 +36,26 @@ const STATUS_FILTERS = [
   { key: "cancelled", label: "Cancelled" },
 ] as const;
 
+const SERVICE_TABS = [
+  { key: "blood", label: "Blood Tests", icon: TestTube },
+  { key: "vitals", label: "ECG & BP", icon: Activity },
+] as const;
+
+const BP_PATTERN = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
+const ECG_PATTERN = /ecg|electrocardiogram/i;
+
+/** Classify an order as a blood-test booking or an ECG / BP vitals booking. */
+const getServiceKind = (order: Order): "blood" | "vitals" => {
+  const parts = splitTestNames(order.test_name);
+  const label = `${order.order_number || ""} ${order.test_name || ""}`;
+  const isVitals =
+    parts.length > 0
+      ? parts.every((p) => BP_PATTERN.test(p) || ECG_PATTERN.test(p))
+      : BP_PATTERN.test(label) || ECG_PATTERN.test(label);
+  return isVitals ? "vitals" : "blood";
+};
+
+
 const BookingsScreen = () => {
   useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders, sample collection status and view past bookings." });
   const navigate = useNavigate();
