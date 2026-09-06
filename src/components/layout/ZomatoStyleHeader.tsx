@@ -70,7 +70,9 @@ export const ZomatoStyleHeader = ({
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
+        setCurrentAddress("Add Address • Tap to add your pickup address");
       }
+
 
     } catch (e) {
       console.error("Failed to fetch user addresses:", e);
