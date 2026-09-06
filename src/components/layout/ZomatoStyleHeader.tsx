@@ -46,6 +46,8 @@ export const ZomatoStyleHeader = ({
     { id: "3", type: "Parents House", address_line1: "88 Care Street, Dadar", city: "Mumbai", pincode: "400014", is_default: false },
   ]);
   const [switching, setSwitching] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
 
   // Load user's real saved addresses from Supabase
   const loadAddresses = async () => {
