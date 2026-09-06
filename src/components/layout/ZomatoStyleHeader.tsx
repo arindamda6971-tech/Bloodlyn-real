@@ -66,7 +66,12 @@ export const ZomatoStyleHeader = ({
         const title = defaultAddr.type || "Home";
         const line = `${defaultAddr.address_line1}${defaultAddr.city ? `, ${defaultAddr.city}` : ''}`;
         setCurrentAddress(`${title} • ${line}`);
+        setSelectedId(defaultAddr.id);
+      } else {
+        setSavedAddresses([]);
+        setSelectedId(null);
       }
+
     } catch (e) {
       console.error("Failed to fetch user addresses:", e);
     }
