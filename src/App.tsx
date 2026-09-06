@@ -5,6 +5,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -20,13 +21,11 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
-import SmoothRoutes from "@/components/SmoothRoutes";
 import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import ScreenLoader from "@/components/ScreenLoader";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -39,45 +38,45 @@ import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
 import HomeScreen from "./pages/HomeScreen";
-const CategoriesScreen = lazy(() => import("./pages/CategoriesScreen"));
-const ProfileScreen = lazy(() => import("./pages/ProfileScreen"));
-const BookingsScreen = lazy(() => import("./pages/BookingsScreen"));
-const LocationCheckScreen = lazy(() => import("./pages/LocationCheckScreen"));
-const TestDetailScreen = lazy(() => import("./pages/TestDetailScreen"));
-const CartScreen = lazy(() => import("./pages/CartScreen"));
-const InstallScreen = lazy(() => import("./pages/InstallScreen"));
-const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
-const TestSelectionScreen = lazy(() => import("./pages/TestSelectionScreen"));
-const LabSelectionScreen = lazy(() => import("./pages/LabSelectionScreen"));
-const PaymentScreen = lazy(() => import("./pages/PaymentScreen"));
-const ReportsScreen = lazy(() => import("./pages/ReportsScreen"));
-const ReportDetailScreen = lazy(() => import("./pages/ReportDetailScreen"));
-const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
-const NotificationsScreen = lazy(() => import("./pages/NotificationsScreen"));
-const SubscriptionScreen = lazy(() => import("./pages/SubscriptionScreen"));
-const SavedAddressesScreen = lazy(() => import("./pages/SavedAddressesScreen"));
-const DoctorConsultScreen = lazy(() => import("./pages/DoctorConsultScreen"));
-const PartnerLabsScreen = lazy(() => import("./pages/PartnerLabsScreen"));
-const LabDetailScreen = lazy(() => import("./pages/LabDetailScreen"));
-const PackagesScreen = lazy(() => import("./pages/PackagesScreen"));
-const PackageDetailScreen = lazy(() => import("./pages/PackageDetailScreen"));
-const SupportScreen = lazy(() => import("./pages/SupportScreen"));
-const PhysioConsultScreen = lazy(() => import("./pages/PhysioConsultScreen"));
-const ECGTestScreen = lazy(() => import("./pages/ECGTestScreen"));
-const BPCheckScreen = lazy(() => import("./pages/BPCheckScreen"));
-const ConsultationCallScreen = lazy(() => import("./pages/ConsultationCallScreen"));
-const EmbeddedCallScreen = lazy(() => import("./pages/EmbeddedCallScreen"));
-const OrderSuccessScreen = lazy(() => import("./pages/OrderSuccessScreen"));
-const TrackingScreen = lazy(() => import("./pages/TrackingScreen"));
-const FamilyMembersScreen = lazy(() => import("./pages/FamilyMembersScreen"));
-const AddFamilyMemberScreen = lazy(() => import("./pages/AddFamilyMemberScreen"));
-const PaymentMethodsScreen = lazy(() => import("./pages/PaymentMethodsScreen"));
-const TermsScreen = lazy(() => import("./pages/TermsScreen"));
-const PrivacyPolicyScreen = lazy(() => import("./pages/PrivacyPolicyScreen"));
-const ECGDoctorsScreen = lazy(() => import("./pages/ECGDoctorsScreen"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-const UnauthorizedScreen = lazy(() => import("./pages/UnauthorizedScreen"));
-const UploadPrescriptionScreen = lazy(() => import("./pages/UploadPrescriptionScreen"));
+import CategoriesScreen from "./pages/CategoriesScreen";
+import ProfileScreen from "./pages/ProfileScreen";
+import BookingsScreen from "./pages/BookingsScreen";
+import LocationCheckScreen from "./pages/LocationCheckScreen";
+import TestDetailScreen from "./pages/TestDetailScreen";
+import CartScreen from "./pages/CartScreen";
+import InstallScreen from "./pages/InstallScreen";
+import CategoryTestsScreen from "./pages/CategoryTestsScreen";
+import TestSelectionScreen from "./pages/TestSelectionScreen";
+import LabSelectionScreen from "./pages/LabSelectionScreen";
+import PaymentScreen from "./pages/PaymentScreen";
+import ReportsScreen from "./pages/ReportsScreen";
+import ReportDetailScreen from "./pages/ReportDetailScreen";
+import EditProfileScreen from "./pages/EditProfileScreen";
+import NotificationsScreen from "./pages/NotificationsScreen";
+import SubscriptionScreen from "./pages/SubscriptionScreen";
+import SavedAddressesScreen from "./pages/SavedAddressesScreen";
+import DoctorConsultScreen from "./pages/DoctorConsultScreen";
+import PartnerLabsScreen from "./pages/PartnerLabsScreen";
+import LabDetailScreen from "./pages/LabDetailScreen";
+import PackagesScreen from "./pages/PackagesScreen";
+import PackageDetailScreen from "./pages/PackageDetailScreen";
+import SupportScreen from "./pages/SupportScreen";
+import PhysioConsultScreen from "./pages/PhysioConsultScreen";
+import ECGTestScreen from "./pages/ECGTestScreen";
+import BPCheckScreen from "./pages/BPCheckScreen";
+import ConsultationCallScreen from "./pages/ConsultationCallScreen";
+import EmbeddedCallScreen from "./pages/EmbeddedCallScreen";
+import OrderSuccessScreen from "./pages/OrderSuccessScreen";
+import TrackingScreen from "./pages/TrackingScreen";
+import FamilyMembersScreen from "./pages/FamilyMembersScreen";
+import AddFamilyMemberScreen from "./pages/AddFamilyMemberScreen";
+import PaymentMethodsScreen from "./pages/PaymentMethodsScreen";
+import TermsScreen from "./pages/TermsScreen";
+import PrivacyPolicyScreen from "./pages/PrivacyPolicyScreen";
+import ECGDoctorsScreen from "./pages/ECGDoctorsScreen";
+import NotFound from "./pages/NotFound";
+import UnauthorizedScreen from "./pages/UnauthorizedScreen";
+import UploadPrescriptionScreen from "./pages/UploadPrescriptionScreen";
 
 const CapacitorInitializer = () => {
   useEffect(() => {
@@ -92,12 +91,12 @@ const CapacitorInitializer = () => {
  * and PageTransition to handle the physical "Native-Feel" animation.
  */
 const AnimatedRoutes = () => {
+  const location = useLocation();
+  
   return (
-    <SmoothRoutes>
-      {(deferredLocation) => (
-        <PageTransition location={deferredLocation}>
-          <Suspense fallback={<ScreenLoader />}>
-            <Routes location={deferredLocation}>
+    <AnimatePresence initial={false}>
+      <PageTransition location={location} key={location.pathname}>
+        <Routes location={location}>
               {/* Public Routes */}
               <Route path="/" element={<SplashScreen />} />
             <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -154,10 +153,8 @@ const AnimatedRoutes = () => {
             <Route path="/unauthorized" element={<UnauthorizedScreen />} />
             <Route path="*" element={<NotFound />} />
             </Routes>
-          </Suspense>
-        </PageTransition>
-      )}
-    </SmoothRoutes>
+          </PageTransition>
+        </AnimatePresence>
   );
 };
 

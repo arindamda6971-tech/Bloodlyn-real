@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Droplets,
   Activity,
@@ -38,6 +38,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Hand-picked icons and colors for specific known categories
 const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string }> = {
@@ -256,26 +257,34 @@ const CategoriesScreen = () => {
       {!searchQuery.trim() && (
         <div className="px-5 mt-6 pb-12">
           <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            </div>
-          ) : filteredCategories.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground font-medium">No categories found</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {filteredCategories.map((category, index) => (
-                <CategoryTile
-                  key={category.slug || category.name}
-                  category={category}
-                  index={index}
-                  onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
-                />
-              ))}
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {isLoading ? (
+              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm aspect-square">
+                    <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
+                    <Skeleton className="w-20 h-3 mb-1" />
+                    <Skeleton className="w-16 h-2" />
+                  </div>
+                ))}
+              </motion.div>
+            ) : filteredCategories.length === 0 ? (
+              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12">
+                <p className="text-muted-foreground font-medium">No categories found</p>
+              </motion.div>
+            ) : (
+              <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+                {filteredCategories.map((category, index) => (
+                  <CategoryTile
+                    key={category.slug || category.name}
+                    category={category}
+                    index={index}
+                    onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </MobileLayout>

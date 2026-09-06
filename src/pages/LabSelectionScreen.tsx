@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { hapticSelection } from "@/utils/haptics";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Building2, Star, Clock, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -18,6 +18,7 @@ import {
   type FixedCollectionSlot,
 } from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface PatientState {
   patientName?: string;
@@ -325,20 +326,34 @@ const LabSelectionScreen = () => {
         {!hasVendorLab && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
             <h2 className="text-base font-bold text-foreground mb-2">Choose Your Lab</h2>
-            {labsLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              </div>
-            ) : labs.length === 0 ? (
-              <div className="text-center py-8">
-                <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No labs available for your selected tests</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {labs.map((lab) => {
-                  const labPrice = getLabPrice(lab);
-                  return (
+            <AnimatePresence mode="wait">
+              {labsLoading ? (
+                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 rounded-2xl border border-border/50 bg-card space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-3">
+                          <Skeleton className="w-12 h-12 rounded-xl" />
+                          <div className="space-y-2">
+                            <Skeleton className="w-32 h-4" />
+                            <Skeleton className="w-24 h-3" />
+                          </div>
+                        </div>
+                        <Skeleton className="w-16 h-4" />
+                      </div>
+                    </div>
+                  ))}
+                </motion.div>
+              ) : labs.length === 0 ? (
+                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
+                  <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No labs available for your selected tests</p>
+                </motion.div>
+              ) : (
+                <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                  {labs.map((lab) => {
+                    const labPrice = getLabPrice(lab);
+                    return (
                     <button
                       key={lab.id}
                       onClick={() => { hapticSelection(); setSelectedLabId(lab.id); setSelectedLabName(lab.name); }}
@@ -364,8 +379,9 @@ const LabSelectionScreen = () => {
                     </button>
                   );
                 })}
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
           </motion.div>
         )}
 

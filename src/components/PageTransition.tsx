@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
@@ -42,22 +42,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
       };
 
   return (
-    <div
-      className="transition-container"
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "hsl(var(--background))",
-        overflow: "hidden",
-        contain: "paint size layout",
-      }}
-    >
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={location.pathname}
-          initial="initial"
+    <motion.div
+      key={location.pathname}
+      initial="initial"
           animate="animate"
           exit="exit"
           variants={variants}
@@ -67,17 +54,15 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
             duration: 0.65 // Slightly increased from 0.55s for maximum grace
           }}
           className="w-full h-full absolute top-0 left-0 bg-background"
-          style={{
-            contain: "paint size layout",
-            willChange: "transform, opacity",
-            backfaceVisibility: "hidden", // Forces dedicated GPU layer on Android
-            WebkitBackfaceVisibility: "hidden",
-          }}
-        >
-          {children}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+      style={{
+        contain: "paint size layout",
+        willChange: "transform, opacity",
+        backfaceVisibility: "hidden", // Forces dedicated GPU layer on Android
+        WebkitBackfaceVisibility: "hidden",
+      }}
+    >
+      {children}
+    </motion.div>
   );
 };
 

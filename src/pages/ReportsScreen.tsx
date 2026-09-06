@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+import { Skeleton } from "@/components/ui/skeleton";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -224,30 +225,49 @@ const ReportsScreen = () => {
       />
 
       <div className="px-4 pb-6 mt-2">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading reports…</p>
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-20 gap-4"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <FileText className="w-8 h-8 text-primary" />
-            </div>
-            <div className="text-center">
-              <h3 className="font-semibold text-foreground">{orders.length === 0 ? "No Reports Yet" : "No Reports Found"}</h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
-                {orders.length === 0 ? "Your test reports will appear here once they are ready." : `No reports found matching "${searchQuery}".`}
-              </p>
-            </div>
-          </motion.div>
-        ) : (
-          <div className="space-y-4 list-virtual-lg">
-            {filteredOrders.map((order, i) => {
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-3">
+                      <Skeleton className="w-10 h-10 rounded-xl" />
+                      <div className="space-y-2">
+                        <Skeleton className="w-32 h-4" />
+                        <Skeleton className="w-24 h-3" />
+                      </div>
+                    </div>
+                    <Skeleton className="w-16 h-6 rounded-full" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
+                    <Skeleton className="w-24 h-3" />
+                    <Skeleton className="w-20 h-3" />
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          ) : filteredOrders.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="flex flex-col items-center justify-center py-20 gap-4"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-primary" />
+              </div>
+              <div className="text-center">
+                <h3 className="font-semibold text-foreground">{orders.length === 0 ? "No Reports Yet" : "No Reports Found"}</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
+                  {orders.length === 0 ? "Your test reports will appear here once they are ready." : `No reports found matching "${searchQuery}".`}
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 list-virtual-lg">
+              {filteredOrders.map((order, i) => {
               const names = splitTestNames(order.test_name);
               const label = formatTestsLabel(names, "Health Test");
               
@@ -427,8 +447,9 @@ const ReportsScreen = () => {
               </motion.div>
             );
           })}
-          </div>
-        )}
+          </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MobileLayout>
   );
