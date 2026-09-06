@@ -21,8 +21,20 @@ const SplashScreen = () => {
       try {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
-          // Logged in → straight to home (skip onboarding entirely)
+          // Logged in → attempt to restore last route, otherwise go to home
           localStorage.setItem(ONBOARDED_KEY, "1");
+          
+          const lastRoute = localStorage.getItem('bloodlyn_last_route');
+          if (lastRoute) {
+            // Clear immediately to prevent boot loops if the route crashes
+            localStorage.removeItem('bloodlyn_last_route');
+            
+            // Whitelist of routes safe to restore (ignore checkout flows, auth, etc)
+            const safeToRestore = /^\/(home|categories|reports|profile|bookings|category-tests|test|lab|report-detail|tracking)/;
+            if (safeToRestore.test(lastRoute)) {
+              return lastRoute;
+            }
+          }
           return "/home";
         }
       } catch {

@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
+import { onlineManager } from '@tanstack/react-query';
 import { onAppReady } from '@/lib/boot';
 
 /**
@@ -11,6 +13,16 @@ import { onAppReady } from '@/lib/boot';
  */
 export const useAppLifecycle = () => {
   useEffect(() => {
+    // Configure React Query to use Capacitor's native network status
+    onlineManager.setEventListener((setOnline) => {
+      const listener = Network.addListener('networkStatusChange', (status) => {
+        setOnline(status.connected);
+      });
+      return () => {
+        listener.then(l => l.remove());
+      };
+    });
+
     if (!Capacitor.isNativePlatform()) return;
 
     // Safety net for the status-bar overlap: on native, env(safe-area-inset-top)

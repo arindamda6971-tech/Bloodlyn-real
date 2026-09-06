@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -156,10 +156,23 @@ const AnimatedRoutes = () => {
           </PageTransition>
         </AnimatePresence>
   );
-};
-
-
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      // Avoid spamming toasts for 404s or canceled queries
+      if (error.message && !error.message.includes("404")) {
+        console.error("Query Error:", error);
+      }
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => {
+      console.error("Mutation Error:", error);
+      // We don't import toast directly here to avoid circular dependencies if any,
+      // but since it's App.tsx, we can actually import it. We'll rely on the components
+      // handling their own toasts, but this serves as a central logger.
+    },
+  }),
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 min — avoid redundant refetches

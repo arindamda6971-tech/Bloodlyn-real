@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { triggerHaptic } from "@/utils/haptics";
 import { useHaptics } from "@/hooks/useHaptics";
 import { toast } from "sonner";
+import { Analytics } from "@/lib/analytics";
 
 interface CartItem {
   id: string;
@@ -304,6 +305,10 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       impactMedium();
       return updated;
     });
+
+    Analytics.trackAddToCart({ id: item.id, name: item.name, price: item.price, kind: item.kind });
+    triggerHaptic('success');
+    toast.success("Added to cart");
     return true;
   }, [items, currentLabId, currentLabName, hasItem, syncCartToSupabase]);
 

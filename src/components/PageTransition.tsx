@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
+import { Analytics } from "@/lib/analytics";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
@@ -18,6 +20,10 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
   const navType = useNavigationType();
+
+  useEffect(() => {
+    Analytics.trackPageView(location.pathname, location.pathname + location.search);
+  }, [location.pathname, location.search]);
 
   const isTab = TAB_PATHS.includes(location.pathname);
   const isPop = navType === "POP";
