@@ -102,6 +102,10 @@ export const ZomatoStyleHeader = ({
       const title = loc.type || "Home";
       const line = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''}`;
       setCurrentAddress(`${title} • ${line}`);
+      setSelectedId(loc.id);
+      setSavedAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === loc.id })));
+
+
 
       // Invalidate queries so tests/labs refresh for new pincode
       queryClient.invalidateQueries();
