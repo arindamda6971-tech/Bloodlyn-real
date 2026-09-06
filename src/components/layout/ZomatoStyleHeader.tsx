@@ -190,12 +190,19 @@ export const ZomatoStyleHeader = ({
       </div>
 
       {/* Location Picker Bottom Sheet Modal */}
-      <Drawer open={showLocationModal} onOpenChange={setShowLocationModal}>
-        <DrawerContent className="px-6 pb-8 bg-/98 border-border/80 rounded-t-[2rem]">
+      <Drawer
+        open={showLocationModal}
+        onOpenChange={(o) => {
+          setShowLocationModal(o);
+          if (o) loadAddresses();
+        }}
+      >
+        <DrawerContent className="px-6 pb-8 bg-background border-border rounded-t-[2rem] shadow-2xl">
           <DrawerHeader className="px-0 pt-6 text-left">
             <DrawerTitle className="text-xl font-black text-foreground tracking-tight">Select Delivery Location</DrawerTitle>
             <DrawerDescription className="text-xs font-medium mt-1">Select sample pickup address for instant home collection</DrawerDescription>
           </DrawerHeader>
+
 
           <div className="space-y-2.5 max-h-[50vh] overflow-y-auto mt-2">
             {savedAddresses.map((loc) => {
