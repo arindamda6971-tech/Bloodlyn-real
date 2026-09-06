@@ -93,6 +93,15 @@ const SavedAddressesScreen = () => {
     fetchAddresses();
   }, [fetchAddresses]);
 
+  // Deep-link: /saved-addresses?add=1 opens the "add address" form directly.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("add") === "1") {
+      setIsAdding(true);
+      setEditing(null);
+    }
+  }, []);
+
+
   const resetForm = () => {
     setFormData({
       type: "Home",
