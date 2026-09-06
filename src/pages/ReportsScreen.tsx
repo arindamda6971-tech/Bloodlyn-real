@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { saveReportOffline, getOfflineReport, checkReportOffline } from "@/lib/offline-storage";
+import { authenticateBiometrically } from "@/lib/biometrics";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Badge } from "@/components/ui/badge";
@@ -106,11 +107,15 @@ const ReportsScreen = () => {
   });
 
   const handleDownload = async (order: ReportOrder) => {
-    if (!order.report_url) {
-      toast.error("Report file not available yet");
+    if (!order.report_url) return;
+
+    // Trigger biometric privacy lock before downloading
+    const authenticated = await authenticateBiometrically("Authenticate to download your medical report");
+    if (!authenticated) {
+      toast.error("Authentication failed. Cannot download report.");
       return;
     }
-    
+
     // Extract file extension from URL, fallback to .pdf
     const getExtension = (url: string) => {
       const match = url.match(/\.([a-zA-Z0-9]+)(?:[?#]|$)/);
