@@ -156,6 +156,8 @@ const AnimatedRoutes = () => {
           </PageTransition>
         </AnimatePresence>
   );
+};
+
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
