@@ -218,51 +218,76 @@ export const ZomatoStyleHeader = ({
 
 
           <div className="space-y-2.5 max-h-[50vh] overflow-y-auto mt-2">
+            {savedAddresses.length === 0 && (
+              <div className="rounded-2xl border border-dashed border-border p-6 text-center">
+                <MapPin className="w-6 h-6 mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm font-bold text-foreground">No saved addresses</p>
+                <p className="text-xs text-muted-foreground mt-1">Add one to book home collection.</p>
+              </div>
+            )}
             {savedAddresses.map((loc) => {
               const title = loc.type || "Home";
               const addrLine = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''} (${loc.pincode})`;
-              const isCurrent = currentAddress.startsWith(title) || loc.is_default;
+              const isCurrent = selectedId ? selectedId === loc.id : !!loc.is_default;
               const isBusy = switching === loc.id;
               return (
-                <button
+                <div
                   key={loc.id}
-                  type="button"
-                  disabled={isBusy}
-                  onClick={() => handleSelectAddress(loc)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all flex items-start justify-between gap-3 ${
+                  className={`w-full rounded-2xl border transition-all ${
                     isCurrent
                       ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
                       : "border-border/60 hover:bg-accent/40"
                   }`}
                 >
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
-                      isCurrent ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
-                    }`}>
-                      {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                  <button
+                    type="button"
+                    disabled={isBusy}
+                    onClick={() => handleSelectAddress(loc)}
+                    className="w-full text-left p-4 flex items-start justify-between gap-3"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${
+                        isCurrent ? "bg-primary text-white shadow-xs" : "bg-muted text-muted-foreground"
+                      }`}>
+                        {isBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-sm font-bold text-foreground">{title}</h4>
+                        <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{addrLine}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="text-sm font-bold text-foreground">{title}</h4>
-                      <p className="text-xs font-medium text-muted-foreground leading-tight mt-0.5 truncate">{addrLine}</p>
-                    </div>
-                  </div>
-                  {isCurrent && <Check className="w-5 h-5 text-primary shrink-0 mt-2" />}
-                </button>
+                    {isCurrent && <Check className="w-5 h-5 text-primary shrink-0 mt-2" />}
+                  </button>
+                </div>
               );
             })}
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setShowLocationModal(false);
-              navigate("/saved-addresses");
-            }}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-primary via-primary to-indigo-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all hover:brightness-105 mt-6"
-          >
-            <Crosshair className="w-5 h-5" />
-            Add New Address
-          </button>
+          <div className="flex gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => {
+                setShowLocationModal(false);
+                navigate("/saved-addresses");
+              }}
+              className="flex-1 py-4 rounded-2xl border border-border bg-card text-foreground font-black text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            >
+              <Pencil className="w-4 h-4" />
+              Manage
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowLocationModal(false);
+                navigate("/saved-addresses?add=1");
+              }}
+              className="flex-[1.4] py-4 rounded-2xl bg-gradient-to-r from-primary via-primary to-indigo-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 active:scale-[0.98] transition-all hover:brightness-105"
+            >
+              <Crosshair className="w-5 h-5" />
+              Add New Address
+            </button>
+          </div>
+
         </DrawerContent>
       </Drawer>
     </div>
