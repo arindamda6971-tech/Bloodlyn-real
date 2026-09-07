@@ -229,104 +229,116 @@ const TrackingScreen = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="soft-card mt-4"
+          className="mt-4 rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <FlaskConical className="w-5 h-5 text-primary" />
-            <h3 className="font-bold text-foreground">Test Summary</h3>
-            <Badge variant="soft" className="ml-auto text-xs">
+          {/* Header band */}
+          <div className="flex items-center gap-2.5 px-4 py-3.5 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-b border-border/50">
+            <span className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
+              <FlaskConical className="w-4.5 h-4.5 text-primary" />
+            </span>
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-foreground tracking-tight">Test Summary</h3>
+              <p className="text-[11px] font-medium text-muted-foreground">
+                {order.order_number ? `Order ${order.order_number}` : "Booking details"}
+              </p>
+            </div>
+            <Badge variant="soft" className="ml-auto text-[10px] font-black uppercase tracking-wide">
               {testNames.length || orderItems.length || 1} {(testNames.length || orderItems.length || 1) === 1 ? "Test" : "Tests"}
             </Badge>
           </div>
 
           {/* Test names list */}
-          <div className="space-y-1.5 mb-4">
+          <div className="px-4 pt-3.5 pb-1 space-y-2">
             {testNames.length > 0 ? (
               testNames.map((name, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-[10px] font-bold text-primary">{i + 1}</span>
+                <div key={i} className="flex items-start gap-2.5 rounded-xl bg-muted/50 px-3 py-2">
+                  <span className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-[10px] font-black text-primary">{i + 1}</span>
                   </span>
-                  <p className="text-sm text-foreground">{name}</p>
+                  <p className="text-sm font-semibold text-foreground leading-snug">{name}</p>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground">{order.test_name || "Lab Test"}</p>
+              <p className="text-sm font-semibold text-foreground">{order.test_name || "Lab Test"}</p>
             )}
           </div>
 
-          {/* Patient Name */}
-          <div className="flex items-center gap-2 py-2.5 border-t border-border">
-            <User className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Patient:</span>
-            <span className="text-sm font-semibold text-foreground uppercase">{patientName}</span>
-          </div>
-
-          {/* Lab Name */}
-          {order.lab_name && (
-            <div className="flex items-center gap-2 py-2.5 border-t border-border">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Lab:</span>
-              <span className="text-sm font-semibold text-foreground">{order.lab_name}</span>
+          {/* Detail rows */}
+          <div className="px-4 py-2 divide-y divide-border/50">
+            {/* Patient Name */}
+            <div className="flex items-center gap-2.5 py-3">
+              <User className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs font-medium text-muted-foreground flex-1">Patient</span>
+              <span className="text-sm font-bold text-foreground uppercase text-right">{patientName}</span>
             </div>
-          )}
 
-          {/* Order Placed Time */}
-          {order.created_at && (
-            <div className="flex items-center gap-2 py-2.5 border-t border-border">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground flex-1">Order Placed:</span>
-              <span className="text-sm font-semibold text-foreground text-right">
-                {format(new Date(order.created_at), "MMM dd, yyyy • hh:mm a")}
-              </span>
-            </div>
-          )}
+            {/* Lab Name */}
+            {order.lab_name && (
+              <div className="flex items-center gap-2.5 py-3">
+                <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground flex-1">Lab</span>
+                <span className="text-sm font-bold text-foreground text-right">{order.lab_name}</span>
+              </div>
+            )}
 
-          {/* Schedule */}
-          {(order.scheduled_date || order.scheduled_time_slot) && (
-            <div className="flex items-start gap-2 py-2.5 border-t border-border">
-              <Calendar className="w-4 h-4 text-muted-foreground mt-0.5" />
-              <div className="flex flex-col flex-1 gap-1">
-                <div className="flex justify-between items-start">
-                  <span className="text-sm text-muted-foreground">Booking Time:</span>
-                  <span className="text-sm font-semibold text-foreground text-right">
-                    {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
-                    {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
-                  </span>
-                </div>
-                {(order as any).is_rescheduled && (order as any).rescheduled_date && (
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm text-muted-foreground">Rescheduled Time:</span>
-                    <span className="text-sm font-semibold text-amber-600 text-right">
-                      {format(new Date((order as any).rescheduled_date), "MMM dd, yyyy")}
-                      {(order as any).rescheduled_time_slot && ` • ${(order as any).rescheduled_time_slot}`}
+            {/* Order Placed Time */}
+            {order.created_at && (
+              <div className="flex items-center gap-2.5 py-3">
+                <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground flex-1">Order placed</span>
+                <span className="text-sm font-bold text-foreground text-right">
+                  {format(new Date(order.created_at), "MMM dd, yyyy • hh:mm a")}
+                </span>
+              </div>
+            )}
+
+            {/* Schedule */}
+            {(order.scheduled_date || order.scheduled_time_slot) && (
+              <div className="flex items-start gap-2.5 py-3">
+                <Calendar className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                <div className="flex flex-col flex-1 gap-1.5">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="text-xs font-medium text-muted-foreground">Booking time</span>
+                    <span className="text-sm font-bold text-foreground text-right">
+                      {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
+                      {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
                     </span>
                   </div>
-                )}
+                  {(order as any).is_rescheduled && (order as any).rescheduled_date && (
+                    <div className="flex justify-between items-start gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">Rescheduled time</span>
+                      <span className="text-sm font-bold text-amber-600 text-right">
+                        {format(new Date((order as any).rescheduled_date), "MMM dd, yyyy")}
+                        {(order as any).rescheduled_time_slot && ` • ${(order as any).rescheduled_time_slot}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Payment Method */}
-          {order.payment_method && (
-            <div className="flex items-center gap-2 py-2.5 border-t border-border">
-              <CreditCard className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Payment:</span>
-              <span className="text-sm font-semibold text-foreground capitalize">
-                {order.payment_method.replace(/_/g, ' ')}
-              </span>
-            </div>
-          )}
+            {/* Payment Method */}
+            {order.payment_method && (
+              <div className="flex items-center gap-2.5 py-3">
+                <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
+                <span className="text-xs font-medium text-muted-foreground flex-1">Payment</span>
+                <span className="text-sm font-bold text-foreground capitalize text-right">
+                  {order.payment_method.replace(/_/g, ' ')}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Total */}
-          <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div className="flex items-center justify-between px-4 py-3.5 bg-muted/40 border-t border-border/50">
             <div className="flex items-center gap-2">
-              <IndianRupee className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Total Amount</span>
+              <IndianRupee className="w-4 h-4 text-primary" />
+              <span className="text-xs font-black uppercase tracking-wide text-muted-foreground">Total Amount</span>
             </div>
-            <span className="text-lg font-bold text-foreground">₹{order.total}</span>
+            <span className="text-xl font-black text-foreground">₹{order.total}</span>
           </div>
         </motion.div>
+
 
         {/* Tile 2: Collection Partner */}
         <motion.div
