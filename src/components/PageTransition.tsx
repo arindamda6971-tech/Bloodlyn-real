@@ -41,8 +41,8 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   if (isPresent) {
     animClass = isTab ? "page-anim-fade" : isPop ? "page-anim-pop" : "page-anim-push";
   } else {
-    // When popping, the exiting screen was the one previously pushed
-    animClass = isTab ? "page-anim-fade-exit" : isPop ? "page-anim-push-exit" : "page-anim-pop-exit";
+    // When popping, the exiting screen slides right (pop-exit). When pushing, the exiting screen slides left (push-exit).
+    animClass = isTab ? "page-anim-fade-exit" : isPop ? "page-anim-pop-exit" : "page-anim-push-exit";
   }
 
   // Z-Index logic:
@@ -53,9 +53,8 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   return (
     <div
       key={location.pathname}
-      className={`w-full h-full absolute top-0 left-0 bg-background overflow-y-auto overflow-x-hidden ${animClass}`}
+      className={`w-full h-full absolute top-0 left-0 bg-white dark:bg-gray-950 overflow-y-auto overflow-x-hidden ${animClass}`}
       style={{
-        contain: "paint layout",
         zIndex: zIndex,
         WebkitOverflowScrolling: "touch",
       }}
