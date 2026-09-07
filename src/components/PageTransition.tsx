@@ -53,10 +53,11 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   return (
     <div
       key={location.pathname}
-      className={`w-full h-full absolute top-0 left-0 bg-background ${animClass}`}
+      className={`w-full h-full absolute top-0 left-0 bg-background overflow-y-auto overflow-x-hidden ${animClass}`}
       style={{
         contain: "paint layout",
         zIndex: zIndex,
+        WebkitOverflowScrolling: "touch",
       }}
     >
       {children}
