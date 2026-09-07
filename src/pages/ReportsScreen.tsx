@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, FileText, Loader2, Calendar, Activity, User, Hash, Clock, ChevronDown, FlaskConical, Building2, CreditCard, IndianRupee } from "lucide-react";
-import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { saveReportOffline, getOfflineReport, checkReportOffline } from "@/lib/offline-storage";
 import { downloadReport } from "@/lib/download-report";
+
 
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
