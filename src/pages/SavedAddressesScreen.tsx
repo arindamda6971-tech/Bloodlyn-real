@@ -324,14 +324,14 @@ const SavedAddressesScreen = () => {
       <ScreenHeader title="Saved Addresses" />
 
       <div className="px-4 pb-32">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mt-4">
           <p className="text-sm text-muted-foreground">
             Manage your saved addresses for faster bookings and sample collection.
           </p>
         </motion.div>
 
         {editing !== null || isAdding ? (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mt-4 space-y-4">
             <div className="space-y-2">
               <Label>Address Type</Label>
               <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
@@ -442,7 +442,7 @@ const SavedAddressesScreen = () => {
             </div>
           </motion.div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mt-6">
             {loading ? (
               <div className="soft-card p-6 text-center text-muted-foreground">
                 <Loader className="mx-auto w-8 h-8 text-muted-foreground animate-spin" />
@@ -547,7 +547,7 @@ const SavedAddressesScreen = () => {
       {/* Bottom buttons — always show "Add Address Manually" */}
       {!isAdding && !editing && (
         <motion.div
-          initial={{ y: 100 }}
+          initial={false}
           animate={{ y: 0 }}
           className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-/98 border-t border-border px-4 py-4 safe-area-bottom"
         >

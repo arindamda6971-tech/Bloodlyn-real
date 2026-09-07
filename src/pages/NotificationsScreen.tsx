@@ -72,7 +72,7 @@ const NotificationsScreen = () => {
       <div className="px-4 pb-10">
         {notifications.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="mt-16 text-center"
           >
@@ -114,7 +114,7 @@ const NotificationsScreen = () => {
                         <motion.button
                           key={n.id}
                           layout
-                          initial={{ opacity: 0, y: 12 }}
+                          initial={false}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -50 }}
                           transition={{ delay: i * 0.03 }}

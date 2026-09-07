@@ -200,7 +200,7 @@ const TestSelectionScreen = () => {
       <div className="px-4 pb-32">
         {/* Test Info Card */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="soft-card mt-4"
         >
@@ -225,7 +225,7 @@ const TestSelectionScreen = () => {
 
         {/* Lab Selection Header */}
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={false}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="mt-6 mb-4"
@@ -242,7 +242,7 @@ const TestSelectionScreen = () => {
             return (
               <motion.div
                 key={lab.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + index * 0.05 }}
                 className={`soft-card cursor-pointer transition-all hover:border-primary/50`}

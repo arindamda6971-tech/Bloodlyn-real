@@ -291,7 +291,7 @@ const PackageDetailScreen = () => {
       <div className="pb-32">
         {/* Hero Section with Gradient Background */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-primary/10 via-accent/5 to-background pt-6 pb-8 px-4 relative overflow-hidden"
         >
@@ -303,7 +303,7 @@ const PackageDetailScreen = () => {
             {/* Discount Badge */}
             {discountPercent > 0 && (
               <motion.div
-                initial={{ scale: 0 }}
+                initial={false}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
                 className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-destructive/90 text-destructive-foreground rounded-full"
@@ -365,7 +365,7 @@ const PackageDetailScreen = () => {
         <div className="px-4 space-y-6 py-6">
           {/* What's Included - Modern Grid Layout */}
           <motion.section
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
           >
@@ -377,7 +377,7 @@ const PackageDetailScreen = () => {
               {defaultIncludes.map((item, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, scale: 0.9 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
                   className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3.5 border border-success/20 hover:border-success/40 transition-colors"
@@ -396,7 +396,7 @@ const PackageDetailScreen = () => {
           {/* Tests in Package - Enhanced List */}
           {packageTests.length > 0 && (
             <motion.section
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
             >
@@ -413,7 +413,7 @@ const PackageDetailScreen = () => {
                 {packageTests.map((test, index) => (
                   <motion.div
                     key={test.id}
-                    initial={{ opacity: 0, x: -10 }}
+                    initial={false}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.3 + index * 0.02 }}
                     className="flex items-center gap-3 p-3 hover:bg-muted/80 transition-colors"
@@ -441,7 +441,7 @@ const PackageDetailScreen = () => {
           {/* Lab Selection - Modern Card Layout */}
           {!packageData.lab_id && (
             <motion.section
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
@@ -462,7 +462,7 @@ const PackageDetailScreen = () => {
                     <motion.button
                       key={lab.id}
                       type="button"
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={false}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.35 + index * 0.05 }}
                       onClick={() => setSelectedLabId(lab.id)}
@@ -496,7 +496,7 @@ const PackageDetailScreen = () => {
                             </h3>
                             {selectedLabId === lab.id && (
                               <motion.div
-                                initial={{ scale: 0 }}
+                                initial={false}
                                 animate={{ scale: 1 }}
                                 className="flex-shrink-0 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center"
                               >
@@ -560,13 +560,13 @@ const PackageDetailScreen = () => {
         <AnimatePresence>
           {pendingItem && (
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 z-50 flex items-end"
             >
               <motion.div
-                initial={{ y: 100 }}
+                initial={false}
                 animate={{ y: 0 }}
                 exit={{ y: 100 }}
                 className="w-full bg-background rounded-t-3xl p-6 shadow-2xl"
@@ -599,7 +599,7 @@ const PackageDetailScreen = () => {
 
       {/* Add to Cart Button - Fixed Bottom Bar */}
       <motion.div
-        initial={{ y: 100 }}
+        initial={false}
         animate={{ y: 0 }}
         className="fixed left-0 right-0 bg-gradient-to-t from-background via-background to-transparent border-t border-border/40 p-4 z-40"
         style={{

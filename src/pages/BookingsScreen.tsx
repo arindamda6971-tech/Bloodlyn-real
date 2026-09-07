@@ -397,7 +397,7 @@ const BookingsScreen = () => {
             </div>
           ) : orders.length > 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={false}
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center justify-center py-20 text-center"
             >
@@ -411,7 +411,7 @@ const BookingsScreen = () => {
             </motion.div>
           ) : (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center py-24 text-center"
             >

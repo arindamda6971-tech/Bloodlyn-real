@@ -324,11 +324,11 @@ const LabSelectionScreen = () => {
       <div className="px-4 pb-28">
         {/* Lab Selection */}
         {!hasVendorLab && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+          <motion.div initial={false} animate={{ opacity: 1 }} className="mb-4">
             <h2 className="text-base font-bold text-foreground mb-2">Choose Your Lab</h2>
             <AnimatePresence mode="wait">
               {labsLoading ? (
-                <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                <motion.div key="loading" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="p-4 rounded-2xl border border-border/50 bg-card space-y-3">
                       <div className="flex justify-between items-start">
@@ -345,12 +345,12 @@ const LabSelectionScreen = () => {
                   ))}
                 </motion.div>
               ) : labs.length === 0 ? (
-                <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
+                <motion.div key="empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-8">
                   <Building2 className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No labs available for your selected tests</p>
                 </motion.div>
               ) : (
-                <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                <motion.div key="data" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
                   {labs.map((lab) => {
                     const labPrice = getLabPrice(lab);
                     return (
@@ -387,7 +387,7 @@ const LabSelectionScreen = () => {
 
         {/* Selected lab info for vendor lab */}
         {hasVendorLab && currentLabName && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-4">
+          <motion.div initial={false} animate={{ opacity: 1 }} className="mb-4">
             <div className="bg-card rounded-xl border border-primary/30 p-3 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Building2 className="w-5 h-5 text-primary" />
@@ -406,7 +406,7 @@ const LabSelectionScreen = () => {
         )}
 
         {/* Date Selection */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-base font-bold text-foreground mb-2">Select Date</h2>
           <div className="flex gap-2">
             {dates.map((date, index) => {
@@ -443,7 +443,7 @@ const LabSelectionScreen = () => {
         </motion.div>
 
         {/* Time Selection */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-4">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SELECT TIME SLOT</h2>
 
           {!selectedLabId ? (
@@ -502,7 +502,7 @@ const LabSelectionScreen = () => {
         </motion.div>
         {/* Confirm Button (Moved Inline) */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+          initial={false} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.3 }}
           className="mt-6 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"

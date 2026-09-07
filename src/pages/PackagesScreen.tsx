@@ -87,7 +87,7 @@ const PackagesScreen = () => {
       <div className="pb-6">
         {/* Hero Section */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-primary/10 via-accent/5 to-background px-4 py-8 relative overflow-hidden"
         >
@@ -118,7 +118,7 @@ const PackagesScreen = () => {
             </div>
           ) : labs.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={false}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-12"
             >
@@ -132,7 +132,7 @@ const PackagesScreen = () => {
             <>
               {/* Quick Stats */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
                 className="grid grid-cols-2 gap-3 mb-4"
@@ -157,7 +157,7 @@ const PackagesScreen = () => {
                       if (lab.id) navigate(`/lab/${lab.id}`);
                       else navigate('/partner-labs');
                     }}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + index * 0.05 }}
                     className="w-full text-left group"
@@ -206,7 +206,7 @@ const PackagesScreen = () => {
 
               {/* Footer Info */}
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 className="mt-8 p-4 rounded-xl bg-accent/30 border border-accent/40"

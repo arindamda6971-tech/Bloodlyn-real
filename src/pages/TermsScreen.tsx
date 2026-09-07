@@ -58,7 +58,7 @@ const TermsScreen = () => {
         />
 
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(30,27,75,0.5)] relative overflow-hidden border border-white/10"
@@ -84,7 +84,7 @@ const TermsScreen = () => {
           {sections.map((section, index) => (
             <motion.section
               key={section.title}
-              initial={{ opacity: 0, x: -10 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 + index * 0.08 }}
               className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
@@ -104,7 +104,7 @@ const TermsScreen = () => {
           ))}
 
           <motion.section
-            initial={{ opacity: 0, y: 15 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center"

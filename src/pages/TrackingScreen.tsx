@@ -203,7 +203,7 @@ const TrackingScreen = () => {
       <div className="px-4 pb-8">
         {/* Order Number & Status Header */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 flex items-center justify-between"
         >
@@ -226,7 +226,7 @@ const TrackingScreen = () => {
 
         {/* Tile 1: Test Details */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           className="mt-4 rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden"
@@ -342,7 +342,7 @@ const TrackingScreen = () => {
 
         {/* Tile 2: Collection Partner */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="soft-card mt-4"
@@ -424,7 +424,7 @@ const TrackingScreen = () => {
 
                       {/* Circle */}
                       <motion.div
-                        initial={{ scale: 0 }}
+                        initial={false}
                         animate={{ scale: 1 }}
                         transition={{ delay: 0.1 + index * 0.08, type: "spring", stiffness: 200 }}
                         className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
@@ -444,7 +444,7 @@ const TrackingScreen = () => {
 
                       {/* Label */}
                       <motion.div
-                        initial={{ opacity: 0, x: -6 }}
+                        initial={false}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.15 + index * 0.08 }}
                         className={`flex-1 ${isLast ? "pb-0" : "pb-6"}`}
@@ -588,7 +588,7 @@ const TrackingScreen = () => {
 
         {/* Actions */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="mt-6 space-y-3"

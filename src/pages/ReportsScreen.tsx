@@ -138,7 +138,7 @@ const ReportsScreen = () => {
       <div className="px-4 pb-6 mt-2">
         <AnimatePresence mode="wait">
           {loading ? (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+            <motion.div key="loading" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 space-y-4">
                   <div className="flex justify-between items-start">
@@ -161,7 +161,7 @@ const ReportsScreen = () => {
           ) : filteredOrders.length === 0 ? (
             <motion.div
               key="empty"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={false}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="flex flex-col items-center justify-center py-20 gap-4"
@@ -177,7 +177,7 @@ const ReportsScreen = () => {
               </div>
             </motion.div>
           ) : (
-            <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 list-virtual-lg">
+            <motion.div key="data" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 list-virtual-lg">
               {filteredOrders.map((order, i) => {
               const names = splitTestNames(order.test_name);
               const label = formatTestsLabel(names, "Health Test");
@@ -185,7 +185,7 @@ const ReportsScreen = () => {
               return (
               <motion.div
                 key={order.id}
-                initial={{ opacity: 0, y: 15 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
                 className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
@@ -274,7 +274,7 @@ const ReportsScreen = () => {
                 <AnimatePresence>
                   {expandedId === order.id && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
+                      initial={false}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"

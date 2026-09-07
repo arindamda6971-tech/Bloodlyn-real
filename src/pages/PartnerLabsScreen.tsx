@@ -147,7 +147,7 @@ const PartnerLabsScreen = () => {
             {filteredCenters.map((center, index) => (
               <motion.div
                 key={center.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={`soft-card p-4 cursor-pointer relative overflow-hidden ${center.is_active === false ? 'grayscale opacity-75' : ''}`}

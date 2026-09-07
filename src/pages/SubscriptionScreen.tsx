@@ -89,7 +89,7 @@ const SubscriptionScreen = () => {
       <div className="px-4 pb-32">
         {/* Hero section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 text-center"
         >
@@ -104,7 +104,7 @@ const SubscriptionScreen = () => {
 
         {/* Plan selection */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mt-8 grid grid-cols-2 gap-3"
@@ -151,7 +151,7 @@ const SubscriptionScreen = () => {
 
         {/* Features */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="mt-8"
@@ -161,7 +161,7 @@ const SubscriptionScreen = () => {
             {features.map((feature, index) => (
               <motion.div
                 key={feature.text}
-                initial={{ opacity: 0, x: -20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + index * 0.05 }}
                 className="flex items-center gap-3"
@@ -180,7 +180,7 @@ const SubscriptionScreen = () => {
 
         {/* Testimonials */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="mt-8"
@@ -227,7 +227,7 @@ const SubscriptionScreen = () => {
 
       {/* Bottom CTA */}
       <motion.div
-        initial={{ y: 100 }}
+        initial={false}
         animate={{ y: 0 }}
         className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-/98 border-t border-border px-4 py-4 safe-area-bottom"
       >

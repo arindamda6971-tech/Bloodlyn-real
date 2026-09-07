@@ -119,7 +119,7 @@ const ConsultationCallScreen = () => {
               />
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
+                  initial={false}
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-center"
                 >
@@ -135,7 +135,7 @@ const ConsultationCallScreen = () => {
             </div>
           ) : (
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={false}
               animate={{ scale: 1, opacity: 1 }}
               className="text-center"
             >
@@ -180,7 +180,7 @@ const ConsultationCallScreen = () => {
         {/* Self view (for video calls) */}
         {isVideoCall && callStatus === "connected" && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="absolute bottom-4 right-4 w-28 h-36 rounded-2xl bg-muted border-2 border-border overflow-hidden shadow-xl"
           >
@@ -200,7 +200,7 @@ const ConsultationCallScreen = () => {
 
       {/* Call Controls */}
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 260, damping: 20 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
@@ -209,7 +209,7 @@ const ConsultationCallScreen = () => {
         <AnimatePresence mode="wait">
           {callStatus !== "connected" && callStatus !== "ended" && (
             <motion.p
-              initial={{ opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               className="text-center text-white/80 font-medium mb-4 drop-shadow-md"

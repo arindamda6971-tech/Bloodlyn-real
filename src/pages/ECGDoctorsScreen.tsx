@@ -255,7 +255,7 @@ const ECGDoctorsScreen = () => {
 
         {/* Center Info Card */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-primary/15 via-primary/10 to-transparent border border-primary/20 shadow-sm"
         >
@@ -304,7 +304,7 @@ const ECGDoctorsScreen = () => {
 
         {/* ECG Test Info */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mt-5 p-5 rounded-3xl bg-gradient-to-br from-rose-500/15 via-rose-500/5 to-transparent border border-rose-500/20 shadow-sm"
@@ -329,7 +329,7 @@ const ECGDoctorsScreen = () => {
 
         {/* Doctors List */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
           className="mt-7"
@@ -361,7 +361,7 @@ const ECGDoctorsScreen = () => {
               {doctors.map((doctor, index) => (
                 <motion.div
                   key={doctor.id}
-                  initial={{ opacity: 0, x: -15 }}
+                  initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 + index * 0.08 }}
                   className="p-5 rounded-3xl bg-/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
@@ -419,7 +419,7 @@ const ECGDoctorsScreen = () => {
 
         {/* Info Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
           className="mt-7 p-5 rounded-3xl bg-gradient-to-br from-rose-500/10 via-blue-500/5 to-indigo-500/10 border border-rose-500/20 shadow-sm relative overflow-hidden"

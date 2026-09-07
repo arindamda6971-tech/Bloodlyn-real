@@ -663,7 +663,7 @@ const PaymentScreen = () => {
 
       <div className="px-4 pb-28">
         {/* Appointment Details */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-3">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-3">
           <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden />
           <div className="p-3.5 pl-5">
             <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
@@ -705,7 +705,7 @@ const PaymentScreen = () => {
         </motion.div>
 
         {/* Order Details */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
           <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
             <h3 className="text-base font-bold text-foreground tracking-tight">Order Details</h3>
             {orderOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
@@ -739,7 +739,7 @@ const PaymentScreen = () => {
         {bpAddonPrice !== null && (
           <motion.button
             type="button"
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
             onClick={() => setBpAddonSelected((v) => !v)}
@@ -777,7 +777,7 @@ const PaymentScreen = () => {
         {ecgAddonPrice !== null && (
           <motion.button
             type="button"
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.13 }}
             onClick={() => setEcgAddonSelected((v) => !v)}
@@ -813,7 +813,7 @@ const PaymentScreen = () => {
 
         {/* Lab Offers */}
         {labOffers.length > 0 && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="mb-4 space-y-3">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="mb-4 space-y-3">
             <h3 className="text-base font-bold text-foreground tracking-tight px-1">Offers for you</h3>
             <div className="flex flex-col gap-3">
               {labOffers.map((offer) => {
@@ -890,7 +890,7 @@ const PaymentScreen = () => {
         )}
 
         {/* Offers & Benefits */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
           <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Offers &amp; Benefits</h3>
           <div className="rounded-xl bg-success/5 border border-success/20 p-2.5">
             <div className="flex items-center gap-2.5">
@@ -917,7 +917,7 @@ const PaymentScreen = () => {
         </motion.div>
 
         {/* Bill Summary */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
           <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Bill Summary</h3>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
@@ -974,7 +974,7 @@ const PaymentScreen = () => {
 
         {/* Split Pay Button - Select Mode + Pay Now (Moved from fixed bottom) */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+          initial={false} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.25 }}
           className="mt-4 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"

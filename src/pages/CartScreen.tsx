@@ -393,7 +393,7 @@ const CartScreen = () => {
         {/* Fasting Alert */}
         {requiresFasting && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={false}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 flex gap-3 shadow-sm"
           >
@@ -412,7 +412,7 @@ const CartScreen = () => {
         {/* Collection point */}
         {currentLabName && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3"
           >
@@ -430,7 +430,7 @@ const CartScreen = () => {
 
 
 {/* Collection Address */}
-        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
           <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -491,7 +491,7 @@ const CartScreen = () => {
         
         {/* Booking for — member selector + patient details */}
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
           className="bg-card rounded-2xl border border-border/70 shadow-sm p-4"
@@ -607,7 +607,7 @@ const CartScreen = () => {
         <div className="pt-1">
           
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="space-y-4">
             
             {/* Consultations Group */}
             {items.some(i => i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-")) && (
@@ -629,7 +629,7 @@ const CartScreen = () => {
                   return (
                     <motion.div
                       key={item.id}
-                      initial={{ opacity: 0, x: -10 }}
+                      initial={false}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.04 }}
                       className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
@@ -673,7 +673,7 @@ const CartScreen = () => {
                 {items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).map((item, index) => (
                   <motion.div
                     key={item.id}
-                    initial={{ opacity: 0, x: -10 }}
+                    initial={false}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.04 }}
                     className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all p-4 flex items-start justify-between gap-3"
@@ -714,7 +714,7 @@ const CartScreen = () => {
             onChange={handlePrescriptionChange}
           />
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             onClick={() => { if (!prescription && !prescriptionUploading) prescriptionInputRef.current?.click(); }}
             className="mt-4 bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
@@ -760,7 +760,7 @@ const CartScreen = () => {
 
         {/* Checkout Bar (Moved Inline) */}
         <motion.div 
-          initial={{ opacity: 0, y: 15 }} 
+          initial={false} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0.25 }}
           className="mt-6 bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4"

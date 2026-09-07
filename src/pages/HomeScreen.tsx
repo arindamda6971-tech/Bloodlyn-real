@@ -352,7 +352,7 @@ const HomeScreen = () => {
           {quickActions.map((action, idx) => (
             <motion.div
               key={action.label}
-              initial={{ opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => navigate(action.path)}

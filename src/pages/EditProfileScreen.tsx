@@ -234,7 +234,7 @@ const EditProfileScreen = () => {
 
       {/* Floating Action Button (Industry Standard) */}
       <motion.div
-        initial={{ y: 100 }}
+        initial={false}
         animate={{ y: 0 }}
         className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto p-6 bg-gradient-to-t from-background via-background to-transparent pointer-events-none"
       >

@@ -53,7 +53,7 @@ const FamilyMembersScreen = () => {
       <div className="px-4 pb-6">
         {members.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-center"
           >
@@ -76,7 +76,7 @@ const FamilyMembersScreen = () => {
                 <motion.div
                   key={member.id}
                   layout
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
                   transition={{ delay: index * 0.05 }}
@@ -129,7 +129,7 @@ const FamilyMembersScreen = () => {
             </AnimatePresence>
 
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
             >

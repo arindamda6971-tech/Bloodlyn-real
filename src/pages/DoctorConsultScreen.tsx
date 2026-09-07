@@ -300,7 +300,7 @@ const DoctorConsultScreen = () => {
           <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
             <motion.div 
               className="h-full bg-primary"
-              initial={{ width: 0 }}
+              initial={false}
               animate={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }}
               transition={{ duration: 0.3, ease: "easeInOut" }}
             />

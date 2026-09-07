@@ -99,7 +99,7 @@ const ReportDetailScreen = () => {
       <div className="px-4 pb-8">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           className="mt-4"
         >
@@ -115,7 +115,7 @@ const ReportDetailScreen = () => {
 
         {/* AI Summary */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
           className="mt-6"
@@ -140,7 +140,7 @@ const ReportDetailScreen = () => {
 
           {showAiSummary && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
+              initial={false}
               animate={{ height: "auto", opacity: 1 }}
               className="soft-card mt-2"
             >
@@ -164,7 +164,7 @@ const ReportDetailScreen = () => {
 
         {/* Parameters */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="mt-6"
@@ -174,7 +174,7 @@ const ReportDetailScreen = () => {
             {reportDetails.parameters.map((param, index) => (
               <motion.div
                 key={param.name}
-                initial={{ opacity: 0, x: -20 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 + index * 0.05 }}
                 className="soft-card"
@@ -216,7 +216,7 @@ const ReportDetailScreen = () => {
 
         {/* Actions */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
           className="mt-6 space-y-3"
@@ -265,7 +265,7 @@ const ReportDetailScreen = () => {
                 <p className="text-zinc-400 text-sm animate-pulse">Rendering Document...</p>
               </div>
             ) : (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white rounded shadow-2xl overflow-hidden mb-8">
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white rounded shadow-2xl overflow-hidden mb-8">
                 {/* Mock PDF Content */}
                 <div className="p-6 pb-20 border-b border-gray-200">
                   <div className="flex justify-between items-center mb-6">

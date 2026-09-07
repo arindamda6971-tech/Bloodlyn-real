@@ -175,7 +175,7 @@ const LoginScreen = () => {
           <>
             {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowHelp(false)}
@@ -183,7 +183,7 @@ const LoginScreen = () => {
             />
             {/* Sheet */}
             <motion.div
-              initial={{ y: '100%' }}
+              initial={false}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
@@ -256,7 +256,7 @@ const LoginScreen = () => {
           <AnimatePresence mode="wait">
             <motion.div
               key={isSignUp ? 'signup' : 'login'}
-              initial={{ opacity: 0, y: 10 }}
+              initial={false}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}

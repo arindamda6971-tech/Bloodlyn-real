@@ -100,7 +100,7 @@ const SupportScreen = () => {
 
         {/* Premium Gradient Hero Banner */}
         <motion.div
-          initial={{ opacity: 0, y: 15 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white shadow-[0_10px_30px_-10px_rgba(23,37,84,0.5)] relative overflow-hidden border border-white/10"
@@ -134,7 +134,7 @@ const SupportScreen = () => {
             {/* Contact Tab */}
             <TabsContent value="contact" className="space-y-4">
               <motion.div
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
                 onClick={() => { window.location.href = `tel:+91${SUPPORT_PHONE}`; }}
                 className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
@@ -149,7 +149,7 @@ const SupportScreen = () => {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
                 onClick={() => { window.location.href = `https://wa.me/91${SUPPORT_PHONE}`; }}
                 className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-green-500/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
@@ -163,7 +163,7 @@ const SupportScreen = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
               </motion.div>
 
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center mt-6">
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center mt-6">
                 <p className="text-xs text-muted-foreground font-medium">Our dedicated support team is available</p>
                 <p className="text-sm font-bold text-primary mt-1">Monday - Sunday • 9 AM - 9 PM</p>
               </motion.div>
@@ -171,7 +171,7 @@ const SupportScreen = () => {
 
             {/* New Ticket Tab */}
             <TabsContent value="new">
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] space-y-5">
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] space-y-5">
                 <h3 className="text-base font-bold text-foreground tracking-tight">Submit a Formal Ticket</h3>
 
                 <div>
@@ -221,7 +221,7 @@ const SupportScreen = () => {
 
             {/* My Tickets Tab */}
             <TabsContent value="tickets">
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}>
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }}>
                 {ticketsLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -271,7 +271,7 @@ const SupportScreen = () => {
 
             {/* Track Ticket Tab */}
             <TabsContent value="track">
-              <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                 <div className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
                   <h3 className="text-base font-bold text-foreground tracking-tight mb-3">Track Ticket Status</h3>
                   <div className="flex gap-2.5">
@@ -298,7 +298,7 @@ const SupportScreen = () => {
                     </div>
                   )}
                   {trackedTicket && !trackLoading && (
-                    <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+                    <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="p-6 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
                       {trackedTicket.success === false ? (
                         <div className="text-center py-6">
                           <AlertCircle className="w-12 h-12 mx-auto text-destructive mb-3" />

@@ -26,7 +26,7 @@ const InstallScreen = () => {
       {/* Header */}
       <div className="pt-12 pb-8 px-6 text-center">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={false}
           animate={{ scale: 1, opacity: 1 }}
           className="flex items-center justify-center gap-2 mb-6"
         >
@@ -37,7 +37,7 @@ const InstallScreen = () => {
         </motion.div>
 
         <motion.h1
-          initial={{ y: 20, opacity: 0 }}
+          initial={false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="text-2xl font-bold text-secondary mb-2"
@@ -46,7 +46,7 @@ const InstallScreen = () => {
         </motion.h1>
 
         <motion.p
-          initial={{ y: 20, opacity: 0 }}
+          initial={false}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
           className="text-muted-foreground"
@@ -57,7 +57,7 @@ const InstallScreen = () => {
 
       {/* Features */}
       <motion.div
-        initial={{ y: 20, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.3 }}
         className="flex-1 px-6 space-y-4"
@@ -65,7 +65,7 @@ const InstallScreen = () => {
         {features.map((feature, index) => (
           <motion.div
             key={feature.title}
-            initial={{ x: -20, opacity: 0 }}
+            initial={false}
             animate={{ x: 0, opacity: 1 }}
             transition={{ delay: 0.4 + index * 0.1 }}
             className="soft-card flex items-center gap-4"
@@ -84,7 +84,7 @@ const InstallScreen = () => {
 
       {/* Install Instructions / Button */}
       <motion.div
-        initial={{ y: 20, opacity: 0 }}
+        initial={false}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.7 }}
         className="px-6 pb-8 safe-area-bottom space-y-4"

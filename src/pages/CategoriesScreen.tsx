@@ -105,7 +105,7 @@ CategoryTile.displayName = "CategoryTile";
 
 const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => (
   <motion.div
-    initial={{ opacity: 0, y: 10 }}
+    initial={false}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay: index * 0.03 }}
     onClick={onNavigate}
@@ -259,7 +259,7 @@ const CategoriesScreen = () => {
           <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
           <AnimatePresence mode="wait">
             {isLoading ? (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+              <motion.div key="loading" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm aspect-square">
                     <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
@@ -269,11 +269,11 @@ const CategoriesScreen = () => {
                 ))}
               </motion.div>
             ) : filteredCategories.length === 0 ? (
-              <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12">
+              <motion.div key="empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12">
                 <p className="text-muted-foreground font-medium">No categories found</p>
               </motion.div>
             ) : (
-              <motion.div key="data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+              <motion.div key="data" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
                 {filteredCategories.map((category, index) => (
                   <CategoryTile
                     key={category.slug || category.name}

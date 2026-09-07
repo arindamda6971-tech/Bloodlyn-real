@@ -66,7 +66,7 @@ const ConfettiPiece = ({ index }: { index: number }) => {
         borderRadius: isCircle ? "50%" : "2px",
         backgroundColor: color,
       }}
-      initial={{ y: -20, opacity: 1, rotate: 0, scale: 0 }}
+      initial={false}
       animate={{
         y: ["0%", "800%"],
         opacity: [1, 1, 0.8, 0],
@@ -128,7 +128,7 @@ const OrderSuccessScreen = () => {
             <motion.div
               key={i}
               className="absolute inset-0 rounded-full border border-primary/20"
-              initial={{ scale: 0.8, opacity: 0.6 }}
+              initial={false}
               animate={{ scale: 2 + i * 0.8, opacity: 0 }}
               transition={{
                 duration: 2,
@@ -143,7 +143,7 @@ const OrderSuccessScreen = () => {
           {/* Glow */}
           <motion.div
             className="absolute -inset-4 rounded-full bg-primary/10 blur-xl"
-            initial={{ opacity: 0, scale: 0.5 }}
+            initial={false}
             animate={{ opacity: [0, 0.6, 0.3], scale: [0.5, 1.2, 1] }}
             transition={{ duration: 1.2, delay: 0.2 }}
           />
@@ -151,13 +151,13 @@ const OrderSuccessScreen = () => {
           {/* Checkmark circle */}
           <motion.div
             className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg"
-            initial={{ scale: 0, rotate: -180 }}
+            initial={false}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
             style={{ boxShadow: "0 8px 40px -8px hsl(var(--primary) / 0.5)" }}
           >
             <motion.div
-              initial={{ scale: 0 }}
+              initial={false}
               animate={{ scale: 1 }}
               transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
             >
@@ -168,7 +168,7 @@ const OrderSuccessScreen = () => {
 
         {/* Title */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
           className="mb-2"
@@ -178,7 +178,7 @@ const OrderSuccessScreen = () => {
 
         <motion.p
           className="text-muted-foreground text-sm max-w-xs mb-8"
-          initial={{ opacity: 0, y: 10 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.75 }}
         >
@@ -188,7 +188,7 @@ const OrderSuccessScreen = () => {
         {/* Order details card */}
         <motion.div
           className="w-full max-w-sm soft-card p-5 mb-6 text-left"
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.9 }}
         >
@@ -330,7 +330,7 @@ const OrderSuccessScreen = () => {
         {/* Actions */}
         <motion.div
           className="w-full max-w-sm space-y-3"
-          initial={{ opacity: 0, y: 20 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.05 }}
         >

@@ -95,7 +95,7 @@ const UploadPrescriptionScreen = () => {
         <MobileLayout>
           <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={false}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", bounce: 0.5 }}
               className="w-24 h-24 bg-success/10 rounded-full flex items-center justify-center mb-6"
@@ -161,7 +161,7 @@ const UploadPrescriptionScreen = () => {
               <AnimatePresence mode="wait">
                 {!file ? (
                   <motion.label
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-primary/30 rounded-3xl bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer active:scale-[0.98]"
@@ -180,7 +180,7 @@ const UploadPrescriptionScreen = () => {
                   </motion.label>
                 ) : (
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={false}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="flex items-center p-4 bg-muted/30 border border-border/50 rounded-2xl"

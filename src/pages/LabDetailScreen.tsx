@@ -879,7 +879,7 @@ const LabDetailScreen = () => {
         <div className="px-5 py-2 space-y-4">
           {/* Tests Count and Filter */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="flex items-center justify-between"
@@ -909,7 +909,7 @@ const LabDetailScreen = () => {
               return (
                 <motion.div
                   key={test.id}
-                  initial={{ opacity: 0, y: 15 }}
+                  initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 + index * 0.03 }}
                   className="bg-card rounded-3xl border border-border/60 p-4 shadow-2xs hover:shadow-xs transition-all"
@@ -947,7 +947,7 @@ const LabDetailScreen = () => {
                       )}
                       {expandedTest === test.id && (
                         <motion.p
-                          initial={{ opacity: 0, height: 0 }}
+                          initial={false}
                           animate={{ opacity: 1, height: "auto" }}
                           className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium"
                         >
@@ -1048,13 +1048,13 @@ const LabDetailScreen = () => {
         <AnimatePresence>
           {serviceError && (
             <motion.div
-              initial={{ opacity: 0 }}
+              initial={false}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-5"
             >
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
+                initial={false}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
