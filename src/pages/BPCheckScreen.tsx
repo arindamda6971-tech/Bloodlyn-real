@@ -45,7 +45,7 @@ const ConfettiPiece = ({ index }: { index: number }) => {
   const isCircle = Math.random() > 0.5;
 
   return (
-    <motion.div
+    <div
       className="absolute top-0 pointer-events-none"
       style={{
         left: `${randomX}%`,
@@ -53,16 +53,13 @@ const ConfettiPiece = ({ index }: { index: number }) => {
         height: isCircle ? size : size * 2.5,
         borderRadius: isCircle ? "50%" : "2px",
         backgroundColor: color,
-      }}
-      initial={false}
-      animate={{
+      }} data-initial={false} data-animate={{
         y: ["0%", "800%"],
         opacity: [1, 1, 0.8, 0],
         rotate: randomRotation,
         scale: [0, 1.2, 1, 0.6],
         x: [0, (Math.random() - 0.5) * 120],
-      }}
-      transition={{
+      }} data-transition={{
         duration: randomDuration,
         delay: 0,
         ease: "easeOut",
@@ -638,10 +635,8 @@ const BPCheckScreen = () => {
           </div>
           <div className="px-4 mt-2">
             <div className="flex gap-1 h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-              <motion.div
-                className="bg-blue-600 h-full rounded-full"
-                initial={false}
-                animate={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
+              <div
+                className="bg-blue-600 h-full rounded-full" data-initial={false} data-animate={{ width: `${((stepIndex + 1) / totalSteps) * 100}%` }}
               />
             </div>
           </div>
@@ -659,7 +654,7 @@ const BPCheckScreen = () => {
         <AnimatePresence mode="wait">
 
           {step === "ADDRESS" && (
-            <motion.div key="address" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+            <div key="address" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-4">Where should we visit?</h2>
 
               {savedAddresses.length === 0 ? (
@@ -717,11 +712,11 @@ const BPCheckScreen = () => {
                   </div>
                 </>
               )}
-            </motion.div>
+            </div>
           )}
 
           {step === "AVAILABILITY" && (
-            <motion.div key="availability" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 flex flex-col items-center justify-center min-h-[60vh]">
+            <div key="availability" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4 flex flex-col items-center justify-center min-h-[60vh]">
               <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6">
                 <Search className="w-10 h-10 text-blue-500" />
               </div>
@@ -747,11 +742,11 @@ const BPCheckScreen = () => {
                   Find Labs
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === "LAB" && (
-            <motion.div key="lab" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+            <div key="lab" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-1">Pick a lab</h2>
               <p className="text-xs text-muted-foreground font-medium mb-3">
                 Only labs offering Home BP Check for pincode <span className="font-bold text-foreground">{pincode}</span>
@@ -845,11 +840,11 @@ const BPCheckScreen = () => {
                   Continue
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === "APPOINTMENT" && (
-            <motion.div key="appointment" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+            <div key="appointment" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-6">When should we visit?</h2>
               <CollectionSlotPicker
                 dates={labDays.dates}
@@ -873,11 +868,11 @@ const BPCheckScreen = () => {
                   Continue to Patient Details
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === "DETAILS" && (
-            <motion.div key="details" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+            <div key="details" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-4">Patient Information</h2>
 
               {/* Family Member Selection */}
@@ -989,11 +984,11 @@ const BPCheckScreen = () => {
                   Proceed to Check Out
                 </button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === "PAYMENT" && (
-            <motion.div key="payment" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4 pb-4">
+            <div key="payment" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4 pb-4">
               <h2 className="text-xl font-black mb-4">Check Out</h2>
 
               {/* Appointment Details */}
@@ -1131,11 +1126,11 @@ const BPCheckScreen = () => {
                   </Button>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {step === "SUMMARY" && (
-            <motion.div key="summary" initial={false} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="p-4">
+            <div key="summary" data-initial={false} data-animate={{ opacity: 1, x: 0 }} data-exit={{ opacity: 0, x: -20 }} className="p-4">
               <h2 className="text-xl font-black mb-6">Booking Summary</h2>
 
               <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
@@ -1181,7 +1176,7 @@ const BPCheckScreen = () => {
                   <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-blue-600 text-lg">₹{price}</span></div>
                 </div>
               </div>
-            </motion.div>
+            </div>
           )}
 
         </AnimatePresence>

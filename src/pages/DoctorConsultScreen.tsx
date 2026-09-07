@@ -298,11 +298,8 @@ const DoctorConsultScreen = () => {
         {/* Progress Bar */}
         <div className="px-4 mt-2">
           <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <motion.div 
-              className="h-full bg-primary"
-              initial={false}
-              animate={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
+            <div 
+              className="h-full bg-primary" data-initial={false} data-animate={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }} data-transition={{ duration: 0.3, ease: "easeInOut" }}
             />
           </div>
         </div>
