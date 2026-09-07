@@ -28,23 +28,25 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const isTab = TAB_PATHS.includes(location.pathname);
   const isPop = navType === "POP";
 
-  // Native iOS-style transition variants
+  // Native iOS-style transition variants optimized for mobile GPU
   const variants = isTab
     ? {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
+        initial: { opacity: 0, zIndex: 1 },
+        animate: { opacity: 1, zIndex: 1 },
+        exit: { opacity: 0, zIndex: 1 },
       }
     : isPop
     ? {
-        initial: { x: "-30%", opacity: 0.8 }, // Slide in slightly from left
-        animate: { x: 0, opacity: 1 },
-        exit: { x: "100%", opacity: 1, zIndex: 10 }, // Slide out completely to right
+        // Popping a screen: previous screen slides in from left (dimmed), popped screen slides out to right
+        initial: { x: "-30vw", opacity: 0.8, zIndex: 1 }, 
+        animate: { x: "0vw", opacity: 1, zIndex: 1 },
+        exit: { x: "100vw", opacity: 1, zIndex: 10 }, 
       }
     : {
-        initial: { x: "100%", opacity: 1, zIndex: 10 }, // New page slides in from right
-        animate: { x: 0, opacity: 1 },
-        exit: { x: "-30%", opacity: 0.8 }, // Old page pushes slightly to the left
+        // Pushing a new screen: new screen slides in from right, current screen slides out to left (dimmed)
+        initial: { x: "100vw", opacity: 1, zIndex: 10 }, 
+        animate: { x: "0vw", opacity: 1, zIndex: 10 },
+        exit: { x: "-30vw", opacity: 0.8, zIndex: 1 }, 
       };
 
   return (
@@ -56,15 +58,16 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
           variants={variants}
           transition={{
             type: "tween",
-            ease: [0.32, 0.72, 0, 1], // Native iOS-like ease-out cubic bezier
-            duration: 0.65 // Slightly increased from 0.55s for maximum grace
+            ease: [0.36, 0.66, 0.04, 1], // Standard snappy mobile ease
+            duration: 0.4 // Snappier duration for buttery smooth feel
           }}
           className="w-full h-full absolute top-0 left-0 bg-background"
       style={{
-        contain: "paint size layout",
-        willChange: "transform, opacity",
-        backfaceVisibility: "hidden", // Forces dedicated GPU layer on Android
+        contain: "paint layout", // Removed strict size containment to prevent layout thrashing
+        willChange: "transform", // Prioritize hardware transform over opacity for sliding pages
+        backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
+        transform: "translateZ(0)", // Force 3D hardware acceleration
       }}
     >
       {children}

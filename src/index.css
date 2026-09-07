@@ -565,7 +565,6 @@
     border-radius: 9999px;
     /* 100px blur on a 400px layer is one of the most expensive paints on
        mobile GPUs — a cheaper radial gradient gives the same soft glow. */
-    filter: blur(48px);
     opacity: 0.3;
     transform: translate3d(0, 0, 0); /* Force GPU */
     pointer-events: none;

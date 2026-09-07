@@ -163,11 +163,12 @@ const HomeScreen = () => {
     }));
   }, [centersData]);
 
-  // Performance optimized background
+  // Performance optimized background (Hardware Accelerated)
   const StaticBackground = useMemo(() => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ transform: "translateZ(0)" }}>
       <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-primary/5 via-primary/5 to-transparent" />
-      <div className="absolute top-[-50px] left-[-50px] w-80 h-80 bg-primary/10 rounded-full blur-[120px]" />
+      {/* Replaced expensive blur-[120px] with a cheap radial-gradient for the same visual effect at 0 GPU cost */}
+      <div className="absolute top-[-50px] left-[-50px] w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)" }} />
     </div>
   ), []);
 
