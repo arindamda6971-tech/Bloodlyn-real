@@ -868,6 +868,200 @@ html.native [data-scroll-container] {
 @keyframes pageFadeEnter {
   0% {
     opacity: 0;
+  /* Text gradient */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .text-gradient-navy {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-navy);
+  }
+
+  /* Hide scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe tap target */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* ----------------------------------------------------------------
+   * Native-style press feedback
+   * Touch devices have no hover, so a tap must acknowledge itself
+   * instantly. Transform+opacity only => compositor-driven, no layout.
+   * ---------------------------------------------------------------- */
+  .press {
+    transition: transform 110ms ease-out, opacity 110ms ease-out;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .press:active {
+    transform: scale(0.97);
+    opacity: 0.92;
+  }
+
+  /* Row-style targets shouldn't shrink; they dim instead. */
+  .press-row {
+    transition: background-color 110ms ease-out, opacity 110ms ease-out;
+  }
+  .press-row:active {
+    opacity: 0.85;
+  }
+
+  /* Apply the same feel to the app's existing tappable surfaces on touch
+     devices without touching a single component file. */
+  @media (hover: none) and (pointer: coarse) {
+    .soft-card:active,
+    .test-card:active,
+    .category-card:active,
+    .quick-action:active,
+    [role="button"]:active {
+      transform: scale(0.98);
+      transition: transform 110ms ease-out;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .press,
+    .press:active,
+    .soft-card:active,
+    .test-card:active,
+    .category-card:active,
+    .quick-action:active,
+    [role="button"]:active {
+      transform: none;
+      transition: none;
+    }
+  }
+
+@layer utilities {
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  /* ----------------------------------------------------------------
+   * Extreme List Optimization
+   * Using content-visibility to skip rendering of off-screen items.
+   * This is a "Zero-JS" virtualization technique.
+   * ---------------------------------------------------------------- */
+  .list-virtual > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 100px;
+  }
+
+  .list-virtual-lg > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 200px;
+  }
+
+  /* Off-screen page sections skip rendering work entirely. */
+  .section-defer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 320px;
+  }
+}
+
+/* Sticky/fixed action bars are promoted so scrolling never repaints them. */
+.safe-area-bottom,
+[class*="fixed left-0 right-0"] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Smooth, momentum scrolling without layout thrash on WebViews. */
+html,
+body {
+  -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeSpeed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Native (Capacitor WebView) rendering mode.
+ * Android WebViews pay a very high per-frame cost for backdrop-filter and
+ * large blur radii. On native we swap them for opaque surfaces — visually
+ * near-identical, but removes the biggest source of scroll/transition jank.
+ * ------------------------------------------------------------------ */
+html.native [class*="backdrop-blur"],
+html.native .glass-card,
+html.native .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.native .glass-card {
+  background-color: hsl(var(--card)) !important;
+}
+
+/* Opaque header on native for 60fps scrolling */
+html.native .sticky.top-0 {
+  background-color: hsl(var(--background)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+html.native [class*="blur-3xl"],
+html.native [class*="blur-2xl"],
+html.native .aurora-blob {
+  filter: blur(28px) !important;
+  opacity: 0.35 !important;
+}
+
+html.native .shadow-xl,
+html.native .shadow-2xl {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+}
+
+/* Scrolling containers on native never composite a shadow-heavy backdrop. */
+html.native [data-scroll-container] {
+  will-change: scroll-position;
+}
+
+/* ------------------------------------------------------------------
+ * Ultra-Smooth GPU-Composited Native Page Transitions
+ * Uses 100% compositor CSS animations (transform3d) to guarantee
+ * buttery 60-120 FPS transitions without JS main-thread locking.
+ * ------------------------------------------------------------------ */
+@keyframes pagePushEnter {
+  0% {
+    transform: translate3d(100%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes pagePopEnter {
+  0% {
+    transform: translate3d(-10%, 0, 0);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes pageFadeEnter {
+  0% {
+    opacity: 0;
     transform: scale(0.99);
   }
   100% {
@@ -877,21 +1071,21 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push {
-  animation: pagePushEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePushEnter 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
 .page-anim-pop {
-  animation: pagePopEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePopEnter 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
 .page-anim-fade {
-  animation: pageFadeEnter 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageFadeEnter 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -913,19 +1107,19 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePushExit 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePopExit 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-fade-exit {
-  animation: pageFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageFadeExit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
