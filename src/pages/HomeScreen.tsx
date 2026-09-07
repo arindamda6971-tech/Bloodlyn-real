@@ -355,7 +355,7 @@ const HomeScreen = () => {
               key={action.label}
               initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
+              transition={{ delay: 0}}
               onClick={() => navigate(action.path)}
               className="w-full relative overflow-hidden bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
             >

@@ -79,7 +79,7 @@ const FamilyMembersScreen = () => {
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, x: -100 }}
-                  transition={{ delay: index * 0.05 }}
+                  transition={{ delay: 0}}
                   className="soft-card"
                 >
                   <div className="flex items-start gap-3">
@@ -131,7 +131,7 @@ const FamilyMembersScreen = () => {
             <motion.div
               initial={false}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0}}
             >
               <Button
                 variant="outline"

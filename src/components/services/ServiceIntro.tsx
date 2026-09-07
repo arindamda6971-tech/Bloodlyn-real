@@ -146,7 +146,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           <motion.h2 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0}}
             className="text-2xl font-black tracking-tight text-center mb-6"
           >
             {data.title}
@@ -156,7 +156,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
+              transition={{ delay: 0}}
               className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm"
             >
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -177,7 +177,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.1 }}
+                  transition={{ delay: 0}}
                   className="flex gap-4 relative"
                 >
                   {/* Vertical Line Connector */}
@@ -206,7 +206,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0}}
             className="w-full mt-10 mb-6"
           >
             <Button

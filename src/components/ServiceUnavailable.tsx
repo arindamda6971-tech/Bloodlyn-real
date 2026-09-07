@@ -55,7 +55,7 @@ const ServiceUnavailable = ({ title, serviceName }: ServiceUnavailableProps) => 
           className="text-xl font-bold text-foreground mb-2"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0}}
         >
           Coming Soon to Your Area
         </motion.h2>
@@ -63,7 +63,7 @@ const ServiceUnavailable = ({ title, serviceName }: ServiceUnavailableProps) => 
           className="text-sm text-muted-foreground max-w-xs mb-8"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0}}
         >
           <span className="font-medium text-foreground">{serviceName}</span> isn't
           available in your area yet. We're expanding fast — stay tuned!
@@ -71,7 +71,7 @@ const ServiceUnavailable = ({ title, serviceName }: ServiceUnavailableProps) => 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0}}
         >
           <Button variant="hero" onClick={() => navigate("/home")}>
             Back to Home

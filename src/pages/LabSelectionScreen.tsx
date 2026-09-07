@@ -406,7 +406,7 @@ const LabSelectionScreen = () => {
         )}
 
         {/* Date Selection */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h2 className="text-base font-bold text-foreground mb-2">Select Date</h2>
           <div className="flex gap-2">
             {dates.map((date, index) => {
@@ -443,7 +443,7 @@ const LabSelectionScreen = () => {
         </motion.div>
 
         {/* Time Selection */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mt-4">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="mt-4">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">SELECT TIME SLOT</h2>
 
           {!selectedLabId ? (
@@ -504,7 +504,7 @@ const LabSelectionScreen = () => {
         <motion.div 
           initial={false} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0}}
           className="mt-6 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"
         >
           <Button

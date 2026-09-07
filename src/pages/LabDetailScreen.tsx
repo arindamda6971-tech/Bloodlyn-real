@@ -881,7 +881,7 @@ const LabDetailScreen = () => {
           <motion.div
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+            transition={{ delay: 0}}
             className="flex items-center justify-between"
           >
             <p className="text-xs font-extrabold text-muted-foreground tracking-tight">
@@ -911,7 +911,7 @@ const LabDetailScreen = () => {
                   key={test.id}
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + index * 0.03 }}
+                  transition={{ delay: 0}}
                   className="bg-card rounded-3xl border border-border/60 p-4 shadow-2xs hover:shadow-xs transition-all"
                 >
                   <div className="flex justify-between items-start gap-3">

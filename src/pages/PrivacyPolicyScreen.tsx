@@ -103,7 +103,7 @@ const PrivacyPolicyScreen = () => {
               key={section.title}
               initial={false}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.08 + index * 0.06 }}
+              transition={{ delay: 0}}
               className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] transition-all duration-300 group"
             >
               <div className="flex items-start gap-3.5 mb-2.5">
@@ -121,7 +121,7 @@ const PrivacyPolicyScreen = () => {
           <motion.section
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0}}
             className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center"
           >
             <h3 className="text-sm font-bold text-foreground mb-1">Privacy Requests</h3>

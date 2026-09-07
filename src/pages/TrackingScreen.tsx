@@ -228,7 +228,7 @@ const TrackingScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={{ delay: 0}}
           className="mt-4 rounded-3xl border border-border/60 bg-card shadow-sm overflow-hidden"
         >
           {/* Header band */}
@@ -344,7 +344,7 @@ const TrackingScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="soft-card mt-4"
         >
           <div className="flex items-center gap-2 mb-3">
@@ -426,7 +426,7 @@ const TrackingScreen = () => {
                       <motion.div
                         initial={false}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.1 + index * 0.08, type: "spring", stiffness: 200 }}
+                        transition={{ delay: 0, type: "spring", stiffness: 200 }}
                         className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                           isCompleted
                             ? "bg-success text-white"
@@ -446,7 +446,7 @@ const TrackingScreen = () => {
                       <motion.div
                         initial={false}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.15 + index * 0.08 }}
+                        transition={{ delay: 0}}
                         className={`flex-1 ${isLast ? "pb-0" : "pb-6"}`}
                       >
                         <p className={`font-semibold text-sm ${
@@ -590,7 +590,7 @@ const TrackingScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0}}
           className="mt-6 space-y-3"
         >
           {isOnlineCall && !isCancelled && completedIndex < 4 && (

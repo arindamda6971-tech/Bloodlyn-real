@@ -93,7 +93,7 @@ const SplashScreen = () => {
             <motion.div
               initial={false}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: "spring" }}
+              transition={{ delay: 0, type: "spring" }}
               className="absolute -top-1 -right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center"
             >
               <Zap className="w-3 h-3 text-success-foreground" />
@@ -104,7 +104,7 @@ const SplashScreen = () => {
         <motion.h1
           initial={false}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0}}
           className="text-3xl font-bold text-secondary mb-2"
         >
           Blood<span className="text-primary">Lyn</span>
@@ -113,7 +113,7 @@ const SplashScreen = () => {
         <motion.p
           initial={false}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
+          transition={{ delay: 0}}
           className="text-muted-foreground text-center font-medium"
         >
           Diagnostics. Faster. Smarter.
@@ -123,7 +123,7 @@ const SplashScreen = () => {
       <motion.div
         initial={false}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0}}
         className="absolute bottom-20 left-8 right-8"
       >
         <div className="progress-track">

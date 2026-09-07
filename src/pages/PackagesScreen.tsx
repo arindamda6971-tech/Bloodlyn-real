@@ -134,7 +134,7 @@ const PackagesScreen = () => {
               <motion.div
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
+                transition={{ delay: 0}}
                 className="grid grid-cols-2 gap-3 mb-4"
               >
                 <div className="bg-primary/10 rounded-xl p-3 text-center border border-primary/20">
@@ -159,7 +159,7 @@ const PackagesScreen = () => {
                     }}
                     initial={false}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + index * 0.05 }}
+                    transition={{ delay: 0}}
                     className="w-full text-left group"
                   >
                     <div className="bg-white dark:bg-secondary/30 rounded-xl p-4 border border-border/40 hover:border-primary/40 hover:shadow-md transition-all duration-200 overflow-hidden relative"
@@ -208,7 +208,7 @@ const PackagesScreen = () => {
               <motion.div
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0}}
                 className="mt-8 p-4 rounded-xl bg-accent/30 border border-accent/40"
               >
                 <p className="text-xs text-muted-foreground text-center leading-relaxed">

@@ -39,7 +39,7 @@ const InstallScreen = () => {
         <motion.h1
           initial={false}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="text-2xl font-bold text-secondary mb-2"
         >
            Blood<span className="text-primary">Lyn</span>
@@ -48,7 +48,7 @@ const InstallScreen = () => {
         <motion.p
           initial={false}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0}}
           className="text-muted-foreground"
         >
           Install for the best experience
@@ -59,7 +59,7 @@ const InstallScreen = () => {
       <motion.div
         initial={false}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0}}
         className="flex-1 px-6 space-y-4"
       >
         {features.map((feature, index) => (
@@ -67,7 +67,7 @@ const InstallScreen = () => {
             key={feature.title}
             initial={false}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.4 + index * 0.1 }}
+            transition={{ delay: 0}}
             className="soft-card flex items-center gap-4"
           >
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -86,7 +86,7 @@ const InstallScreen = () => {
       <motion.div
         initial={false}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.7 }}
+        transition={{ delay: 0}}
         className="px-6 pb-8 safe-area-bottom space-y-4"
       >
         {isInstalled ? (

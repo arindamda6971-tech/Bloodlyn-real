@@ -149,7 +149,7 @@ const PartnerLabsScreen = () => {
                 key={center.id}
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
+                transition={{ delay: 0}}
                 className={`soft-card p-4 cursor-pointer relative overflow-hidden ${center.is_active === false ? 'grayscale opacity-75' : ''}`}
                 onClick={() => navigate(`/lab/${center.id}`)}
               >

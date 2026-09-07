@@ -306,7 +306,7 @@ const ECGDoctorsScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="mt-5 p-5 rounded-3xl bg-gradient-to-br from-rose-500/15 via-rose-500/5 to-transparent border border-rose-500/20 shadow-sm"
         >
           <div className="flex items-center gap-2.5 mb-3">
@@ -331,7 +331,7 @@ const ECGDoctorsScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
+          transition={{ delay: 0}}
           className="mt-7"
         >
           <div className="flex items-center justify-between mb-4">
@@ -363,7 +363,7 @@ const ECGDoctorsScreen = () => {
                   key={doctor.id}
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + index * 0.08 }}
+                  transition={{ delay: 0}}
                   className="p-5 rounded-3xl bg-/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
                   {/* Doctor Header */}
@@ -421,7 +421,7 @@ const ECGDoctorsScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          transition={{ delay: 0}}
           className="mt-7 p-5 rounded-3xl bg-gradient-to-br from-rose-500/10 via-blue-500/5 to-indigo-500/10 border border-rose-500/20 shadow-sm relative overflow-hidden"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-xl pointer-events-none" />

@@ -117,7 +117,7 @@ const NotificationsScreen = () => {
                           initial={false}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, x: -50 }}
-                          transition={{ delay: i * 0.03 }}
+                          transition={{ delay: 0}}
                           onClick={() => handleClick(n)}
                           className={`relative w-full text-left rounded-2xl border border-border/70 bg-card p-3.5 pr-4 flex items-start gap-3 active:scale-[0.985] transition-all overflow-hidden ${
                             !n.read ? "shadow-sm" : "opacity-80"

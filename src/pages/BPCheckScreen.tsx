@@ -64,7 +64,7 @@ const ConfettiPiece = ({ index }: { index: number }) => {
       }}
       transition={{
         duration: randomDuration,
-        delay: 0.3 + randomDelay,
+        delay: 0,
         ease: "easeOut",
       }}
     />

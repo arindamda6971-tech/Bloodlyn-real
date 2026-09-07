@@ -305,7 +305,7 @@ const PackageDetailScreen = () => {
               <motion.div
                 initial={false}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0}}
                 className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-destructive/90 text-destructive-foreground rounded-full"
               >
                 <TrendingDown className="w-4 h-4" />
@@ -367,7 +367,7 @@ const PackageDetailScreen = () => {
           <motion.section
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
+            transition={{ delay: 0}}
           >
             <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
               <HeartPulse className="w-5 h-5 text-primary" />
@@ -379,7 +379,7 @@ const PackageDetailScreen = () => {
                   key={index}
                   initial={false}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 + index * 0.05 }}
+                  transition={{ delay: 0}}
                   className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3.5 border border-success/20 hover:border-success/40 transition-colors"
                 >
                   <div className="w-9 h-9 rounded-lg bg-success/20 flex items-center justify-center mb-2">
@@ -398,7 +398,7 @@ const PackageDetailScreen = () => {
             <motion.section
               initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
+              transition={{ delay: 0}}
             >
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -415,7 +415,7 @@ const PackageDetailScreen = () => {
                     key={test.id}
                     initial={false}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 + index * 0.02 }}
+                    transition={{ delay: 0}}
                     className="flex items-center gap-3 p-3 hover:bg-muted/80 transition-colors"
                   >
                     <div className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
@@ -443,7 +443,7 @@ const PackageDetailScreen = () => {
             <motion.section
               initial={false}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0}}
             >
               <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-primary" />
@@ -464,7 +464,7 @@ const PackageDetailScreen = () => {
                       type="button"
                       initial={false}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.35 + index * 0.05 }}
+                      transition={{ delay: 0}}
                       onClick={() => setSelectedLabId(lab.id)}
                       className={`w-full text-left transition-all duration-200 ${
                         selectedLabId === lab.id

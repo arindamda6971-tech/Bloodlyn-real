@@ -430,7 +430,7 @@ const CartScreen = () => {
 
 
 {/* Collection Address */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
           <div className="flex items-center justify-between mb-3 gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -493,7 +493,7 @@ const CartScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.05 }}
+          transition={{ delay: 0}}
           className="bg-card rounded-2xl border border-border/70 shadow-sm p-4"
         >
           <div className="flex items-center justify-between mb-3.5">
@@ -631,7 +631,7 @@ const CartScreen = () => {
                       key={item.id}
                       initial={false}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.04 }}
+                      transition={{ delay: 0}}
                       className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
                     >
                       {doctorName && (
@@ -675,7 +675,7 @@ const CartScreen = () => {
                     key={item.id}
                     initial={false}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.04 }}
+                    transition={{ delay: 0}}
                     className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all p-4 flex items-start justify-between gap-3"
                   >
                     <div className="flex-1 min-w-0">
@@ -762,7 +762,7 @@ const CartScreen = () => {
         <motion.div 
           initial={false} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0}}
           className="mt-6 bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4"
         >
           <div className="max-w-md mx-auto flex items-center justify-between gap-4">

@@ -117,7 +117,7 @@ const ReportDetailScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="mt-6"
         >
           <button
@@ -166,7 +166,7 @@ const ReportDetailScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0}}
           className="mt-6"
         >
           <h2 className="text-lg font-bold text-foreground mb-4">Test Parameters</h2>
@@ -176,7 +176,7 @@ const ReportDetailScreen = () => {
                 key={param.name}
                 initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
+                transition={{ delay: 0}}
                 className="soft-card"
               >
                 <div className="flex items-center justify-between mb-2">
@@ -218,7 +218,7 @@ const ReportDetailScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0}}
           className="mt-6 space-y-3"
         >
           <Button variant="outline" className="w-full bg-[#25D366]/10 hover:bg-[#25D366]/20 border-[#25D366]/50 text-[#128C7E]" size="lg" onClick={() => {

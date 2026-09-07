@@ -115,7 +115,7 @@ export default function TicketDetailSheet({ ticket, open, onClose }: TicketDetai
                     key={reply.id || idx}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
+                    transition={{ delay: 0}}
                     className="soft-card border-l-2 border-primary/40"
                   >
                     <div className="flex items-center justify-between mb-1.5">

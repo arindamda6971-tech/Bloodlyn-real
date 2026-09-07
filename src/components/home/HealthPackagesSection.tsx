@@ -30,7 +30,7 @@ const LabPackageCard = memo(({ lab, idx, onClick }: { lab: LabGroup, idx: number
     onClick={onClick}
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: idx * 0.04 }}
+    transition={{ delay: 0}}
     className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:scale-[0.98] transition-transform"
     style={{ contain: 'content' }}
   >

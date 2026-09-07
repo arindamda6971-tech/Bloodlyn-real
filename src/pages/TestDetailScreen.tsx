@@ -383,7 +383,7 @@ const TestDetailScreen = () => {
           <motion.div 
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0}}
             className="mt-4 flex items-center justify-between bg-white p-4 rounded-xl shadow-md border border-border/50"
           >
             <div>
@@ -398,7 +398,7 @@ const TestDetailScreen = () => {
           <motion.div 
             initial={false}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0}}
             className="mt-4 flex items-start gap-2 bg-white/10 p-3 rounded-xl border border-white/20"
           >
             <AlertCircle className="w-4 h-4 mt-0.5 text-blue-100 shrink-0" />
@@ -411,7 +411,7 @@ const TestDetailScreen = () => {
 
       <div className="px-4 pt-6 pb-12 space-y-7">
         {/* About */}
-        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">About the test</h3>
           <div className="flex flex-wrap gap-2 mb-4">
             <Chip icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />} label={test.fastingRequired ? `Fast ${test.fastingHours || 8}h` : "No Preparation"} />
@@ -434,7 +434,7 @@ const TestDetailScreen = () => {
 
 
 
-        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <Accordion type="single" collapsible className="space-y-3">
             {[
               { v: "diseases", title: "Diseases Covered", body: "Helps detect and monitor a range of conditions related to this test category. Discuss results with your physician for accurate diagnosis." },
@@ -458,7 +458,7 @@ const TestDetailScreen = () => {
         </motion.section>
 
         {/* Why book with us */}
-        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-4">Why to Book with us?</h3>
           <div className="space-y-4">
             {whyBookItems.map(({ Icon, color, text }, i) => (
@@ -476,7 +476,7 @@ const TestDetailScreen = () => {
         </motion.section>
 
         {/* How to prepare */}
-        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">How to prepare for the Lab test ?</h3>
           <ul className="space-y-2 text-[15px] text-muted-foreground">
             <li className="flex gap-2"><span className="text-primary">—</span> Our Lab Technician will collect samples from Home</li>
@@ -489,7 +489,7 @@ const TestDetailScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
+          transition={{ delay: 0}}
           className="pt-2"
         >
           {itemCount > 0 && !isInCart && (

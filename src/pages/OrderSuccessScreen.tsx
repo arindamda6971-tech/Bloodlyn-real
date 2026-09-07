@@ -76,7 +76,7 @@ const ConfettiPiece = ({ index }: { index: number }) => {
       }}
       transition={{
         duration: randomDuration,
-        delay: 0.3 + randomDelay,
+        delay: 0,
         ease: "easeOut",
       }}
     />
@@ -132,7 +132,7 @@ const OrderSuccessScreen = () => {
               animate={{ scale: 2 + i * 0.8, opacity: 0 }}
               transition={{
                 duration: 2,
-                delay: 0.5 + i * 0.3,
+                delay: 0,
                 repeat: Infinity,
                 ease: "easeOut",
               }}
@@ -145,7 +145,7 @@ const OrderSuccessScreen = () => {
             className="absolute -inset-4 rounded-full bg-primary/10 blur-xl"
             initial={false}
             animate={{ opacity: [0, 0.6, 0.3], scale: [0.5, 1.2, 1] }}
-            transition={{ duration: 1.2, delay: 0.2 }}
+            transition={{ duration: 1.2, delay: 0}}
           />
 
           {/* Checkmark circle */}
@@ -153,13 +153,13 @@ const OrderSuccessScreen = () => {
             className="relative w-24 h-24 rounded-full bg-gradient-to-br from-primary to-success flex items-center justify-center shadow-lg"
             initial={false}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0}}
             style={{ boxShadow: "0 8px 40px -8px hsl(var(--primary) / 0.5)" }}
           >
             <motion.div
               initial={false}
               animate={{ scale: 1 }}
-              transition={{ delay: 0.5, type: "spring", stiffness: 300 }}
+              transition={{ delay: 0, type: "spring", stiffness: 300 }}
             >
               <CheckCircle className="w-12 h-12 text-white" strokeWidth={2.5} />
             </motion.div>
@@ -170,7 +170,7 @@ const OrderSuccessScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0}}
           className="mb-2"
         >
           <h1 className="text-2xl font-bold text-foreground">Order Placed!</h1>
@@ -180,7 +180,7 @@ const OrderSuccessScreen = () => {
           className="text-muted-foreground text-sm max-w-xs mb-8"
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.75 }}
+          transition={{ delay: 0}}
         >
           Your booking has been confirmed successfully. We'll notify you with updates.
         </motion.p>
@@ -190,7 +190,7 @@ const OrderSuccessScreen = () => {
           className="w-full max-w-sm soft-card p-5 mb-6 text-left"
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9 }}
+          transition={{ delay: 0}}
         >
           {/* Order ID */}
           {orderId && (
@@ -332,7 +332,7 @@ const OrderSuccessScreen = () => {
           className="w-full max-w-sm space-y-3"
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.05 }}
+          transition={{ delay: 0}}
         >
           <Button
             className="w-full h-12 rounded-2xl text-base font-semibold gap-2"

@@ -107,7 +107,7 @@ const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCa
   <motion.div
     initial={false}
     animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: index * 0.03 }}
+    transition={{ delay: 0}}
     onClick={onNavigate}
     className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
     style={{ contain: 'content' }}

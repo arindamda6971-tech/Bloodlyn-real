@@ -227,7 +227,7 @@ const TestSelectionScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="mt-6 mb-4"
         >
           <h2 className="text-lg font-bold text-foreground">Choose Your Favourite Lab</h2>
@@ -244,7 +244,7 @@ const TestSelectionScreen = () => {
                 key={lab.id}
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + index * 0.05 }}
+                transition={{ delay: 0}}
                 className={`soft-card cursor-pointer transition-all hover:border-primary/50`}
               >
                 <div className="flex items-start gap-3">

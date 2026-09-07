@@ -106,7 +106,7 @@ const SubscriptionScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0}}
           className="mt-8 grid grid-cols-2 gap-3"
         >
           {plans.map((plan) => (
@@ -153,7 +153,7 @@ const SubscriptionScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0}}
           className="mt-8"
         >
           <h2 className="text-lg font-bold text-foreground mb-4">What's Included</h2>
@@ -163,7 +163,7 @@ const SubscriptionScreen = () => {
                 key={feature.text}
                 initial={false}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
+                transition={{ delay: 0}}
                 className="flex items-center gap-3"
               >
                 <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -182,7 +182,7 @@ const SubscriptionScreen = () => {
         <motion.div
           initial={false}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0}}
           className="mt-8"
         >
           <h2 className="text-lg font-bold text-foreground mb-4">

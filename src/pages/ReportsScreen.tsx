@@ -187,7 +187,7 @@ const ReportsScreen = () => {
                 key={order.id}
                 initial={false}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
+                transition={{ delay: 0}}
                 className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
               >
 

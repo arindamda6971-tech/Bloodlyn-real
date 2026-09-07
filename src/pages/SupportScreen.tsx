@@ -134,7 +134,7 @@ const SupportScreen = () => {
             {/* Contact Tab */}
             <TabsContent value="contact" className="space-y-4">
               <motion.div
-                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
+                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0}}
                 onClick={() => { window.location.href = `tel:+91${SUPPORT_PHONE}`; }}
                 className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
@@ -149,7 +149,7 @@ const SupportScreen = () => {
               </motion.div>
 
               <motion.div
-                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
+                initial={false} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0}}
                 onClick={() => { window.location.href = `https://wa.me/91${SUPPORT_PHONE}`; }}
                 className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-green-500/30 transition-all duration-300 flex items-center gap-4 cursor-pointer group"
               >
@@ -163,7 +163,7 @@ const SupportScreen = () => {
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform duration-300" />
               </motion.div>
 
-              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center mt-6">
+              <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="p-5 rounded-3xl bg-primary/5 border border-primary/20 text-center mt-6">
                 <p className="text-xs text-muted-foreground font-medium">Our dedicated support team is available</p>
                 <p className="text-sm font-bold text-primary mt-1">Monday - Sunday • 9 AM - 9 PM</p>
               </motion.div>
