@@ -18,9 +18,11 @@ const NativeChrome = () => {
   const { theme } = useTheme();
   const { impactLight } = useHaptics();
 
-  // Flag the document so CSS can drop WebView-expensive effects on native.
+  // Flag the document so CSS can drop WebView-expensive effects on native and mobile browsers.
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
+    const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!Capacitor.isNativePlatform() && !isMobileBrowser) return;
+    
     document.documentElement.classList.add("native");
     return () => document.documentElement.classList.remove("native");
   }, []);

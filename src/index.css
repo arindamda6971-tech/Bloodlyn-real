@@ -878,3 +878,36 @@ html.native [data-scroll-container] {
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
+
+@keyframes pagePushExit {
+  0% { transform: translate3d(0, 0, 0); opacity: 1; }
+  100% { transform: translate3d(-30%, 0, 0); opacity: 0.8; }
+}
+
+@keyframes pagePopExit {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(100%, 0, 0); }
+}
+
+@keyframes pageFadeExit {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.99); }
+}
+
+.page-anim-push-exit {
+  animation: pagePushExit 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.page-anim-pop-exit {
+  animation: pagePopExit 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.page-anim-fade-exit {
+  animation: pageFadeExit 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}

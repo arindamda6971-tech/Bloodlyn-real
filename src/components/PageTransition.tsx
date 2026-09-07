@@ -1,7 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { motion, usePresence } from "framer-motion";
 import { Analytics } from "@/lib/analytics";
 
 const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
@@ -13,65 +12,55 @@ interface PageTransitionProps {
 
 /**
  * Ultra-Smooth Native App Page Transition.
- * Uses Framer Motion's AnimatePresence to slide pages in and out
- * exactly like an iOS/Android native navigation stack.
+ * Bypasses Framer Motion JS locking and uses pure CSS compositing
+ * to guarantee 60fps even when React blocks the main thread.
  */
 const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
   const navType = useNavigationType();
+  const [isPresent, safeToRemove] = usePresence();
 
   useEffect(() => {
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
   }, [location.pathname, location.search]);
 
+  // Keep unmounted page in DOM for 220ms so the CSS exit animation can play
+  useEffect(() => {
+    if (!isPresent) {
+      const timer = setTimeout(safeToRemove, 220);
+      return () => clearTimeout(timer);
+    }
+  }, [isPresent, safeToRemove]);
+
   const isTab = TAB_PATHS.includes(location.pathname);
   const isPop = navType === "POP";
 
-  // Native iOS-style transition variants optimized for mobile GPU
-  const variants = isTab
-    ? {
-        initial: { opacity: 0, zIndex: 1 },
-        animate: { opacity: 1, zIndex: 1 },
-        exit: { opacity: 0, zIndex: 1 },
-      }
-    : isPop
-    ? {
-        // Popping a screen: previous screen slides in from left (dimmed), popped screen slides out to right
-        initial: { x: "-30vw", opacity: 0.8, zIndex: 1 }, 
-        animate: { x: "0vw", opacity: 1, zIndex: 1 },
-        exit: { x: "100vw", opacity: 1, zIndex: 10 }, 
-      }
-    : {
-        // Pushing a new screen: new screen slides in from right, current screen slides out to left (dimmed)
-        initial: { x: "100vw", opacity: 1, zIndex: 10 }, 
-        animate: { x: "0vw", opacity: 1, zIndex: 10 },
-        exit: { x: "-30vw", opacity: 0.8, zIndex: 1 }, 
-      };
+  // Determine the pure CSS compositor class
+  let animClass = "";
+  if (isPresent) {
+    animClass = isTab ? "page-anim-fade" : isPop ? "page-anim-pop" : "page-anim-push";
+  } else {
+    // When popping, the exiting screen was the one previously pushed
+    animClass = isTab ? "page-anim-fade-exit" : isPop ? "page-anim-push-exit" : "page-anim-pop-exit";
+  }
+
+  // Z-Index logic:
+  // - Pushing: Incoming (isPresent) is 10, Outgoing (!isPresent) is 1
+  // - Popping: Incoming (isPresent) is 1, Outgoing (!isPresent) is 10
+  const zIndex = isPop ? (isPresent ? 1 : 10) : (isPresent ? 10 : 1);
 
   return (
-    <motion.div
+    <div
       key={location.pathname}
-      initial="initial"
-          animate="animate"
-          exit="exit"
-          variants={variants}
-          transition={{
-            type: "tween",
-            ease: [0.36, 0.66, 0.04, 1], // Standard snappy mobile ease
-            duration: 0.35 // Snappier duration for buttery smooth feel without perceived lag
-          }}
-          className="w-full h-full absolute top-0 left-0 bg-background"
+      className={`w-full h-full absolute top-0 left-0 bg-background ${animClass}`}
       style={{
-        contain: "paint layout", // Removed strict size containment to prevent layout thrashing
-        willChange: "transform", // Prioritize hardware transform over opacity for sliding pages
-        backfaceVisibility: "hidden",
-        WebkitBackfaceVisibility: "hidden",
-        transform: "translateZ(0)", // Force 3D hardware acceleration
+        contain: "paint layout",
+        zIndex: zIndex,
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 };
 
