@@ -25,10 +25,10 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
   }, [location.pathname, location.search]);
 
-  // Keep unmounted page in DOM for 350ms so the CSS exit animation can play
+  // Keep unmounted page in DOM for 450ms so the CSS exit animation can play
   useEffect(() => {
     if (!isPresent) {
-      const timer = setTimeout(safeToRemove, 350);
+      const timer = setTimeout(safeToRemove, 450);
       return () => clearTimeout(timer);
     }
   }, [isPresent, safeToRemove]);

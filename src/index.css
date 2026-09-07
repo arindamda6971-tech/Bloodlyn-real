@@ -877,21 +877,21 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push {
-  animation: pagePushEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePushEnter 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
 .page-anim-pop {
-  animation: pagePopEnter 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePopEnter 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
 }
 
 .page-anim-fade {
-  animation: pageFadeEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageFadeEnter 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
@@ -913,19 +913,19 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePushExit 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pagePopExit 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-fade-exit {
-  animation: pageFadeExit 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: pageFadeExit 0.25s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
