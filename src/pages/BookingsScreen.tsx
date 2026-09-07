@@ -63,11 +63,22 @@ const BookingsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeFilter, setActiveFilter] = useState<string>("all");
+  const [serviceTab, setServiceTab] = useState<"blood" | "vitals">("blood");
 
   useRealtimeOrders();
 
+  const serviceCounts = useMemo(() => {
+    return orders.reduce(
+      (acc, o) => {
+        acc[getServiceKind(o)] += 1;
+        return acc;
+      },
+      { blood: 0, vitals: 0 } as Record<"blood" | "vitals", number>,
+    );
+  }, [orders]);
+
   const filteredOrders = useMemo(() => {
-    let result = orders;
+    let result = orders.filter((o) => getServiceKind(o) === serviceTab);
 
     if (activeFilter !== "all") {
       if (activeFilter === "confirmed") {
@@ -94,7 +105,8 @@ const BookingsScreen = () => {
     }
 
     return result;
-  }, [orders, activeFilter, debouncedSearchQuery]);
+  }, [orders, activeFilter, debouncedSearchQuery, serviceTab]);
+
 
   const getDisplayStatus = (status: string | null) => {
     switch (status) {
