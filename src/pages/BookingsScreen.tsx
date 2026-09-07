@@ -325,22 +325,49 @@ const BookingsScreen = () => {
         placeholder="Search tests, orders, labs..."
         accent="from-emerald-500 via-teal-500 to-primary"
         footer={
-          <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
-            {STATUS_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
-                className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
-                  activeFilter === f.key
-                    ? "bg-primary text-primary-foreground scale-[1.02]"
-                    : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+          <div className="w-full space-y-2">
+            {/* Service type segmented control */}
+            <div className="flex w-full gap-1.5 p-1 rounded-2xl bg-muted/60 border border-border/50">
+              {SERVICE_TABS.map((t) => {
+                const Icon = t.icon;
+                const active = serviceTab === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => setServiceTab(t.key)}
+                    className={`flex-1 py-2 rounded-xl text-[11px] font-black tracking-wide transition-all duration-300 flex items-center justify-center gap-1.5 ${
+                      active
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {t.label}
+                    <span className={`text-[10px] font-bold px-1.5 rounded-full ${active ? "bg-primary/10 text-primary" : "bg-border/60 text-muted-foreground"}`}>
+                      {serviceCounts[t.key]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
+              {STATUS_FILTERS.map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setActiveFilter(f.key)}
+                  className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
+                    activeFilter === f.key
+                      ? "bg-primary text-primary-foreground scale-[1.02]"
+                      : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
         }
+
       />
 
       <div className="px-5 pb-24 pt-4">
