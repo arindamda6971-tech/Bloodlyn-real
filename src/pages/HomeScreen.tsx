@@ -60,6 +60,7 @@ const quickActions = [
     path: "/doctor-consult", 
     badge: "Live Video",
     desc: "Connect with specialized doctors instantly via secure video call.",
+    price: "Starts at ₹299",
     gradient: "from-[#10b981] to-[#0d9488]",
     glow: "bg-[#10b981]/20",
     badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]",
@@ -71,6 +72,7 @@ const quickActions = [
     path: "/ecg-test", 
     badge: "At Home",
     desc: "Clinical-grade resting ECG test performed by certified technicians.",
+    price: "Starts at ₹499",
     gradient: "from-[#f43f5e] to-[#dc2626]",
     glow: "bg-[#f43f5e]/20",
     badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]",
@@ -82,6 +84,7 @@ const quickActions = [
     path: "/bp-check",
     badge: "Home Visit",
     desc: "Book a trained professional to measure your blood pressure accurately.",
+    price: "Starts at ₹199",
     gradient: "from-[#f43f5e] to-[#3b82f6]",
     glow: "bg-[#3b82f6]/20",
     badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]",
@@ -93,6 +96,7 @@ const quickActions = [
     path: "/physio-consult", 
     badge: "Expert Care",
     desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
+    price: "Starts at ₹599",
     gradient: "from-[#6366f1] to-[#2563eb]",
     glow: "bg-[#6366f1]/20",
     badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]",
@@ -393,6 +397,11 @@ const HomeScreen = () => {
                 </div>
                 
                 <div className="flex items-center justify-start gap-1 mt-2 group/btn">
+                  {action.price && (
+                    <span className="text-[13px] font-bold text-foreground/70 mr-2">
+                      {action.price}
+                    </span>
+                  )}
                   <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient}`}>
                     Book Now
                   </span>

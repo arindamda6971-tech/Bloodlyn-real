@@ -51,53 +51,72 @@ const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: numb
       className="flex-shrink-0 w-[280px] snap-start"
     >
       <div
-        className={`relative rounded-3xl overflow-hidden border border-border/40 bg-card active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : 'shadow-sm'}`}
+        className={`relative rounded-[24px] overflow-hidden border border-border/40 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
         style={{
-          height: '180px',
           touchAction: 'pan-x pan-y',
           contain: 'paint' // Native-level rendering isolation
         }}
       >
-        {/* Visual Banner */}
-        <div className="absolute inset-0 z-0">
-           <LabBanner labName={center.name} />
-           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-        </div>
-
-        {/* Trust Badge */}
-        <div className="absolute top-3 left-3 z-10">
-           <div className="flex items-center gap-1 bg-white/10 border border-white/10 px-2 py-1 rounded-full">
-              <BadgeCheck className="w-3 h-3 text-primary" />
-              <span className="text-[9px] font-bold text-white uppercase tracking-wider">{meta.trustBadge}</span>
-           </div>
-        </div>
-
-        {/* Closed Indicator */}
-        {isClosed && (
-          <div className="absolute top-3 right-3 z-10 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg">
-            Closed
-          </div>
-        )}
-
-        {/* Lab Info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <h4 className="font-black text-white text-base leading-tight truncate drop-shadow-sm">{center.name}</h4>
+        {/* Top Image Section */}
+        <div className="relative h-[170px] w-full bg-muted overflow-hidden rounded-b-2xl">
+          <img 
+            src="/lab-bannernew.webp" 
+            alt="Lab Background" 
+            className="w-full h-full object-cover transform scale-[1.02]"
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+          />
+          <div className="absolute inset-0 bg-black/5" />
+          
+          {/* Top Left Pill */}
+          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+            <BadgeCheck className="w-3.5 h-3.5 text-[#0d9488]" />
+            <span className="text-[10px] font-bold text-slate-700 tracking-wide">NABL • CAP Certified</span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-bold text-white/90">{center.rating}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-white/60" />
-                <span className="text-[11px] font-medium text-white/80">{meta.distance}</span>
-              </div>
+
+
+          {/* Closed Indicator */}
+          {isClosed && (
+            <div className="absolute top-3 right-3 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg z-10">
+              Closed
             </div>
-            <div className="bg-primary/20 border border-primary/30 px-2.5 py-1 rounded-full">
-              <p className="text-[10px] font-bold text-primary-foreground">{center.tests}+ Tests</p>
+          )}
+        </div>
+
+        {/* Bottom Info Section */}
+        <div className="p-4 flex flex-col gap-2 bg-white">
+          {/* Lab Name */}
+          <div className="flex items-center gap-1.5">
+            <h4 className="font-black text-slate-900 text-[16px] leading-tight truncate">{center.name}</h4>
+            <div className="w-4 h-4 bg-[#0d9488] rounded-full flex items-center justify-center shrink-0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5 text-white">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Rating and Distance */}
+          <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+            <Star className="w-3.5 h-3.5 text-[#d97706] fill-[#d97706]" />
+            <span className="text-[#d97706] font-bold">{center.rating}</span>
+            <span>(1.8k)</span>
+            <span className="px-0.5">•</span>
+            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+            <span>{meta.distance}</span>
+          </div>
+
+          <div className="w-full h-[1px] bg-slate-100 my-1" />
+
+          {/* Bottom Row */}
+          <div className="flex items-center justify-between mt-1">
+            <div className="flex flex-col">
+              <span className="text-[13px] font-black text-slate-900">120+ Tests</span>
+              <span className="text-[10px] text-slate-500 font-medium -mt-0.5">Available</span>
+            </div>
+            <div className="bg-slate-900 hover:bg-black text-white text-[12px] font-bold px-4 py-2 rounded-[10px] transition-colors shadow-sm">
+              Book Now
             </div>
           </div>
         </div>
