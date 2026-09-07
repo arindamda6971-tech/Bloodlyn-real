@@ -131,7 +131,10 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   const navigate = useNavigate();
 
   return (
-    <div className="mt-6 mb-2">
+    <div className="relative py-6 my-4">
+      {/* Soft depth background for the entire section */}
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-lg shadow-[0_10px_40px_rgb(0,0,0,0.03)] -z-10" />
+      
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-6">
         <div className="flex items-center gap-2">
