@@ -80,7 +80,7 @@ const BookingsScreen = () => {
   const filteredOrders = useMemo(() => {
     let result = orders.filter((o) => getServiceKind(o) === serviceTab);
 
-    if (activeFilter !== "all") {
+    if (serviceTab === "blood" && activeFilter !== "all") {
       if (activeFilter === "confirmed") {
         result = result.filter((o) => [
           "confirmed", "pending", "accepted", "assigned", "partner_assigned", "out_for_collection",
@@ -350,21 +350,23 @@ const BookingsScreen = () => {
                 );
               })}
             </div>
-            <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
-              {STATUS_FILTERS.map((f) => (
-                <button
-                  key={f.key}
-                  onClick={() => setActiveFilter(f.key)}
-                  className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
-                    activeFilter === f.key
-                      ? "bg-primary text-primary-foreground scale-[1.02]"
-                      : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+            {serviceTab === "blood" && (
+              <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
+                {STATUS_FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    onClick={() => setActiveFilter(f.key)}
+                    className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
+                      activeFilter === f.key
+                        ? "bg-primary text-primary-foreground scale-[1.02]"
+                        : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         }
 
