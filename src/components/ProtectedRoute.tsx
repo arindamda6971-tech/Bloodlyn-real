@@ -9,12 +9,20 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
+// ── Module-level role cache ──────────────────────────────────────────
+// Persists across component mounts within the same session so navigating
+// back never re-shows RouteFallback.  Keyed by userId.
+const roleCache = new Map<string, { authorized: boolean; checked: boolean }>();
+
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const userId = user?.id ?? null;
   const location = useLocation();
-  const [roleChecked, setRoleChecked] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(true);
+
+  // Seed initial state from cache so re-mounts are instant
+  const cached = userId ? roleCache.get(userId) : undefined;
+  const [roleChecked, setRoleChecked] = useState(cached?.checked ?? false);
+  const [isAuthorized, setIsAuthorized] = useState(cached?.authorized ?? true);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,6 +42,13 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
         return;
       }
 
+      // If we already have a cached result, render children immediately.
+      // The background fetch below will silently refresh the cache.
+      if (cached?.checked) {
+        setRoleChecked(true);
+        setIsAuthorized(cached.authorized);
+      }
+
       // Fail closed on a persistent error: a vendor/admin must never silently
       // land in the consumer app just because one request failed. We retry
       // twice first, and stay permissive only while the device is offline.
@@ -49,6 +64,8 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
             const blocked = roles.some((r) => r === "vendor" || r === "admin");
             isAuth = !blocked;
           }
+          // Update cache + state
+          roleCache.set(userId, { authorized: isAuth, checked: true });
           setIsAuthorized(isAuth);
           setRoleChecked(true);
           return;
@@ -62,14 +79,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
       if (cancelled) return;
       const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+      roleCache.set(userId, { authorized: offline, checked: true });
       setIsAuthorized(offline);
       setRoleChecked(true);
     };
 
-    // Depend on the stable user id, not the user object: Supabase hands back a
-    // fresh object on every auth event, which would otherwise re-run this
-    // effect (and reset roleChecked) on every token refresh.
-    if (userId) setRoleChecked(false);
+    // Only reset roleChecked if we have NO cached result for this user.
+    // This prevents the flash of RouteFallback on back-navigation.
+    if (userId && !cached?.checked) setRoleChecked(false);
     checkRole();
     return () => {
       cancelled = true;
@@ -81,10 +98,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     return <RouteFallback />;
   }
 
-  // Guard against a redirect loop during SmoothRoutes transitions.
-  // useLocation() provides the most up-to-date state from React Router.
-  // Using window.location.pathname causes an infinite render loop because it
-  // can lag behind React's synchronous render cycle when <Navigate> is used.
+  // Guard against a redirect loop.
   const currentPath = location.pathname;
 
   if (!user) {
@@ -104,7 +118,6 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
       return <Navigate to="/location-check" replace />;
     }
   }
-
 
   return <>{children}</>;
 };
