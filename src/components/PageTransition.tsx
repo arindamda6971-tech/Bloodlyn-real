@@ -53,6 +53,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   return (
     <div
       key={location.pathname}
+      data-scroll-container
       className={`w-full h-full absolute top-0 left-0 bg-background overflow-y-auto overflow-x-hidden ${animClass}`}
       style={{
         zIndex: zIndex,
