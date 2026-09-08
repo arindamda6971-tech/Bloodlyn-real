@@ -39,6 +39,22 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
+
+const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
+  const [showLoading, setShowLoading] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setShowLoading(true), delayMs);
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoading(false);
+    }
+  }, [isLoading, delayMs]);
+
+  return showLoading;
+};
 
 // Hand-picked icons and colors for specific known categories
 const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string }> = {
@@ -104,10 +120,7 @@ const CategoryTile = memo(({ category, index, onClick }: { category: any, index:
 CategoryTile.displayName = "CategoryTile";
 
 const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => (
-  <motion.div
-    initial={false}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0}}
+  <div
     onClick={onNavigate}
     className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
     style={{ contain: 'content' }}
@@ -130,7 +143,7 @@ const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCa
         </Button>
       )}
     </div>
-  </motion.div>
+  </div>
 ));
 
 TestResultCard.displayName = "TestResultCard";
@@ -139,6 +152,7 @@ const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
   const { data: bridgeData, isLoading } = useBridgeTests();
+  const showLoading = useDelayedLoading(isLoading);
   const { addToCart, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -257,9 +271,8 @@ const CategoriesScreen = () => {
       {!searchQuery.trim() && (
         <div className="px-5 mt-6 pb-12">
           <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
-          <AnimatePresence mode="wait">
-            {isLoading ? (
-              <motion.div key="loading" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+            {showLoading ? (
+              <div className="grid grid-cols-2 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm aspect-square">
                     <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
@@ -267,13 +280,13 @@ const CategoriesScreen = () => {
                     <Skeleton className="w-16 h-2" />
                   </div>
                 ))}
-              </motion.div>
+              </div>
             ) : filteredCategories.length === 0 ? (
-              <motion.div key="empty" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center py-12">
+              <div className="text-center py-12">
                 <p className="text-muted-foreground font-medium">No categories found</p>
-              </motion.div>
+              </div>
             ) : (
-              <motion.div key="data" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {filteredCategories.map((category, index) => (
                   <CategoryTile
                     key={category.slug || category.name}
@@ -282,9 +295,8 @@ const CategoriesScreen = () => {
                     onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
                   />
                 ))}
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
         </div>
       )}
     </MobileLayout>

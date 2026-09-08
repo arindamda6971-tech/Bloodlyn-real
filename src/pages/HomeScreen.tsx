@@ -351,11 +351,8 @@ const HomeScreen = () => {
         <section className="px-4 mt-8 flex flex-col gap-4 section-defer list-virtual-lg">
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {quickActions.map((action, idx) => (
-            <motion.div
+            <div
               key={action.label}
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0}}
               onClick={() => navigate(action.path)}
               className="w-full relative overflow-hidden bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
             >
@@ -412,7 +409,7 @@ const HomeScreen = () => {
                   />
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </section>
 

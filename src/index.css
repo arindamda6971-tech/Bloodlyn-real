@@ -401,9 +401,11 @@
     @apply font-bold px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider;
   }
 
-  /* Refined Shimmer Effect */
+  /* Refined Zomato-Style Shimmer Effect */
   .shimmer {
-    @apply relative overflow-hidden bg-muted/60;
+    @apply relative overflow-hidden bg-muted/80;
+    /* Force GPU acceleration so the animation doesn't lag */
+    transform: translateZ(0);
   }
 
   .shimmer::after {
@@ -411,16 +413,25 @@
     @apply absolute inset-0;
     background: linear-gradient(
       90deg,
-      transparent,
-      hsl(var(--primary) / 0.08),
-      transparent
+      transparent 0%,
+      rgba(255, 255, 255, 0.6) 50%,
+      transparent 100%
     );
-    animation: shimmer 1.8s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    animation: shimmer 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark .shimmer::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.08) 50%,
+      transparent 100%
+    );
   }
 
   @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
+    0% { transform: translateX(-150%); }
+    100% { transform: translateX(150%); }
   }
   .safe-area-top {
     padding-top: var(--sat);
@@ -543,31 +554,7 @@
     background: var(--gradient-primary);
   }
 
-  /* Shimmer animation for loading */
-  .shimmer {
-    @apply relative overflow-hidden bg-muted;
-  }
 
-  .shimmer::after {
-    content: '';
-    @apply absolute inset-0;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      hsl(var(--primary) / 0.1),
-      transparent
-    );
-    animation: shimmer 2s infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(100%);
-    }
-  }
 
   /* ============================================================
      HOME — Award-winning ambient layer + premium components

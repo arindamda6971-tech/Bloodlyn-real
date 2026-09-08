@@ -25,6 +25,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
+import SmoothRoutes from "@/components/SmoothRoutes";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
@@ -93,13 +94,13 @@ const CapacitorInitializer = () => {
  * and PageTransition to handle the physical "Native-Feel" animation.
  */
 const AnimatedRoutes = () => {
-  const location = useLocation();
-  
   return (
-    <AnimatePresence initial={false}>
-      <PageTransition location={location} key={location.pathname}>
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
-          <Routes location={location}>
+    <SmoothRoutes>
+      {(deferredLocation) => (
+        <AnimatePresence initial={false}>
+          <PageTransition location={deferredLocation} key={deferredLocation.pathname}>
+            <Suspense fallback={<div className="min-h-screen bg-background" />}>
+              <Routes location={deferredLocation}>
                 {/* Public Routes */}
                 <Route path="/" element={<SplashScreen />} />
               <Route path="/onboarding" element={<OnboardingScreen />} />
@@ -156,9 +157,11 @@ const AnimatedRoutes = () => {
               <Route path="/unauthorized" element={<UnauthorizedScreen />} />
               <Route path="*" element={<NotFound />} />
               </Routes>
-        </Suspense>
+            </Suspense>
           </PageTransition>
         </AnimatePresence>
+      )}
+    </SmoothRoutes>
   );
 };
 
