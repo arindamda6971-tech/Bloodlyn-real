@@ -351,15 +351,15 @@ const BookingsScreen = () => {
               })}
             </div>
             {serviceTab === "blood" && (
-              <div className="flex w-full gap-1.5 overflow-x-auto hide-scrollbar pb-0.5">
+              <div className="flex w-full p-1 rounded-full bg-muted/60 border border-border/50">
                 {STATUS_FILTERS.map((f) => (
                   <button
                     key={f.key}
                     onClick={() => setActiveFilter(f.key)}
-                    className={`flex-1 py-2 px-2.5 rounded-xl text-[10px] font-black tracking-wide uppercase transition-all duration-300 shadow-sm flex items-center justify-center text-center shrink-0 ${
+                    className={`flex-1 py-2 px-2 rounded-full text-[10px] font-black tracking-wide uppercase transition-all duration-300 flex items-center justify-center text-center shrink-0 ${
                       activeFilter === f.key
-                        ? "bg-primary text-primary-foreground scale-[1.02]"
-                        : "bg-card border border-border/50 text-muted-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground shadow-md scale-[1.02]"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {f.label}

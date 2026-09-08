@@ -222,7 +222,7 @@ const HomeScreen = () => {
     <div className="relative bg-background min-h-screen">
       {StaticBackground}
 
-      <MobileLayout>
+      <MobileLayout enablePullToRefresh={false}>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
         <div className="px-5 pb-0">
           <ZomatoStyleHeader
