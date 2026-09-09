@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
 
     if (method.toUpperCase() !== "GET" && payload) {
       // Inject anonymous_id for ticket submissions
-      if (baseEndpoint === "bridge-tickets" && method.toUpperCase() === "POST") {
+      if (baseEndpoint === "bridge-tickets" && method.toUpperCase() === "POST" && userId) {
         const last5 = userId.slice(-5);
         payload.anonymous_id = `User#U${last5}`;
         payload.app_type = "user_app";
