@@ -74,22 +74,37 @@ Deno.serve(async (req) => {
       });
     }
 
-    const jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const userId = jwtPayload?.sub as string | undefined;
-    if (!userId) {
+    let jwtPayload: Record<string, unknown> = {};
+    try {
+      jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    } catch {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: profile, error: profileError } = await userSupabase
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
+    const userId = jwtPayload?.sub as string | undefined;
+    const tokenRole = jwtPayload?.role as string | undefined;
 
-    if (profileError || !profile?.id) {
+    // Public read-only endpoints may be reached with the anon/publishable key
+    // (no user session yet — e.g. catalog warm-up before login).
+    const PUBLIC_READ_ENDPOINTS = ["bridge-tests", "bridge-settings"];
+
+    if (userId) {
+      const { data: profile, error: profileError } = await userSupabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError || !profile?.id) {
+        return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (tokenRole !== "anon") {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -97,7 +112,7 @@ Deno.serve(async (req) => {
     }
 
     // Per-user rate limit (after auth so anon traffic can't exhaust the table)
-    const rl = rateLimitCheck(userId);
+    const rl = rateLimitCheck(userId ?? "anon");
     if (!rl.ok) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Try again shortly.", retryAfter: rl.retryAfter }),
@@ -126,6 +141,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Anon (no user session) may only perform public read-only calls
+    if (!userId && (!PUBLIC_READ_ENDPOINTS.includes(baseEndpoint) || method.toUpperCase() !== "GET")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Build the bridge URL
     let url = `${BRIDGE_BASE_URL}/${endpoint}`;
     if (params && Object.keys(params).length > 0) {
@@ -150,7 +173,7 @@ Deno.serve(async (req) => {
 
     if (method.toUpperCase() !== "GET" && payload) {
       // Inject anonymous_id for ticket submissions
-      if (baseEndpoint === "bridge-tickets" && method.toUpperCase() === "POST") {
+      if (baseEndpoint === "bridge-tickets" && method.toUpperCase() === "POST" && userId) {
         const last5 = userId.slice(-5);
         payload.anonymous_id = `User#U${last5}`;
         payload.app_type = "user_app";
