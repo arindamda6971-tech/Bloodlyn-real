@@ -50,65 +50,50 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Authenticate user
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
+    // Parse and validate proxy instructions before authentication so public
+    // catalog reads can also work with Supabase's non-JWT publishable keys.
+    const body = await req.json();
+    const { endpoint, method = "GET", params, payload } = body;
+    const normalizedMethod = typeof method === "string" ? method.toUpperCase() : "GET";
+    const allowedEndpoints = ["bridge-tests", "bridge-tickets", "bridge-tickets/status", "bridge-tickets/details", "bridge-settings"];
+    const baseEndpoint = typeof endpoint === "string" ? endpoint.split("?")[0] : "";
+    if (!allowedEndpoints.includes(baseEndpoint)) {
+      return new Response(JSON.stringify({ error: "Invalid endpoint" }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace("Bearer ", "");
-    const tokenParts = token.split(".");
-    if (tokenParts.length !== 3) {
-      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let jwtPayload: Record<string, unknown> = {};
-    try {
-      jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    } catch {
-      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = jwtPayload?.sub as string | undefined;
-    const tokenRole = jwtPayload?.role as string | undefined;
-
-    // Public read-only endpoints may be reached with the anon/publishable key
-    // (no user session yet — e.g. catalog warm-up before login).
     const PUBLIC_READ_ENDPOINTS = ["bridge-tests", "bridge-settings"];
+    const isPublicRead = PUBLIC_READ_ENDPOINTS.includes(baseEndpoint) && normalizedMethod === "GET";
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | undefined;
 
-    if (userId) {
-      const { data: profile, error: profileError } = await userSupabase
-        .from("profiles")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
+    // Public reads need no user identity. Protected bridge operations require
+    // a real Supabase user access token, verified by Auth rather than decoded
+    // locally. An anon/publishable API key can therefore never create tickets.
+    if (!isPublicRead) {
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
-      if (profileError || !profile?.id) {
+      const token = authHeader.slice("Bearer ".length).trim();
+      const userSupabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+      );
+      const { data: authData, error: authError } = await userSupabase.auth.getUser(token);
+      userId = authData.user?.id;
+
+      if (authError || !userId) {
         return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-    } else if (tokenRole !== "anon") {
-      return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
 
     // Per-user rate limit (after auth so anon traffic can't exhaust the table)
@@ -127,28 +112,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse the request body to get the proxy instructions
-    const body = await req.json();
-    const { endpoint, method = "GET", params, payload } = body;
-
-    // Validate endpoint whitelist
-    const allowedEndpoints = ["bridge-tests", "bridge-tickets", "bridge-tickets/status", "bridge-tickets/details", "bridge-settings"];
-    const baseEndpoint = endpoint?.split("?")[0];
-    if (!allowedEndpoints.includes(baseEndpoint)) {
-      return new Response(JSON.stringify({ error: "Invalid endpoint" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Anon (no user session) may only perform public read-only calls
-    if (!userId && (!PUBLIC_READ_ENDPOINTS.includes(baseEndpoint) || method.toUpperCase() !== "GET")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Build the bridge URL
     let url = `${BRIDGE_BASE_URL}/${endpoint}`;
     if (params && Object.keys(params).length > 0) {
@@ -164,16 +127,16 @@ Deno.serve(async (req) => {
 
     // Build bridge request options
     const fetchOptions: RequestInit = {
-      method: method.toUpperCase(),
+      method: normalizedMethod,
       headers: {
         "Content-Type": "application/json",
         "x-bridge-key": BRIDGE_API_KEY,
       },
     };
 
-    if (method.toUpperCase() !== "GET" && payload) {
+    if (normalizedMethod !== "GET" && payload) {
       // Inject anonymous_id for ticket submissions
-      if (baseEndpoint === "bridge-tickets" && method.toUpperCase() === "POST" && userId) {
+      if (baseEndpoint === "bridge-tickets" && normalizedMethod === "POST" && userId) {
         const last5 = userId.slice(-5);
         payload.anonymous_id = `User#U${last5}`;
         payload.app_type = "user_app";
