@@ -141,6 +141,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Anon (no user session) may only perform public read-only calls
+    if (!userId && (!PUBLIC_READ_ENDPOINTS.includes(baseEndpoint) || method.toUpperCase() !== "GET")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Build the bridge URL
     let url = `${BRIDGE_BASE_URL}/${endpoint}`;
     if (params && Object.keys(params).length > 0) {
