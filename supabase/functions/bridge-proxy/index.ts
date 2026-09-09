@@ -74,22 +74,37 @@ Deno.serve(async (req) => {
       });
     }
 
-    const jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const userId = jwtPayload?.sub as string | undefined;
-    if (!userId) {
+    let jwtPayload: Record<string, unknown> = {};
+    try {
+      jwtPayload = JSON.parse(atob(tokenParts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    } catch {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const { data: profile, error: profileError } = await userSupabase
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
+    const userId = jwtPayload?.sub as string | undefined;
+    const tokenRole = jwtPayload?.role as string | undefined;
 
-    if (profileError || !profile?.id) {
+    // Public read-only endpoints may be reached with the anon/publishable key
+    // (no user session yet — e.g. catalog warm-up before login).
+    const PUBLIC_READ_ENDPOINTS = ["bridge-tests", "bridge-settings"];
+
+    if (userId) {
+      const { data: profile, error: profileError } = await userSupabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileError || !profile?.id) {
+        return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (tokenRole !== "anon") {
       return new Response(JSON.stringify({ error: "Unauthorized: invalid token" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -97,7 +112,7 @@ Deno.serve(async (req) => {
     }
 
     // Per-user rate limit (after auth so anon traffic can't exhaust the table)
-    const rl = rateLimitCheck(userId);
+    const rl = rateLimitCheck(userId ?? "anon");
     if (!rl.ok) {
       return new Response(
         JSON.stringify({ error: "Rate limit exceeded. Try again shortly.", retryAfter: rl.retryAfter }),
