@@ -580,7 +580,7 @@ Deno.serve(async (req) => {
         const partnerSecret = Deno.env.get("DOCTOR_APPOINTMENT_WEBHOOK_SECRET");
         if (partnerSecret) {
           const dirRes = await fetch(
-            `https://titjcfklrmytppvsoavv.supabase.co/functions/v1/doctor-directory?status=approved&is_active=true&vendor_type=doctor&doctor_id=${encodeURIComponent(doctorIdRaw)}`,
+            `https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-directory?status=approved&is_active=true&vendor_type=doctor&doctor_id=${encodeURIComponent(doctorIdRaw)}`,
             { headers: { "x-webhook-secret": partnerSecret } },
           );
           if (dirRes.ok) {
@@ -831,7 +831,7 @@ Deno.serve(async (req) => {
           symptoms: specialInstructions,
         };
 
-        fetch("https://titjcfklrmytppvsoavv.supabase.co/functions/v1/doctor-appointment-webhook", {
+        fetch("https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-appointment-webhook", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

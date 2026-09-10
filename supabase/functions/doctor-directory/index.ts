@@ -13,7 +13,7 @@ const corsHeaders = {
 };
 
 const PARTNER_URL =
-  "https://titjcfklrmytppvsoavv.supabase.co/functions/v1/doctor-directory";
+  "https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-directory";
 
 // Only surface doctors that the partner project has explicitly approved.
 function isApprovedDoctor(d: any): boolean {

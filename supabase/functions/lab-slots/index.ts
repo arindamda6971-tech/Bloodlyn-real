@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 // Partner Real project (BloodLyn Partner Real)
-const PARTNER_URL = "https://titjcfklrmytppvsoavv.supabase.co";
+const PARTNER_URL = "https://wkhwuzsiehrcvlxfeytf.supabase.co";
 // Publishable anon key — safe to embed (same kind as the one in .env)
 const PARTNER_ANON_FALLBACK =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdGpjZmtscm15dHBwdnNvYXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzMzNTIsImV4cCI6MjA4NzA0OTM1Mn0.tyKSMCLjnAVB8WCvKiHF7JrBkOEmBHoLkrrmXFVfunU";

@@ -321,7 +321,7 @@ Deno.serve(async (req) => {
     // Forward to external partner-order-receiver (marketplace project)
     const receiverUrl =
       Deno.env.get("PARTNER_ORDER_RECEIVER_URL") ||
-      "https://titjcfklrmytppvsoavv.supabase.co/functions/v1/partner-order-receiver";
+      "https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/partner-order-receiver";
     const webhookSecret = Deno.env.get("PARTNER_WEBHOOK_SECRET");
 
     let forwardResult: { status: number; body: string } | { error: string } | null = null;
