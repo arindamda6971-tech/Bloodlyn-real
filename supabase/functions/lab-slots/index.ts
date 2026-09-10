@@ -11,7 +11,7 @@ const corsHeaders = {
 const PARTNER_URL = "https://wkhwuzsiehrcvlxfeytf.supabase.co";
 // Publishable anon key — safe to embed (same kind as the one in .env)
 const PARTNER_ANON_FALLBACK =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRpdGpjZmtscm15dHBwdnNvYXZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0NzMzNTIsImV4cCI6MjA4NzA0OTM1Mn0.tyKSMCLjnAVB8WCvKiHF7JrBkOEmBHoLkrrmXFVfunU";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndraHd1enNpZWhyY3ZseGZleXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzE2MTYsImV4cCI6MjEwMTk0NzYxNn0.fFrH7uJ_fCn0hkAlQdf3yLNW5x9LOTE2yAg8jhWyPxM";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
