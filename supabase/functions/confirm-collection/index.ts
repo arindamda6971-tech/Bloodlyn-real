@@ -26,7 +26,7 @@ const json = (body: unknown, status = 200) =>
   });
 
 // BloodLyn Partner Real project
-const PARTNER_URL = "https://titjcfklrmytppvsoavv.supabase.co";
+const PARTNER_URL = "https://wkhwuzsiehrcvlxfeytf.supabase.co";
 
 /** Slot end time in minutes-from-midnight for the three fixed collection slots. */
 function slotEndMinutes(slot: string | null): number | null {
