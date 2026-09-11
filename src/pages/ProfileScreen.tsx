@@ -103,7 +103,7 @@ const ProfileScreen = () => {
     } catch { /* ignore */ }
     try {
       Object.keys(localStorage)
-        .filter((k) => k.startsWith("sb-") || k.startsWith("location_checked_"))
+        .filter((k) => k.startsWith("sb-") || k.startsWith("location_checked_") || k.startsWith("bloodlyn_service_pincode_"))
         .forEach((k) => localStorage.removeItem(k));
     } catch { /* ignore */ }
     toast.success("Logged out successfully");

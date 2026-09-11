@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { sanitizePincode } from "@/utils/inputSanitizers";
+import { setServicePincode } from "@/lib/service-pincode";
 
 /**
  * Small "Delivering to: PIN xxxxxx — Change" chip.
@@ -65,30 +66,7 @@ const LocationChip = () => {
         return;
       }
 
-      const { data: existing } = await supabase
-        .from("addresses")
-        .select("id, is_default")
-        .eq("user_id", user.id)
-        .eq("pincode", newPin)
-        .limit(1);
-
-      if (existing && existing.length > 0) {
-        if (!existing[0].is_default) {
-          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-          await supabase.from("addresses").update({ is_default: true }).eq("id", existing[0].id);
-        }
-      } else {
-        await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-        await supabase.from("addresses").insert({
-          user_id: user.id,
-          address_line1: `Location - ${newPin}`,
-          city: svc.city || "",
-          state: svc.state || "",
-          pincode: newPin,
-          is_default: true,
-          type: "Home",
-        });
-      }
+      if (!setServicePincode(user.id, newPin)) throw new Error("Unable to store pincode");
       savedKeyRef.current = key;
       toast.success(`Location updated to ${svc.city || "PIN " + newPin}`);
       setOpen(false);
