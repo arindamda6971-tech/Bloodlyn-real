@@ -52,7 +52,11 @@ const LoginScreen = () => {
     if (user) {
       const rawFrom = (location.state as { from?: string | { pathname?: string } } | null)?.from;
       const fromPath = typeof rawFrom === "string" ? rawFrom : rawFrom?.pathname;
-      const destination = fromPath && fromPath !== "/login" ? fromPath : "/home";
+      let locationChecked = false;
+      try { locationChecked = localStorage.getItem(`location_checked_${user.id}`) === "true"; } catch { /* ignore */ }
+      const destination = fromPath && fromPath !== "/login"
+        ? fromPath
+        : locationChecked ? "/home" : "/location-check";
       navigate(destination, { replace: true });
     }
   }, [user, navigate, location]);

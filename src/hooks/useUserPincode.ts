@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getServicePincode, SERVICE_PIN_CHANGED_EVENT, setServicePincode } from "@/lib/service-pincode";
 
 /**
  * Returns the current user's serviceable pincode.
@@ -22,6 +23,14 @@ export const useUserPincode = () => {
         }
         return;
       }
+      const temporaryPincode = getServicePincode(user.id);
+      if (temporaryPincode) {
+        if (!cancelled) {
+          setPincode(temporaryPincode);
+          setLoading(false);
+        }
+        return;
+      }
       try {
         const { data } = await supabase
           .from("addresses")
@@ -32,16 +41,24 @@ export const useUserPincode = () => {
           .limit(1);
         if (cancelled) return;
         const pc = data?.[0]?.pincode?.trim() || null;
-        setPincode(pc && /^\d{6}$/.test(pc) ? pc : null);
+        const valid = pc && /^\d{6}$/.test(pc) ? pc : null;
+        setPincode(valid);
+        if (valid) setServicePincode(user.id, valid);
       } catch {
         if (!cancelled) setPincode(null);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
+    const handlePincodeChanged = (event: Event) => {
+      const next = (event as CustomEvent<string>).detail;
+      if (/^\d{6}$/.test(next)) setPincode(next);
+    };
+    window.addEventListener(SERVICE_PIN_CHANGED_EVENT, handlePincodeChanged);
     load();
     return () => {
       cancelled = true;
+      window.removeEventListener(SERVICE_PIN_CHANGED_EVENT, handlePincodeChanged);
     };
   }, [user]);
 

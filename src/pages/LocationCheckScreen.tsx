@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { setServicePincode } from "@/lib/service-pincode";
 import { toast } from "@/hooks/use-toast";
 import { Geolocation } from "@capacitor/geolocation";
 import { Capacitor } from "@capacitor/core";
@@ -29,7 +30,7 @@ const LocationCheckScreen = () => {
   const [busy, setBusy] = useState(false);
 
   const serviceableRef = useRef<Set<string>>(new Set());
-  // Single-flight guards — prevent StrictMode / double-tap duplicate inserts
+  // Single-flight guards — prevent StrictMode / double-tap navigation races.
   const savingRef = useRef(false);
   const savedKeyRef = useRef<string | null>(null);
 
@@ -88,12 +89,9 @@ const LocationCheckScreen = () => {
     }
   }, []);
 
-  /**
-   * Save the default address (idempotent) and enter the app.
-   * Same contract as before: one default address per user, keyed by pincode.
-   */
-  const saveAddressAndProceed = useCallback(
-    async (pc: string, displayName: string, lat?: number, lon?: number) => {
+  /** Store only the service-area PIN. A full collection address is saved later. */
+  const savePincodeAndProceed = useCallback(
+    async (pc: string) => {
       if (!user) {
         setStep("input");
         toast({
@@ -110,42 +108,15 @@ const LocationCheckScreen = () => {
       }
       savingRef.current = true;
       try {
-        const { data: existing } = await supabase
-          .from("addresses")
-          .select("id, is_default")
-          .eq("user_id", user.id)
-          .eq("pincode", pc.trim())
-          .limit(1);
-
-        if (existing && existing.length > 0) {
-          if (!existing[0].is_default) {
-            await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-            await supabase.from("addresses").update({ is_default: true }).eq("id", existing[0].id);
-          }
-        } else {
-          await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-          const { error: insertError } = await supabase.from("addresses").insert({
-            user_id: user.id,
-            address_line1: displayName || `Location - ${pc}`,
-            city: displayName.split(",")[0]?.trim() || "",
-            state: displayName.split(",")[1]?.trim() || "",
-            pincode: pc.trim(),
-            latitude: lat ?? null,
-            longitude: lon ?? null,
-            is_default: true,
-            type: "Home",
-          });
-          if (insertError) throw insertError;
-        }
+        if (!setServicePincode(user.id, pc)) throw new Error("Local storage unavailable");
         savedKeyRef.current = key;
-        try { localStorage.setItem(`location_checked_${user.id}`, "true"); } catch { /* ignore */ }
         navigate("/home", { replace: true });
       } catch (e) {
-        console.error("Failed to save address:", e);
+        console.error("Failed to save service pincode:", e);
         savingRef.current = false;
         setStep("input");
         toast({
-          title: "Couldn't save your location",
+          title: "Couldn't remember your PIN",
           description: "Please check your connection and try again.",
           variant: "destructive",
         });
@@ -163,12 +134,12 @@ const LocationCheckScreen = () => {
       setBusy(false);
       if (ok) {
         setStep("serviceable");
-        saveAddressAndProceed(pc, displayName, lat, lon);
+        savePincodeAndProceed(pc);
       } else {
         setStep("not-serviceable");
       }
     },
-    [checkServiceability, saveAddressAndProceed],
+    [checkServiceability, savePincodeAndProceed],
   );
 
   const handleManualCheck = () => {
