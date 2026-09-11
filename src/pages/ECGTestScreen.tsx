@@ -560,9 +560,30 @@ const ECGTestScreen = () => {
         return;
       }
 
-      setOrderNumber(data.orderNumber || data.orderId);
-      setShowConfetti(true);
-      setStep("SUCCESS");
+      navigate("/order-success", {
+        replace: true,
+        state: {
+          cartItems,
+          addressId: validAddressId,
+          scheduledDate: getIsoDate(appointment.date),
+          scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
+          subtotal: rawPrice,
+          couponApplied,
+          discount,
+          total: price,
+          selectedPayment: selectedPaymentMethod.id,
+          selectedPaymentName: selectedPaymentMethod.name,
+          paymentVerified: true,
+          patientName: patient.name || "Patient",
+          patientAge: validAge,
+          patientGender: patient.gender || "Other",
+          patientPhone: validPhone,
+          orderId: data.orderId,
+          orderNumber: data.orderNumber || data.orderId,
+          selectedLabName: selectedLab.name,
+          selectedLabId: safeLabId || selectedLab.id,
+        }
+      });
     } catch (e: any) {
       console.error("ECG order exception:", e);
       toast.error(e?.message || "Something went wrong. Please try again.");

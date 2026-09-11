@@ -405,16 +405,6 @@ const SavedAddressesScreen = () => {
               />
             </div>
 
-            <div className="mt-2">
-              <Button variant="outline" className="w-full mb-2" onClick={handleUseCurrentLocation} disabled={locLoading}>
-                {locLoading ? "Locating..." : "Or use my current location"}
-              </Button>
-              {formData.latitude && formData.longitude && (
-                <p className="text-xs text-muted-foreground text-center">
-                  Location: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
-                </p>
-              )}
-            </div>
 
             <div className="flex gap-3 mt-4">
               <Button

@@ -146,25 +146,25 @@ const TrackingScreen = () => {
     );
   }
 
-  const isBpOrder = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(order.order_number || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure)/i.test(testNames.join(" ") || "");
+  const isVitalsOrder = /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(order.order_number || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(testNames.join(" ") || "");
 
-  const activeWorkflowSteps = isBpOrder ? [
+  const activeWorkflowSteps = isVitalsOrder ? [
     { key: "confirmed", label: "Ordered", icon: CheckCircle },
     { key: "completed", label: "Checked", icon: CheckCircle },
   ] : workflowSteps;
 
-  const completedIndex = isBpOrder
+  const completedIndex = isVitalsOrder
     ? (["completed", "report_ready", "report_delivered", "checked"].includes(order.status?.toLowerCase() || "") ? 1 : 0)
     : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
 
   const statusLower = order.status?.toLowerCase() || "";
-  const labAccepted = !isBpOrder && isLabAccepted(order.status, order.delivery_partner_name);
+  const labAccepted = !isVitalsOrder && isLabAccepted(order.status, order.delivery_partner_name);
   const partnerAssigned =
-    !isBpOrder && (ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name);
+    !isVitalsOrder && (ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name);
   const collectionDone =
-    !isBpOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
+    !isVitalsOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
   const showCollectionPrompt =
     !isCancelled &&
     statusLower !== "collection_pending" &&

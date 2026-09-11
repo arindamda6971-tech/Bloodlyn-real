@@ -108,6 +108,7 @@ const quickActions = [
     path: "/upload-prescription", 
     badge: "Get a Call",
     desc: "Simply upload your prescription and our experts will call you to arrange the tests.",
+    cta: "Take a Photo",
     gradient: "from-[#f59e0b] to-[#d97706]",
     glow: "bg-[#f59e0b]/20",
     badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
@@ -381,10 +382,7 @@ const HomeScreen = () => {
 
               <div className="relative z-10">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${action.gradient} flex items-center justify-center shadow-md shrink-0 group-hover:scale-105 transition-transform`}>
-                      <action.icon className="w-5 h-5 text-white" />
-                    </div>
+                  <div className="flex items-center">
                     <h3 className="text-foreground text-[16px] font-black tracking-tight leading-tight">
                       {action.label}
                     </h3>
@@ -400,12 +398,15 @@ const HomeScreen = () => {
                       {action.price}
                     </span>
                   )}
-                  <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient}`}>
-                    Book Now
-                  </span>
+                  {(action as any).cta && (
+                    <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient} mr-0.5`}>
+                      {(action as any).cta}
+                    </span>
+                  )}
                   <ChevronRight 
-                    className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" 
+                    className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" 
                     color={action.gradient.match(/from-\[([^\]]+)\]/)?.[1] || 'currentColor'} 
+                    strokeWidth={2.5}
                   />
                 </div>
               </div>

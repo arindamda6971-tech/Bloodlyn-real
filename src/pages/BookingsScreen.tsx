@@ -163,16 +163,18 @@ const BookingsScreen = () => {
 
   const renderOrderCard = (order: Order, index: number) => {
     const BP_RE = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
-    const bpParts = splitTestNames(order.test_name);
-    // Only a pure BP booking counts as a BP order; a BP add-on on a lab order stays a lab order.
-    const isBp = bpParts.length > 0
-      ? bpParts.every((p) => BP_RE.test(p))
-      : BP_RE.test(order.order_number || "");
+    const ECG_RE = /ecg|electrocardiogram/i;
+    const vitalsParts = splitTestNames(order.test_name);
+    // A pure BP or ECG booking gets vitals-style card; a BP/ECG add-on on a lab order stays a lab order.
+    const isVitals = vitalsParts.length > 0
+      ? vitalsParts.every((p) => BP_RE.test(p) || ECG_RE.test(p))
+      : BP_RE.test(order.order_number || "") || ECG_RE.test(order.order_number || "") || ECG_RE.test(order.test_name || "");
+    const isEcg = ECG_RE.test(order.test_name || "") || ECG_RE.test(order.order_number || "");
 
     const BookingIcon = getBookingIcon(order.order_number);
     const bookingType = getBookingType(order.order_number);
     const statusInfo = getDisplayStatus(order.status);
-    const showTimeline = isBp ? (order.status !== "cancelled") : !["completed", "report_ready", "report_delivered", "cancelled"].includes(order.status || "");
+    const showTimeline = isVitals ? (order.status !== "cancelled") : !["completed", "report_ready", "report_delivered", "cancelled"].includes(order.status || "");
     let patientName = order.patient_name || (order as any).family_members?.full_name;
     if (!patientName && (order as any).special_instructions) {
       const match = (order as any).special_instructions.match(/Patient:\s*([^(|]+)/);
@@ -197,7 +199,7 @@ const BookingsScreen = () => {
         <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-[2rem] blur opacity-0 group-active:opacity-100 transition duration-500" />
 
         <div className={`relative border rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all duration-200 overflow-hidden ${
-          isBp 
+          isVitals 
             ? "bg-gradient-to-br from-blue-500/[0.08] via-indigo-500/[0.04] to-card border-blue-500/40 shadow-blue-500/5" 
             : "bg-card border-border/50"
         }`}>
@@ -205,16 +207,16 @@ const BookingsScreen = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
-                isBp 
+                isVitals 
                   ? "bg-gradient-to-tr from-blue-600 to-indigo-600 border-blue-500/30 text-white shadow-lg shadow-blue-500/20" 
                   : "bg-primary/5 border-primary/10 text-primary"
               }`}>
-                {isBp ? <Heart className="w-5 h-5 fill-white/20 animate-pulse" /> : <BookingIcon className="w-5 h-5" />}
+                {isVitals ? <Heart className="w-5 h-5 fill-white/20 animate-pulse" /> : <BookingIcon className="w-5 h-5" />}
               </div>
               <div>
-                {isBp && (
+                {isVitals && (
                   <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase px-2 py-0.5 mb-1 inline-flex items-center gap-1">
-                    🫀 Home BP Check
+                    {isEcg ? "🫀 At-Home ECG" : "🫀 Home BP Check"}
                   </Badge>
                 )}
                 <h3 className="font-bold text-foreground text-[15px] leading-tight">
@@ -267,7 +269,7 @@ const BookingsScreen = () => {
           {/* Visual Timeline */}
           {showTimeline && (
             <div className="mt-5 mb-8">
-              <OrderStatusTimeline status={order.status} isBp={isBp} />
+              <OrderStatusTimeline status={order.status} isBp={isVitals} />
             </div>
           )}
 
@@ -292,11 +294,11 @@ const BookingsScreen = () => {
                 </button>
               )}
               <button className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-colors ${
-                isBp
+                isVitals
                   ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white"
                   : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
               }`}>
-                {order.status === "completed" ? (isBp ? "VIEW STATUS" : "VIEW REPORT") : "TRACK STATUS"}
+                {order.status === "completed" ? (isVitals ? "VIEW STATUS" : "VIEW REPORT") : "TRACK STATUS"}
                 <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
               </button>
             </div>

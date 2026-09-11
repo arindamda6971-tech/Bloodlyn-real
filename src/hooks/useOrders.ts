@@ -46,11 +46,14 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ["orders", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
+
       let dbOrders: Order[] = [];
       try {
         const { data } = await supabase
           .from("orders")
           .select("*")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
         if (data && Array.isArray(data)) dbOrders = data as Order[];
       } catch (e) {
@@ -62,6 +65,7 @@ export const useOrders = () => {
         const { data } = await (supabase as any)
           .from("blood_lyn_orders")
           .select("*")
+          .eq("user_id", user.id)
           .order("created_at", { ascending: false });
         if (data && Array.isArray(data)) {
           bloodLynOrders = data.map((b: any) => ({
@@ -85,15 +89,8 @@ export const useOrders = () => {
       }
 
       let storedOrders: Order[] = [];
-      try {
-        const savedStr = localStorage.getItem("BloodLyn_real_orders") || localStorage.getItem("blood_lyn_real_orders");
-        if (savedStr) {
-          const parsed = JSON.parse(savedStr);
-          if (Array.isArray(parsed)) storedOrders = parsed;
-        }
-      } catch (e) {
-        console.warn("Stored orders parse error:", e);
-      }
+      // Disabled local storage fallback to prevent ghost orders across accounts
+      // since the Edge Function now reliably stores orders in the database.
 
       const mergedMap = new Map<string, Order>();
       for (const o of dbOrders) {
