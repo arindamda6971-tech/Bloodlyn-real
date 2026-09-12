@@ -15,7 +15,6 @@ const RoutePrefetcher = () => {
       import("../pages/BookingsScreen");
       import("../pages/ReportsScreen");
       import("../pages/ProfileScreen");
-      import("../pages/LocationCheckScreen");
 
       // Most visited flows
       import("../pages/CartScreen");
