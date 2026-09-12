@@ -22,6 +22,7 @@ import { sanitizePincode } from "@/utils/inputSanitizers";
 import { useAuth } from "@/hooks/useAuth";
 import { triggerHaptic } from "@/utils/haptics";
 import type { Tables } from "@/integrations/supabase/types";
+import { isCompleteCollectionAddress } from "@/lib/service-pincode";
 
 import {
   AlertDialog,
@@ -79,7 +80,7 @@ const SavedAddressesScreen = () => {
         console.error("Error fetching addresses:", error);
         setAddresses([]);
       } else {
-        setAddresses(data || []);
+        setAddresses((data || []).filter(isCompleteCollectionAddress));
       }
     } catch (err) {
       console.error("Exception fetching addresses:", err);

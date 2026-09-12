@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { isCompleteCollectionAddress, setServicePincode } from "@/lib/service-pincode";
+import { useUserPincode } from "@/hooks/useUserPincode";
 
 interface ZomatoStyleHeaderProps {
   unreadCount?: number;
@@ -38,13 +40,10 @@ export const ZomatoStyleHeader = ({
   const queryClient = useQueryClient();
   const { items } = useCart();
   const cartCount = items.length;
+  const { pincode } = useUserPincode();
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState("Home • 42 Medical Lane, Bandra West");
-  const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([
-    { id: "1", type: "Home", address_line1: "42 Medical Lane, Bandra West", city: "Mumbai", pincode: "400050", is_default: true },
-    { id: "2", type: "Office", address_line1: "12 Tech Park, BKC", city: "Mumbai", pincode: "400051", is_default: false },
-    { id: "3", type: "Parents House", address_line1: "88 Care Street, Dadar", city: "Mumbai", pincode: "400014", is_default: false },
-  ]);
+  const [currentAddress, setCurrentAddress] = useState("Delivery PIN • Select your service area");
+  const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([]);
   const [switching, setSwitching] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -60,9 +59,10 @@ export const ZomatoStyleHeader = ({
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: false });
 
-      if (data && data.length > 0) {
-        setSavedAddresses(data.map((a) => ({ ...a, type: a.type ?? "Home", is_default: a.is_default ?? false })));
-        const defaultAddr = data.find((a) => a.is_default) || data[0];
+      const completeAddresses = (data || []).filter(isCompleteCollectionAddress);
+      if (completeAddresses.length > 0) {
+        setSavedAddresses(completeAddresses.map((a) => ({ ...a, type: a.type ?? "Home", is_default: a.is_default ?? false })));
+        const defaultAddr = completeAddresses.find((a) => a.is_default) || completeAddresses[0];
         const title = defaultAddr.type || "Home";
         const line = `${defaultAddr.address_line1}${defaultAddr.city ? `, ${defaultAddr.city}` : ''}`;
         setCurrentAddress(`${title} • ${line}`);
@@ -70,7 +70,7 @@ export const ZomatoStyleHeader = ({
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
-        setCurrentAddress("Add Address • Tap to add your pickup address");
+        setCurrentAddress(`Delivery PIN • ${pincode || "Select your service area"}`);
       }
 
 
@@ -81,7 +81,7 @@ export const ZomatoStyleHeader = ({
 
   useEffect(() => {
     loadAddresses();
-  }, [user]);
+  }, [user, pincode]);
 
   const handleSelectAddress = async (loc: AddressItem) => {
     if (!user) {
@@ -104,6 +104,7 @@ export const ZomatoStyleHeader = ({
       setCurrentAddress(`${title} • ${line}`);
       setSelectedId(loc.id);
       setSavedAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === loc.id })));
+      setServicePincode(user.id, loc.pincode);
 
 
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText, Pencil, Loader2 } from "lucide-react";
 import {
   getStoredPrescription,
   setStoredPrescription,
@@ -35,6 +35,8 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useSEO } from "@/hooks/useSEO";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useUserPincode } from "@/hooks/useUserPincode";
+import { isCompleteCollectionAddress } from "@/lib/service-pincode";
 
 interface SavedAddress {
   id: string;
@@ -83,6 +85,7 @@ const CartScreen = () => {
   const { items, addToCart, removeFromCart, subtotal, currentLabName, currentLabId, isLoading, updateFamilyMember } = useCart();
   const { supabaseUserId, user } = useAuth();
   const { members: familyMembers, addMember } = useFamilyMembers();
+  const { pincode: servicePincode } = useUserPincode();
   const [selfProfile, setSelfProfile] = useState<{ full_name: string; age: string; gender: string; phone: string } | null>(null);
 
   // Handle returning from AddFamilyMemberScreen
@@ -113,6 +116,16 @@ const CartScreen = () => {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(saved?.selectedAddressId || null);
   const [addressLoading, setAddressLoading] = useState(true);
+  const [addressFormOpen, setAddressFormOpen] = useState(false);
+  const [addressSaving, setAddressSaving] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState({
+    type: "Home",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+  });
 
   // Prescription attachment (optional) — travels to the lab with the order
   const prescriptionInputRef = useRef<HTMLInputElement>(null);
@@ -248,11 +261,16 @@ const CartScreen = () => {
           .eq("user_id", supabaseUserId)
           .order("is_default", { ascending: false });
         if (!error && data) {
-          setSavedAddresses(data);
+          const completeAddresses = data.filter(isCompleteCollectionAddress);
+          const matchingAddresses = servicePincode
+            ? completeAddresses.filter((address) => address.pincode.trim() === servicePincode)
+            : completeAddresses;
+          setSavedAddresses(matchingAddresses);
           if (!selectedAddressId) {
-            const defaultAddr = data.find((a) => a.is_default);
+            const defaultAddr = matchingAddresses.find((a) => a.is_default);
             if (defaultAddr) setSelectedAddressId(defaultAddr.id);
-            else if (data.length > 0) setSelectedAddressId(data[0].id);
+            else if (matchingAddresses.length > 0) setSelectedAddressId(matchingAddresses[0].id);
+            else setAddressFormOpen(true);
           }
         }
       } catch (err) {
@@ -260,7 +278,75 @@ const CartScreen = () => {
       } finally { setAddressLoading(false); }
     };
     fetchAddresses();
-  }, [supabaseUserId]);
+  }, [supabaseUserId, servicePincode]);
+
+  const openNewAddressForm = () => {
+    setEditingAddressId(null);
+    setAddressForm({ type: "Home", address_line1: "", address_line2: "", city: "", state: "" });
+    setAddressFormOpen(true);
+  };
+
+  const openEditAddressForm = (address: SavedAddress) => {
+    setEditingAddressId(address.id);
+    setAddressForm({
+      type: address.type || "Home",
+      address_line1: address.address_line1,
+      address_line2: address.address_line2 || "",
+      city: address.city,
+      state: address.state,
+    });
+    setAddressFormOpen(true);
+  };
+
+  const saveCollectionAddress = async () => {
+    if (!supabaseUserId || !servicePincode) {
+      toast.error("Please select your service PIN first");
+      return;
+    }
+    if (!addressForm.address_line1.trim() || !addressForm.city.trim() || !addressForm.state.trim()) {
+      toast.error("Please enter your complete collection address");
+      return;
+    }
+    setAddressSaving(true);
+    try {
+      const payload = {
+        type: addressForm.type,
+        address_line1: addressForm.address_line1.trim(),
+        address_line2: addressForm.address_line2.trim() || null,
+        city: addressForm.city.trim(),
+        state: addressForm.state.trim(),
+        pincode: servicePincode,
+      };
+      if (editingAddressId) {
+        const { data, error } = await supabase
+          .from("addresses")
+          .update(payload)
+          .eq("id", editingAddressId)
+          .eq("user_id", supabaseUserId)
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .single();
+        if (error) throw error;
+        setSavedAddresses((current) => current.map((address) => address.id === data.id ? data : address));
+        setSelectedAddressId(data.id);
+      } else {
+        const { data, error } = await supabase
+          .from("addresses")
+          .insert({ ...payload, user_id: supabaseUserId, is_default: savedAddresses.length === 0 })
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .single();
+        if (error) throw error;
+        setSavedAddresses((current) => [data, ...current]);
+        setSelectedAddressId(data.id);
+      }
+      setAddressFormOpen(false);
+      toast.success("Collection address saved");
+    } catch (error) {
+      console.error("Collection address save failed:", error);
+      toast.error("Could not save the address. Please try again.");
+    } finally {
+      setAddressSaving(false);
+    }
+  };
 
 
 
@@ -446,17 +532,30 @@ const CartScreen = () => {
 
           {addressLoading ? (
             <Skeleton className="h-16 w-full rounded-2xl" />
-          ) : savedAddresses.length === 0 ? (
-            <button
-              onClick={() => navigate("/saved-addresses")}
-              className={`w-full rounded-2xl border-2 border-dashed transition-all p-5 ${showValidation && !selectedAddressId ? "border-destructive bg-destructive/5" : "border-primary/30 hover:border-primary/50 bg-primary/5"}`}
-            >
-              <div className="flex flex-col items-center py-2 text-center">
-                <MapPin className="w-8 h-8 text-primary mb-2" />
-                <p className="text-xs font-black text-foreground">Add Sample Collection Address</p>
-                <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">Tap here to select or create your address</p>
+          ) : addressFormOpen ? (
+            <div className="space-y-3 rounded-2xl border border-primary/30 bg-primary/5 p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-extrabold text-foreground">{editingAddressId ? "Edit collection address" : "Enter collection address"}</p>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-primary"><Lock className="h-3 w-3" /> PIN {servicePincode || "—"}</div>
               </div>
-            </button>
+              <Select value={addressForm.type} onValueChange={(type) => setAddressForm((current) => ({ ...current, type }))}>
+                <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="Home">Home</SelectItem><SelectItem value="Office">Office</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
+              </Select>
+              <Input value={addressForm.address_line1} onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))} placeholder="House/Flat No., Building, Street *" className="bg-background" />
+              <Input value={addressForm.address_line2} onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))} placeholder="Landmark, Area (optional)" className="bg-background" />
+              <div className="grid grid-cols-2 gap-2">
+                <Input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} placeholder="City *" className="bg-background" />
+                <Input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} placeholder="State *" className="bg-background" />
+              </div>
+              <div className="flex gap-2">
+                {savedAddresses.length > 0 && <Button type="button" variant="outline" className="flex-1" disabled={addressSaving} onClick={() => setAddressFormOpen(false)}>Cancel</Button>}
+                <Button type="button" className="flex-1" disabled={addressSaving || !servicePincode} onClick={saveCollectionAddress}>
+                  {addressSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Address
+                </Button>
+              </div>
+              <p className="text-[10px] leading-relaxed text-muted-foreground">The PIN is locked during this booking. Change your service location from Home before starting another booking.</p>
+            </div>
           ) : (
             (() => {
               const addr =
@@ -479,8 +578,10 @@ const CartScreen = () => {
                       </div>
                       <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
                     </div>
-                    <Check className="w-4 h-4 text-primary shrink-0 mt-1" />
+                    <button type="button" aria-label="Edit collection address" onClick={() => openEditAddressForm(addr)} className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0"><Pencil className="w-4 h-4" /></button>
                   </div>
+                  {savedAddresses.length > 1 && <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">{savedAddresses.map((address) => <Button key={address.id} type="button" size="sm" variant={address.id === addr.id ? "default" : "outline"} onClick={() => setSelectedAddressId(address.id)}>{address.type || "Address"}</Button>)}</div>}
+                  <Button type="button" variant="ghost" size="sm" className="w-full mt-2 text-primary" onClick={openNewAddressForm}><Plus className="w-3.5 h-3.5 mr-1" /> Add another address for this PIN</Button>
                 </div>
               );
             })()
