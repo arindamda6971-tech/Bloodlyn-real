@@ -288,6 +288,18 @@ export const ZomatoStyleHeader = ({
               Add New Address
             </button>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full mt-3 text-primary"
+            onClick={() => {
+              setShowLocationModal(false);
+              navigate("/location-check");
+            }}
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            Change service PIN
+          </Button>
 
         </DrawerContent>
       </Drawer>

@@ -22,7 +22,7 @@ import { sanitizePincode } from "@/utils/inputSanitizers";
 import { useAuth } from "@/hooks/useAuth";
 import { triggerHaptic } from "@/utils/haptics";
 import type { Tables } from "@/integrations/supabase/types";
-import { isCompleteCollectionAddress } from "@/lib/service-pincode";
+import { isCompleteCollectionAddress, setServicePincode } from "@/lib/service-pincode";
 
 import {
   AlertDialog,
@@ -233,6 +233,7 @@ const SavedAddressesScreen = () => {
           .eq("user_id", supabaseUserId);
 
         if (error) throw error;
+        if (editing.is_default) setServicePincode(supabaseUserId, formData.pincode);
       } else {
         const { error } = await supabase
           .from("addresses")
@@ -250,6 +251,7 @@ const SavedAddressesScreen = () => {
           });
 
         if (error) throw error;
+        if (addresses.length === 0) setServicePincode(supabaseUserId, formData.pincode);
       }
 
       await triggerHaptic('success');
@@ -311,6 +313,8 @@ const SavedAddressesScreen = () => {
         .eq("user_id", supabaseUserId);
 
       if (error) throw error;
+      const selected = addresses.find((address) => address.id === id);
+      if (selected) setServicePincode(supabaseUserId, selected.pincode);
       await fetchAddresses();
       queryClient.invalidateQueries();
       toast.success("Default location updated!");

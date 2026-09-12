@@ -266,11 +266,14 @@ const CartScreen = () => {
             ? completeAddresses.filter((address) => address.pincode.trim() === servicePincode)
             : completeAddresses;
           setSavedAddresses(matchingAddresses);
-          if (!selectedAddressId) {
+          if (!selectedAddressId || !matchingAddresses.some((address) => address.id === selectedAddressId)) {
             const defaultAddr = matchingAddresses.find((a) => a.is_default);
             if (defaultAddr) setSelectedAddressId(defaultAddr.id);
             else if (matchingAddresses.length > 0) setSelectedAddressId(matchingAddresses[0].id);
-            else setAddressFormOpen(true);
+            else {
+              setSelectedAddressId(null);
+              setAddressFormOpen(true);
+            }
           }
         }
       } catch (err) {
