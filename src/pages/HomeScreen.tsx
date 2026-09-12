@@ -30,6 +30,7 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
+import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import DeferredMount from "@/components/DeferredMount";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
@@ -302,6 +303,8 @@ const HomeScreen = () => {
             ) : null
           }
         />
+
+        <TakeChargeBanner />
 
         {/* Running Features Marquee */}
         <div className="mt-4 flex overflow-hidden whitespace-nowrap bg-primary/5 py-3 border-y border-primary/10 relative">
