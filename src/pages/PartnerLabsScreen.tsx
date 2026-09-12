@@ -161,7 +161,7 @@ const PartnerLabsScreen = () => {
                 )}
                 <div className="flex gap-3">
                   {/* Lab Icon */}
-                  <motion.div layoutId={`lab-logo-${center.id}`} className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <motion.div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     {center.logo_url ? (
                       <img loading="lazy" decoding="async" width={40} height={40}
                         src={center.logo_url}
@@ -176,7 +176,7 @@ const PartnerLabsScreen = () => {
                   {/* Lab Details */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <motion.h3 layoutId={`lab-name-${center.id}`} className="font-semibold text-foreground truncate">{center.name}</motion.h3>
+                      <motion.h3 className="font-semibold text-foreground truncate">{center.name}</motion.h3>
                       {center.home_collection_available && (
                         <Badge variant="outline" className="text-[10px] flex-shrink-0">
                           Home Collection

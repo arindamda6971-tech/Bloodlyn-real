@@ -367,7 +367,7 @@ const TestDetailScreen = () => {
           <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase mb-1">
             {test.category || "Diagnostic Test"}
           </p>
-          <motion.h2 layoutId={`test-name-${test.id}`} className="text-xl font-extrabold leading-tight text-secondary">{test.name}</motion.h2>
+          <motion.h2 className="text-xl font-extrabold leading-tight text-secondary">{test.name}</motion.h2>
           <div className="flex items-center gap-2 mt-2">
             <span 
               onClick={() => setShowTrustSheet(true)}
