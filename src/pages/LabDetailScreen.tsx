@@ -674,8 +674,8 @@ const LabDetailScreen = () => {
       <MobileLayout showNav={false}>
         <div className="pb-32 bg-slate-50 min-h-screen">
           <div className="relative h-72 w-full rounded-b-[2.5rem] bg-slate-200 animate-pulse overflow-hidden shadow-sm">
-            <div className="absolute top-4 left-4 z-10 pt-safe">
-              <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+            <div className="absolute -top-3 left-4 z-10 pt-safe">
+              <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
                 <ChevronRight className="w-5 h-5 rotate-180 text-slate-400" />
               </button>
             </div>
@@ -700,7 +700,7 @@ const LabDetailScreen = () => {
           <img loading="lazy" decoding="async" src="/lab-banner.png" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pt-safe">
+          <div className="absolute -top-3 left-4 right-4 flex items-center justify-between z-10 pt-safe">
             <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
@@ -729,20 +729,17 @@ const LabDetailScreen = () => {
             </button>
           </div>
 
-          <div className="absolute bottom-10 left-6 right-6">
-            <motion.h1 className="text-2xl font-black text-white leading-tight drop-shadow-md mb-2">{labName}</motion.h1>
-            <div className="flex items-center gap-2">
-               <motion.div className="flex items-center justify-center">
-                 {logoUrl ? (
-                   <img loading="lazy" decoding="async" width={28} height={28} src={logoUrl} alt="Logo" className="w-7 h-7 rounded-lg bg-white p-1 object-contain shadow-sm" />
-                 ) : (
-                   <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                     <Building2 className="w-4 h-4 text-primary" />
-                   </div>
-                 )}
-               </motion.div>
-               <p className="text-[13px] font-semibold text-white/90 drop-shadow-sm">{tagline}</p>
-            </div>
+          <div className="absolute bottom-8 left-6 right-6 flex items-center gap-3">
+             <motion.div className="flex items-center justify-center shrink-0">
+               {logoUrl ? (
+                 <img loading="lazy" decoding="async" width={32} height={32} src={logoUrl} alt="Logo" className="w-8 h-8 rounded-xl bg-white p-1 object-contain shadow-sm" />
+               ) : (
+                 <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                   <Building2 className="w-5 h-5 text-primary" />
+                 </div>
+               )}
+             </motion.div>
+            <motion.h1 className="text-[22px] font-black text-white leading-tight drop-shadow-lg">{labName}</motion.h1>
           </div>
         </div>
 
