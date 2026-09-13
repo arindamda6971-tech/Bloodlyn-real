@@ -607,6 +607,7 @@ const PaymentScreen = () => {
           vendorId: resolvedVendorId,
           selectedLabName: paymentState?.selectedLabName || labName,
           selectedLabId: paymentState?.selectedLabId || labId,
+          orderAddressString: orderAddress ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ") : undefined,
         },
       });
     } catch (error: any) {
