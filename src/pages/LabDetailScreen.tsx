@@ -409,6 +409,9 @@ const ActiveOffers = ({ centerId }: { centerId?: string }) => {
   );
 };
 
+// Simple session cache to prevent showing the skeleton loader on subsequent visits
+const globalLabCache = new Map<string, { labFromDb: any; dynamicTests: DynamicTest[]; packages: DynamicTest[] }>();
+
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
   const navigate = useNavigate();
@@ -418,16 +421,22 @@ const LabDetailScreen = () => {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
-  const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(null);
+  
+  const cached = labId ? globalLabCache.get(labId) : null;
+  const [labFromDb, setLabFromDb] = useState<DiagnosticCenter | null>(cached?.labFromDb || null);
   // Live schedule from the Partner dashboard — same source as the booking slots.
   const { data: partnerSlots } = useLabSlots(labFromDb?.vendor_id ?? null);
-  const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>(cached?.dynamicTests || []);
+  const [isLoading, setIsLoading] = useState(!cached);
 
   // Try to fetch lab from database first
   useEffect(() => {
     const fetchLabFromDb = async () => {
       if (!labId) {
+        setIsLoading(false);
+        return;
+      }
+      if (globalLabCache.has(labId)) {
         setIsLoading(false);
         return;
       }
@@ -463,6 +472,13 @@ const LabDetailScreen = () => {
           }
 
           setDynamicTests(allDynamicTests);
+          if (labId) {
+            globalLabCache.set(labId, {
+              labFromDb: data,
+              dynamicTests: allDynamicTests,
+              packages: [] // Will be populated by the packages effect
+            });
+          }
         }
       } catch (err) {
         console.error('Error fetching lab:', err);
@@ -475,7 +491,7 @@ const LabDetailScreen = () => {
   }, [labId]);
 
   // Separate health-packages fetch + realtime subscription tied to the diagnostic center
-  const [packages, setPackages] = useState<DynamicTest[]>([]);
+  const [packages, setPackages] = useState<DynamicTest[]>(cached?.packages || []);
   useEffect(() => {
     const centerId = labFromDb?.id || labId;
     if (!centerId) return;
@@ -504,6 +520,23 @@ const LabDetailScreen = () => {
           discountPercent: pkg.discount_percent || undefined,
         }))
       );
+      
+      if (labId) {
+        const existing = globalLabCache.get(labId);
+        if (existing) {
+          existing.packages = (data || []).map((pkg: any) => ({
+            id: pkg.id,
+            name: pkg.name,
+            price: Number(pkg.price),
+            originalPrice: pkg.original_price ? Number(pkg.original_price) : undefined,
+            category: 'Health Packages',
+            popular: pkg.is_popular || false,
+            description: pkg.description || undefined,
+            testsCount: pkg.tests_count || undefined,
+            discountPercent: pkg.discount_percent || undefined,
+          }));
+        }
+      }
     };
 
     loadPackages();
@@ -573,6 +606,8 @@ const LabDetailScreen = () => {
     return { ...fallback, tests: [] }; // Prevent hardcoded tests
   };
 
+
+
   const rawLab = getLabData();
   const lab = rawLab || { ...labsData["lal-pathlabs"], tests: [] };
   const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
@@ -633,6 +668,29 @@ const LabDetailScreen = () => {
   const logoUrl = brandData?.logo || (labFromDb?.logo_url) || null;
   const accreditedText = Array.isArray(lab.accredited) ? lab.accredited.join(" & ") : "NABL";
   const reviewsCountText = typeof lab.reviews === "number" ? lab.reviews.toLocaleString() : "1,000";
+
+  if (isLoading) {
+    return (
+      <MobileLayout showNav={false}>
+        <div className="pb-32 bg-slate-50 min-h-screen">
+          <div className="relative h-72 w-full rounded-b-[2.5rem] bg-slate-200 animate-pulse overflow-hidden shadow-sm">
+            <div className="absolute top-4 left-4 z-10 pt-safe">
+              <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <ChevronRight className="w-5 h-5 rotate-180 text-slate-400" />
+              </button>
+            </div>
+          </div>
+          <div className="px-5 -mt-20 relative z-20">
+            <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100/50 mb-6 flex flex-col items-center animate-pulse">
+              <div className="w-20 h-20 bg-slate-200 rounded-2xl mb-4" />
+              <div className="h-6 bg-slate-200 rounded-md w-3/4 mb-2" />
+              <div className="h-4 bg-slate-200 rounded-md w-1/2" />
+            </div>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout showNav={false}>
