@@ -298,7 +298,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     setItems((prev) => {
       // Defensive guard inside setter as well (handles race conditions)
-      if (prev.some((i) => i.id === item.id)) return prev;
+      if (prev.some((i) => i.id === item.id || (item.name && i.name === item.name))) return prev;
       const updated = [...prev, { ...item, quantity: 1 }];
       setLocalCart(updated);
       syncCartToSupabase(updated);
