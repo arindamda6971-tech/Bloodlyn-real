@@ -32,6 +32,7 @@ import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useNotifications } from "@/contexts/NotificationContext";
+import { isCompleteCollectionAddress } from "@/lib/service-pincode";
 
 const menuItems = [
   { icon: HelpCircle, label: "Help & Support", path: "/support" },
@@ -73,11 +74,13 @@ const ProfileScreen = () => {
         setWalletBalance(Number(profileData.wallet_balance ?? 0));
       }
 
-      const { count } = await supabase
+      const { data: addressesData } = await supabase
         .from("addresses")
-        .select("id", { count: "exact", head: true })
+        .select("*")
         .eq("user_id", session.user.id);
-      setAddressCount(count ?? 0);
+      
+      const validAddresses = (addressesData || []).filter(isCompleteCollectionAddress);
+      setAddressCount(validAddresses.length);
 
       const { data: txns } = await supabase
         .from("wallet_transactions")

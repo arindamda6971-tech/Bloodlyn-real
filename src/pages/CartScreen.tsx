@@ -583,7 +583,7 @@ const CartScreen = () => {
                     </div>
                     <button type="button" aria-label="Edit collection address" onClick={() => openEditAddressForm(addr)} className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0"><Pencil className="w-4 h-4" /></button>
                   </div>
-                  {savedAddresses.length > 1 && <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">{savedAddresses.map((address) => <Button key={address.id} type="button" size="sm" variant={address.id === addr.id ? "default" : "outline"} onClick={() => setSelectedAddressId(address.id)}>{address.type || "Address"}</Button>)}</div>}
+                  {savedAddresses.length > 1 && <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">{savedAddresses.map((address) => <Button key={address.id} type="button" size="sm" variant={address.id === addr.id ? "default" : "outline"} onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }}>{address.type || "Address"}</Button>)}</div>}
                   <Button type="button" variant="ghost" size="sm" className="w-full mt-2 text-primary" onClick={openNewAddressForm}><Plus className="w-3.5 h-3.5 mr-1" /> Add another address for this PIN</Button>
                 </div>
               );
