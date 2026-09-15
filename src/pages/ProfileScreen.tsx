@@ -145,8 +145,7 @@ const ProfileScreen = () => {
             { icon: FileText, title: "My Reports", subtitle: "View your test reports", path: "/reports", iconColor: "text-purple-500", iconBg: "bg-purple-50" },
             { icon: MapPin, title: "Saved Addresses", subtitle: "Manage your delivery addresses", path: "/saved-addresses", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
             { icon: HelpCircle, title: "Help & Support", subtitle: "Get help or contact us", path: "/support", iconColor: "text-teal-500", iconBg: "bg-teal-50" },
-            { icon: ShieldCheck, title: "Privacy & Terms", subtitle: "Privacy policy, terms & data settings", path: "/terms", iconColor: "text-blue-600", iconBg: "bg-blue-50" },
-            { icon: Database, title: "Data Attribution", subtitle: "LOINC licensing and data notices", path: "/data-attribution", iconColor: "text-indigo-500", iconBg: "bg-indigo-50" },
+            { icon: ShieldCheck, title: "Privacy & Terms", subtitle: "Policies, terms & data settings", path: "/terms", iconColor: "text-blue-600", iconBg: "bg-blue-50" },
           ].map((item, idx, arr) => (
             <button
               key={item.title}

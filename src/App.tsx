@@ -81,6 +81,7 @@ const ECGDoctorsScreen = lazy(() => import("./pages/ECGDoctorsScreen"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UnauthorizedScreen = lazy(() => import("./pages/UnauthorizedScreen"));
 const UploadPrescriptionScreen = lazy(() => import("./pages/UploadPrescriptionScreen"));
+const PolicyDetailScreen = lazy(() => import("./pages/PolicyDetailScreen"));
 
 const CapacitorInitializer = () => {
   useEffect(() => {
@@ -154,6 +155,7 @@ const AnimatedRoutes = () => {
               <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
               <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
               <Route path="/terms" element={<TermsScreen />} />
+              <Route path="/policy/:id" element={<PolicyDetailScreen />} />
               <Route path="/privacy" element={<PrivacyPolicyScreen />} />
               <Route path="/data-attribution" element={<DataAttributionScreen />} />
               <Route path="/unauthorized" element={<UnauthorizedScreen />} />
