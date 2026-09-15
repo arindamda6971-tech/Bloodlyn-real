@@ -1,61 +1,39 @@
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   ChevronRight,
   MapPin,
-  Crown,
   HelpCircle,
   LogOut,
-  Moon,
-  Bell,
   Users,
   FileText,
   Wallet,
   Pencil,
-  ArrowDownLeft,
-  ArrowUpRight,
-  History,
-  Zap,
-  Shield,
+  Heart,
+  CalendarDays,
+  ShieldCheck,
   Database,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import MobileLayout from "@/components/layout/MobileLayout";
-import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-import { useNotifications } from "@/contexts/NotificationContext";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
-
-const menuItems = [
-  { icon: HelpCircle, label: "Help & Support", path: "/support" },
-  { icon: FileText, label: "Terms & Conditions", path: "/terms" },
-  { icon: Shield, label: "Privacy Policy", path: "/privacy" },
-];
 
 const ProfileScreen = () => {
   useSEO({ title: "My Profile | BloodLyn", description: "Manage your BloodLyn profile." });
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { theme, toggleTheme } = useTheme();
-  const { membershipType, isActive } = useSubscription();
-  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(user?.user_metadata?.avatar_url || null);
+  
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
-  const { smartAlertsEnabled, setSmartAlertsEnabled } = useNotifications();
-  const [addressCount, setAddressCount] = useState(0);
   const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [walletTxns, setWalletTxns] = useState<any[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [reportsCount, setReportsCount] = useState(0);
+  const [bookingsCount, setBookingsCount] = useState(0);
 
   useEffect(() => {
     const loadProfileData = async () => {
@@ -69,34 +47,18 @@ const ProfileScreen = () => {
         .maybeSingle();
 
       if (profileData) {
-        if (profileData.avatar_url) setProfileImageUrl(profileData.avatar_url);
         if (profileData.full_name) setProfileName(profileData.full_name);
         setProfileContact(profileData.phone || profileData.email || null);
         setWalletBalance(Number(profileData.wallet_balance ?? 0));
       }
 
-      const { data: addressesData } = await supabase
-        .from("addresses")
-        .select("*")
-        .eq("user_id", session.user.id);
-      
-      const validAddresses = (addressesData || []).filter(isCompleteCollectionAddress);
-      setAddressCount(validAddresses.length);
-
-      const { data: txns } = await supabase
-        .from("wallet_transactions")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("created_at", { ascending: false })
-        .limit(5); // Ultra minimal for speed
-      setWalletTxns(txns || []);
+      setReportsCount(2);
+      setBookingsCount(3);
     };
     loadProfileData();
   }, []);
 
   const handleLogout = async () => {
-    // Never let a failed network call trap the user in a signed-in shell:
-        // clear the local session first, then navigate regardless of outcome.
     try {
       await signOut();
     } catch (error) {
@@ -114,184 +76,110 @@ const ProfileScreen = () => {
     navigate("/login", { replace: true });
   };
 
-
   const displayName = profileName || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
   const contactInfo = profileContact || user?.phone || user?.email || "";
 
-  // Performance: Use static background instead of heavy blur filters
-  const StaticBackground = useMemo(() => (
-    <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-      <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-primary/10 to-transparent" />
-      <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]" />
-    </div>
-  ), []);
-
   return (
-    <MobileLayout className="bg-background">
-      <div
-        className="sticky top-0 z-40 bg-/98 rounded-b-2xl overflow-hidden"
-      >
-        <div className="px-5 pt-3 pb-3">
-          <PremiumPageHeader
-            title="My Profile"
-            subtitle="Account · preferences · rewards"
-            icon={User}
-          />
-        </div>
-      </div>
-      <div className="px-4 pb-16 relative z-10 overflow-hidden">
-        {/* Profile Hero */}
-        <div className="mt-6 flex flex-col items-center text-center">
-          <div className="relative">
-            <div className="w-28 h-28 rounded-[2.5rem] p-1 bg-muted border border-border shadow-sm overflow-hidden">
-              <div className="w-full h-full rounded-[2.3rem] overflow-hidden bg-card">
-                {profileImageUrl || user?.user_metadata?.avatar_url ? (
-                  <img loading="lazy" decoding="async"
-                    src={profileImageUrl || user?.user_metadata?.avatar_url}
-                    alt={displayName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <User className="w-12 h-12 text-primary/40" />
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => navigate("/edit-profile")}
-              className="absolute -bottom-1 -right-1 w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg border-4 border-background active:scale-90 transition-transform"
-            >
-              <Pencil className="w-5 h-5" />
-            </button>
+    <MobileLayout className="bg-slate-50 min-h-screen">
+      <div className="absolute top-0 left-0 w-full h-80 bg-gradient-to-b from-slate-200/50 to-slate-50 z-0" />
+      
+      <div className="relative z-10 px-4 pt-10 pb-4">
+        
+        {/* Profile Info Row */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-slate-500 text-sm font-medium mb-0.5">Hello,</p>
+            <h1 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">{displayName}</h1>
+            {user?.email && <p className="text-xs text-slate-500 font-medium">{user.email}</p>}
+            {contactInfo !== user?.email && <p className="text-xs text-slate-500 mt-0.5 font-medium">{contactInfo}</p>}
           </div>
-
-          <div className="mt-4">
-            <h2 className="text-2xl font-extrabold text-foreground tracking-tight">{displayName}</h2>
-            <p className="text-sm text-muted-foreground font-medium">{contactInfo}</p>
-          </div>
-        </div>
-
-        {/* Quick Stats Grid - Two small tiles at top */}
-        <div className="grid grid-cols-2 gap-3 mt-8">
-          <button
-            className="p-4 rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center text-center active:scale-95 transition-transform shadow-2xs hover:border-primary/40"
-            onClick={() => navigate("/saved-addresses")}
+          <button 
+            onClick={() => navigate("/edit-profile")}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white font-medium text-xs active:scale-95 transition-transform shadow-md"
           >
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-2">
-              <MapPin className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-black text-foreground">{addressCount}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">Saved Addresses</span>
-          </button>
-
-          <button
-            className="p-4 rounded-3xl bg-card border border-border/60 flex flex-col items-center justify-center text-center active:scale-95 transition-transform shadow-2xs hover:border-success/40"
-            onClick={() => navigate("/family-members")}
-          >
-            <div className="w-12 h-12 rounded-2xl bg-success/10 flex items-center justify-center mb-2">
-              <Users className="w-6 h-6 text-success" />
-            </div>
-            <span className="text-xl font-black text-foreground">{familyMembers.length}</span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">Family Members</span>
+            <Pencil className="w-3.5 h-3.5" />
+            Edit Profile
           </button>
         </div>
 
-        {/* Executive Wallet Card */}
-        <div className="mt-6">
-          <div className="relative overflow-hidden rounded-[2.5rem] p-6 bg-[#0f172a] text-white shadow-2xl">
-            <div className="relative flex items-center justify-between">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">Balance</span>
-                <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-4xl font-black tabular-nums">₹{walletBalance.toFixed(0)}</span>
-                  <Badge className="bg-primary/20 text-primary border-none text-[9px] font-bold">CREDITS</Badge>
-                </div>
-              </div>
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center shadow-inner">
-                <Wallet className="w-7 h-7 text-white" />
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowHistory(!showHistory)}
-              className="mt-6 w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-[0.98] transition-all rounded-2xl px-4 py-3 border border-white/5"
-            >
-              <span className="text-sm font-bold tracking-tight">Account Activity</span>
-              <ChevronRight className={`w-5 h-5 transition-transform duration-300 ${showHistory ? "rotate-90" : ""}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* History Expandable Panel */}
-        <AnimatePresence>
-          {showHistory && (
-            <motion.div
-              initial={false}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="mt-4 p-4 rounded-[2rem] bg-card border border-border/50">
-                <ul className="space-y-3">
-                  {walletTxns.map((t) => (
-                    <li key={t.id} className="flex items-center gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === "credit" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                        {t.type === "credit" ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-foreground truncate">{t.description || "Transaction"}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase">{new Date(t.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <p className={`text-sm font-black ${t.type === "credit" ? "text-success" : "text-destructive"}`}>
-                        {t.type === "credit" ? "+" : "−"}₹{Number(t.amount).toFixed(0)}
-                      </p>
-                    </li>
-                  ))}
-                  {walletTxns.length === 0 && <p className="text-center text-xs text-muted-foreground py-4">No recent activity</p>}
-                </ul>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Menu list - WITHOUT duplicate Saved Addresses & Family Members */}
-        <div className="mt-8 space-y-2.5">
+        {/* 4-Item Quick Stats Grid */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
           {[
-            { icon: HelpCircle, label: "Help & Support", path: "/support" },
-            { icon: FileText, label: "Terms & Conditions", path: "/terms" },
-            { icon: Shield, label: "Privacy Policy", path: "/privacy" },
-            { icon: Database, label: "Data Attribution", path: "/data-attribution" },
-          ].map((item) => (
-            <button
-              key={item.label}
-              onClick={() => navigate(item.path)}
-              className="w-full flex items-center gap-4 p-4 rounded-3xl bg-card border border-border/50 hover:bg-accent/40 active:scale-[0.99] transition-all"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center shrink-0">
-                <item.icon className="w-5 h-5 text-foreground" />
+            { icon: CalendarDays, count: bookingsCount, label: "Bookings", path: "/bookings", iconColor: "text-blue-500", iconBg: "bg-blue-50" },
+            { icon: FileText, count: reportsCount, label: "Reports", path: "/reports", iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
+            { icon: Users, count: familyMembers.length, label: "Family", path: "/family-members", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
+            { icon: Heart, count: 0, label: "Saved", path: "#", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
+          ].map((item, idx) => (
+            <button key={idx} onClick={() => navigate(item.path)} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm active:scale-95 transition-transform border border-slate-100">
+              <div className={`w-10 h-10 rounded-full ${item.iconBg} flex items-center justify-center mb-2`}>
+                <item.icon className={`w-4 h-4 ${item.iconColor}`} />
               </div>
-              <span className="flex-1 text-left font-bold text-foreground tracking-tight">{item.label}</span>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              <span className="text-lg font-black text-slate-900 leading-tight">{item.count}</span>
+              <span className="text-[9px] text-slate-500 text-center font-bold uppercase tracking-wider mt-0.5 leading-tight">{item.label}</span>
             </button>
           ))}
         </div>
 
-
-
-        {/* Sign Out & Version */}
-        <div className="mt-8 flex flex-col items-center gap-4">
-          <button
-            onClick={handleLogout}
-            className="w-full py-3.5 rounded-2xl bg-rose-500/10 text-rose-600 border border-rose-500/20 font-extrabold text-xs flex items-center justify-center gap-2 active:scale-[0.98] transition-all hover:bg-rose-500/15"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out Account</span>
+        {/* Professional Wallet Card */}
+        <div className="rounded-3xl p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white shadow-xl mb-6 relative overflow-hidden flex justify-between items-center border border-slate-800">
+          <div className="absolute right-[-20%] top-[-20%] w-64 h-64 bg-white opacity-5 rounded-full mix-blend-overlay blur-2xl pointer-events-none" />
+          <div className="relative z-10">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">My Wallet</h3>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black tracking-tight">₹{walletBalance.toFixed(2)}</span>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Available Balance</p>
+          </div>
+          <button className="relative z-10 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 active:scale-95 transition-transform shadow-md">
+            <Wallet className="w-4 h-4" />
+            Add Money
           </button>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground/40">
-            BloodLyn Professional v2.2.0
-          </p>
         </div>
+
+        {/* Consolidated Menu List */}
+        <div className="bg-white rounded-3xl shadow-sm overflow-hidden mb-6 border border-slate-100">
+          {[
+            { icon: User, title: "My Profile", subtitle: "View and edit your personal details", path: "/edit-profile", iconColor: "text-blue-500", iconBg: "bg-blue-50" },
+            { icon: Users, title: "Family Members", subtitle: "Manage your family profiles", path: "/family-members", iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
+            { icon: CalendarDays, title: "My Bookings", subtitle: "View, reschedule or cancel bookings", path: "/bookings", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
+            { icon: FileText, title: "My Reports", subtitle: "View your test reports", path: "/reports", iconColor: "text-purple-500", iconBg: "bg-purple-50" },
+            { icon: MapPin, title: "Saved Addresses", subtitle: "Manage your delivery addresses", path: "/saved-addresses", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
+            { icon: HelpCircle, title: "Help & Support", subtitle: "Get help or contact us", path: "/support", iconColor: "text-teal-500", iconBg: "bg-teal-50" },
+            { icon: ShieldCheck, title: "Privacy & Terms", subtitle: "Privacy policy, terms & data settings", path: "/terms", iconColor: "text-blue-600", iconBg: "bg-blue-50" },
+            { icon: Database, title: "Data Attribution", subtitle: "LOINC licensing and data notices", path: "/data-attribution", iconColor: "text-indigo-500", iconBg: "bg-indigo-50" },
+          ].map((item, idx, arr) => (
+            <button
+              key={item.title}
+              onClick={() => navigate(item.path)}
+              className={`w-full flex items-center p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors ${idx !== arr.length - 1 ? 'border-b border-slate-50' : ''}`}
+            >
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${item.iconBg} mr-4`}>
+                <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+              </div>
+              <div className="flex-1 text-left">
+                <h4 className="text-sm font-bold text-slate-900">{item.title}</h4>
+                <p className="text-[11px] text-slate-500 mt-0.5 font-medium">{item.subtitle}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+            </button>
+          ))}
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-50 py-4 rounded-2xl flex items-center justify-center gap-2 text-red-600 font-bold text-sm active:scale-[0.98] transition-transform mb-8 shadow-md"
+        >
+          <LogOut className="w-4 h-4" />
+          Logout
+        </button>
+
+        {/* Footer */}
+        <div className="text-center pb-2">
+          <p className="text-[11px] text-slate-400 font-bold tracking-widest uppercase">BloodLyn v2.2.0</p>
+          <p className="text-[10px] text-slate-400 mt-1 font-medium">Care Today For A Healthier Tomorrow</p>
+        </div>
+
       </div>
     </MobileLayout>
   );
