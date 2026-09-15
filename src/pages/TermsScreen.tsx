@@ -103,6 +103,7 @@ const TermsScreen = () => {
             </motion.section>
           ))}
 
+
           <motion.section
             initial={false}
             animate={{ opacity: 1, y: 0 }}

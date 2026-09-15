@@ -76,6 +76,7 @@ const AddFamilyMemberScreen = lazy(() => import("./pages/AddFamilyMemberScreen")
 const PaymentMethodsScreen = lazy(() => import("./pages/PaymentMethodsScreen"));
 const TermsScreen = lazy(() => import("./pages/TermsScreen"));
 const PrivacyPolicyScreen = lazy(() => import("./pages/PrivacyPolicyScreen"));
+const DataAttributionScreen = lazy(() => import("./pages/DataAttributionScreen"));
 const ECGDoctorsScreen = lazy(() => import("./pages/ECGDoctorsScreen"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const UnauthorizedScreen = lazy(() => import("./pages/UnauthorizedScreen"));
@@ -154,6 +155,7 @@ const AnimatedRoutes = () => {
               <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
               <Route path="/terms" element={<TermsScreen />} />
               <Route path="/privacy" element={<PrivacyPolicyScreen />} />
+              <Route path="/data-attribution" element={<DataAttributionScreen />} />
               <Route path="/unauthorized" element={<UnauthorizedScreen />} />
               <Route path="*" element={<NotFound />} />
           </Routes>

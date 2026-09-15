@@ -19,6 +19,7 @@ import {
   History,
   Zap,
   Shield,
+  Database,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -260,6 +261,7 @@ const ProfileScreen = () => {
             { icon: HelpCircle, label: "Help & Support", path: "/support" },
             { icon: FileText, label: "Terms & Conditions", path: "/terms" },
             { icon: Shield, label: "Privacy Policy", path: "/privacy" },
+            { icon: Database, label: "Data Attribution", path: "/data-attribution" },
           ].map((item) => (
             <button
               key={item.label}
