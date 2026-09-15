@@ -50,11 +50,7 @@ const PremiumPageHeader = ({
           )}
         </div>
 
-        {badgeText && (
-          <span className="shrink-0 text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-            {badgeText}
-          </span>
-        )}
+
 
         {rightSlot && <div className="shrink-0">{rightSlot}</div>}
       </div>
