@@ -84,6 +84,9 @@ const UploadPrescriptionScreen = lazy(() => import("./pages/UploadPrescriptionSc
 const PolicyDetailScreen = lazy(() => import("./pages/PolicyDetailScreen"));
 const TicketDetailScreen = lazy(() => import("./pages/TicketDetailScreen"));
 const TicketHistoryScreen = lazy(() => import("./pages/TicketHistoryScreen"));
+const WalletScreen = lazy(() => import("./pages/wallet/WalletScreen"));
+const AddMoneyScreen = lazy(() => import("./pages/wallet/AddMoneyScreen"));
+const TransactionDetailScreen = lazy(() => import("./pages/wallet/TransactionDetailScreen"));
 
 const CapacitorInitializer = () => {
   useEffect(() => {
@@ -145,6 +148,9 @@ const AnimatedRoutes = () => {
               <Route path="/support" element={<ProtectedRoute><SupportScreen /></ProtectedRoute>} />
               <Route path="/support/ticket/:id" element={<ProtectedRoute><TicketDetailScreen /></ProtectedRoute>} />
               <Route path="/support/history" element={<ProtectedRoute><TicketHistoryScreen /></ProtectedRoute>} />
+              <Route path="/wallet" element={<ProtectedRoute><WalletScreen /></ProtectedRoute>} />
+              <Route path="/wallet/add" element={<ProtectedRoute><AddMoneyScreen /></ProtectedRoute>} />
+              <Route path="/wallet/transaction/:id" element={<ProtectedRoute><TransactionDetailScreen /></ProtectedRoute>} />
               <Route path="/physio-consult" element={<ProtectedRoute><PhysioConsultScreen /></ProtectedRoute>} />
               <Route path="/physio-booking" element={<Navigate replace to="/physio-consult" />} />
               <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />

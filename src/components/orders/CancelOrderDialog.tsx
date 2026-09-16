@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import { FIXED_COLLECTION_SLOTS } from "@/lib/lab-slots";
 import { format, addDays } from "date-fns";
-
+import { walletService } from "@/lib/walletService";
 type Reason = "preparation" | "reschedule" | "not_now";
 
 interface CancelOrderDialogProps {
@@ -112,11 +112,11 @@ const CancelOrderDialog = ({
         description: `${format(targetDate, "MMM dd, yyyy")} • ${targetSlot}`,
       });
       onSuccess("rescheduled");
+      setSubmitting(false);
       close();
     } catch (e: any) {
-      toast.error("Could not reschedule", { description: e.message ?? "Please try again." });
-    } finally {
       setSubmitting(false);
+      toast.error("Could not reschedule", { description: e.message ?? "Please try again." });
     }
   };
 
@@ -162,7 +162,7 @@ const CancelOrderDialog = ({
   const handleWalletRefund = async () => {
     setSubmitting(true);
     try {
-      // 1. Cancel the order (RLS allows transition to 'cancelled' on pending/confirmed)
+      // 1. Cancel the order
       const { error: cancelErr } = await supabase
         .from("orders")
         .update({ status: "cancelled", cancellation_reason: "User requested wallet refund", cancelled_at: new Date().toISOString() })
@@ -170,41 +170,27 @@ const CancelOrderDialog = ({
         .eq("user_id", userId);
       if (cancelErr) throw cancelErr;
 
-      // 2. Read current wallet balance
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("wallet_balance")
-        .eq("id", userId)
-        .maybeSingle();
-      const current = Number(profile?.wallet_balance ?? 0);
-      const newBalance = current + Number(orderTotal);
+      // 2. Refund using the unified walletService
+      const refundResult = await walletService.refundOrder(
+        userId, 
+        Number(orderTotal), 
+        orderId, 
+        "User requested wallet refund"
+      );
 
-      // 3. Update wallet
-      const { error: walletErr } = await supabase
-        .from("profiles")
-        .update({ wallet_balance: newBalance })
-        .eq("id", userId);
-      if (walletErr) throw walletErr;
+      if (!refundResult.success) {
+        throw new Error("Failed to credit refund to wallet");
+      }
 
-      // 4. Insert ledger entry
-      await supabase.from("wallet_transactions").insert({
-        user_id: userId,
-        amount: Number(orderTotal),
-        type: "credit",
-        description: `Refund for cancelled order`,
-        order_id: orderId,
-        balance_after: newBalance,
-      });
-
-      toast.success("Order cancelled & wallet credited", {
-        description: `₹${orderTotal} added to your wallet`,
+      toast.success("Order Cancelled Successfully", {
+        description: `₹${orderTotal} has been refunded to your BloodLyn Wallet.`,
       });
       onSuccess("cancelled");
+      setSubmitting(false);
       close();
     } catch (e: any) {
-      toast.error("Could not cancel order", { description: e.message ?? "Please try again." });
-    } finally {
       setSubmitting(false);
+      toast.error("Could not cancel order", { description: e.message ?? "Please try again." });
     }
   };
 

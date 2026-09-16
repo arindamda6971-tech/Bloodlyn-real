@@ -15,7 +15,7 @@ import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
 import { getStoredPrescription, clearStoredPrescription } from "@/lib/order-prescription";
-
+import { useAuth } from "@/hooks/useAuth";
 
 interface PaymentState {
   cartItems: Array<{
@@ -54,6 +54,24 @@ const PaymentScreen = () => {
   const { pincode: userPincode } = useUserPincode();
 
   const stateSubtotal = paymentState?.subtotal || cartSubtotal;
+  
+  const { user } = useAuth();
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [useWallet, setUseWallet] = useState(false);
+  
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (user?.id) {
+        import("@/lib/walletService").then(({ walletService }) => {
+          walletService.getWallet(user.id).then(({ wallet }) => {
+            if (wallet) setWalletBalance(wallet.available_balance);
+          });
+        });
+      }
+    };
+    fetchBalance();
+  }, [user?.id]);
+
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
@@ -194,7 +212,9 @@ const PaymentScreen = () => {
   const platformFeePercent = usePlatformFeePercent();
   const basePlatformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
   const platformFee = isFreeDelivery ? 0 : basePlatformFee;
-  const total = effectiveSubtotal - discount + platformFee;
+  const baseTotal = effectiveSubtotal - discount + platformFee;
+  const walletDeduction = useWallet ? Math.min(walletBalance, baseTotal) : 0;
+  const total = baseTotal - walletDeduction;
 
 
   const applyCoupon = () => {
@@ -586,6 +606,18 @@ const PaymentScreen = () => {
       clearCart();
       clearStoredPrescription();
 
+      // Deduct wallet balance if used
+      if (useWallet && walletDeduction > 0 && user?.id) {
+        import("@/lib/walletService").then(({ walletService }) => {
+          walletService.chargeWallet(
+            user.id,
+            walletDeduction,
+            fnData?.orderId || fnData?.id || 'unknown_order',
+            "Booking Payment"
+          );
+        });
+      }
+
       } catch (postOrderError) {
         console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
       }
@@ -966,12 +998,44 @@ const PaymentScreen = () => {
                 <span className="text-foreground font-semibold tabular-nums">₹ {platformFee}.00</span>
               </div>
             )}
+            {useWallet && walletDeduction > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Wallet Used</span>
+                <span className="text-primary font-bold tabular-nums">- ₹ {walletDeduction}.00</span>
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
               <span className="font-bold text-foreground">Payable Amount</span>
               <span className="font-black text-lg text-primary tabular-nums">₹ {total}.00</span>
             </div>
           </div>
         </motion.div>
+
+        {/* Use Wallet Balance Toggle */}
+        {walletBalance > 0 && (
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4 mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Use Wallet Balance</h3>
+                <p className="text-xs text-muted-foreground">Available: <span className="font-semibold text-foreground">₹ {walletBalance.toFixed(2)}</span></p>
+              </div>
+            </div>
+            
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                value="" 
+                className="sr-only peer" 
+                checked={useWallet}
+                onChange={() => setUseWallet(!useWallet)}
+              />
+              <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </motion.div>
+        )}
 
         {/* Split Pay Button - Select Mode + Pay Now (Moved from fixed bottom) */}
         <motion.div 

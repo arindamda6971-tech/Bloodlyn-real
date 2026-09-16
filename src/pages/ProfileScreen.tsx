@@ -14,6 +14,7 @@ import {
   CalendarDays,
   ShieldCheck,
   Database,
+  Plus,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,6 +23,8 @@ import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
+import { walletService } from "@/lib/walletService";
+import { WalletSummary } from "@/types/wallet";
 
 const ProfileScreen = () => {
   useSEO({ title: "My Profile | BloodLyn", description: "Manage your BloodLyn profile." });
@@ -32,6 +35,7 @@ const ProfileScreen = () => {
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [walletSummary, setWalletSummary] = useState<WalletSummary>({ moneyAdded: 0, refunds: 0, spent: 0 });
   const [reportsCount, setReportsCount] = useState(0);
   const [bookingsCount, setBookingsCount] = useState(0);
 
@@ -50,6 +54,9 @@ const ProfileScreen = () => {
         if (profileData.full_name) setProfileName(profileData.full_name);
         setProfileContact(profileData.phone || profileData.email || null);
         setWalletBalance(Number(profileData.wallet_balance ?? 0));
+        
+        const { summary } = await walletService.getWallet(session.user.id);
+        setWalletSummary(summary);
       }
 
       setReportsCount(2);
@@ -120,20 +127,37 @@ const ProfileScreen = () => {
           ))}
         </div>
 
-        {/* Professional Wallet Card */}
-        <div className="rounded-3xl p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-black text-white shadow-xl mb-6 relative overflow-hidden flex justify-between items-center border border-slate-800">
-          <div className="absolute right-[-20%] top-[-20%] w-64 h-64 bg-white opacity-5 rounded-full mix-blend-overlay blur-2xl pointer-events-none" />
-          <div className="relative z-10">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">My Wallet</h3>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black tracking-tight">₹{walletBalance.toFixed(2)}</span>
+        {/* Ultra-Professional Wallet Card (Compact) */}
+        <div 
+          onClick={() => navigate('/wallet')}
+          className="rounded-3xl p-4 mb-5 relative overflow-hidden bg-gradient-to-b from-[#18191c] to-[#0a0a0c] border border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] cursor-pointer active:scale-[0.98] transition-transform"
+        >
+          {/* Subtle top edge highlight for glass effect */}
+          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          
+          {/* Subtle glowing orb in the background */}
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary/20 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
+          <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
+          
+          <div className="relative z-10 mb-4 flex justify-between items-center">
+            <div className="flex flex-col">
+              <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-2.5 flex items-center gap-2 opacity-90">
+                <Wallet className="w-4 h-4 text-slate-300" strokeWidth={2} />
+                BloodLyn Wallet
+              </h3>
+              <div className="flex flex-col gap-1">
+                <span className="text-[32px] leading-[0.8] font-bold tracking-tight text-white drop-shadow-sm">₹{walletBalance.toFixed(2)}</span>
+                <p className="text-xs text-slate-400 font-medium">Available Balance</p>
+              </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Available Balance</p>
+            <button 
+              onClick={(e) => { e.stopPropagation(); navigate('/wallet/add'); }}
+              className="bg-white hover:bg-slate-50 text-slate-900 rounded-full px-4 py-2 flex items-center justify-center transition-transform active:scale-95 shadow-md gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold">Add Money</span>
+            </button>
           </div>
-          <button className="relative z-10 bg-white text-slate-900 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 active:scale-95 transition-transform shadow-md">
-            <Wallet className="w-4 h-4" />
-            Add Money
-          </button>
         </div>
 
         {/* Consolidated Menu List */}
