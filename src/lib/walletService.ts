@@ -127,9 +127,6 @@ export const walletService = {
 
       await supabase.from('wallet_transactions').insert(transaction);
 
-      // 3. Update profiles table for redundancy/quick access (as currently used in ProfileScreen)
-      await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
-
       return { success: true, newBalance };
     } catch (err) {
       console.error("Failed to add money:", err);
@@ -168,7 +165,6 @@ export const walletService = {
       };
 
       await supabase.from('wallet_transactions').insert(transaction);
-      await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
 
       return { success: true, newBalance };
     } catch (err) {
@@ -220,7 +216,6 @@ export const walletService = {
       };
 
       await supabase.from('wallet_transactions').insert(transaction);
-      await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
 
       return { success: true, newBalance };
     } catch (err) {

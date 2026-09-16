@@ -46,18 +46,18 @@ const ProfileScreen = () => {
 
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("avatar_url, full_name, phone, email, wallet_balance")
+        .select("avatar_url, full_name, phone, email")
         .eq("id", session.user.id)
         .maybeSingle();
 
       if (profileData) {
         if (profileData.full_name) setProfileName(profileData.full_name);
         setProfileContact(profileData.phone || profileData.email || null);
-        setWalletBalance(Number(profileData.wallet_balance ?? 0));
-        
-        const { summary } = await walletService.getWallet(session.user.id);
-        setWalletSummary(summary);
       }
+
+      const { wallet, summary } = await walletService.getWallet(session.user.id);
+      setWalletBalance(Number(wallet?.available_balance ?? 0));
+      setWalletSummary(summary);
 
       setReportsCount(2);
       setBookingsCount(3);
