@@ -358,7 +358,7 @@ const HomeScreen = () => {
             <div
               key={action.label}
               onClick={() => navigate(action.path)}
-              className="w-full relative overflow-hidden bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
+              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
             >
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
@@ -429,7 +429,7 @@ const HomeScreen = () => {
 
         {/* Doctor Banner */}
         <section className="px-4 mt-8 mb-8 section-defer">
-          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
+          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate transform-gpu rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
             
             {/* Background Image */}
             <OptimizedImage

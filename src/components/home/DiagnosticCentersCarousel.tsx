@@ -133,7 +133,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   return (
     <div className="relative py-6 my-4">
       {/* Soft depth background for the entire section */}
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-lg shadow-[0_10px_40px_rgb(0,0,0,0.03)] -z-10" />
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-lg -z-10" />
       
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-6">

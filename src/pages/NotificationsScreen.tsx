@@ -66,8 +66,20 @@ const NotificationsScreen = () => {
     <MobileLayout showNav={false}>
       <ScreenHeader
         title="Notifications"
+        rightAction={
+          notifications.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearNotifications}
+              className="text-destructive hover:text-destructive h-8 text-xs font-medium"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Clear all
+            </Button>
+          ) : undefined
+        }
       />
-
 
       <div className="px-4 pb-10">
         {notifications.length === 0 ? (
@@ -89,17 +101,6 @@ const NotificationsScreen = () => {
           </motion.div>
         ) : (
           <>
-            <div className="flex justify-end -mt-1 mb-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearNotifications}
-                className="text-destructive hover:text-destructive h-8 text-xs"
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-1" />
-                Clear all
-              </Button>
-            </div>
 
             <AnimatePresence initial={false}>
               {grouped.map(([label, items]) => (
