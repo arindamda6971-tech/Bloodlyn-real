@@ -12,14 +12,14 @@ const TermsScreen = () => {
   return (
     <MobileLayout className="bg-slate-50 min-h-screen pb-6">
       {/* Header */}
-      <div className="bg-white px-4 pt-6 pb-6 shadow-sm sticky top-0 z-20">
+      <div className="bg-white px-4 pt-6 pb-2 sticky top-0 z-20">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Privacy & Terms</h1>
           <p className="text-sm font-medium text-slate-500 mt-1">Policies, terms and important information</p>
         </div>
       </div>
 
-      <div className="px-4 py-6 space-y-8">
+      <div className="px-4 pt-4 pb-6 space-y-8">
         {POLICY_CATEGORIES.map((category) => (
           <section key={category.id} className="space-y-3">
             <h2 className="text-xs font-bold tracking-widest text-slate-400 uppercase ml-2">

@@ -244,47 +244,6 @@ const SupportScreen = () => {
         />
       </div>
 
-      {/* My Tickets Snippet */}
-      {tickets.length > 0 && !searchQuery && (
-        <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-bold text-slate-900">My Support Tickets</h3>
-            <button 
-              onClick={() => navigate('/support/history')}
-              className="text-xs font-bold text-blue-600 active:scale-95 transition-transform"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-3">
-            {tickets.slice(0, 2).map((ticket: any) => (
-              <button 
-                key={ticket.id} 
-                onClick={() => navigate(`/support/ticket/${ticket.id}`)}
-                className="w-full text-left bg-slate-50 rounded-2xl p-4 flex items-center gap-3 active:scale-95 transition-transform"
-              >
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                  <Ticket className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-900 truncate">{ticket.subject || ticket.category || "Support Ticket"}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 truncate">{ticket.ticket_number}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${
-                    ticket.status === 'open' ? 'bg-amber-100 text-amber-700' :
-                    ticket.status === 'resolved' ? 'bg-emerald-100 text-emerald-700' :
-                    'bg-slate-200 text-slate-700'
-                  }`}>
-                    {ticket.status}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Categories */}
       <div>
         <h2 className="text-sm font-bold text-slate-900 mb-4 px-1">Select a problem category</h2>
