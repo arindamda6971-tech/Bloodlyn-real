@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { MapPin, ChevronDown, Bell, Phone, Coins, Crosshair, Check, ShieldCheck, Loader2, ShoppingCart, X, Plus, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
@@ -24,6 +24,7 @@ export interface AddressItem {
   id: string;
   type: string;
   address_line1: string;
+  address_line2?: string;
   city?: string;
   state?: string;
   pincode: string;
@@ -43,66 +44,86 @@ export const ZomatoStyleHeader = ({
   const cartCount = items.length;
   const { pincode } = useUserPincode();
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState("Delivery PIN • Select your service area");
+  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>({
+    title: "Delivery PIN",
+    line: "Select your service area",
+  });
   const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([]);
   const [switching, setSwitching] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
 
   // Load user's real saved addresses from Supabase
-  const loadAddresses = async () => {
-    if (!user) return;
+  const loadAddresses = useCallback(async () => {
+    if (!user?.id) return;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("addresses")
-        .select("id, type, address_line1, city, state, pincode, is_default")
+        .select("id, type, address_line1, address_line2, city, state, pincode, is_default")
         .eq("user_id", user.id)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: false });
 
+      if (error) throw error;
       const completeAddresses = (data || []).filter(isCompleteCollectionAddress);
       if (completeAddresses.length > 0) {
         setSavedAddresses(completeAddresses.map((a) => ({ ...a, type: a.type ?? "Home", is_default: a.is_default ?? false })));
         const defaultAddr = completeAddresses.find((a) => a.is_default) || completeAddresses[0];
         const title = defaultAddr.type || "Home";
-        const line = `${defaultAddr.address_line1}${defaultAddr.city ? `, ${defaultAddr.city}` : ''}`;
-        setCurrentAddress(`${title} • ${line}`);
+        const line = [defaultAddr.address_line1, defaultAddr.address_line2, defaultAddr.city, defaultAddr.state, defaultAddr.pincode]
+          .filter(Boolean)
+          .join(", ");
+        setCurrentAddress({ title, line });
         setSelectedId(defaultAddr.id);
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
-        setCurrentAddress(`Delivery PIN • ${pincode || "Select your service area"}`);
+        setCurrentAddress({ title: "Delivery PIN", line: pincode || "Select your service area" });
       }
 
 
     } catch (e) {
       console.error("Failed to fetch user addresses:", e);
     }
-  };
+  }, [user?.id, pincode]);
 
   useEffect(() => {
-    loadAddresses();
-  }, [user, pincode]);
+    void loadAddresses();
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void loadAddresses();
+    };
+    window.addEventListener("focus", loadAddresses);
+    window.addEventListener("pageshow", loadAddresses);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      window.removeEventListener("focus", loadAddresses);
+      window.removeEventListener("pageshow", loadAddresses);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [loadAddresses]);
 
   const handleSelectAddress = async (loc: AddressItem) => {
     if (!user) {
       const title = loc.type || "Home";
       const line = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''}`;
-      setCurrentAddress(`${title} • ${line}`);
+      setCurrentAddress({ title, line });
       setShowLocationModal(false);
       return;
     }
 
     setSwitching(loc.id);
     try {
-      // Set all user addresses to is_default = false
-      await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
-      // Set chosen address to is_default = true
-      await supabase.from("addresses").update({ is_default: true }).eq("id", loc.id);
+      // The database trigger clears the previous default in the same transaction.
+      const { error } = await supabase
+        .from("addresses")
+        .update({ is_default: true })
+        .eq("id", loc.id)
+        .eq("user_id", user.id);
+      if (error) throw error;
 
       const title = loc.type || "Home";
-      const line = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''}`;
-      setCurrentAddress(`${title} • ${line}`);
+      const line = [loc.address_line1, loc.address_line2, loc.city, loc.state, loc.pincode].filter(Boolean).join(", ");
+      setCurrentAddress({ title, line });
       setSelectedId(loc.id);
       setSavedAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === loc.id })));
       setServicePincode(user.id, loc.pincode);
@@ -122,11 +143,9 @@ export const ZomatoStyleHeader = ({
 
   const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
-  const addressTitle = currentAddress.split("•")[0]?.trim() || "Delivery Location";
-  // De-duplicate repeated fragments (e.g. "PIN 721424, PIN 721424") coming from
-  // partially filled address rows so the subtitle always reads cleanly.
+  const addressTitle = currentAddress.title || "Delivery Location";
   const addressLine = (() => {
-    const raw = currentAddress.split("•")[1]?.trim();
+    const raw = currentAddress.line?.trim();
     if (!raw) return "Select your location";
     const parts = raw
       .split(",")

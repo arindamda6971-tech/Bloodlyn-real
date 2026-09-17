@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Search, ChevronRight, Upload, CheckCircle2, Ticket, History } from "lucide-react";
+import { ArrowLeft, Search, ChevronRight, Upload, CheckCircle2, Ticket, History, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
@@ -136,7 +137,7 @@ const SupportScreen = () => {
   };
 
   const autoCreateTicket = async (issueNode: IssueNode) => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || isSubmitting) return;
     
     // Determine priority
     let priority: "low"|"medium"|"high"|"critical" = "medium";
@@ -178,7 +179,7 @@ const SupportScreen = () => {
   };
 
   const submitOtherTicket = async () => {
-    if (!description.trim() || !selectedCategory) return;
+    if (!description.trim() || !selectedCategory || isSubmitting) return;
     
     setIsSubmitting(true);
     try {
@@ -524,6 +525,28 @@ const SupportScreen = () => {
           {step === "SUCCESS" && <motion.div key="success">{renderSuccess()}</motion.div>}
         </AnimatePresence>
       </div>
+      {isSubmitting && typeof document !== "undefined" && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-background/90 px-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="ticket-progress-title"
+          aria-describedby="ticket-progress-description"
+        >
+          <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+            </div>
+            <h2 id="ticket-progress-title" className="text-xl font-black text-foreground">
+              Creating your request…
+            </h2>
+            <p id="ticket-progress-description" className="mt-2 text-sm font-medium text-muted-foreground">
+              Please hold on while we securely send your request to our support team.
+            </p>
+          </div>
+        </div>,
+        document.body,
+      )}
     </MobileLayout>
   );
 };

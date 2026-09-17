@@ -25,6 +25,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
 import { walletService } from "@/lib/walletService";
 import { WalletSummary } from "@/types/wallet";
+import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
 
 const ProfileScreen = () => {
   useSEO({ title: "My Profile | BloodLyn", description: "Manage your BloodLyn profile." });
@@ -38,6 +39,7 @@ const ProfileScreen = () => {
   const [walletSummary, setWalletSummary] = useState<WalletSummary>({ moneyAdded: 0, refunds: 0, spent: 0 });
   const [reportsCount, setReportsCount] = useState(0);
   const [bookingsCount, setBookingsCount] = useState(0);
+  const { favoriteCount } = useFavoriteLabs();
 
   useEffect(() => {
     const loadProfileData = async () => {
@@ -115,7 +117,7 @@ const ProfileScreen = () => {
             { icon: CalendarDays, count: bookingsCount, label: "Bookings", path: "/bookings", iconColor: "text-blue-500", iconBg: "bg-blue-50" },
             { icon: FileText, count: reportsCount, label: "Reports", path: "/reports", iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
             { icon: Users, count: familyMembers.length, label: "Family", path: "/family-members", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
-            { icon: Heart, count: 0, label: "Saved", path: "#", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
+            { icon: Heart, count: favoriteCount, label: "Saved", path: "/saved-labs", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
           ].map((item, idx) => (
             <button key={idx} onClick={() => navigate(item.path)} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm active:scale-95 transition-transform border border-slate-100">
               <div className={`w-10 h-10 rounded-full ${item.iconBg} flex items-center justify-center mb-2`}>
@@ -168,6 +170,7 @@ const ProfileScreen = () => {
             { icon: CalendarDays, title: "My Bookings", subtitle: "View, reschedule or cancel bookings", path: "/bookings", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
             { icon: FileText, title: "My Reports", subtitle: "View your test reports", path: "/reports", iconColor: "text-purple-500", iconBg: "bg-purple-50" },
             { icon: MapPin, title: "Saved Addresses", subtitle: "Manage your delivery addresses", path: "/saved-addresses", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
+            { icon: Heart, title: "Saved Labs", subtitle: "View your favorite partner labs", path: "/saved-labs", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
             { icon: HelpCircle, title: "Help & Support", subtitle: "Get help or contact us", path: "/support", iconColor: "text-teal-500", iconBg: "bg-teal-50" },
             { icon: ShieldCheck, title: "Privacy & Terms", subtitle: "Policies, terms & data settings", path: "/terms", iconColor: "text-blue-600", iconBg: "bg-blue-50" },
           ].map((item, idx, arr) => (
