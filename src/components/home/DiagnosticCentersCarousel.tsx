@@ -1,9 +1,11 @@
 import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Star, ChevronRight, MapPin, BadgeCheck } from "lucide-react";
+import { Building2, Star, ChevronRight, MapPin, BadgeCheck, Heart } from "lucide-react";
 import LabBanner from "@/components/labs/LabBanner";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
 
 interface DiagnosticCenter {
   id: string;
@@ -32,7 +34,12 @@ const fallbackMeta = [
   { distance: "3.2 km", tagline: "Your Health, Our Priority", trustBadge: "Quality Assured" },
 ];
 
-const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: number }) => {
+const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
+  center: DiagnosticCenter;
+  index: number;
+  favorite: boolean;
+  onToggleFavorite: (labId: string) => void;
+}) => {
   const isClosed = center.isActive === false;
   const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
 
@@ -68,6 +75,22 @@ const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: numb
             fetchPriority="high"
           />
           <div className="absolute inset-0 bg-black/5" />
+
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="absolute right-3 top-3 z-20 h-10 w-10 rounded-full border border-border/50 bg-card/95 shadow-md backdrop-blur-sm"
+            aria-label={favorite ? `Remove ${center.name} from saved labs` : `Save ${center.name}`}
+            aria-pressed={favorite}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onToggleFavorite(center.id);
+            }}
+          >
+            <Heart className={`h-5 w-5 ${favorite ? "fill-destructive text-destructive" : "text-foreground"}`} />
+          </Button>
           
           {/* Top Left Pill */}
           <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
@@ -79,7 +102,7 @@ const LabCard = memo(({ center, index }: { center: DiagnosticCenter, index: numb
 
           {/* Closed Indicator */}
           {isClosed && (
-            <div className="absolute top-3 right-3 bg-destructive/90 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg z-10">
+            <div className="absolute bottom-3 right-3 bg-destructive/90 text-destructive-foreground text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg z-10">
               Closed
             </div>
           )}
@@ -129,6 +152,7 @@ LabCard.displayName = "LabCard";
 
 const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselProps) => {
   const navigate = useNavigate();
+  const { isFavorite, toggleFavorite } = useFavoriteLabs();
 
   return (
     <div className="relative py-6 my-4">
@@ -165,7 +189,13 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
         }}
       >
         {centers.map((center, index) => (
-          <LabCard key={center.id} center={center} index={index} />
+          <LabCard
+            key={center.id}
+            center={center}
+            index={index}
+            favorite={isFavorite(center.id)}
+            onToggleFavorite={toggleFavorite}
+          />
         ))}
         {/* Spacer at the end for padding */}
         <div className="flex-shrink-0 w-2 h-full" aria-hidden="true" />
