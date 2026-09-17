@@ -290,6 +290,49 @@ export type Database = {
         }
         Relationships: []
       }
+      favorite_labs: {
+        Row: {
+          created_at: string
+          id: string
+          lab_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lab_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lab_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_labs_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_labs_lab_id_fkey"
+            columns: ["lab_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_centers_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "favorite_labs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lab_offers: {
         Row: {
           created_at: string
