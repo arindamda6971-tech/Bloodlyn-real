@@ -38,6 +38,7 @@ const RoutePrefetcher = () => {
       import("../pages/NotificationsScreen");
       import("../pages/SubscriptionScreen");
       import("../pages/SavedAddressesScreen");
+      import("../pages/SavedLabsScreen");
       import("../pages/DoctorConsultScreen");
       import("../pages/PartnerLabsScreen");
       import("../pages/LabDetailScreen");

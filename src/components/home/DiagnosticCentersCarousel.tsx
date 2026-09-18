@@ -1,7 +1,6 @@
 import React, { memo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Star, ChevronRight, MapPin, BadgeCheck, Heart } from "lucide-react";
-import LabBanner from "@/components/labs/LabBanner";
+import { Building2, Star, MapPin, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";

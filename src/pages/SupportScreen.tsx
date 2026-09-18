@@ -9,6 +9,7 @@ import { SUPPORT_CATEGORIES, MOCK_ORDERS } from "@/lib/supportData";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubmitTicket, useMyTickets } from "@/hooks/useBridgeTickets";
 import { toast } from "sonner";
+import type { IssueNode, SupportCategory, SupportTicket } from "@/types/support";
 
 type WizardStep = 
   | "CATEGORY_SELECT"
