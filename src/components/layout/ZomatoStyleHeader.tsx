@@ -248,7 +248,9 @@ export const ZomatoStyleHeader = ({
             )}
             {savedAddresses.map((loc) => {
               const title = loc.type || "Home";
-              const addrLine = `${loc.address_line1}${loc.city ? `, ${loc.city}` : ''} (${loc.pincode})`;
+              const addrLine = [loc.address_line1, loc.address_line2, loc.city, loc.state, loc.pincode]
+                .filter(Boolean)
+                .join(", ");
               const isCurrent = selectedId ? selectedId === loc.id : !!loc.is_default;
               const isBusy = switching === loc.id;
               return (
