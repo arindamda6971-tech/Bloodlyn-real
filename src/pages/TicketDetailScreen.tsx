@@ -172,12 +172,7 @@ const TicketDetailScreen = () => {
           </div>
         </div>
 
-        {/* Action Button */}
-        {!isResolved && (
-          <button className="w-full py-4 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold active:scale-[0.98] transition-transform">
-            Add Additional Notes
-          </button>
-        )}
+
       </div>
     </MobileLayout>
   );

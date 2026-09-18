@@ -60,9 +60,19 @@ const ProfileScreen = () => {
       const { wallet, summary } = await walletService.getWallet(session.user.id);
       setWalletBalance(Number(wallet?.available_balance ?? 0));
       setWalletSummary(summary);
+      const { count: actualReportsCount } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .in("status", ["report_ready", "report_delivered", "completed"]);
 
-      setReportsCount(2);
-      setBookingsCount(3);
+      const { count: actualBookingsCount } = await supabase
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
+
+      setReportsCount(actualReportsCount || 0);
+      setBookingsCount(actualBookingsCount || 0);
     };
     loadProfileData();
   }, []);
