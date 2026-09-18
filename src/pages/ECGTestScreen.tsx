@@ -392,7 +392,7 @@ const ECGTestScreen = () => {
     switch (step) {
       case "ADDRESS": navigate(-1); break;
       case "AVAILABILITY": setStep(selectedAddress ? "LAB" : "ADDRESS"); break;
-      case "LAB": setStep("ADDRESS"); break;
+      case "LAB": navigate(-1); break;
       case "APPOINTMENT": setStep("LAB"); break;
       case "DETAILS": setStep("APPOINTMENT"); break;
       case "PAYMENT": setStep("DETAILS"); break;
@@ -754,23 +754,7 @@ const ECGTestScreen = () => {
                 Only labs offering At-Home ECG Test for pincode <span className="font-bold text-foreground">{pincode}</span>
               </p>
 
-              {selectedAddress && (
-                <div className="mb-5 bg-rose-50/60 border border-rose-100 rounded-2xl p-3 flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0">
-                    <MapPin className="w-4 h-4 text-rose-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-black uppercase tracking-widest text-rose-700/80">Visit at</p>
-                    <p className="text-xs font-bold text-foreground leading-snug truncate">{selectedAddress.fullAddress}</p>
-                  </div>
-                  <button
-                    onClick={() => setStep("ADDRESS")}
-                    className="text-[11px] font-black text-rose-600 uppercase tracking-wider px-2 py-1 rounded-lg active:bg-rose-100 shrink-0"
-                  >
-                    Change
-                  </button>
-                </div>
-              )}
+
 
               {labsLoading ? (
                 <div className="flex flex-col items-center justify-center py-16">
