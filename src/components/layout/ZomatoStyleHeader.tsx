@@ -24,9 +24,9 @@ export interface AddressItem {
   id: string;
   type: string;
   address_line1: string;
-  address_line2?: string;
-  city?: string;
-  state?: string;
+  address_line2?: string | null;
+  city?: string | null;
+  state?: string | null;
   pincode: string;
   is_default?: boolean;
 }

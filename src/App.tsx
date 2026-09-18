@@ -58,6 +58,7 @@ const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
 const NotificationsScreen = lazy(() => import("./pages/NotificationsScreen"));
 const SubscriptionScreen = lazy(() => import("./pages/SubscriptionScreen"));
 const SavedAddressesScreen = lazy(() => import("./pages/SavedAddressesScreen"));
+const SavedLabsScreen = lazy(() => import("./pages/SavedLabsScreen"));
 const DoctorConsultScreen = lazy(() => import("./pages/DoctorConsultScreen"));
 const PartnerLabsScreen = lazy(() => import("./pages/PartnerLabsScreen"));
 const LabDetailScreen = lazy(() => import("./pages/LabDetailScreen"));
@@ -134,6 +135,7 @@ const AnimatedRoutes = () => {
               <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
               <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
               <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
+              <Route path="/saved-labs" element={<ProtectedRoute><SavedLabsScreen /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
               <Route path="/subscription" element={<ProtectedRoute><SubscriptionScreen /></ProtectedRoute>} />
               <Route path="/doctor-consult" element={<ProtectedRoute><DoctorConsultScreen /></ProtectedRoute>} />
