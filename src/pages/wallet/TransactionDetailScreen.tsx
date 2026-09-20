@@ -7,6 +7,30 @@ import { WalletTransaction } from "@/types/wallet";
 import { format } from "date-fns";
 import { useSEO } from "@/hooks/useSEO";
 
+const mapTransaction = (row: {
+  id: string;
+  user_id: string;
+  amount: number;
+  type: string;
+  description: string | null;
+  order_id: string | null;
+  balance_after: number;
+  created_at: string;
+}): WalletTransaction => ({
+  id: row.id,
+  wallet_id: row.user_id,
+  user_id: row.user_id,
+  transaction_type: row.type as WalletTransaction["transaction_type"],
+  amount: Number(row.amount),
+  balance_before: Number(row.balance_after) - Number(row.amount),
+  balance_after: Number(row.balance_after),
+  status: "Successful",
+  booking_id: row.order_id ?? undefined,
+  order_id: row.order_id ?? undefined,
+  description: row.description ?? undefined,
+  created_at: row.created_at,
+});
+
 const TransactionDetailScreen = () => {
   useSEO({ title: "Transaction Details | BloodLyn" });
   const navigate = useNavigate();
@@ -25,7 +49,8 @@ const TransactionDetailScreen = () => {
           .eq('id', id)
           .maybeSingle();
         
-        if (data) setTransaction(data as WalletTransaction);
+        if (error) throw error;
+        if (data) setTransaction(mapTransaction(data));
       } catch (err) {
         console.error("Failed to fetch transaction:", err);
       } finally {

@@ -114,13 +114,14 @@ const OrderSuccessScreen = () => {
     
     // Fetch if we have an addressId but no string
     if (bookingState?.addressId) {
+      const addressId = bookingState.addressId;
       const fetchAddress = async () => {
         try {
           const { supabase } = await import("@/integrations/supabase/client");
           const { data } = await supabase
             .from("addresses")
             .select("*")
-            .eq("id", bookingState.addressId)
+            .eq("id", addressId)
             .maybeSingle();
             
           if (data) {
