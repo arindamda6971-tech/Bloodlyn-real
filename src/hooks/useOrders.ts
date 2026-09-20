@@ -88,7 +88,7 @@ export const useOrders = () => {
         console.warn("Error fetching blood_lyn_orders:", e);
       }
 
-      let storedOrders: Order[] = [];
+      const storedOrders: Order[] = [];
       // Disabled local storage fallback to prevent ghost orders across accounts
       // since the Edge Function now reliably stores orders in the database.
 

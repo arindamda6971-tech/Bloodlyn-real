@@ -116,7 +116,9 @@ export const downloadReport = async (
     } catch (e) {
       console.error("Native save failed:", e);
       // Last resort on device: hand the file to the system viewer.
-      window.open(reportUrl, "_system") || window.open(reportUrl, "_blank");
+      if (!window.open(reportUrl, "_system")) {
+        window.open(reportUrl, "_blank");
+      }
       return { ok: true, message: "Opening report..." };
     }
   }
