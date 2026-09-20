@@ -52,6 +52,7 @@ const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
 const TestSelectionScreen = lazy(() => import("./pages/TestSelectionScreen"));
 const LabSelectionScreen = lazy(() => import("./pages/LabSelectionScreen"));
 const PaymentScreen = lazy(() => import("./pages/PaymentScreen"));
+const PaymentProcessingScreen = lazy(() => import("./pages/PaymentProcessingScreen"));
 const ReportsScreen = lazy(() => import("./pages/ReportsScreen"));
 const ReportDetailScreen = lazy(() => import("./pages/ReportDetailScreen"));
 const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
@@ -128,6 +129,7 @@ const AnimatedRoutes = () => {
               <Route path="/cart" element={<ProtectedRoute><CartScreen /></ProtectedRoute>} />
               <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
               <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
+              <Route path="/payment-processing" element={<ProtectedRoute><PaymentProcessingScreen /></ProtectedRoute>} />
               <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
               <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
               <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />

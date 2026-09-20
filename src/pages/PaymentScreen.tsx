@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity, Star } from "lucide-react";
@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
-import { getStoredPrescription, clearStoredPrescription } from "@/lib/order-prescription";
+import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 
 interface PaymentState {
@@ -49,7 +49,7 @@ interface PaymentState {
 const PaymentScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { subtotal: cartSubtotal, clearCart, items: cartItemsState, removeFromCart } = useCart();
+  const { subtotal: cartSubtotal, items: cartItemsState } = useCart();
   const paymentState = location.state as PaymentState | undefined;
   const { pincode: userPincode } = useUserPincode();
 
@@ -86,7 +86,7 @@ const PaymentScreen = () => {
   const [labOffers, setLabOffers] = useState<any[]>([]);
   const [appliedOffer, setAppliedOffer] = useState<any | null>(null);
 
-  const idempotencyKeyRef = useRef<string | null>(null);
+
 
 
   // Listen for payment method selection from PaymentMethodsScreen
@@ -427,17 +427,7 @@ const PaymentScreen = () => {
         return;
       }
 
-      // Stable idempotency key for THIS checkout session — generated once
-      // and reused on every retry (double-tap, network glitch, StrictMode
-      // double-invoke). The server enforces uniqueness via a partial UNIQUE
-      // index on orders(user_id, client_idempotency_key), so even a perfectly
-      // timed concurrent retry cannot produce two orders.
-      const idempotencyKey =
-        idempotencyKeyRef.current ||
-        (typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
-      idempotencyKeyRef.current = idempotencyKey;
+
 
       // Normalize item IDs to satisfy edge-function validation.
       // Accepts: UUID, UUID-prefixed (uuid-suffix), or known synthetic prefixes.
@@ -501,187 +491,43 @@ const PaymentScreen = () => {
       };
 
 
-      // Transport-level hiccups (WebView fetch abort, cold start, 5xx) used to
-      // surface as an error even though the order was already created — the user
-      // then had to tap "Place Order" a second time to reach the success screen.
-      // The Idempotency-Key makes retries safe, so retry automatically here and
-      // let the server return the already-created order.
-      let fnData: any = null;
-      let fnError: any = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const res = await supabase.functions.invoke("create-order", {
-          headers: { "Idempotency-Key": idempotencyKey },
-          body: orderPayload,
-        });
-        fnData = res.data;
-        fnError = res.error;
-
-        if (!fnError) break;
-
-        // Only retry when there is no application-level response body
-        // (i.e. a network/transport failure or a 5xx), never on validation errors.
-        const status = fnError?.context?.response?.status;
-        const retriable = !status || status >= 500;
-        if (!retriable || attempt === 2) break;
-        await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
-      }
-
-      if (fnError) throw fnError;
-      if (fnData?.error) throw new Error(fnData.error);
-
-
-      // Post-order bookkeeping must never block the success screen.
-      try {
-      // Insert appointment into Supabase appointments table for doctor services
-      for (const rawItem of cartItems) {
-        const item = rawItem as any;
-        if (isDoctorServiceItem(item)) {
-          const rawDocId = String(item.doctorId || item.vendorId || item.id || "").replace(/^doc-(video-|audio-)?/i, "");
-          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawDocId);
-          if (isUuid) {
-            const typePrefix = getDoctorServicePrefix(item);
-            const mode = typePrefix === "doc-video" ? "video" : typePrefix === "doc-audio" ? "audio" : "in_clinic";
-            const apptPayload = {
-              doctor_id: rawDocId,
-              patient_name: item.patientName || paymentState?.patientName || "Patient",
-              patient_phone: paymentState?.patientPhone || "",
-              patient_age: paymentState?.patientAge ? Number(paymentState.patientAge) : 30,
-              patient_gender: paymentState?.patientGender || "Male",
-              scheduled_at: paymentState?.scheduledDate ? new Date(paymentState.scheduledDate).toISOString() : new Date().toISOString(),
-              mode,
-              symptoms: item.symptoms || "Doctor Consultation",
-              fee: Number(item.price) || 0,
-              status: "pending",
-              source: "main_app",
-              external_booking_id: fnData?.orderId || fnData?.id || null,
-            };
-            try {
-              // Now securely handled by create-order Edge Function
-              // await (supabase as any).from("appointments").insert(apptPayload);
-            } catch (e) {
-              console.warn("Failed to insert appointment row:", e);
-            }
-          }
-        }
-      }
-
-      // Save real booking order for partner portal sync
-
-      const newRealOrder = {
-        id: fnData?.orderId || `ord-real-${Date.now()}`,
-        order_number: fnData?.orderNumber || `BL-${Math.floor(10000 + Math.random() * 90000)}`,
-        status: "accepted",
-        created_at: new Date().toISOString(),
-        customer_name: paymentState?.patientName || "Patient",
-        customer_phone: paymentState?.patientPhone || "9876543210",
-        customer_address: orderAddress ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ") : "Address not available locally",
-        patient_name: paymentState?.patientName || "Patient",
-        patient_age: paymentState?.patientAge || "30",
-        patient_gender: paymentState?.patientGender || "Male",
-        test_name: cartItems.map((c: any) => c.name).join(" | ") || "Lab Diagnostic Test",
-        total_amount: total,
-        payment_status: "Paid",
-        payment_method: selectedPaymentMethod.name || "UPI / Online",
-        scheduled_date: paymentState?.scheduledDate || new Date().toISOString().slice(0, 10),
-        scheduled_time_slot: paymentState?.scheduledTimeSlot || "Morning Slot",
-        test_items: cartItems.map((c: any) => c.name || "Diagnostic Test"),
-      };
-
-      try {
-        // Now securely handled by create-order Edge Function
-        // await (supabase as any).from("blood_lyn_orders").insert([newRealOrder]);
-      } catch (e) {
-        console.warn("Failed to insert blood_lyn_orders row:", e);
-      }
-
-      try {
-        const existingRealStr = localStorage.getItem("BloodLyn_real_orders") || "[]";
-        const existingRealList = JSON.parse(existingRealStr);
-        existingRealList.unshift(newRealOrder);
-        localStorage.setItem("BloodLyn_real_orders", JSON.stringify(existingRealList));
-      } catch (e) {
-        console.warn("Failed to update BloodLyn_real_orders in localStorage:", e);
-      }
-
-      clearCart();
-      clearStoredPrescription();
-
-      // Deduct wallet balance if used
-      if (useWallet && walletDeduction > 0 && user?.id) {
-        import("@/lib/walletService").then(({ walletService }) => {
-          walletService.chargeWallet(
-            user.id,
-            walletDeduction,
-            fnData?.orderId || fnData?.id || 'unknown_order',
-            "Booking Payment"
-          );
-        });
-      }
-
-      } catch (postOrderError) {
-        console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
-      }
-
-      navigate("/order-success", {
-        replace: true,
+      // Hand off to the dedicated processing screen — the API call,
+      // retry logic, and post-order bookkeeping all happen there.
+      // This avoids the CSS stacking-context bug where the inline
+      // overlay scrolled with the page.
+      navigate("/payment-processing", {
         state: {
-          ...paymentState,
+          orderPayload,
+          successState: {
+            ...paymentState,
+            cartItems,
+            subtotal: effectiveSubtotal,
+            couponApplied,
+            discount,
+            total,
+            selectedPayment: selectedPaymentMethod.id,
+            selectedPaymentName: selectedPaymentMethod.name,
+            paymentVerified: true,
+            vendorId: resolvedVendorId,
+            selectedLabName: paymentState?.selectedLabName || labName,
+            selectedLabId: paymentState?.selectedLabId || labId,
+            orderAddressString: orderAddress
+              ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ")
+              : undefined,
+          },
+          resolvedVendorId,
+          walletDeduction,
+          useWallet,
           cartItems,
-          subtotal: effectiveSubtotal,
-          couponApplied,
-          discount,
-          total,
-          selectedPayment: selectedPaymentMethod.id,
-          selectedPaymentName: selectedPaymentMethod.name,
-          paymentVerified: true,
-          orderId: fnData?.orderId || null,
-          orderNumber: fnData?.orderNumber || null,
-          vendorId: resolvedVendorId,
-          selectedLabName: paymentState?.selectedLabName || labName,
-          selectedLabId: paymentState?.selectedLabId || labId,
-          orderAddressString: orderAddress ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ") : undefined,
+          paymentState,
+          labId,
+          labName,
+          orderAddress,
+          selectedPaymentMethod,
         },
       });
     } catch (error: any) {
-      console.error("Order placement failed:", error);
-
-      // Detect vendor_not_approved from the edge function response body.
-      let unavailableCode: string | null = null;
-      let unavailableDoctorId: string | null = null;
-      try {
-        const resp: Response | undefined = error?.context?.response;
-        if (resp && typeof resp.clone === "function") {
-          const body = await resp.clone().json().catch(() => null);
-          const code = String(body?.code ?? "").toLowerCase();
-          if (code === "vendor_not_approved" || code === "doctor_unavailable") {
-            unavailableCode = code;
-            unavailableDoctorId = body?.doctor_id ?? null;
-          }
-        }
-      } catch { /* ignore parse errors */ }
-
-      if (unavailableCode) {
-        // Drop any doctor consult items from cart so the user can't retry.
-        try {
-          (cartItemsState || []).forEach((it) => {
-            const id = String(it.id ?? "").toLowerCase();
-            const labId = String(it.labId ?? "");
-            if (id.startsWith("doc-") || labId === "doctor-service") {
-              if (!unavailableDoctorId || id.includes(String(unavailableDoctorId).toLowerCase())) {
-                removeFromCart(it.id);
-              }
-            }
-          });
-        } catch { /* ignore */ }
-
-        toast.error("This doctor is no longer available", {
-          description: "The directory has been refreshed. Please pick another doctor.",
-        });
-        // Force a fresh directory fetch on the consult screen (no retry here).
-        navigate("/doctor-consult", { replace: true });
-        return;
-      }
-
+      console.error("Order validation failed:", error);
       toast.error(mapOrderError(error));
     } finally {
       setVerifyingServiceability(false);
@@ -1079,15 +925,7 @@ const PaymentScreen = () => {
 
       </div>
 
-      {isSubmittingOrder && (
-        <div className="fixed inset-0 z-50 bg-/98 flex items-center justify-center px-6">
-          <div className="w-full max-w-xs rounded-2xl border border-border bg-card p-6 text-center shadow-lg">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
-            <h3 className="text-base font-bold text-foreground">Placing your order…</h3>
-            <p className="mt-2 text-sm text-muted-foreground">Please wait while we confirm your booking.</p>
-          </div>
-        </div>
-      )}
+
     </MobileLayout>
   );
 };

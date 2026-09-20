@@ -33,6 +33,7 @@ const RoutePrefetcher = () => {
       import("../pages/InstallScreen");
       import("../pages/TestSelectionScreen");
       import("../pages/PaymentScreen");
+      import("../pages/PaymentProcessingScreen");
       import("../pages/ReportDetailScreen");
       import("../pages/EditProfileScreen");
       import("../pages/NotificationsScreen");
