@@ -132,7 +132,7 @@ export const walletService = {
 
       // 1. Update wallet balance
       const { error: updateError } = await supabase
-        .from('wallets')
+        .from('profiles')
         .update({ wallet_balance: newBalance })
         .eq('id', userId);
       
