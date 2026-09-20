@@ -45,7 +45,7 @@ const WalletScreen = () => {
       const { wallet } = await walletService.getWallet(user.id);
       if (wallet) {
         setBalance(wallet.available_balance);
-        const txs = await walletService.getTransactions(wallet.id);
+        const txs = await walletService.getTransactions(user.id);
         setTransactions(txs);
       }
       setLoading(false);
