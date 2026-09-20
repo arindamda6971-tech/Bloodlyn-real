@@ -44,9 +44,16 @@ export const ZomatoStyleHeader = ({
   const cartCount = items.length;
   const { pincode } = useUserPincode();
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>({
-    title: "Delivery PIN",
-    line: "Select your service area",
+  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>(() => {
+    try {
+      const title = localStorage.getItem("bloodlyn_last_address_title");
+      const line = localStorage.getItem("bloodlyn_last_address_line");
+      if (title && line) return { title, line };
+    } catch {}
+    return {
+      title: "Delivery PIN",
+      line: "Select your service area",
+    };
   });
   const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([]);
   const [switching, setSwitching] = useState<string | null>(null);
@@ -75,6 +82,10 @@ export const ZomatoStyleHeader = ({
           .join(", ");
         setCurrentAddress({ title, line });
         setSelectedId(defaultAddr.id);
+        try {
+          localStorage.setItem("bloodlyn_last_address_title", title);
+          localStorage.setItem("bloodlyn_last_address_line", line);
+        } catch {}
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
@@ -125,6 +136,10 @@ export const ZomatoStyleHeader = ({
       const line = [loc.address_line1, loc.address_line2, loc.city, loc.state, loc.pincode].filter(Boolean).join(", ");
       setCurrentAddress({ title, line });
       setSelectedId(loc.id);
+      try {
+        localStorage.setItem("bloodlyn_last_address_title", title);
+        localStorage.setItem("bloodlyn_last_address_line", line);
+      } catch {}
       setSavedAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === loc.id })));
       setServicePincode(user.id, loc.pincode);
 
