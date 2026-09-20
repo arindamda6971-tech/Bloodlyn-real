@@ -224,7 +224,7 @@ const LabSelectionScreen = () => {
 
   if (items.length === 0) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Select Lab & Slot" />
         <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
@@ -317,11 +317,11 @@ const LabSelectionScreen = () => {
   const selectedLabPrice = getSelectedLabPrice();
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <ScreenHeader title="Select Lab & Slot" />
       <BookingStepper currentStep={2} />
 
-      <div className="px-4 pb-28">
+      <div className="px-4 pb-6">
         {/* Lab Selection */}
         {!hasVendorLab && (
           <motion.div initial={false} animate={{ opacity: 1 }} className="mb-4">

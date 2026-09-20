@@ -409,7 +409,7 @@ const CartScreen = () => {
 
   if (isLoading) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Cart" />
         <div className="px-4 pb-44">
           <div className="space-y-3 mt-4">
@@ -427,7 +427,7 @@ const CartScreen = () => {
 
   if (!items || items.length === 0) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Cart" />
         <div className="flex flex-col items-center justify-center h-[70vh] px-6 text-center">
           <div className="relative w-32 h-32 mb-6">
@@ -474,11 +474,11 @@ const CartScreen = () => {
     String(name ?? "").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "U";
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-28 space-y-3.5">
+      <div className="px-4 pb-6 space-y-3.5">
         {/* Fasting Alert */}
         {requiresFasting && (
           <motion.div
