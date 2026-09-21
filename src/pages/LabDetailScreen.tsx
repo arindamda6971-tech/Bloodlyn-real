@@ -436,7 +436,14 @@ const LabDetailScreen = () => {
         setIsLoading(false);
         return;
       }
+      setIsLoading(true);
       if (globalLabCache.has(labId)) {
+        const cachedLab = globalLabCache.get(labId);
+        if (cachedLab) {
+          setLabFromDb(cachedLab.labFromDb);
+          setDynamicTests(cachedLab.dynamicTests);
+          setPackages(cachedLab.packages);
+        }
         setIsLoading(false);
         return;
       }

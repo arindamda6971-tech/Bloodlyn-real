@@ -88,7 +88,16 @@ const ProfileScreen = () => {
     } catch { /* ignore */ }
     try {
       Object.keys(localStorage)
-        .filter((k) => k.startsWith("sb-") || k.startsWith("location_checked_") || k.startsWith("bloodlyn_service_pincode_"))
+        .filter((k) => 
+          k.startsWith("sb-") || 
+          k.startsWith("location_checked_") || 
+          k.startsWith("bloodlyn_service_pincode_") ||
+          k === "BloodLyn_cart_items" ||
+          k === "bloodlyn-query-cache" ||
+          k === "family_members_fallback" ||
+          k === "addresses_fallback" ||
+          k === "user_addresses"
+        )
         .forEach((k) => localStorage.removeItem(k));
     } catch { /* ignore */ }
     toast.success("Logged out successfully");

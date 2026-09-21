@@ -287,7 +287,7 @@ const BPCheckScreen = () => {
       if (cancelled) return;
 
       let rawAddrs = addrData || [];
-      if (addrErr || rawAddrs.length === 0) {
+      if (addrErr) {
         try {
           const fallback = localStorage.getItem("addresses_fallback") || localStorage.getItem("user_addresses");
           if (fallback) {

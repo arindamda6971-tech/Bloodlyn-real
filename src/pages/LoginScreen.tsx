@@ -244,7 +244,7 @@ const LoginScreen = () => {
       </AnimatePresence>
 
       {/* ── MAIN CONTENT ── */}
-      <div className="px-7 pt-[calc(var(--sat,0px)+52px)] pb-8 flex flex-col">
+      <div className="px-7 pt-[calc(var(--sat,0px)+52px)] pb-[40vh] flex flex-col">
 
           {/* Main Logo */}
           <div className="flex justify-center mb-5">
