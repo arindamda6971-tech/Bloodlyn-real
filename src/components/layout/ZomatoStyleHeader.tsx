@@ -38,22 +38,16 @@ export const ZomatoStyleHeader = ({
   activeBookingsCount = 0,
 }: ZomatoStyleHeaderProps) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { items } = useCart();
   const cartCount = items.length;
   const { pincode } = useUserPincode();
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>(() => {
-    try {
-      const title = localStorage.getItem("bloodlyn_last_address_title");
-      const line = localStorage.getItem("bloodlyn_last_address_line");
-      if (title && line) return { title, line };
-    } catch {}
-    return {
-      title: "Delivery PIN",
-      line: "Select your service area",
-    };
+  const [isAddressLoading, setIsAddressLoading] = useState(true);
+  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>({
+    title: "Delivery PIN",
+    line: "Select your service area",
   });
   const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([]);
   const [switching, setSwitching] = useState<string | null>(null);
@@ -95,6 +89,8 @@ export const ZomatoStyleHeader = ({
 
     } catch (e) {
       console.error("Failed to fetch user addresses:", e);
+    } finally {
+      setIsAddressLoading(false);
     }
   }, [user?.id, pincode]);
 
@@ -190,15 +186,25 @@ export const ZomatoStyleHeader = ({
              onClick={() => setShowLocationModal(true)}
              className="flex items-center gap-1 text-left group min-w-0"
           >
-             <h2 className="text-[22px] font-black text-foreground tracking-tight truncate leading-none">
-               {addressTitle}
-             </h2>
-             <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+             {(isAddressLoading || authLoading) ? (
+               <div className="h-6 w-32 bg-muted/60 rounded animate-pulse" />
+             ) : (
+               <>
+                 <h2 className="text-[22px] font-black text-foreground tracking-tight truncate leading-none">
+                   {addressTitle}
+                 </h2>
+                 <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+               </>
+             )}
           </button>
-          <p className="text-xs text-muted-foreground font-medium truncate mt-1.5 flex items-center gap-1.5 opacity-80">
-             <MapPin className="w-3.5 h-3.5 shrink-0" />
-             {addressLine}
-          </p>
+          {(isAddressLoading || authLoading) ? (
+             <div className="h-4 w-48 bg-muted/60 rounded animate-pulse mt-1.5" />
+          ) : (
+             <p className="text-xs text-muted-foreground font-medium truncate mt-1.5 flex items-center gap-1.5 opacity-80">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                {addressLine}
+             </p>
+          )}
         </div>
 
         {/* Right: Clean Action Buttons */}

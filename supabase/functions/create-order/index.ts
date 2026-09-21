@@ -736,41 +736,39 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Notify partner hub if vendor is assigned (replaces pg_net trigger)
-    if (orderVendorId) {
-      try {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        const webhookPayload = {
-          type: "INSERT",
-          table: "orders",
-          schema: "public",
-          record: orderData,
-          old_record: null,
-          // Authoritative per-test line items (one object per test) so the
-          // partner hub never has to split a concatenated test_name string.
-          line_items: cartItems.map((item) => ({
-            name: item.name || "Diagnostic Test",
-            price: priceMap[item.id] !== undefined ? priceMap[item.id] : item.price,
-            quantity: item.quantity ?? 1,
-          })),
-        };
+    // Notify partner hub (replaces pg_net trigger)
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const webhookPayload = {
+        type: "INSERT",
+        table: "orders",
+        schema: "public",
+        record: orderData,
+        old_record: null,
+        // Authoritative per-test line items (one object per test) so the
+        // partner hub never has to split a concatenated test_name string.
+        line_items: cartItems.map((item) => ({
+          name: item.name || "Diagnostic Test",
+          price: priceMap[item.id] !== undefined ? priceMap[item.id] : item.price,
+          quantity: item.quantity ?? 1,
+        })),
+      };
 
-        // Await (with timeout) so the isolate isn't torn down before the
-        // partner hub receives the order. Never fatal for the order.
-        const resp = await fetch(`${supabaseUrl}/functions/v1/partner-hub-webhook`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`,
-          },
-          body: JSON.stringify(webhookPayload),
-          signal: AbortSignal.timeout(8000),
-        });
-        console.log("Partner hub webhook status:", resp.status);
-      } catch (e) {
-        console.error("Partner notification error (non-blocking):", e);
-      }
+      // Await (with timeout) so the isolate isn't torn down before the
+      // partner hub receives the order. Never fatal for the order.
+      const resp = await fetch(`${supabaseUrl}/functions/v1/partner-hub-webhook`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${supabaseServiceKey}`,
+        },
+        body: JSON.stringify(webhookPayload),
+        signal: AbortSignal.timeout(8000),
+      });
+      console.log("Partner hub webhook status:", resp.status);
+    } catch (e) {
+      console.error("Partner notification error (non-blocking):", e);
     }
 
     // Doctor-consultation webhook — mirror booking to Partner project.
