@@ -57,9 +57,12 @@ const LoginScreen = () => {
       const destination = fromPath && fromPath !== "/login"
         ? fromPath
         : locationChecked ? "/home" : "/location-check";
-      navigate(destination, { replace: true });
+        
+      if (location.pathname !== destination) {
+        navigate(destination, { replace: true });
+      }
     }
-  }, [user, navigate, location]);
+  }, [user, navigate, location.pathname, location.state]);
 
   const handleEmailAuth = async () => {
     try {
