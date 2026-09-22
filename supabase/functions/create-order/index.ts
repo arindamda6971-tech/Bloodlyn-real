@@ -411,34 +411,30 @@ Deno.serve(async (req) => {
       serverDiscount = 100;
     }
 
-    // Platform charge for Lab Tests (Home Collection) — percentage controlled from
-    // the Admin app's Finance & Revenue → Commission Engine. Falls back to 10% when
-    // the admin settings endpoint is unavailable so checkout never breaks.
-    const DEFAULT_PLATFORM_FEE_PERCENT = 10;
-    let platformFeePercent = DEFAULT_PLATFORM_FEE_PERCENT;
+    // Flat platform fee controlled by Admin Finance & Revenue. Invalid or
+    // unavailable settings intentionally resolve to ₹0.
+    let platformFee = 0;
     try {
-      const bridgeKey = Deno.env.get("BRIDGE_API_KEY");
-      if (bridgeKey) {
+      const adminKey = Deno.env.get("ADMIN_SUPABASE_PUBLISHABLE_KEY");
+      if (adminKey) {
         const settingsRes = await fetch(
-          "https://uivexkxdhcubjcdxmjuu.supabase.co/functions/v1/bridge-settings",
-          { headers: { "x-bridge-key": bridgeKey } },
+          "https://yhigcsypzwhbjvaqhhwq.supabase.co/functions/v1/bridge-settings",
+          { headers: { apikey: adminKey, Authorization: `Bearer ${adminKey}` } },
         );
         if (settingsRes.ok) {
-          const settings = await settingsRes.json();
-          const raw = Number(
-            settings?.lab_test_commission_percent ?? settings?.labTestCommissionPercent,
-          );
-          if (Number.isFinite(raw) && raw >= 0 && raw <= 50) platformFeePercent = raw;
+          const response = await settingsRes.json();
+          const raw = response?.data?.lab_test_platform_fee_flat;
+          const parsed = typeof raw === "number" || typeof raw === "string" ? Number(raw) : Number.NaN;
+          if (Number.isFinite(parsed) && parsed >= 0) platformFee = parsed;
         }
       }
     } catch (e) {
-      console.warn("Platform fee lookup failed, using default:", String(e));
+      console.warn("Platform fee lookup failed, using ₹0:", String(e));
     }
 
     const netAmount = Math.max(0, serverSubtotal - serverDiscount);
-    const platformFee = Math.max(0, Math.round((netAmount * platformFeePercent) / 100));
     const serverTotal = netAmount + platformFee;
-    console.log(`Platform fee: ${platformFeePercent}% => ₹${platformFee}; total ₹${serverTotal}`);
+    console.log(`Flat platform fee: ₹${platformFee}; total ₹${serverTotal}`);
 
     // Accept all payment methods from the client
     // In production, online methods would be verified via a payment gateway callback
@@ -542,6 +538,7 @@ Deno.serve(async (req) => {
           orderId: existingOrder.id,
           orderNumber: existingOrder.order_number,
           total: serverTotal,
+          platformFee,
           paymentStatus,
           status: orderStatus,
           deduplicated: true,
@@ -847,6 +844,7 @@ Deno.serve(async (req) => {
       orderId: orderData.id,
       orderNumber: orderData.order_number,
       total: serverTotal,
+      platformFee,
       paymentStatus,
       status: orderStatus,
     };

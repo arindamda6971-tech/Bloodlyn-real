@@ -24,6 +24,7 @@ interface BookingState {
   subtotal: number;
   couponApplied?: boolean;
   discount?: number;
+  platformFee?: number;
   total?: number;
   selectedPayment?: string;
   selectedPaymentName?: string;
@@ -359,6 +360,10 @@ const OrderSuccessScreen = () => {
                   <span className="font-bold text-green-600">₹0</span>
                 </div>
               )}
+              <div className="flex justify-between text-[13px]">
+                <span className="text-slate-500 font-medium">Platform fee</span>
+                <span className="font-bold text-slate-800">₹{(bookingState?.platformFee ?? 0).toLocaleString()}</span>
+              </div>
               {bookingState?.selectedPaymentName && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate-500 font-medium">Payment Method</span>
