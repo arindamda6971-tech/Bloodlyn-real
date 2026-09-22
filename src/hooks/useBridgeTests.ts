@@ -25,7 +25,7 @@ interface BridgeTestsResponse {
 }
 
 async function fetchBridgeTests(category?: string): Promise<BridgeTestsResponse> {
-  const params: Record<string, string> = { status: "active" };
+  const params: Record<string, string> = { status: "active", limit: "20000" };
   if (category) params.category = category;
 
   const { data, error } = await supabase.functions.invoke("bridge-proxy", {
@@ -39,7 +39,7 @@ async function fetchBridgeTests(category?: string): Promise<BridgeTestsResponse>
 
 export function useBridgeTests(category?: string) {
   return useQuery({
-    queryKey: ["bridge-tests", category],
+    queryKey: ["bridge-tests-v2", category],
     queryFn: () => fetchBridgeTests(category),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,

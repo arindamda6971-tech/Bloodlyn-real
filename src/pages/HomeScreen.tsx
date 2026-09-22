@@ -178,7 +178,8 @@ const HomeScreen = () => {
     const { data } = await supabase
       .from("tests")
       .select("id, name, price, original_price, discount_percent")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .limit(20000);
     if (data) setAllTests(data);
   }, []);
 
