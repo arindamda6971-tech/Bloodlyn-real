@@ -99,6 +99,7 @@ const ProfileScreen = () => {
           k === "user_addresses"
         )
         .forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
     } catch { /* ignore */ }
     toast.success("Logged out successfully");
     navigate("/login", { replace: true });

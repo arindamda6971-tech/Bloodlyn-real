@@ -146,6 +146,8 @@ const PackageDetailScreen = () => {
 
     try {
       setLoading(true);
+      setPackageData(null);
+      setError(null);
       const { data, error: fetchError } = await supabase
         .from("test_packages")
         .select(`
@@ -190,6 +192,7 @@ const PackageDetailScreen = () => {
 
     try {
       setFetchingTests(true);
+      setPackageTests([]);
       const { data, error: fetchError } = await supabase
         .from("package_tests")
         .select(`

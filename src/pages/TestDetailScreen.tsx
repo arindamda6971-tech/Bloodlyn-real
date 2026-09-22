@@ -106,10 +106,37 @@ const TestDetailScreen = () => {
   const [prepChecked, setPrepChecked] = useState<boolean[]>([]);
 
   useEffect(() => {
-    if (test || !id) {
+    if (!id) {
       setLoading(false);
       return;
     }
+
+    // If location state provides the new test, use it
+    if (bridgeTest && (bridgeTest.id === id || (bridgeTest as any).slug === id || (bridgeTest.test_name || bridgeTest.name)?.toLowerCase() === id.toLowerCase())) {
+      setTest({
+        id: bridgeTest.id,
+        name: bridgeTest.test_name || bridgeTest.name,
+        price: bridgeTest.price > 0 ? bridgeTest.price : bridgeTest.collection_fee || 0,
+        reportTime: bridgeTest.report_delivery_time || bridgeTest.reportTime,
+        prerequisites: bridgeTest.prerequisites,
+        category: bridgeTest.category,
+      });
+      setLoading(false);
+      return;
+    }
+
+    // If state already has the correct test, we're done
+    if (test && (test.id === id || test.name.toLowerCase() === id.toLowerCase())) {
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, clear stale state and fetch
+    setLoading(true);
+    setTest(null);
+    setError(null);
+    setAiDescription("");
+
     (async () => {
       try {
         const { data } = await supabase.from("tests").select("*").eq("id", id).maybeSingle();
