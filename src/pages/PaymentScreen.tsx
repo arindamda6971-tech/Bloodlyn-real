@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
-import { usePlatformFeePercent, calcPlatformFee } from "@/hooks/usePlatformFee";
+import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -209,9 +209,7 @@ const PaymentScreen = () => {
   }
 
   const discount = Math.round(appliedDiscount);
-  const platformFeePercent = usePlatformFeePercent();
-  const basePlatformFee = calcPlatformFee(Math.max(0, effectiveSubtotal - discount), platformFeePercent);
-  const platformFee = isFreeDelivery ? 0 : basePlatformFee;
+  const platformFee = usePlatformFeeFlat();
   const baseTotal = effectiveSubtotal - discount + platformFee;
   const walletDeduction = useWallet ? Math.min(walletBalance, baseTotal) : 0;
   const total = baseTotal - walletDeduction;
@@ -504,6 +502,7 @@ const PaymentScreen = () => {
             subtotal: effectiveSubtotal,
             couponApplied,
             discount,
+            platformFee,
             total,
             selectedPayment: selectedPaymentMethod.id,
             selectedPaymentName: selectedPaymentMethod.name,
@@ -851,21 +850,10 @@ const PaymentScreen = () => {
                 <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
               </div>
             )}
-            {isFreeDelivery ? (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Platform Charge <span className="text-xs line-through ml-1">₹{basePlatformFee}</span>
-                </span>
-                <span className="text-success font-bold tabular-nums">FREE</span>
-              </div>
-            ) : platformFee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Platform Charge <span className="text-xs">({platformFeePercent}%)</span>
-                </span>
-                <span className="text-foreground font-semibold tabular-nums">₹ {platformFee}.00</span>
-              </div>
-            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Platform fee</span>
+              <span className="text-foreground font-semibold tabular-nums">₹ {platformFee.toFixed(2)}</span>
+            </div>
             {useWallet && walletDeduction > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Wallet Used</span>

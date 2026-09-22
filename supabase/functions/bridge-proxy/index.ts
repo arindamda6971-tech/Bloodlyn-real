@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRIDGE_BASE_URL = "https://yhigcsypzwhbjvaqhhwq.supabase.co/functions/v1";
+const BRIDGE_BASE_URL = "https://yhigcsypzwhbjvaqhhw.supabase.co/functions/v1";
 
 // ----------------------------------------------------------------------------
 // In-memory token-bucket rate limiter: 30 requests / 60 seconds per user_id.
@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
 
   try {
     const BRIDGE_API_KEY = Deno.env.get("BRIDGE_API_KEY");
+    const ADMIN_SUPABASE_PUBLISHABLE_KEY = Deno.env.get("ADMIN_SUPABASE_PUBLISHABLE_KEY");
     if (!BRIDGE_API_KEY) {
       return new Response(JSON.stringify({ error: "Bridge API key not configured" }), {
         status: 500,
@@ -130,9 +131,21 @@ Deno.serve(async (req) => {
       method: normalizedMethod,
       headers: {
         "Content-Type": "application/json",
-        "x-bridge-key": BRIDGE_API_KEY,
+        ...(baseEndpoint === "bridge-settings"
+          ? {
+              apikey: ADMIN_SUPABASE_PUBLISHABLE_KEY ?? "",
+              Authorization: `Bearer ${ADMIN_SUPABASE_PUBLISHABLE_KEY ?? ""}`,
+            }
+          : { "x-bridge-key": BRIDGE_API_KEY }),
       },
     };
+
+    if (baseEndpoint === "bridge-settings" && !ADMIN_SUPABASE_PUBLISHABLE_KEY) {
+      return new Response(JSON.stringify({ error: "Admin publishable key not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (normalizedMethod !== "GET" && payload) {
       // Inject anonymous_id for ticket submissions
