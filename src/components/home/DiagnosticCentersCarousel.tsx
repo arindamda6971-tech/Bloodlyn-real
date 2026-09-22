@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Star, MapPin, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
@@ -153,6 +153,16 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   const navigate = useNavigate();
   const { isFavorite, toggleFavorite } = useFavoriteLabs();
 
+  const sortedCenters = useMemo(() => {
+    return [...centers].sort((a, b) => {
+      const aFav = isFavorite(a.id);
+      const bFav = isFavorite(b.id);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return 0;
+    });
+  }, [centers, isFavorite]);
+
   return (
     <div className="relative py-6 my-4">
       {/* Soft depth background for the entire section */}
@@ -187,7 +197,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
           willChange: 'scroll-position'
         }}
       >
-        {centers.map((center, index) => (
+        {sortedCenters.map((center, index) => (
           <LabCard
             key={center.id}
             center={center}
