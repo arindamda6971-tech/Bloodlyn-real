@@ -86,8 +86,8 @@ export const labServesPincode = (
   // values (some vendors store multiple pincodes in a single text column).
   const raw = (lab.pincode || "").trim();
   
-  // If the lab has no location constraints defined at all, default to visible.
-  if (!raw && list.length === 0) return true;
+  // If the lab has no location constraints defined at all, default to hidden.
+  if (!raw && list.length === 0) return false;
   
   if (!raw) return false;
   const pins = raw.split(/[,;\s]+/).map((p) => p.trim()).filter(Boolean);

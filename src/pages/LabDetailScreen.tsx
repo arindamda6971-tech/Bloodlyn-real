@@ -436,7 +436,6 @@ const LabDetailScreen = () => {
         setIsLoading(false);
         return;
       }
-      setIsLoading(true);
       if (globalLabCache.has(labId)) {
         const cachedLab = globalLabCache.get(labId);
         if (cachedLab) {
@@ -447,6 +446,12 @@ const LabDetailScreen = () => {
         setIsLoading(false);
         return;
       }
+
+      // Reset state for new lab to prevent leaking previous lab's data
+      setIsLoading(true);
+      setLabFromDb(null);
+      setDynamicTests([]);
+      setPackages([]);
 
       try {
         const { data, error } = await supabase

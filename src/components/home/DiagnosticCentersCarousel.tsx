@@ -151,17 +151,17 @@ LabCard.displayName = "LabCard";
 
 const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselProps) => {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite } = useFavoriteLabs();
+  const { isFavorite, toggleFavorite, favoriteLabIds } = useFavoriteLabs();
 
   const sortedCenters = useMemo(() => {
     return [...centers].sort((a, b) => {
-      const aFav = isFavorite(a.id);
-      const bFav = isFavorite(b.id);
+      const aFav = favoriteLabIds.includes(a.id);
+      const bFav = favoriteLabIds.includes(b.id);
       if (aFav && !bFav) return -1;
       if (!aFav && bFav) return 1;
       return 0;
     });
-  }, [centers, isFavorite]);
+  }, [centers, favoriteLabIds]);
 
   return (
     <div className="relative py-6 my-4">
