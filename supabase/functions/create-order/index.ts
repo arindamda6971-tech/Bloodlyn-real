@@ -418,7 +418,7 @@ Deno.serve(async (req) => {
       const adminKey = Deno.env.get("ADMIN_SUPABASE_PUBLISHABLE_KEY");
       if (adminKey) {
         const settingsRes = await fetch(
-          "https://yhigcsypzwhbjvaqhhw.supabase.co/functions/v1/bridge-settings",
+          "https://yhigcsypzwhbjvaqhhwq.supabase.co/functions/v1/bridge-settings",
           { headers: { apikey: adminKey, Authorization: `Bearer ${adminKey}` } },
         );
         if (settingsRes.ok) {

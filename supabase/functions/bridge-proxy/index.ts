@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const BRIDGE_BASE_URL = "https://yhigcsypzwhbjvaqhhw.supabase.co/functions/v1";
+const BRIDGE_BASE_URL = "https://yhigcsypzwhbjvaqhhwq.supabase.co/functions/v1";
 
 // ----------------------------------------------------------------------------
 // In-memory token-bucket rate limiter: 30 requests / 60 seconds per user_id.
