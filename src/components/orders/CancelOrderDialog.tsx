@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, CalendarClock, Wallet, X, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CalendarClock, CreditCard, X, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import { FIXED_COLLECTION_SLOTS } from "@/lib/lab-slots";
 import { format, addDays } from "date-fns";
-import { walletService } from "@/lib/walletService";
-type Reason = "preparation" | "reschedule" | "not_now";
+type Reason = "preparation" | "reschedule";
 
 interface CancelOrderDialogProps {
   open: boolean;
@@ -44,13 +43,6 @@ const REASONS: { key: Reason; title: string; subtitle: string; icon: any; tone: 
     icon: CalendarClock,
     tone: "text-primary bg-primary/10",
   },
-  {
-    key: "not_now",
-    title: "I don't want it right now",
-    subtitle: "Refund will be added to your wallet for next order",
-    icon: Wallet,
-    tone: "text-success bg-success/10",
-  },
 ];
 
 const CancelOrderDialog = ({
@@ -64,7 +56,7 @@ const CancelOrderDialog = ({
   onSuccess,
   labId,
 }: CancelOrderDialogProps) => {
-  const [step, setStep] = useState<"choose" | "reschedule" | "wallet-confirm" | "preparation-confirm">("choose");
+  const [step, setStep] = useState<"choose" | "reschedule" | "refund-confirm" | "preparation-confirm">("choose");
   const [reason, setReason] = useState<Reason | null>(null);
   const [date, setDate] = useState<Date | undefined>(addDays(new Date(), 1));
   const [slot, setSlot] = useState<string | null>(null);
@@ -72,13 +64,6 @@ const CancelOrderDialog = ({
 
   const { dates, openByOffset, scheduleKnown } = useLabOpenDays(labId, null, 7);
 
-  // Once the lab assigns a collection partner the user cannot get a wallet refund
-  const partnerAssigned = useMemo(() => {
-    const s = (orderStatus || "").toLowerCase();
-    return ["assigned", "out_for_collection", "processing", "sample_collected", "in_progress",
-            "collection_complete", "sample_received", "lab_processing", "report_ready",
-            "report_delivered", "completed"].includes(s);
-  }, [orderStatus]);
 
   const slots = availableTimeSlots && availableTimeSlots.length > 0 ? availableTimeSlots : DEFAULT_SLOTS;
 
@@ -146,8 +131,6 @@ const CancelOrderDialog = ({
       setStep("preparation-confirm");
     } else if (r === "reschedule") {
       setStep("reschedule");
-    } else {
-      setStep("wallet-confirm");
     }
   };
 
@@ -159,31 +142,19 @@ const CancelOrderDialog = ({
     submitReschedule(nextAvailableDate, slot);
   };
 
-  const handleWalletRefund = async () => {
+  const handleRefund = async () => {
     setSubmitting(true);
     try {
       // 1. Cancel the order
       const { error: cancelErr } = await supabase
         .from("orders")
-        .update({ status: "cancelled", cancellation_reason: "User requested wallet refund", cancelled_at: new Date().toISOString() })
+        .update({ status: "cancelled", cancellation_reason: "User requested cancellation", cancelled_at: new Date().toISOString() })
         .eq("id", orderId)
         .eq("user_id", userId);
       if (cancelErr) throw cancelErr;
 
-      // 2. Refund using the unified walletService
-      const refundResult = await walletService.refundOrder(
-        userId, 
-        Number(orderTotal), 
-        orderId, 
-        "User requested wallet refund"
-      );
-
-      if (!refundResult.success) {
-        throw new Error("Failed to credit refund to wallet");
-      }
-
       toast.success("Order Cancelled Successfully", {
-        description: `₹${orderTotal} has been refunded to your BloodLyn Wallet.`,
+        description: `₹${orderTotal} will be refunded to your original payment method.`,
       });
       onSuccess("cancelled");
       setSubmitting(false);
@@ -215,18 +186,12 @@ const CancelOrderDialog = ({
 
               <div className="space-y-2.5">
                 {REASONS.map((r) => {
-                  const disabled = r.key === "not_now" && partnerAssigned;
                   const Icon = r.icon;
                   return (
                     <button
                       key={r.key}
-                      onClick={() => !disabled && handleReasonSelect(r.key)}
-                      disabled={disabled}
-                      className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all ${
-                        disabled
-                          ? "border-border opacity-50 cursor-not-allowed"
-                          : "border-border hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
-                      }`}
+                      onClick={() => handleReasonSelect(r.key)}
+                      className="w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all border-border hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
                     >
                       <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${r.tone}`}>
                         <Icon className="w-5 h-5" />
@@ -234,10 +199,10 @@ const CancelOrderDialog = ({
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-foreground">{r.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                          {disabled ? "Not available — collection partner already assigned" : r.subtitle}
+                          {r.subtitle}
                         </p>
                       </div>
-                      {!disabled && <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     </button>
                   );
                 })}
@@ -359,9 +324,9 @@ const CancelOrderDialog = ({
             </motion.div>
           )}
 
-          {step === "wallet-confirm" && (
+          {step === "refund-confirm" && (
             <motion.div
-              key="wallet"
+              key="refund"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
@@ -374,11 +339,11 @@ const CancelOrderDialog = ({
                   transition={{ type: "spring", stiffness: 200, damping: 15 }}
                   className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mb-3"
                 >
-                  <Wallet className="w-8 h-8 text-success" />
+                  <CreditCard className="w-8 h-8 text-success" />
                 </motion.div>
-                <DrawerTitle className="text-xl">Refund to your wallet</DrawerTitle>
+                <DrawerTitle className="text-xl">Refund Processed</DrawerTitle>
                 <DrawerDescription className="mt-2 max-w-sm">
-                  Your money will be added to your wallet. You can use it on your next order.
+                  Your money will be refunded to your original payment method.
                 </DrawerDescription>
               </div>
 
@@ -389,7 +354,7 @@ const CancelOrderDialog = ({
                 </div>
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-success/20">
                   <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                  <span className="text-xs text-muted-foreground">Instant credit • No expiry • Use anytime</span>
+                  <span className="text-xs text-muted-foreground">Processed in 3-5 business days</span>
                 </div>
               </div>
 
@@ -397,8 +362,8 @@ const CancelOrderDialog = ({
                 <Button variant="outline" className="flex-1" onClick={() => setStep("choose")} disabled={submitting}>
                   Back
                 </Button>
-                <Button className="flex-1 bg-success hover:bg-success/90 text-white" onClick={handleWalletRefund} disabled={submitting}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Get Refund"}
+                <Button className="flex-1 bg-success hover:bg-success/90 text-white" onClick={handleRefund} disabled={submitting}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Cancel"}
                 </Button>
               </div>
             </motion.div>

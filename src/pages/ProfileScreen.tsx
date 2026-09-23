@@ -8,7 +8,7 @@ import {
   LogOut,
   Users,
   FileText,
-  Wallet,
+
   Pencil,
   Heart,
   CalendarDays,
@@ -23,8 +23,7 @@ import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
-import { walletService } from "@/lib/walletService";
-import { WalletSummary } from "@/types/wallet";
+
 import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
 
 const ProfileScreen = () => {
@@ -35,8 +34,7 @@ const ProfileScreen = () => {
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileContact, setProfileContact] = useState<string | null>(null);
   const { members: familyMembers } = useFamilyMembers();
-  const [walletBalance, setWalletBalance] = useState<number>(0);
-  const [walletSummary, setWalletSummary] = useState<WalletSummary>({ moneyAdded: 0, refunds: 0, spent: 0 });
+
   const [reportsCount, setReportsCount] = useState(0);
   const [bookingsCount, setBookingsCount] = useState(0);
   const { favoriteCount } = useFavoriteLabs();
@@ -57,9 +55,7 @@ const ProfileScreen = () => {
         setProfileContact(profileData.phone || profileData.email || null);
       }
 
-      const { wallet, summary } = await walletService.getWallet(session.user.id);
-      setWalletBalance(Number(wallet?.available_balance ?? 0));
-      setWalletSummary(summary);
+
       const { count: actualReportsCount } = await supabase
         .from("orders")
         .select("*", { count: "exact", head: true })
@@ -149,38 +145,6 @@ const ProfileScreen = () => {
           ))}
         </div>
 
-        {/* Ultra-Professional Wallet Card (Compact) */}
-        <div 
-          onClick={() => navigate('/wallet')}
-          className="rounded-3xl p-4 mb-5 relative overflow-hidden bg-gradient-to-b from-[#18191c] to-[#0a0a0c] border border-white/10 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)] cursor-pointer active:scale-[0.98] transition-transform"
-        >
-          {/* Subtle top edge highlight for glass effect */}
-          <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          
-          {/* Subtle glowing orb in the background */}
-          <div className="absolute -top-12 -right-12 w-40 h-40 bg-primary/20 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
-          <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-[60px] pointer-events-none mix-blend-screen" />
-          
-          <div className="relative z-10 mb-4 flex justify-between items-center">
-            <div className="flex flex-col">
-              <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400 mb-2.5 flex items-center gap-2 opacity-90">
-                <Wallet className="w-4 h-4 text-slate-300" strokeWidth={2} />
-                BloodLyn Wallet
-              </h3>
-              <div className="flex flex-col gap-1">
-                <span className="text-[32px] leading-[0.8] font-bold tracking-tight text-white drop-shadow-sm">₹{walletBalance.toFixed(2)}</span>
-                <p className="text-xs text-slate-400 font-medium">Available Balance</p>
-              </div>
-            </div>
-            <button 
-              onClick={(e) => { e.stopPropagation(); navigate('/wallet/add'); }}
-              className="bg-white hover:bg-slate-50 text-slate-900 rounded-full px-4 py-2 flex items-center justify-center transition-transform active:scale-95 shadow-md gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold">Add Money</span>
-            </button>
-          </div>
-        </div>
 
         {/* Consolidated Menu List */}
         <div className="bg-white rounded-3xl shadow-sm overflow-hidden mb-6 border border-slate-100">

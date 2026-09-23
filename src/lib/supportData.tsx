@@ -6,7 +6,7 @@ import {
   Stethoscope,
   Activity,
   CreditCard,
-  Wallet,
+
   Gift,
   User,
   Truck,
@@ -47,20 +47,7 @@ const orderIssues: IssueNode[] = [
   { id: "other_order", label: "Other order issue", priority: "Normal" }
 ];
 
-const walletIssues: IssueNode[] = [
-  {
-    id: "wallet_transaction",
-    label: "Wallet Transaction",
-    children: [
-      { id: "deducted_not_updated", label: "Money Deducted but Balance Not Updated", priority: "Critical" },
-      { id: "unauthorized_tx", label: "Unauthorized wallet transaction", priority: "Critical" },
-      { id: "refund_not_received", label: "Refund not received in wallet", priority: "High" },
-      { id: "unable_to_add", label: "Unable to add money", priority: "Normal" }
-    ]
-  },
-  { id: "wallet_locked", label: "Wallet locked/blocked", priority: "High" },
-  { id: "kyc_issue", label: "KYC/Verification issue", priority: "Normal" }
-];
+
 
 export const SUPPORT_CATEGORIES: SupportCategory[] = [
   {
@@ -137,14 +124,7 @@ export const SUPPORT_CATEGORIES: SupportCategory[] = [
       { id: "invoice_issue", label: "Need invoice/receipt", priority: "Low" }
     ]
   },
-  {
-    id: "wallet_related",
-    title: "Wallet Related",
-    subtitle: "Problems with BloodLyn Wallet",
-    icon: Wallet,
-    requiresOrderContext: false,
-    issues: walletIssues
-  },
+
   {
     id: "cashback_coupon",
     title: "Cashback / Coupon",

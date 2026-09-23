@@ -55,7 +55,7 @@ const RoutePrefetcher = () => {
       import("../pages/TrackingScreen");
       import("../pages/FamilyMembersScreen");
       import("../pages/AddFamilyMemberScreen");
-      import("../pages/PaymentMethodsScreen");
+
       import("../pages/TermsScreen");
       import("../pages/PrivacyPolicyScreen");
       import("../pages/NotFound");

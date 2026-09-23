@@ -19,9 +19,7 @@ interface ProcessingState {
   successState: Record<string, any>;
   /** Resolved vendor ID */
   resolvedVendorId: string | null;
-  /** Wallet deduction */
-  walletDeduction: number;
-  useWallet: boolean;
+
   /** Cart items for bookkeeping */
   cartItems: Array<Record<string, any>>;
   /** Payment state from checkout */
@@ -162,8 +160,6 @@ const PaymentProcessingScreen = () => {
       orderPayload,
       successState,
       resolvedVendorId,
-      walletDeduction,
-      useWallet: shouldUseWallet,
       cartItems,
       paymentState,
       orderAddress,
@@ -265,17 +261,7 @@ const PaymentProcessingScreen = () => {
         clearCart();
         clearStoredPrescription();
 
-        // Deduct wallet balance if used
-        if (shouldUseWallet && walletDeduction > 0 && user?.id) {
-          import("@/lib/walletService").then(({ walletService }) => {
-            walletService.chargeWallet(
-              user.id,
-              walletDeduction,
-              fnData?.orderId || fnData?.id || "unknown_order",
-              "Booking Payment"
-            );
-          });
-        }
+
       } catch (postOrderError) {
         console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
       }

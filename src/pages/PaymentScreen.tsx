@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, Wallet, ChevronRight, HeartPulse, Activity, Star } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, CreditCard, ChevronRight, HeartPulse, Activity, Star, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -56,27 +56,12 @@ const PaymentScreen = () => {
   const stateSubtotal = paymentState?.subtotal || cartSubtotal;
   
   const { user } = useAuth();
-  const [walletBalance, setWalletBalance] = useState(0);
-  const [useWallet, setUseWallet] = useState(false);
-  
-  useEffect(() => {
-    const fetchBalance = async () => {
-      if (user?.id) {
-        import("@/lib/walletService").then(({ walletService }) => {
-          walletService.getWallet(user.id).then(({ wallet }) => {
-            if (wallet) setWalletBalance(wallet.available_balance);
-          });
-        });
-      }
-    };
-    fetchBalance();
-  }, [user?.id]);
 
   const [couponCode, setCouponCode] = useState("");
   const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay after blood collection" });
   const [verifyingServiceability, setVerifyingServiceability] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [bpAddonPrice, setBpAddonPrice] = useState<number | null>(null);
@@ -211,8 +196,7 @@ const PaymentScreen = () => {
   const discount = Math.round(appliedDiscount);
   const platformFee = usePlatformFeeFlat();
   const baseTotal = effectiveSubtotal - discount + platformFee;
-  const walletDeduction = useWallet ? Math.min(walletBalance, baseTotal) : 0;
-  const total = baseTotal - walletDeduction;
+  const total = baseTotal;
 
 
   const applyCoupon = () => {
@@ -515,8 +499,7 @@ const PaymentScreen = () => {
               : undefined,
           },
           resolvedVendorId,
-          walletDeduction,
-          useWallet,
+
           cartItems,
           paymentState,
           labId,
@@ -854,12 +837,7 @@ const PaymentScreen = () => {
               <span className="text-muted-foreground">Platform fee</span>
               <span className="text-foreground font-semibold tabular-nums">₹ {platformFee.toFixed(2)}</span>
             </div>
-            {useWallet && walletDeduction > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Wallet Used</span>
-                <span className="text-primary font-bold tabular-nums">- ₹ {walletDeduction}.00</span>
-              </div>
-            )}
+
             <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
               <span className="font-bold text-foreground">Payable Amount</span>
               <span className="font-black text-lg text-primary tabular-nums">₹ {total}.00</span>
@@ -867,70 +845,37 @@ const PaymentScreen = () => {
           </div>
         </motion.div>
 
-        {/* Use Wallet Balance Toggle */}
-        {walletBalance > 0 && (
-          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4 mt-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Wallet className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Use Wallet Balance</h3>
-                <p className="text-xs text-muted-foreground">Available: <span className="font-semibold text-foreground">₹ {walletBalance.toFixed(2)}</span></p>
-              </div>
-            </div>
-            
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                value="" 
-                className="sr-only peer" 
-                checked={useWallet}
-                onChange={() => setUseWallet(!useWallet)}
-              />
-              <div className="w-11 h-6 bg-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
-          </motion.div>
-        )}
+
 
         {/* Split Pay Button - Select Mode + Pay Now (Moved from fixed bottom) */}
         <motion.div 
           initial={false} 
           animate={{ opacity: 1, y: 0 }} 
           transition={{ delay: 0}}
-          className="mt-4 w-full bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4"
+          className="mt-4 w-full bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4 flex flex-col gap-3"
         >
-          <div className="flex items-center gap-0">
-            {/* Left: Select Payment Mode */}
-            <button
-              onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total } })}
-              className="flex items-center gap-2 py-2 pr-4 flex-shrink-0"
-            >
-              <Wallet className="w-5 h-5 text-muted-foreground" />
-              <div className="text-left">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  PAY USING <ChevronUp className="w-3 h-3" />
-                </p>
-                <p className="text-sm font-bold text-foreground leading-tight">{selectedPaymentMethod.name}</p>
-              </div>
-            </button>
-
-            {/* Right: Pay Now Button */}
-            <Button
-              variant="hero"
-              className="flex-1 h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
-              onClick={handlePayment}
-              disabled={verifyingServiceability || isSubmittingOrder}
-            >
-              <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
-                <span className="text-sm font-bold">₹{total}</span>
-                <span className="text-[10px] font-semibold opacity-80 tracking-wide">TOTAL</span>
+          <div className="flex justify-center mb-1">
+            <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-full border border-primary/20">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">
+                {selectedPaymentMethod.name}
               </span>
-              <span className="text-base font-bold">
-                {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
-              </span>
-            </Button>
+            </div>
           </div>
+          <Button
+            variant="hero"
+            className="w-full h-14 rounded-2xl text-base font-bold gap-3 shadow-md shadow-primary/20"
+            onClick={handlePayment}
+            disabled={verifyingServiceability || isSubmittingOrder}
+          >
+            <span className="flex flex-col items-center leading-tight pr-3 border-r border-white/25">
+              <span className="text-sm font-bold">₹{total}</span>
+              <span className="text-[10px] font-semibold opacity-80 tracking-wide">TOTAL</span>
+            </span>
+            <span className="text-base font-bold">
+              {isSubmittingOrder ? "Placing…" : verifyingServiceability ? "Verifying…" : "Place Order ›"}
+            </span>
+          </Button>
         </motion.div>
 
       </div>

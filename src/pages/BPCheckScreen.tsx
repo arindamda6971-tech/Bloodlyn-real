@@ -228,7 +228,7 @@ const BPCheckScreen = () => {
   const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay on Delivery" });
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay after BP check" });
 
   useEffect(() => {
     const checkMethod = () => {
@@ -1077,38 +1077,27 @@ const BPCheckScreen = () => {
               </div>
 
               {/* Checkout Bar (Moved Inline) */}
-              <div className="mt-4 bg-card rounded-2xl border border-border/70 p-3 shadow-sm mb-4">
-                <div className="flex items-center gap-3">
-                  {/* Payment Method Selector button */}
-                  <button
-                    onClick={() => navigate("/payment-methods", { state: { selectedMethod: selectedPaymentMethod.id, total: price } })}
-                    className="flex items-center gap-2 text-left shrink-0 active:scale-95 transition-transform"
-                  >
-                    <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center">
-                      <Wallet className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <span className="block text-[9px] font-black uppercase tracking-widest text-muted-foreground">Pay Using</span>
-                      <span className="block text-xs font-bold text-foreground flex items-center gap-0.5">
-                        {selectedPaymentMethod.name} <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                      </span>
-                    </div>
-                  </button>
-
-                  {/* Place Order Button */}
-                  <Button
-                    onClick={handlePayment}
-                    disabled={placing}
-                    className="flex-1 h-13 rounded-2xl text-sm font-black bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 disabled:opacity-60"
-                  >
-                    {placing ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CreditCard className="w-4 h-4" />
-                    )}
-                    <span>{placing ? "Placing Order…" : `Place Order • ₹${price}`}</span>
-                  </Button>
+              <div className="mt-4 bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4 flex flex-col gap-3">
+                <div className="flex justify-center mb-1">
+                  <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full border border-blue-200">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider">
+                      {selectedPaymentMethod.name}
+                    </span>
+                  </div>
                 </div>
+                <Button
+                  onClick={handlePayment}
+                  disabled={placing}
+                  className="w-full h-13 rounded-2xl text-sm font-black bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {placing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CreditCard className="w-4 h-4" />
+                  )}
+                  <span>{placing ? "Placing Order…" : `Place Order • ₹${price}`}</span>
+                </Button>
               </div>
             </div>
           )}
