@@ -41,7 +41,6 @@ const TestItem = React.memo(({
       </motion.div>
       <div className="flex-1 min-w-0">
         <motion.h3 className="font-semibold text-foreground text-sm truncate">{simplifyTestName(test.test_name)}</motion.h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Report in {test.report_delivery_time || "24h"}</p>
       </div>
       <div className="flex-shrink-0">
         <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
