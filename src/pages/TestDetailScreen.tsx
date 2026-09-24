@@ -52,6 +52,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useBridgeTests } from "@/hooks/useBridgeTests";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface UnifiedTest {
   id: string;
@@ -394,7 +395,10 @@ const TestDetailScreen = () => {
           <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase mb-1">
             {test.category || "Diagnostic Test"}
           </p>
-          <motion.h2 className="text-xl font-extrabold leading-tight text-secondary">{test.name}</motion.h2>
+          <motion.h2 className="text-xl font-extrabold leading-tight text-secondary">{simplifyTestName(test.name)}</motion.h2>
+          {simplifyTestName(test.name) !== test.name && (
+            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{test.name}</p>
+          )}
           <div className="flex items-center gap-2 mt-2">
             <span 
               onClick={() => setShowTrustSheet(true)}

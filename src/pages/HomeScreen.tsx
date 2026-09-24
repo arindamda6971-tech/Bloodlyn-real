@@ -37,6 +37,7 @@ import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
 import { intelligentSearch } from "@/utils/search-intelligence";
 import { matchToDictionary } from "@/lib/medical-dictionary";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -171,7 +172,7 @@ const HomeScreen = () => {
     </div>
   ), []);
 
-  // Compute the intelligent search term
+  // Compute the intelligent search term (dictionary-mapped)
   const backendSearchTerm = useMemo(() => {
     const q = debouncedSearchQuery.trim();
     if (!q) return "";
@@ -179,33 +180,61 @@ const HomeScreen = () => {
     const dictMatch = matchToDictionary(q, 0.5);
     if (dictMatch) {
       const canonical = dictMatch.canonical.toLowerCase();
-      if (canonical.includes("hba1c") || canonical.includes("sugar") || canonical.includes("glucose")) return "glucose";
-      if (canonical.includes("thyroid") || canonical.includes("tsh") || canonical.includes("t3") || canonical.includes("t4")) return "thyroid";
-      if (canonical.includes("lipid") || canonical.includes("cholesterol")) return "cholesterol";
-      if (canonical.includes("liver") || canonical.includes("lft")) return "liver";
-      if (canonical.includes("kidney") || canonical.includes("kft")) return "creatinine";
-      if (canonical.includes("blood count") || canonical.includes("cbc")) return "erythrocyte";
-      if (canonical.includes("urine")) return "urine";
-      if (canonical.includes("vitamin d")) return "vitamin d";
-      if (canonical.includes("vitamin b12")) return "vitamin b12";
-      if (canonical.includes("calcium")) return "calcium";
-      if (canonical.includes("iron")) return "iron";
-      return dictMatch.canonical.split(" ")[0];
+      
+      // Extract the most significant scientific keyword from the canonical name
+      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
+      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
+      
+      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
+      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
+      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
+      
+      return words[0] || dictMatch.canonical.split(" ")[0]; 
     }
-    return q;
+    return "";
   }, [debouncedSearchQuery]);
 
-  // Only call the API when there's a search term
-  const searchParams = useMemo(() => {
-    if (!backendSearchTerm) return undefined;
-    return { search: backendSearchTerm, limit: 15 };
-  }, [backendSearchTerm]);
+  const rawQuery = debouncedSearchQuery.trim();
 
-  const { data: bridgeData } = useBridgeTests(searchParams);
+  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
+  const { data: dictBridgeData } = useBridgeTests(
+    backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
+  );
+  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
+  const { data: rawBridgeData } = useBridgeTests(
+    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
+  );
 
   const searchResults = useMemo(() => {
-    return bridgeData?.tests || [];
-  }, [bridgeData]);
+    if (!debouncedSearchQuery.trim()) return [];
+    
+    const dictResults = dictBridgeData?.tests || [];
+    const rawResults = rawBridgeData?.tests || [];
+    
+    // Merge and deduplicate by test ID
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const test of [...rawResults, ...dictResults]) {
+      if (!seen.has(test.id)) {
+        seen.add(test.id);
+        merged.push(test);
+      }
+    }
+    
+    // Client-side filter: match against original, friendly name, AND mapped synonym
+    const q = debouncedSearchQuery.trim().toLowerCase();
+    const mappedQ = backendSearchTerm?.toLowerCase();
+    
+    return merged.filter((test) => {
+      const originalName = (test.test_name || test.name || "").toLowerCase();
+      const friendlyName = simplifyTestName(test.test_name || test.name || "").toLowerCase();
+      
+      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
+      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
+      
+      return matchesRaw || matchesMapped;
+    });
+  }, [debouncedSearchQuery, backendSearchTerm, dictBridgeData, rawBridgeData]);
 
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
@@ -281,7 +310,7 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                              <HighlightText text={testName} highlight={searchQuery} />
+                              <HighlightText text={simplifyTestName(testName)} highlight={searchQuery} />
                             </p>
                           </div>
                           <div className="flex items-center gap-2">

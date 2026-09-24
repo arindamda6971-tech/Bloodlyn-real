@@ -39,6 +39,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
 import { Skeleton } from "@/components/ui/skeleton";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import { useEffect } from "react";
 
 const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
@@ -129,7 +130,7 @@ const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCa
       <Beaker className="w-5 h-5 text-primary" />
     </div>
     <div className="flex-1 min-w-0">
-      <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{test.test_name}</h3>
+      <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{simplifyTestName(test.test_name)}</h3>
       <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
     </div>
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -166,26 +167,32 @@ const CategoriesScreen = () => {
     const dictMatch = matchToDictionary(q, 0.5);
     if (dictMatch) {
       const canonical = dictMatch.canonical.toLowerCase();
-      if (canonical.includes("hba1c") || canonical.includes("sugar") || canonical.includes("glucose")) return "glucose";
-      if (canonical.includes("thyroid") || canonical.includes("tsh") || canonical.includes("t3") || canonical.includes("t4")) return "thyroid";
-      if (canonical.includes("lipid") || canonical.includes("cholesterol")) return "cholesterol";
-      if (canonical.includes("liver") || canonical.includes("lft")) return "liver";
-      if (canonical.includes("kidney") || canonical.includes("kft")) return "creatinine";
-      if (canonical.includes("blood count") || canonical.includes("cbc")) return "erythrocyte";
-      if (canonical.includes("urine")) return "urine";
-      if (canonical.includes("vitamin d")) return "vitamin d";
-      if (canonical.includes("vitamin b12")) return "vitamin b12";
-      if (canonical.includes("calcium")) return "calcium";
-      if (canonical.includes("iron")) return "iron";
       
-      return dictMatch.canonical.split(" ")[0]; // Fallback to first word
+      // Extract the most significant scientific keyword from the canonical name
+      // This is dynamic, so we don't need hardcoded if-statements.
+      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
+      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
+      
+      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
+      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
+      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
+      
+      return words[0] || dictMatch.canonical.split(" ")[0]; 
     }
-    return q;
+    return undefined; // No dictionary match — raw query will be sent separately
   }, [debouncedSearchQuery]);
 
+  const rawQuery = debouncedSearchQuery.trim() || undefined;
+
   const { data: categoryData, isLoading: isCategoriesLoading } = useBridgeTests({});
-  const { data: searchData, isLoading: isSearchLoading } = useBridgeTests(
+
+  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
+  const { data: dictSearchData } = useBridgeTests(
     backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
+  );
+  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
+  const { data: rawSearchData, isLoading: isSearchLoading } = useBridgeTests(
+    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
   );
   
   const showLoading = useDelayedLoading(isCategoriesLoading);
@@ -216,11 +223,37 @@ const CategoriesScreen = () => {
     return cats;
   }, [categoryData]);
 
-  // Search results: Use server-side search
+  // Merge results from both queries + filter against friendly names
   const searchResults = useMemo(() => {
     if (!debouncedSearchQuery.trim()) return [];
-    return searchData?.tests || [];
-  }, [debouncedSearchQuery, searchData]);
+    
+    const dictResults = dictSearchData?.tests || [];
+    const rawResults = rawSearchData?.tests || [];
+    
+    // Merge and deduplicate by test ID
+    const seen = new Set<string>();
+    const merged: BridgeTest[] = [];
+    for (const test of [...rawResults, ...dictResults]) {
+      if (!seen.has(test.id)) {
+        seen.add(test.id);
+        merged.push(test);
+      }
+    }
+    
+    // Also match against the FRIENDLY name client-side, AND the mapped synonym term
+    const q = debouncedSearchQuery.trim().toLowerCase();
+    const mappedQ = backendSearchTerm?.toLowerCase();
+    
+    return merged.filter((test) => {
+      const originalName = (test.test_name || "").toLowerCase();
+      const friendlyName = simplifyTestName(test.test_name || "").toLowerCase();
+      
+      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
+      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
+      
+      return matchesRaw || matchesMapped;
+    });
+  }, [debouncedSearchQuery, backendSearchTerm, dictSearchData, rawSearchData]);
 
   const filteredCategories = useMemo(() => {
     if (debouncedSearchQuery.trim()) return []; // When searching, hide categories and show test results
