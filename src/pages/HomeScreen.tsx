@@ -36,6 +36,7 @@ import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
 import { intelligentSearch } from "@/utils/search-intelligence";
+import { matchToDictionary } from "@/lib/medical-dictionary";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -148,9 +149,7 @@ const HomeScreen = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
 
-  const { data: bridgeData } = useBridgeTests();
   const { pincode: userPincode } = useUserPincode();
-
   const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
 
   const [currentTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
@@ -165,31 +164,48 @@ const HomeScreen = () => {
     }));
   }, [centersData]);
 
-  // Performance optimized background (Hardware Accelerated)
   const StaticBackground = useMemo(() => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ transform: "translateZ(0)" }}>
       <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-primary/5 via-primary/5 to-transparent" />
-      {/* Replaced expensive blur-[120px] with a cheap radial-gradient for the same visual effect at 0 GPU cost */}
       <div className="absolute top-[-50px] left-[-50px] w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)" }} />
     </div>
   ), []);
 
-  const fetchTests = useCallback(async () => {
-    const { data } = await supabase
-      .from("tests")
-      .select("id, name, price, original_price, discount_percent")
-      .eq("is_active", true)
-      .limit(20000);
-    if (data) setAllTests(data);
-  }, []);
+  // Compute the intelligent search term
+  const backendSearchTerm = useMemo(() => {
+    const q = debouncedSearchQuery.trim();
+    if (!q) return "";
 
-  useEffect(() => {
-    fetchTests();
-  }, [fetchTests]);
+    const dictMatch = matchToDictionary(q, 0.5);
+    if (dictMatch) {
+      const canonical = dictMatch.canonical.toLowerCase();
+      if (canonical.includes("hba1c") || canonical.includes("sugar") || canonical.includes("glucose")) return "glucose";
+      if (canonical.includes("thyroid") || canonical.includes("tsh") || canonical.includes("t3") || canonical.includes("t4")) return "thyroid";
+      if (canonical.includes("lipid") || canonical.includes("cholesterol")) return "cholesterol";
+      if (canonical.includes("liver") || canonical.includes("lft")) return "liver";
+      if (canonical.includes("kidney") || canonical.includes("kft")) return "creatinine";
+      if (canonical.includes("blood count") || canonical.includes("cbc")) return "erythrocyte";
+      if (canonical.includes("urine")) return "urine";
+      if (canonical.includes("vitamin d")) return "vitamin d";
+      if (canonical.includes("vitamin b12")) return "vitamin b12";
+      if (canonical.includes("calcium")) return "calcium";
+      if (canonical.includes("iron")) return "iron";
+      return dictMatch.canonical.split(" ")[0];
+    }
+    return q;
+  }, [debouncedSearchQuery]);
+
+  // Only call the API when there's a search term
+  const searchParams = useMemo(() => {
+    if (!backendSearchTerm) return undefined;
+    return { search: backendSearchTerm, limit: 15 };
+  }, [backendSearchTerm]);
+
+  const { data: bridgeData } = useBridgeTests(searchParams);
 
   const searchResults = useMemo(() => {
-    return intelligentSearch(debouncedSearchQuery, [...allTests, ...(bridgeData?.tests || [])]);
-  }, [debouncedSearchQuery, allTests, bridgeData]);
+    return bridgeData?.tests || [];
+  }, [bridgeData]);
 
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
@@ -251,7 +267,8 @@ const HomeScreen = () => {
                     {searchResults.map((test) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
-                      const inCart = isInCart(test.id, test.name);
+                      const testName = test.name || test.test_name || "Unknown Test";
+                      const inCart = isInCart(test.id, testName);
                       return (
                         <button
                           key={test.id}
@@ -264,12 +281,12 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                              <HighlightText text={test.name} highlight={searchQuery} />
+                              <HighlightText text={testName} highlight={searchQuery} />
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => handleQuickAdd(e, test)}
+                              onClick={(e) => handleQuickAdd(e, { ...test, name: testName })}
                               disabled={inCart}
                               className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                                 inCart

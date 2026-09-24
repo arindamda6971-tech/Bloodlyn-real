@@ -24,12 +24,29 @@ interface BridgeTestsResponse {
   tests: BridgeTest[];
 }
 
-async function fetchBridgeTests(category?: string): Promise<BridgeTestsResponse> {
-  const params: Record<string, string> = { status: "active", limit: "20000" };
-  if (category) params.category = category;
+export interface BridgeTestsParams {
+  category?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+async function fetchBridgeTests(params: BridgeTestsParams = {}): Promise<BridgeTestsResponse> {
+  // Use user-provided limit, fallback to 20 for search/category, fallback to 0 if just fetching categories
+  const limitStr = params.limit !== undefined ? String(params.limit) : 
+                   (params.category || params.search ? "20" : "0");
+  
+  const queryParams: Record<string, string> = { 
+    status: "active", 
+    limit: limitStr
+  };
+  
+  if (params.category) queryParams.category = params.category;
+  if (params.search) queryParams.search = params.search;
+  if (params.offset) queryParams.offset = String(params.offset);
 
   const { data, error } = await supabase.functions.invoke("bridge-proxy", {
-    body: { endpoint: "bridge-tests", method: "GET", params },
+    body: { endpoint: "bridge-tests", method: "GET", params: queryParams },
   });
 
   if (error) throw new Error(error.message || "Failed to fetch tests");
@@ -37,10 +54,11 @@ async function fetchBridgeTests(category?: string): Promise<BridgeTestsResponse>
   return data;
 }
 
-export function useBridgeTests(category?: string) {
+export function useBridgeTests(params?: BridgeTestsParams) {
+  // We stringify the params to make a stable query key
   return useQuery({
-    queryKey: ["bridge-tests-v2", category],
-    queryFn: () => fetchBridgeTests(category),
+    queryKey: ["bridge-tests-v2", JSON.stringify(params || {})],
+    queryFn: () => fetchBridgeTests(params),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 2,
   });

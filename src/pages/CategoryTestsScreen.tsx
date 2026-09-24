@@ -10,6 +10,7 @@ import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
+import { intelligentSearch } from "@/utils/search-intelligence";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -59,7 +60,16 @@ const CategoryTestsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const { data: bridgeData, isLoading, error } = useBridgeTests();
+  const params = useMemo(() => {
+    const p: { category?: string; limit?: number } = {};
+    if (categorySlug && categorySlug !== "all") {
+      p.category = categorySlug;
+    }
+    p.limit = 5000; // Load all tests for this specific category
+    return p;
+  }, [categorySlug]);
+
+  const { data: bridgeData, isLoading, error } = useBridgeTests(params);
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
 
   // Incremental rendering for ultra-smooth list population
@@ -68,18 +78,14 @@ const CategoryTestsScreen = () => {
   const allTests = useMemo(() => {
     if (!bridgeData?.tests) return [];
     
-    let filtered = bridgeData.tests;
-    if (categorySlug !== "all") {
-      filtered = filtered.filter((t) => t.category === categorySlug);
+    const query = debouncedSearchQuery.trim();
+    if (query) {
+      // Use intelligent search to handle typos and medical aliases locally!
+      return intelligentSearch(query, bridgeData.tests, 50) as BridgeTest[];
     }
     
-    if (debouncedSearchQuery.trim()) {
-      const q = debouncedSearchQuery.toLowerCase().trim();
-      filtered = filtered.filter((t) => t.test_name.toLowerCase().includes(q));
-    }
-    
-    return filtered;
-  }, [bridgeData, categorySlug, debouncedSearchQuery]);
+    return bridgeData.tests;
+  }, [bridgeData, debouncedSearchQuery]);
 
   const tests = useMemo(() => allTests.slice(0, visibleCount), [allTests, visibleCount]);
 
