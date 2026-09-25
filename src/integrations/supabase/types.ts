@@ -1160,39 +1160,6 @@ export type Database = {
         }
         Relationships: []
       }
-      wallet_transactions: {
-        Row: {
-          amount: number
-          balance_after: number
-          created_at: string
-          description: string | null
-          id: string
-          order_id: string | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          balance_after?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          order_id?: string | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          balance_after?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          order_id?: string | null
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       diagnostic_centers_public: {
