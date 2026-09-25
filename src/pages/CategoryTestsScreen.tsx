@@ -10,6 +10,7 @@ import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
+import { intelligentSearch } from "@/utils/search-intelligence";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import {
   AlertDialog,
@@ -82,14 +83,10 @@ const CategoryTestsScreen = () => {
     
     const query = debouncedSearchQuery.trim();
     if (query) {
-      const normalized = query.toLowerCase();
-      return bridgeData.tests.filter((test) =>
-        [
-          test.test_name,
-          test.category,
-          test.prerequisites,
-        ].some((value) => value?.toLowerCase().includes(normalized))
+      const matchedIds = new Set(
+        intelligentSearch(query, bridgeData.tests, 50).map((result) => result.id)
       );
+      return bridgeData.tests.filter((test) => matchedIds.has(test.id));
     }
     
     return bridgeData.tests;
