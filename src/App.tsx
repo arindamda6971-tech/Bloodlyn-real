@@ -219,7 +219,17 @@ const App = () => {
     <ErrorBoundary>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: "v1" }}
+        persistOptions={{
+          persister,
+          maxAge: 24 * 60 * 60 * 1000,
+          buster: "v2-catalogue-memory-cache",
+          dehydrateOptions: {
+            // Large Admin catalogues remain in React Query's fast in-memory
+            // cache. Serializing thousands of tests into localStorage blocks
+            // mobile navigation and made Explore → Home visibly stutter.
+            shouldDehydrateQuery: (query) => query.queryKey[0] !== "bridge-tests-v2",
+          },
+        }}
       >
         <ThemeProvider>
           <AuthProvider>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, FlaskConical, ShoppingCart, Plus, Search, ChevronRight } from "lucide-react";
@@ -10,7 +10,6 @@ import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
-import { intelligentSearch } from "@/utils/search-intelligence";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import {
   AlertDialog,
@@ -72,16 +71,25 @@ const CategoryTestsScreen = () => {
   const { data: bridgeData, isLoading, error } = useBridgeTests(params);
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
 
-  // Incremental rendering for ultra-smooth list population
-  const [visibleCount, setVisibleCount] = useState(20);
+  // Keep the complete catalogue in the query cache, but mount only nearby
+  // rows. The previous requestAnimationFrame loop mounted every test as soon
+  // as the page opened, blocking the route transition back to Home.
+  const [visibleCount, setVisibleCount] = useState(30);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   const allTests = useMemo(() => {
     if (!bridgeData?.tests) return [];
     
     const query = debouncedSearchQuery.trim();
     if (query) {
-      // Use intelligent search to handle typos and medical aliases locally!
-      return intelligentSearch(query, bridgeData.tests, 50) as BridgeTest[];
+      const normalized = query.toLowerCase();
+      return bridgeData.tests.filter((test) =>
+        [
+          test.test_name,
+          test.category,
+          test.prerequisites,
+        ].some((value) => value?.toLowerCase().includes(normalized))
+      );
     }
     
     return bridgeData.tests;
@@ -92,13 +100,26 @@ const CategoryTestsScreen = () => {
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
   useEffect(() => {
-    if (visibleCount < allTests.length) {
-      const id = requestAnimationFrame(() => {
-        setVisibleCount(prev => Math.min(prev + 20, allTests.length));
-      });
-      return () => cancelAnimationFrame(id);
-    }
-  }, [visibleCount, allTests.length]);
+    setVisibleCount(30);
+  }, [categorySlug, debouncedSearchQuery]);
+
+  const revealNextBatch = useCallback(() => {
+    setVisibleCount((current) => Math.min(current + 30, allTests.length));
+  }, [allTests.length]);
+
+  useEffect(() => {
+    const target = loadMoreRef.current;
+    if (!target || visibleCount >= allTests.length) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) revealNextBatch();
+      },
+      { rootMargin: "240px 0px" }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [revealNextBatch, visibleCount, allTests.length]);
 
 
   const handleAddToCart = (test: BridgeTest) => {
@@ -175,6 +196,11 @@ const CategoryTestsScreen = () => {
                 onOpen={(t) => navigate(`/test/${t.id}`, { state: { bridgeTest: t } })}
               />
             ))}
+            {visibleCount < allTests.length && (
+              <div ref={loadMoreRef} className="h-8 flex items-center justify-center" aria-hidden="true">
+                <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              </div>
+            )}
           </div>
         )}
       </div>
