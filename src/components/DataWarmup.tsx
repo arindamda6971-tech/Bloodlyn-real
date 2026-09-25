@@ -40,11 +40,15 @@ const DataWarmup = () => {
           },
         }),
         queryClient.prefetchQuery({
-          queryKey: ["bridge-tests", undefined],
+          queryKey: ["bridge-tests-v2", "{}"],
           staleTime: 5 * 60 * 1000,
           queryFn: async () => {
             const { data, error } = await supabase.functions.invoke("bridge-proxy", {
-              body: { endpoint: "bridge-tests", method: "GET", params: { status: "active" } },
+              body: {
+                endpoint: "bridge-tests",
+                method: "GET",
+                params: { status: "active", limit: "0" },
+              },
             });
             if (error) throw new Error(error.message || "Failed to fetch tests");
             if (!data?.success) throw new Error("Bridge API returned unsuccessful response");

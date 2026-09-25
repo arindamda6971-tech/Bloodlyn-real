@@ -227,7 +227,9 @@ const App = () => {
             // Large Admin catalogues remain in React Query's fast in-memory
             // cache. Serializing thousands of tests into localStorage blocks
             // mobile navigation and made Explore → Home visibly stutter.
-            shouldDehydrateQuery: (query) => query.queryKey[0] !== "bridge-tests-v2",
+            shouldDehydrateQuery: (query) =>
+              typeof query.queryKey[0] !== "string" ||
+              !query.queryKey[0].startsWith("bridge-tests"),
           },
         }}
       >
