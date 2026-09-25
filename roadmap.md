@@ -5,3 +5,5 @@
 - [x] Add secure favorite partner labs, a real Profile Saved count, and a Saved Labs page.
 - [x] Verify focused lint, TypeScript, tests, production build, and available browser states.
 - [x] Replace the lab-test percentage charge with the Admin-managed flat platform fee across checkout and order creation.
+- [x] Keep Explore Tests smooth with bounded list mounting and memory-only catalogue caching.
+- [x] Enable the existing pull-to-refresh interaction on Home.
