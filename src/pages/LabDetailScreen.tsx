@@ -51,6 +51,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLabSlots } from "@/hooks/useLabSlots";
+import { formatAvailableDays, normalizeAvailabilityType } from "@/lib/test-availability";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -285,9 +286,10 @@ const dbIdToLocalId: Record<string, string> = {
   "apollo": "apollo",
 };
 
-type TabKey = "all" | "packages";
+type TabKey = "general" | "specialized" | "packages";
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "all", label: "All Tests" },
+  { key: "general", label: "General Tests" },
+  { key: "specialized", label: "Specialized Tests" },
   { key: "packages", label: "Health Packages" },
 ];
 
@@ -325,6 +327,14 @@ interface DynamicTest {
   description?: string;
   testsCount?: number;
   discountPercent?: number;
+  availabilityType?: "GENERAL" | "SPECIALIZED";
+  availableDays?: string[];
+  sampleType?: string;
+  preparationRequired?: boolean;
+  preparationInstruction?: string;
+  fastingRequired?: boolean;
+  fastingInstruction?: string;
+  reportType?: string;
 }
 
 // ─── Active Offers Component ───
@@ -418,7 +428,7 @@ const LabDetailScreen = () => {
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [activeTab, setActiveTab] = useState<TabKey>("general");
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
   
@@ -479,6 +489,15 @@ const LabDetailScreen = () => {
                 price: Number(p.price),
                 category: p.category || 'Blood Tests',
                 popular: false,
+                description: p.description || undefined,
+                availabilityType: normalizeAvailabilityType(p.availability_type),
+                availableDays: p.available_days || undefined,
+                sampleType: p.sample_type || undefined,
+                preparationRequired: p.preparation_required || false,
+                preparationInstruction: p.preparation_instruction || undefined,
+                fastingRequired: p.fasting_required || false,
+                fastingInstruction: p.fasting_instruction || undefined,
+                reportType: p.report_type || undefined,
               }));
             }
           }
@@ -627,12 +646,16 @@ const LabDetailScreen = () => {
   const labTests = lab.tests || [];
   const minTestPrice = labTests.length > 0 ? Math.min(...labTests.map(t => t.price).filter(p => p > 0)) : 0;
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
-  const allTestsCount = labTests.length - packageCount;
+  const generalTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "GENERAL").length;
+  const specializedTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "SPECIALIZED").length;
   const filteredTests = labTests.filter((test) => {
     if (!test || !test.name) return false;
     const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
     const isPackage = test.category === "Health Packages";
-    const matchesTab = activeTab === "packages" ? isPackage : !isPackage;
+    const availabilityType = normalizeAvailabilityType(test.availabilityType);
+    const matchesTab = activeTab === "packages"
+      ? isPackage
+      : !isPackage && availabilityType === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
     const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
     return matchesSearch && matchesTab && matchesCategory;
   });
@@ -658,6 +681,14 @@ const LabDetailScreen = () => {
         labName: lab.name,
         vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
         kind: test.category === "Health Packages" ? "package" : "test",
+        availabilityType: test.availabilityType,
+        availableDays: test.availableDays,
+        sampleType: test.sampleType,
+        preparationRequired: test.preparationRequired,
+        preparationInstruction: test.preparationInstruction,
+        fastingRequired: test.fastingRequired,
+        fastingInstruction: test.fastingInstruction,
+        reportType: test.reportType,
       });
       if (ok) {
         toast.success(`${testName} added to cart`);
@@ -759,7 +790,7 @@ const LabDetailScreen = () => {
         <div className="px-5 -mt-6 relative z-20">
           <div className="grid grid-cols-3 gap-3">
              <button onClick={() => { 
-               setActiveTab("all"); 
+               setActiveTab("general"); 
                setSelectedCategory("Blood Tests");
                setSearchQuery("");
                setTimeout(() => {
@@ -907,10 +938,10 @@ const LabDetailScreen = () => {
 
         {/* Tab filters - Scrolls away and hides behind sticky search bar */}
         <div className="px-5 pt-3 pb-1">
-          <div className="relative grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
+          <div className="relative grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
-              const count = tab.key === "packages" ? packageCount : allTestsCount;
+              const count = tab.key === "packages" ? packageCount : tab.key === "specialized" ? specializedTestsCount : generalTestsCount;
               return (
                 <button
                   key={tab.key}
@@ -918,7 +949,7 @@ const LabDetailScreen = () => {
                     setActiveTab(tab.key);
                     setSelectedCategory(null);
                   }}
-                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
+                   className="relative z-10 flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-xl text-[11px] font-extrabold transition-all"
                 >
                   {isActive && (
                     <motion.div
@@ -1006,7 +1037,22 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
+                        {test.category !== "Health Packages" && (
+                          <Badge variant="outline" className="text-[9px] px-2 py-0.5">
+                            {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" ? "Specialized" : "General"}
+                          </Badge>
+                        )}
                       </div>
+                      {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" && (
+                        <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                          Available: {formatAvailableDays(test.availableDays) || "Schedule unavailable"}
+                        </p>
+                      )}
+                      {(test.sampleType || test.reportType) && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {[test.sampleType && `Sample: ${test.sampleType}`, test.reportType && `Report: ${test.reportType}`].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
                         <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                           <span>{test.testsCount} tests included</span>
