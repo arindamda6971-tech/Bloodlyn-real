@@ -64,40 +64,64 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          availability_type: string | null
+          available_days: string[] | null
           created_at: string
           family_member_id: string | null
+          fasting_instruction: string | null
+          fasting_required: boolean | null
           id: string
           lab_id: string | null
           lab_name: string | null
           package_id: string | null
+          preparation_instruction: string | null
+          preparation_required: boolean | null
           price: number | null
           quantity: number | null
+          report_type: string | null
+          sample_type: string | null
           test_id: string | null
           test_name: string | null
           user_id: string
         }
         Insert: {
+          availability_type?: string | null
+          available_days?: string[] | null
           created_at?: string
           family_member_id?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           lab_id?: string | null
           lab_name?: string | null
           package_id?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number | null
           quantity?: number | null
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           test_name?: string | null
           user_id: string
         }
         Update: {
+          availability_type?: string | null
+          available_days?: string[] | null
           created_at?: string
           family_member_id?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           lab_id?: string | null
           lab_name?: string | null
           package_id?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number | null
           quantity?: number | null
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           test_name?: string | null
           user_id?: string

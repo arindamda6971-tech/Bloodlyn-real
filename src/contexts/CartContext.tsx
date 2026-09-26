@@ -5,6 +5,7 @@ import { triggerHaptic } from "@/utils/haptics";
 import { useHaptics } from "@/hooks/useHaptics";
 import { toast } from "sonner";
 import { Analytics } from "@/lib/analytics";
+import { getCommonSpecializedDays, normalizeAvailabilityType, normalizeAvailableDays } from "@/lib/test-availability";
 
 interface CartItem {
   id: string;
@@ -17,6 +18,14 @@ interface CartItem {
   familyMemberId?: string;
   category?: string;
   kind?: "test" | "package";
+  availabilityType?: "GENERAL" | "SPECIALIZED";
+  availableDays?: string[];
+  sampleType?: string;
+  preparationRequired?: boolean;
+  preparationInstruction?: string;
+  fastingRequired?: boolean;
+  fastingInstruction?: string;
+  reportType?: string;
 }
 
 
@@ -39,6 +48,14 @@ type CartItemDBRow = {
   quantity: number | null;
   family_member_id: string | null;
   created_at?: string;
+  availability_type?: string | null;
+  available_days?: string[] | null;
+  sample_type?: string | null;
+  preparation_required?: boolean | null;
+  preparation_instruction?: string | null;
+  fasting_required?: boolean | null;
+  fasting_instruction?: string | null;
+  report_type?: string | null;
 };
 
 interface CartContextType {
@@ -143,6 +160,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantity: item.quantity || 1,
             familyMemberId: item.family_member_id || undefined,
             kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
+            availabilityType: normalizeAvailabilityType(item.availability_type),
+            availableDays: item.available_days || undefined,
+            sampleType: item.sample_type || undefined,
+            preparationRequired: item.preparation_required || undefined,
+            preparationInstruction: item.preparation_instruction || undefined,
+            fastingRequired: item.fasting_required || undefined,
+            fastingInstruction: item.fasting_instruction || undefined,
+            reportType: item.report_type || undefined,
           }));
         setItems(cartItems);
         setLocalCart(cartItems);
@@ -186,6 +211,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
         lab_name: item.labName || null,
         quantity: item.quantity,
+        availability_type: item.availabilityType || null,
+        available_days: item.availableDays || null,
+        sample_type: item.sampleType || null,
+        preparation_required: item.preparationRequired ?? null,
+        preparation_instruction: item.preparationInstruction || null,
+        fasting_required: item.fastingRequired ?? null,
+        fasting_instruction: item.fastingInstruction || null,
+        report_type: item.reportType || null,
       } as any));
 
       let { error } = await supabase
@@ -275,6 +308,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (hasItem(item.id, item.name)) {
       toast.error("This test is already in your cart.");
       return false;
+    }
+
+    if (item.kind === "test") {
+      const incomingType = normalizeAvailabilityType(item.availabilityType);
+      if (incomingType === "SPECIALIZED" && normalizeAvailableDays(item.availableDays).length === 0) {
+        toast.error("This specialized test has no valid booking days. Please contact the lab.");
+        return false;
+      }
+
+      const existingTests = items.filter((existing) => existing.kind === "test");
+      const existingTypes = existingTests.map((existing) => normalizeAvailabilityType(existing.availabilityType));
+      if (existingTypes.some((type) => type !== incomingType)) {
+        toast.error("General and Specialized tests cannot be booked together. Please create a separate booking.");
+        return false;
+      }
+
+      if (incomingType === "SPECIALIZED") {
+        const commonDays = getCommonSpecializedDays([...existingTests, item]);
+        if (commonDays?.length === 0) {
+          toast.error("These specialized tests do not have a common available day. Please book them separately.");
+          return false;
+        }
+      }
     }
 
     const isServiceItem = (i: { id: string; labId?: string; name: string }) =>

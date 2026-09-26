@@ -785,6 +785,14 @@ const CartScreen = () => {
                     <div className="flex-1 min-w-0">
                       
                       <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
+                      {(item.preparationInstruction || item.fastingInstruction || item.sampleType || item.reportType) && (
+                        <div className="mt-2 space-y-1 text-[11px] leading-snug text-muted-foreground">
+                          {item.preparationInstruction && <p><span className="font-bold text-foreground">Preparation:</span> {item.preparationInstruction}</p>}
+                          {item.fastingRequired && <p><span className="font-bold text-foreground">Fasting:</span> {item.fastingInstruction || "Required"}</p>}
+                          {item.sampleType && <p><span className="font-bold text-foreground">Sample:</span> {item.sampleType}</p>}
+                          {item.reportType && <p><span className="font-bold text-foreground">Report:</span> {item.reportType}</p>}
+                        </div>
+                      )}
                       {item.price > 0 && !!item.labId && (
                         <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
                       )}

@@ -19,6 +19,7 @@ import {
 } from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatAvailableDays, getCommonSpecializedDays } from "@/lib/test-availability";
 
 interface PatientState {
   patientName?: string;
@@ -64,6 +65,13 @@ const LabSelectionScreen = () => {
 
   // Only today, tomorrow and the day after tomorrow are bookable.
   const dates = useMemo(() => getLabSlotDates(3), []);
+  const specializedDays = useMemo(
+    () => getCommonSpecializedDays(items.map((item) => ({
+      availabilityType: item.availabilityType,
+      availableDays: item.availableDays,
+    }))),
+    [items]
+  );
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
@@ -122,10 +130,11 @@ const LabSelectionScreen = () => {
   const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
   const labIsClosedOnDate =
     !!selectedLabVendorId && !slotsLoading && (!activeDayRow || !activeDayRow.is_open);
+  const testIsUnavailableOnDate = specializedDays !== null && !specializedDays.includes(dates[selectedDate].dayOfWeek);
 
   const allSlotItems = useMemo(
-    () => (labIsClosedOnDate ? [] : FIXED_COLLECTION_SLOTS),
-    [labIsClosedOnDate]
+    () => (labIsClosedOnDate || testIsUnavailableOnDate ? [] : FIXED_COLLECTION_SLOTS),
+    [labIsClosedOnDate, testIsUnavailableOnDate]
   );
 
   const getSlotAvailability = (slot: FixedCollectionSlot) =>
@@ -414,13 +423,15 @@ const LabSelectionScreen = () => {
               const isOpen = !selectedLabVendorId || slotsLoading
                 ? true
                 : !!dayRow?.is_open;
+              const isTestDay = specializedDays === null || specializedDays.includes(date.dayOfWeek);
+              const isBookableDay = isOpen && isTestDay;
               return (
                 <button
                   key={date.fullDate}
-                  onClick={() => { if (!isOpen) return; hapticSelection(); setSelectedDate(index); }}
-                  disabled={!isOpen}
+                  onClick={() => { if (!isBookableDay) return; hapticSelection(); setSelectedDate(index); }}
+                  disabled={!isBookableDay}
                   className={`flex-1 py-3 rounded-xl text-center transition-all ${
-                    !isOpen
+                    !isBookableDay
                       ? "bg-muted/50 text-muted-foreground opacity-60"
                       : selectedDate === index
                       ? "bg-primary text-primary-foreground"
@@ -432,9 +443,9 @@ const LabSelectionScreen = () => {
                     {index === 0 ? "Today" : index === 1 ? "Tomorrow" : date.day}
                   </p>
                   <p className={`text-[9px] mt-0.5 ${
-                    !isOpen ? "text-destructive" : selectedDate === index ? "text-primary-foreground/80" : "text-success"
+                    !isBookableDay ? "text-destructive" : selectedDate === index ? "text-primary-foreground/80" : "text-success"
                   }`}>
-                    {isOpen ? "Available" : "Closed"}
+                    {!isTestDay ? "Test unavailable" : isOpen ? "Available" : "Closed"}
                   </p>
                 </button>
               );
@@ -451,6 +462,12 @@ const LabSelectionScreen = () => {
           ) : !selectedLabVendorId || slotsLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
+            </div>
+          ) : testIsUnavailableOnDate ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+              <Clock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">Specialized test unavailable on this day</p>
+              <p className="text-xs text-muted-foreground mt-1">Available on {formatAvailableDays(items.find((item) => item.availabilityType === "SPECIALIZED")?.availableDays)}.</p>
             </div>
           ) : labIsClosedOnDate ? (
             <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
