@@ -665,7 +665,9 @@ const LabDetailScreen = () => {
     const baseTests = labTests.filter(t => {
       if (!t || !t.name) return false;
       const tIsPackage = t.category === "Health Packages";
-      return tIsPackage === isPackage;
+      if (tIsPackage !== isPackage) return false;
+      if (isPackage) return true;
+      return normalizeAvailabilityType(t.availabilityType) === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
     });
     return Array.from(new Set(baseTests.map(t => t.category).filter(Boolean)));
   }, [labTests, activeTab]);
