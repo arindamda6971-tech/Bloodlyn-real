@@ -25,8 +25,19 @@ const DAY_ALIASES: Record<string, number> = {
   saturday: 6,
 };
 
-export const normalizeAvailabilityType = (value?: string | null): TestAvailabilityType =>
-  value?.trim().toUpperCase() === "SPECIALIZED" ? "SPECIALIZED" : "GENERAL";
+export const normalizeAvailabilityType = (value?: string | null): TestAvailabilityType => {
+  const normalized = value
+    ?.trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+
+  return normalized === "SPECIALIZED" ||
+    normalized === "SPECIALIZEDTEST" ||
+    normalized === "SPECIALISED" ||
+    normalized === "SPECIALISEDTEST"
+    ? "SPECIALIZED"
+    : "GENERAL";
+};
 
 export const normalizeAvailableDays = (days?: string[] | null): number[] => {
   if (!Array.isArray(days)) return [];

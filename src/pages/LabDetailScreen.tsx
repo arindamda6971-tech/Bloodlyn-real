@@ -438,6 +438,7 @@ const LabDetailScreen = () => {
   const { data: partnerSlots } = useLabSlots(labFromDb?.vendor_id ?? null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>(cached?.dynamicTests || []);
   const [isLoading, setIsLoading] = useState(!cached);
+  const [catalogueRefresh, setCatalogueRefresh] = useState(0);
 
   // Try to fetch lab from database first
   useEffect(() => {
@@ -446,22 +447,19 @@ const LabDetailScreen = () => {
         setIsLoading(false);
         return;
       }
-      if (globalLabCache.has(labId)) {
-        const cachedLab = globalLabCache.get(labId);
-        if (cachedLab) {
-          setLabFromDb(cachedLab.labFromDb);
-          setDynamicTests(cachedLab.dynamicTests);
-          setPackages(cachedLab.packages);
-        }
+      const cachedLab = globalLabCache.get(labId);
+      if (cachedLab) {
+        setLabFromDb(cachedLab.labFromDb);
+        setDynamicTests(cachedLab.dynamicTests);
+        setPackages(cachedLab.packages);
         setIsLoading(false);
-        return;
+      } else {
+        // Reset state for new lab to prevent leaking previous lab's data
+        setIsLoading(true);
+        setLabFromDb(null);
+        setDynamicTests([]);
+        setPackages([]);
       }
-
-      // Reset state for new lab to prevent leaking previous lab's data
-      setIsLoading(true);
-      setLabFromDb(null);
-      setDynamicTests([]);
-      setPackages([]);
 
       try {
         const { data, error } = await supabase
@@ -519,7 +517,30 @@ const LabDetailScreen = () => {
     };
 
     fetchLabFromDb();
-  }, [labId]);
+  }, [labId, catalogueRefresh]);
+
+  // Partner catalogue changes must replace the in-memory lab cache immediately.
+  // This keeps General/Specialized tabs accurate without requiring an app reload.
+  useEffect(() => {
+    const vendorId = labFromDb?.vendor_id;
+    if (!labId || !vendorId) return;
+
+    const channel = supabase
+      .channel(`lab-products-${vendorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `vendor_id=eq.${vendorId}` },
+        () => {
+          globalLabCache.delete(labId);
+          setCatalogueRefresh((value) => value + 1);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [labFromDb?.vendor_id, labId]);
 
   // Separate health-packages fetch + realtime subscription tied to the diagnostic center
   const [packages, setPackages] = useState<DynamicTest[]>(cached?.packages || []);
