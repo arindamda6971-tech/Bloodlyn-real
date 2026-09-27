@@ -12,6 +12,13 @@ describe("test availability", () => {
     expect(normalizeAvailabilityType("general")).toBe("GENERAL");
   });
 
+  it("accepts Partner specialized tag variants", () => {
+    expect(normalizeAvailabilityType("SPECIALIZED")).toBe("SPECIALIZED");
+    expect(normalizeAvailabilityType("specialized_test")).toBe("SPECIALIZED");
+    expect(normalizeAvailabilityType("Specialized Test")).toBe("SPECIALIZED");
+    expect(normalizeAvailabilityType("specialised-test")).toBe("SPECIALIZED");
+  });
+
   it("normalizes configured weekdays", () => {
     expect(normalizeAvailableDays(["Monday", "wed", "FRIDAY", "Monday", "invalid"])).toEqual([1, 3, 5]);
     expect(formatAvailableDays(["thu", "Monday"])).toBe("Monday, Thursday");
