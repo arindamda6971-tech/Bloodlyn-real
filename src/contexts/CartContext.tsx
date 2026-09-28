@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getCommonSpecializedDays, normalizeAvailabilityType, normalizeAvailableDays } from "@/lib/test-availability";
 
 interface CartItem {
   id: string;
@@ -26,15 +27,14 @@ interface CartItem {
   familyMemberId?: string;
   category?: string;
   kind?: "test" | "package";
-  /** Partner-configured availability: GENERAL (default) or SPECIALIZED */
   availabilityType?: "GENERAL" | "SPECIALIZED";
-  /** Weekday names the specialized test is available on, e.g. ["Monday","Wednesday"] */
   availableDays?: string[];
-  /** Requirements info for checkout summary */
+  sampleType?: string;
   preparationRequired?: boolean;
   preparationInstruction?: string;
   fastingRequired?: boolean;
   fastingInstruction?: string;
+  reportType?: string;
 }
 
 
@@ -57,6 +57,14 @@ type CartItemDBRow = {
   quantity: number | null;
   family_member_id: string | null;
   created_at?: string;
+  availability_type?: string | null;
+  available_days?: string[] | null;
+  sample_type?: string | null;
+  preparation_required?: boolean | null;
+  preparation_instruction?: string | null;
+  fasting_required?: boolean | null;
+  fasting_instruction?: string | null;
+  report_type?: string | null;
 };
 
 interface CartContextType {
@@ -78,10 +86,6 @@ interface CartContextType {
   isLoading: boolean;
   validateFamilyMember: (activeMemberIds: string[]) => void;
   hasItem: (testId: string, testName?: string) => boolean;
-  /** The availability type of the current cart: null (empty), GENERAL, SPECIALIZED, or PACKAGE */
-  cartAvailabilityType: "GENERAL" | "SPECIALIZED" | "PACKAGE" | null;
-  /** For a SPECIALIZED cart, the common available days across all items */
-  cartCommonDays: string[];
 }
 
 const LOCAL_STORAGE_KEY = "BloodLyn_cart_items";
@@ -166,6 +170,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             quantity: item.quantity || 1,
             familyMemberId: item.family_member_id || undefined,
             kind: item.package_id ? "package" : item.test_id ? "test" : undefined,
+            availabilityType: normalizeAvailabilityType(item.availability_type),
+            availableDays: item.available_days || undefined,
+            sampleType: item.sample_type || undefined,
+            preparationRequired: item.preparation_required || undefined,
+            preparationInstruction: item.preparation_instruction || undefined,
+            fastingRequired: item.fasting_required || undefined,
+            fastingInstruction: item.fasting_instruction || undefined,
+            reportType: item.report_type || undefined,
           }));
         setItems(cartItems);
         setLocalCart(cartItems);
@@ -209,6 +221,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         lab_id: item.labId && isUuid(item.labId) ? item.labId : null,
         lab_name: item.labName || null,
         quantity: item.quantity,
+        availability_type: item.availabilityType || null,
+        available_days: item.availableDays || null,
+        sample_type: item.sampleType || null,
+        preparation_required: item.preparationRequired ?? null,
+        preparation_instruction: item.preparationInstruction || null,
+        fasting_required: item.fastingRequired ?? null,
+        fasting_instruction: item.fastingInstruction || null,
+        report_type: item.reportType || null,
       } as any));
 
       let { error } = await supabase
@@ -291,28 +311,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return items.some((i) => i.id === testId || (testName && i.name === testName));
   }, [items]);
 
-  // ── Availability type tracking ──
-  const cartAvailabilityType = useMemo<"GENERAL" | "SPECIALIZED" | "PACKAGE" | null>(() => {
-    if (items.length === 0) return null;
-    const hasPackage = items.some((i) => i.kind === "package");
-    if (hasPackage) return "PACKAGE";
-    const hasSpecialized = items.some((i) => i.availabilityType === "SPECIALIZED");
-    return hasSpecialized ? "SPECIALIZED" : "GENERAL";
-  }, [items]);
-
-  /** For a SPECIALIZED cart, compute the intersection of available days across all items */
-  const cartCommonDays = useMemo<string[]>(() => {
-    const specializedItems = items.filter((i) => i.availabilityType === "SPECIALIZED");
-    if (specializedItems.length === 0) return [];
-    // Start with the first item's days, then intersect
-    let common: Set<string> = new Set(specializedItems[0].availableDays || []);
-    for (let i = 1; i < specializedItems.length; i++) {
-      const itemDays = new Set(specializedItems[i].availableDays || []);
-      common = new Set([...common].filter((d) => itemDays.has(d)));
-    }
-    return [...common];
-  }, [items]);
-
   const addToCart = useCallback((item: Omit<CartItem, "quantity">): boolean => {
     if (import.meta.env.DEV) console.log("CartContext.addToCart called with:", item);
 
@@ -320,6 +318,34 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     if (hasItem(item.id, item.name)) {
       toast.error("This test is already in your cart.");
       return false;
+    }
+
+    const isMedical = item.kind === "test" || item.kind === "package";
+    if (isMedical) {
+      const incomingType = item.kind === "package" ? "PACKAGE" : normalizeAvailabilityType(item.availabilityType);
+
+      if (incomingType === "SPECIALIZED" && normalizeAvailableDays(item.availableDays).length === 0) {
+        toast.error("This specialized test has no valid booking days. Please contact the lab.");
+        return false;
+      }
+
+      const existingMedical = items.filter((existing) => existing.kind === "test" || existing.kind === "package");
+      const existingTypes = existingMedical.map((existing) => 
+        existing.kind === "package" ? "PACKAGE" : normalizeAvailabilityType(existing.availabilityType)
+      );
+      
+      if (existingTypes.some((type) => type !== incomingType)) {
+        setShowAvailabilityError(true);
+        return false;
+      }
+
+      if (incomingType === "SPECIALIZED") {
+        const commonDays = getCommonSpecializedDays([...existingMedical, item]);
+        if (commonDays?.length === 0) {
+          toast.error("These specialized tests do not have a common available day. Please book them separately.");
+          return false;
+        }
+      }
     }
 
     const isServiceItem = (i: { id: string; labId?: string; name: string }) =>
@@ -341,36 +367,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // ── General vs Specialized vs Package mixing prevention ──
-    let incomingType: "GENERAL" | "SPECIALIZED" | "PACKAGE" = "GENERAL";
-    if (item.kind === "package") {
-      incomingType = "PACKAGE";
-    } else {
-      incomingType = item.availabilityType || "GENERAL";
-    }
-
-    if (items.length > 0 && cartAvailabilityType) {
-      if (cartAvailabilityType !== incomingType) {
-        setShowAvailabilityError(true);
-        return false;
-      }
-
-      // Specialized + Specialized: check date compatibility
-      if (incomingType === "SPECIALIZED" && cartAvailabilityType === "SPECIALIZED") {
-        const incomingDays = new Set(item.availableDays || []);
-        if (incomingDays.size > 0 && cartCommonDays.length > 0) {
-          const newCommon = cartCommonDays.filter((d) => incomingDays.has(d));
-          if (newCommon.length === 0) {
-            toast.error(
-              "These specialized tests do not have a common available day. Please book them separately.",
-              { duration: 5000 }
-            );
-            return false;
-          }
-        }
-      }
-    }
-
     setItems((prev) => {
       // Defensive guard inside setter as well (handles race conditions)
       if (prev.some((i) => i.id === item.id || (item.name && i.name === item.name))) return prev;
@@ -385,7 +381,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     triggerHaptic('success');
     toast.success("Added to cart");
     return true;
-  }, [items, currentLabId, currentLabName, hasItem, syncCartToSupabase, cartAvailabilityType, cartCommonDays]);
+  }, [items, currentLabId, currentLabName, hasItem, syncCartToSupabase]);
 
   const confirmReplace = useCallback((callback?: () => void) => {
     if (pendingItem) {
@@ -520,11 +516,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       isLoading,
       validateFamilyMember,
       hasItem,
-      cartAvailabilityType,
-      cartCommonDays,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, itemCount, subtotal, currentLabId, currentLabName, pendingItem, isLoading, validateFamilyMember, hasItem, cartAvailabilityType, cartCommonDays]
+    [items, itemCount, subtotal, currentLabId, currentLabName, pendingItem, isLoading, validateFamilyMember, hasItem]
   );
 
   return (
@@ -572,8 +566,6 @@ export const useCart = () => {
       isLoading: false,
       validateFamilyMember: () => {},
       hasItem: () => false,
-      cartAvailabilityType: null,
-      cartCommonDays: [],
     } as CartContextType;
   }
   return context;

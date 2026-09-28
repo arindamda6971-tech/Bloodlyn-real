@@ -66,6 +66,13 @@ interface UnifiedTest {
   description?: string | null;
   prerequisites?: string | null;
   category?: string;
+  availabilityType?: "GENERAL" | "SPECIALIZED";
+  availableDays?: string[];
+  sampleType?: string;
+  preparationRequired?: boolean;
+  preparationInstruction?: string;
+  fastingInstruction?: string;
+  reportType?: string;
 }
 
 const whyBookItems = [
@@ -94,6 +101,14 @@ const TestDetailScreen = () => {
         reportTime: bridgeTest.report_delivery_time || bridgeTest.reportTime,
         prerequisites: bridgeTest.prerequisites,
         category: bridgeTest.category,
+        availabilityType: bridgeTest.availabilityType,
+        availableDays: bridgeTest.availableDays,
+        sampleType: bridgeTest.sampleType,
+        preparationRequired: bridgeTest.preparationRequired,
+        preparationInstruction: bridgeTest.preparationInstruction,
+        fastingRequired: bridgeTest.fastingRequired,
+        fastingInstruction: bridgeTest.fastingInstruction,
+        reportType: bridgeTest.reportType,
       };
     }
     return null;
@@ -121,6 +136,14 @@ const TestDetailScreen = () => {
         reportTime: bridgeTest.report_delivery_time || bridgeTest.reportTime,
         prerequisites: bridgeTest.prerequisites,
         category: bridgeTest.category,
+        availabilityType: bridgeTest.availabilityType,
+        availableDays: bridgeTest.availableDays,
+        sampleType: bridgeTest.sampleType,
+        preparationRequired: bridgeTest.preparationRequired,
+        preparationInstruction: bridgeTest.preparationInstruction,
+        fastingRequired: bridgeTest.fastingRequired,
+        fastingInstruction: bridgeTest.fastingInstruction,
+        reportType: bridgeTest.reportType,
       });
       setLoading(false);
       return;
@@ -232,7 +255,7 @@ const TestDetailScreen = () => {
       const pincodeFiltered = data.filter((d) => labServesPincode(d as any, pincode));
       
       const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
-      const vendorProducts: Record<string, {name: string, price: number}[]> = {};
+      const vendorProducts: Record<string, any[]> = {};
       if (vendorIds.length > 0) {
         const { data: products } = await supabase
           .from("products")
@@ -246,7 +269,15 @@ const TestDetailScreen = () => {
             if (pName) {
               vendorProducts[p.vendor_id].push({
                 name: pName,
-                price: Number(p.price) || 0
+                price: Number(p.price) || 0,
+                availabilityType: p.availability_type,
+                availableDays: p.available_days,
+                sampleType: p.sample_type,
+                preparationRequired: p.preparation_required,
+                preparationInstruction: p.preparation_instruction,
+                fastingRequired: p.fasting_required,
+                fastingInstruction: p.fasting_instruction,
+                reportType: p.report_type,
               });
             }
           });
@@ -268,7 +299,7 @@ const TestDetailScreen = () => {
 
         const baseTests = Array.isArray(lab.available_tests) ? lab.available_tests : [];
         const additionalTests = (lab.vendor_id && vendorProducts[lab.vendor_id])
-          ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, price: vp.price }))
+          ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, ...vp }))
           : [];
         
         const allTests = [...baseTests, ...additionalTests];
@@ -298,6 +329,7 @@ const TestDetailScreen = () => {
         return {
           ...lab,
           testPrice: labPrice && labPrice > 0 ? labPrice : (Number(test.price) || 0),
+          productMetadata: typeof matchingTest === "string" ? null : matchingTest,
         };
       }).filter(Boolean);
 
@@ -323,6 +355,14 @@ const TestDetailScreen = () => {
       vendorId: lab.vendor_id,
       category: test.category || "Blood Tests",
       kind: "test",
+      availabilityType: lab.productMetadata?.availabilityType || test.availabilityType,
+      availableDays: lab.productMetadata?.availableDays || test.availableDays,
+      sampleType: lab.productMetadata?.sampleType || test.sampleType,
+      preparationRequired: lab.productMetadata?.preparationRequired ?? test.preparationRequired,
+      preparationInstruction: lab.productMetadata?.preparationInstruction || test.preparationInstruction,
+      fastingRequired: lab.productMetadata?.fastingRequired ?? test.fastingRequired,
+      fastingInstruction: lab.productMetadata?.fastingInstruction || test.fastingInstruction,
+      reportType: lab.productMetadata?.reportType || test.reportType,
     });
     
     if (ok) {
@@ -445,10 +485,10 @@ const TestDetailScreen = () => {
         <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">About the test</h3>
           <div className="flex flex-wrap gap-2 mb-4">
-            <Chip icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />} label={test.fastingRequired ? `Fast ${test.fastingHours || 8}h` : "No Preparation"} />
+             <Chip icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />} label={test.fastingRequired ? (test.fastingInstruction || `Fast ${test.fastingHours || 8}h`) : "No fasting required"} />
             <Chip icon={<Users className="w-3.5 h-3.5 text-violet-500" />} label="Unisex" />
             <Chip icon={<Activity className="w-3.5 h-3.5 text-emerald-500" />} label="All Age Groups" />
-            <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={`Report in ${test.reportTime || "24h"}`} />
+             <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={test.reportType || `Report in ${test.reportTime || "24h"}`} />
           </div>
           {aiDescLoading && !aboutText ? (
             <div className="space-y-2">
@@ -510,9 +550,9 @@ const TestDetailScreen = () => {
         <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">How to prepare for the Lab test ?</h3>
           <ul className="space-y-2 text-[15px] text-muted-foreground">
-            <li className="flex gap-2"><span className="text-primary">—</span> Our Lab Technician will collect samples from Home</li>
-            <li className="flex gap-2"><span className="text-primary">—</span> Stay well hydrated and rested before the collection</li>
-            <li className="flex gap-2"><span className="text-primary">—</span> Carry a valid government photo ID for verification</li>
+            <li className="flex gap-2"><span className="text-primary">—</span> {test.preparationInstruction || (test.preparationRequired ? "Follow the preparation instructions provided by the lab." : "No special preparation required.")}</li>
+            {test.fastingRequired && <li className="flex gap-2"><span className="text-primary">—</span> {test.fastingInstruction || "Fasting is required before sample collection."}</li>}
+            {test.sampleType && <li className="flex gap-2"><span className="text-primary">—</span> Sample required: {test.sampleType}</li>}
           </ul>
         </motion.section>
 

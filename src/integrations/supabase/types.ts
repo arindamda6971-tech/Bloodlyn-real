@@ -64,40 +64,64 @@ export type Database = {
       }
       cart_items: {
         Row: {
+          availability_type: string | null
+          available_days: string[] | null
           created_at: string
           family_member_id: string | null
+          fasting_instruction: string | null
+          fasting_required: boolean | null
           id: string
           lab_id: string | null
           lab_name: string | null
           package_id: string | null
+          preparation_instruction: string | null
+          preparation_required: boolean | null
           price: number | null
           quantity: number | null
+          report_type: string | null
+          sample_type: string | null
           test_id: string | null
           test_name: string | null
           user_id: string
         }
         Insert: {
+          availability_type?: string | null
+          available_days?: string[] | null
           created_at?: string
           family_member_id?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           lab_id?: string | null
           lab_name?: string | null
           package_id?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number | null
           quantity?: number | null
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           test_name?: string | null
           user_id: string
         }
         Update: {
+          availability_type?: string | null
+          available_days?: string[] | null
           created_at?: string
           family_member_id?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           lab_id?: string | null
           lab_name?: string | null
           package_id?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number | null
           quantity?: number | null
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           test_name?: string | null
           user_id?: string
@@ -648,39 +672,63 @@ export type Database = {
       products: {
         Row: {
           availability: boolean
+          availability_type: string | null
+          available_days: string[] | null
           category: string | null
           created_at: string
           description: string | null
+          fasting_instruction: string | null
+          fasting_required: boolean | null
           id: string
           name: string | null
+          preparation_instruction: string | null
+          preparation_required: boolean | null
           price: number
           product_name: string
+          report_type: string | null
+          sample_type: string | null
           test_id: string | null
           updated_at: string
           vendor_id: string
         }
         Insert: {
           availability?: boolean
+          availability_type?: string | null
+          available_days?: string[] | null
           category?: string | null
           created_at?: string
           description?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           name?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number
           product_name: string
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           updated_at?: string
           vendor_id: string
         }
         Update: {
           availability?: boolean
+          availability_type?: string | null
+          available_days?: string[] | null
           category?: string | null
           created_at?: string
           description?: string | null
+          fasting_instruction?: string | null
+          fasting_required?: boolean | null
           id?: string
           name?: string | null
+          preparation_instruction?: string | null
+          preparation_required?: boolean | null
           price?: number
           product_name?: string
+          report_type?: string | null
+          sample_type?: string | null
           test_id?: string | null
           updated_at?: string
           vendor_id?: string
@@ -1156,39 +1204,6 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
-      wallet_transactions: {
-        Row: {
-          amount: number
-          balance_after: number
-          created_at: string
-          description: string | null
-          id: string
-          order_id: string | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          balance_after?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          order_id?: string | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          balance_after?: number
-          created_at?: string
-          description?: string | null
-          id?: string
-          order_id?: string | null
-          type?: string
           user_id?: string
         }
         Relationships: []

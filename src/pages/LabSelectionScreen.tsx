@@ -19,6 +19,7 @@ import {
 } from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatAvailableDays, getCommonSpecializedDays } from "@/lib/test-availability";
 
 interface PatientState {
   patientName?: string;
@@ -47,7 +48,7 @@ const LabSelectionScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const patientState = (location.state as PatientState) || {};
-  const { items, updateLabForItems, subtotal, currentLabId, currentLabName, cartAvailabilityType, cartCommonDays } = useCart();
+  const { items, updateLabForItems, subtotal, currentLabId, currentLabName } = useCart();
 
   const hasVendorLab = patientState.hasVendorLab || !!(currentLabId && currentLabName);
 
@@ -62,25 +63,15 @@ const LabSelectionScreen = () => {
   const [labs, setLabs] = useState<DiagnosticCenter[]>([]);
   const [labsLoading, setLabsLoading] = useState(!hasVendorLab);
 
-  // For specialized carts show 14 days so the user can find valid days;
-  // general carts keep the existing 3-day window.
-  const dateCount = cartAvailabilityType === "SPECIALIZED" ? 14 : 3;
-  const dates = useMemo(() => getLabSlotDates(dateCount), [dateCount]);
-
-  // Map weekday names ("Monday") → JS day-of-week index (1)
-  const WEEKDAY_NAME_TO_INDEX: Record<string, number> = {
-    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
-    Thursday: 4, Friday: 5, Saturday: 6,
-  };
-
-  /** For a specialized cart, compute the set of allowed JS day-of-week indices */
-  const specializedAllowedDays = useMemo<Set<number> | null>(() => {
-    if (cartAvailabilityType !== "SPECIALIZED" || cartCommonDays.length === 0) return null;
-    const indices = cartCommonDays
-      .map((d) => WEEKDAY_NAME_TO_INDEX[d])
-      .filter((n) => n !== undefined);
-    return indices.length > 0 ? new Set(indices) : null;
-  }, [cartAvailabilityType, cartCommonDays]);
+  // Only today, tomorrow and the day after tomorrow are bookable.
+  const dates = useMemo(() => getLabSlotDates(3), []);
+  const specializedDays = useMemo(
+    () => getCommonSpecializedDays(items.map((item) => ({
+      availabilityType: item.availabilityType,
+      availableDays: item.availableDays,
+    }))),
+    [items]
+  );
 
   // Resolve selected lab's vendor_id (lab_user_id in Partner project)
   useEffect(() => {
@@ -139,10 +130,11 @@ const LabSelectionScreen = () => {
   const activeDayRow = labSlotsByDay[dates[selectedDate].dayOfWeek];
   const labIsClosedOnDate =
     !!selectedLabVendorId && !slotsLoading && (!activeDayRow || !activeDayRow.is_open);
+  const testIsUnavailableOnDate = specializedDays !== null && !specializedDays.includes(dates[selectedDate].dayOfWeek);
 
   const allSlotItems = useMemo(
-    () => (labIsClosedOnDate ? [] : FIXED_COLLECTION_SLOTS),
-    [labIsClosedOnDate]
+    () => (labIsClosedOnDate || testIsUnavailableOnDate ? [] : FIXED_COLLECTION_SLOTS),
+    [labIsClosedOnDate, testIsUnavailableOnDate]
   );
 
   const getSlotAvailability = (slot: FixedCollectionSlot) =>
@@ -425,36 +417,21 @@ const LabSelectionScreen = () => {
         {/* Date Selection */}
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h2 className="text-base font-bold text-foreground mb-2">Select Date</h2>
-
-          {/* Specialized cart info banner */}
-          {cartAvailabilityType === "SPECIALIZED" && cartCommonDays.length > 0 && (
-            <div className="mb-3 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[13px] font-bold text-amber-800">Specialized Test Booking</p>
-                <p className="text-[11px] text-amber-700 mt-0.5">
-                  Available on: <span className="font-bold">{cartCommonDays.join(", ")}</span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+          <div className="flex gap-2">
             {dates.map((date, index) => {
               const dayRow = labSlotsByDay[date.dayOfWeek];
-              const labOpen = !selectedLabVendorId || slotsLoading
+              const isOpen = !selectedLabVendorId || slotsLoading
                 ? true
                 : !!dayRow?.is_open;
-              // For specialized carts, also check if the weekday is allowed
-              const specializedBlocked = specializedAllowedDays !== null && !specializedAllowedDays.has(date.dayOfWeek);
-              const isOpen = labOpen && !specializedBlocked;
+              const isTestDay = specializedDays === null || specializedDays.includes(date.dayOfWeek);
+              const isBookableDay = isOpen && isTestDay;
               return (
                 <button
                   key={date.fullDate}
-                  onClick={() => { if (!isOpen) return; hapticSelection(); setSelectedDate(index); }}
-                  disabled={!isOpen}
-                  className={`flex-shrink-0 min-w-[72px] py-3 px-2 rounded-xl text-center transition-all ${
-                    !isOpen
+                  onClick={() => { if (!isBookableDay) return; hapticSelection(); setSelectedDate(index); }}
+                  disabled={!isBookableDay}
+                  className={`flex-1 py-3 rounded-xl text-center transition-all ${
+                    !isBookableDay
                       ? "bg-muted/50 text-muted-foreground opacity-60"
                       : selectedDate === index
                       ? "bg-primary text-primary-foreground"
@@ -466,13 +443,9 @@ const LabSelectionScreen = () => {
                     {index === 0 ? "Today" : index === 1 ? "Tomorrow" : date.day}
                   </p>
                   <p className={`text-[9px] mt-0.5 ${
-                    !isOpen
-                      ? specializedBlocked ? "text-orange-500" : "text-destructive"
-                      : selectedDate === index ? "text-primary-foreground/80" : "text-success"
+                    !isBookableDay ? "text-destructive" : selectedDate === index ? "text-primary-foreground/80" : "text-success"
                   }`}>
-                    {!isOpen
-                      ? specializedBlocked ? "Not Available" : "Closed"
-                      : "Available"}
+                    {!isTestDay ? "Test unavailable" : isOpen ? "Available" : "Closed"}
                   </p>
                 </button>
               );
@@ -489,6 +462,12 @@ const LabSelectionScreen = () => {
           ) : !selectedLabVendorId || slotsLoading ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
               <Loader2 className="w-4 h-4 animate-spin" /> Loading slots…
+            </div>
+          ) : testIsUnavailableOnDate ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">
+              <Clock className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">Specialized test unavailable on this day</p>
+              <p className="text-xs text-muted-foreground mt-1">Available on {formatAvailableDays(items.find((item) => item.availabilityType === "SPECIALIZED")?.availableDays)}.</p>
             </div>
           ) : labIsClosedOnDate ? (
             <div className="rounded-xl border border-border bg-muted/30 px-4 py-6 text-center">

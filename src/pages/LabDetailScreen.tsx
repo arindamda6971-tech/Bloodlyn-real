@@ -30,9 +30,6 @@ import {
   Truck,
   Percent,
   Gift,
-  Calendar,
-  FileText,
-  FlaskConical,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +51,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useLabSlots } from "@/hooks/useLabSlots";
+import { formatAvailableDays, normalizeAvailabilityType } from "@/lib/test-availability";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -288,7 +286,12 @@ const dbIdToLocalId: Record<string, string> = {
   "apollo": "apollo",
 };
 
-type TabKey = "all" | "general" | "specialized" | "packages";
+type TabKey = "general" | "specialized" | "packages";
+const TABS: { key: TabKey; label: string }[] = [
+  { key: "general", label: "General Tests" },
+  { key: "specialized", label: "Specialized Tests" },
+  { key: "packages", label: "Health Packages" },
+];
 
 interface DiagnosticCenter {
   id: string;
@@ -324,7 +327,6 @@ interface DynamicTest {
   description?: string;
   testsCount?: number;
   discountPercent?: number;
-  /** Partner-configured fields */
   availabilityType?: "GENERAL" | "SPECIALIZED";
   availableDays?: string[];
   sampleType?: string;
@@ -426,7 +428,7 @@ const LabDetailScreen = () => {
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [activeTab, setActiveTab] = useState<TabKey>("general");
   const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
   
@@ -436,6 +438,7 @@ const LabDetailScreen = () => {
   const { data: partnerSlots } = useLabSlots(labFromDb?.vendor_id ?? null);
   const [dynamicTests, setDynamicTests] = useState<DynamicTest[]>(cached?.dynamicTests || []);
   const [isLoading, setIsLoading] = useState(!cached);
+  const [catalogueRefresh, setCatalogueRefresh] = useState(0);
 
   // Try to fetch lab from database first
   useEffect(() => {
@@ -444,22 +447,19 @@ const LabDetailScreen = () => {
         setIsLoading(false);
         return;
       }
-      if (globalLabCache.has(labId)) {
-        const cachedLab = globalLabCache.get(labId);
-        if (cachedLab) {
-          setLabFromDb(cachedLab.labFromDb);
-          setDynamicTests(cachedLab.dynamicTests);
-          setPackages(cachedLab.packages);
-        }
+      const cachedLab = globalLabCache.get(labId);
+      if (cachedLab) {
+        setLabFromDb(cachedLab.labFromDb);
+        setDynamicTests(cachedLab.dynamicTests);
+        setPackages(cachedLab.packages);
         setIsLoading(false);
-        return;
+      } else {
+        // Reset state for new lab to prevent leaking previous lab's data
+        setIsLoading(true);
+        setLabFromDb(null);
+        setDynamicTests([]);
+        setPackages([]);
       }
-
-      // Reset state for new lab to prevent leaking previous lab's data
-      setIsLoading(true);
-      setLabFromDb(null);
-      setDynamicTests([]);
-      setPackages([]);
 
       try {
         const { data, error } = await supabase
@@ -487,13 +487,13 @@ const LabDetailScreen = () => {
                 price: Number(p.price),
                 category: p.category || 'Blood Tests',
                 popular: false,
-                // Partner-configured fields (may or may not exist yet)
-                availabilityType: (p.availability_type === 'SPECIALIZED' ? 'SPECIALIZED' : 'GENERAL') as "GENERAL" | "SPECIALIZED",
-                availableDays: Array.isArray(p.available_days) ? p.available_days : [],
+                description: p.description || undefined,
+                availabilityType: normalizeAvailabilityType(p.availability_type),
+                availableDays: p.available_days || undefined,
                 sampleType: p.sample_type || undefined,
-                preparationRequired: !!p.preparation_required,
+                preparationRequired: p.preparation_required || false,
                 preparationInstruction: p.preparation_instruction || undefined,
-                fastingRequired: !!p.fasting_required,
+                fastingRequired: p.fasting_required || false,
                 fastingInstruction: p.fasting_instruction || undefined,
                 reportType: p.report_type || undefined,
               }));
@@ -517,7 +517,30 @@ const LabDetailScreen = () => {
     };
 
     fetchLabFromDb();
-  }, [labId]);
+  }, [labId, catalogueRefresh]);
+
+  // Partner catalogue changes must replace the in-memory lab cache immediately.
+  // This keeps General/Specialized tabs accurate without requiring an app reload.
+  useEffect(() => {
+    const vendorId = labFromDb?.vendor_id;
+    if (!labId || !vendorId) return;
+
+    const channel = supabase
+      .channel(`lab-products-${vendorId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `vendor_id=eq.${vendorId}` },
+        () => {
+          globalLabCache.delete(labId);
+          setCatalogueRefresh((value) => value + 1);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [labFromDb?.vendor_id, labId]);
 
   // Separate health-packages fetch + realtime subscription tied to the diagnostic center
   const [packages, setPackages] = useState<DynamicTest[]>(cached?.packages || []);
@@ -644,61 +667,34 @@ const LabDetailScreen = () => {
   const labTests = lab.tests || [];
   const minTestPrice = labTests.length > 0 ? Math.min(...labTests.map(t => t.price).filter(p => p > 0)) : 0;
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
-  const allTestsCount = labTests.length - packageCount;
-  const specializedCount = labTests.filter((t) => (t as DynamicTest).availabilityType === "SPECIALIZED").length;
-  const generalCount = allTestsCount - specializedCount;
-  
-  // If the active tab is 'all', but we have specialized tests, we should auto-switch to 'general'
-  useEffect(() => {
-    if (specializedCount > 0 && activeTab === "all") {
-      setActiveTab("general");
-    } else if (specializedCount === 0 && (activeTab === "general" || activeTab === "specialized")) {
-      setActiveTab("all");
-    }
-  }, [specializedCount, activeTab]);
-
+  const generalTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "GENERAL").length;
+  const specializedTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "SPECIALIZED").length;
   const filteredTests = labTests.filter((test) => {
     if (!test || !test.name) return false;
     const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
-    
     const isPackage = test.category === "Health Packages";
-    const testType = (test as DynamicTest).availabilityType || "GENERAL";
-    
-    let matchesTab = false;
-    if (activeTab === "packages") matchesTab = isPackage;
-    else if (activeTab === "all") matchesTab = !isPackage;
-    else if (activeTab === "general") matchesTab = !isPackage && testType === "GENERAL";
-    else if (activeTab === "specialized") matchesTab = !isPackage && testType === "SPECIALIZED";
-
+    const availabilityType = normalizeAvailabilityType(test.availabilityType);
+    const matchesTab = activeTab === "packages"
+      ? isPackage
+      : !isPackage && availabilityType === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
     const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
-    
     return matchesSearch && matchesTab && matchesCategory;
   });
-
-  const dynamicTabs = useMemo(() => {
-    const t: { key: TabKey; label: string; count: number }[] = [];
-    if (specializedCount > 0) {
-      t.push({ key: "general", label: "General Tests", count: generalCount });
-      t.push({ key: "specialized", label: "Specialized Tests", count: specializedCount });
-    } else {
-      t.push({ key: "all", label: "All Tests", count: allTestsCount });
-    }
-    t.push({ key: "packages", label: "Health Packages", count: packageCount });
-    return t;
-  }, [specializedCount, generalCount, allTestsCount, packageCount]);
 
   const availableCategories = useMemo(() => {
     const isPackage = activeTab === "packages";
     const baseTests = labTests.filter(t => {
       if (!t || !t.name) return false;
       const tIsPackage = t.category === "Health Packages";
-      return tIsPackage === isPackage;
+      if (tIsPackage !== isPackage) return false;
+      if (isPackage) return true;
+      return normalizeAvailabilityType(t.availabilityType) === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
     });
     return Array.from(new Set(baseTests.map(t => t.category).filter(Boolean)));
   }, [labTests, activeTab]);
 
   const handleAddTest = (testId: string, testName: string) => {
-    const test = lab.tests.find((t) => t.id === testId) as DynamicTest | undefined;
+    const test = lab.tests.find((t) => t.id === testId);
     if (test) {
       const ok = addToCart({
         id: testId,
@@ -708,12 +704,14 @@ const LabDetailScreen = () => {
         labName: lab.name,
         vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
         kind: test.category === "Health Packages" ? "package" : "test",
-        availabilityType: test.availabilityType || "GENERAL",
-        availableDays: test.availableDays || [],
+        availabilityType: test.availabilityType,
+        availableDays: test.availableDays,
+        sampleType: test.sampleType,
         preparationRequired: test.preparationRequired,
         preparationInstruction: test.preparationInstruction,
         fastingRequired: test.fastingRequired,
         fastingInstruction: test.fastingInstruction,
+        reportType: test.reportType,
       });
       if (ok) {
         toast.success(`${testName} added to cart`);
@@ -815,7 +813,7 @@ const LabDetailScreen = () => {
         <div className="px-5 -mt-6 relative z-20">
           <div className="grid grid-cols-3 gap-3">
              <button onClick={() => { 
-               setActiveTab("all"); 
+               setActiveTab("general"); 
                setSelectedCategory("Blood Tests");
                setSearchQuery("");
                setTimeout(() => {
@@ -963,9 +961,10 @@ const LabDetailScreen = () => {
 
         {/* Tab filters - Scrolls away and hides behind sticky search bar */}
         <div className="px-5 pt-3 pb-1">
-          <div className="flex gap-2 overflow-x-auto scrollbar-none p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
-            {dynamicTabs.map((tab) => {
+          <div className="relative grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
+            {TABS.map((tab) => {
               const isActive = activeTab === tab.key;
+              const count = tab.key === "packages" ? packageCount : tab.key === "specialized" ? specializedTestsCount : generalTestsCount;
               return (
                 <button
                   key={tab.key}
@@ -973,27 +972,24 @@ const LabDetailScreen = () => {
                     setActiveTab(tab.key);
                     setSelectedCategory(null);
                   }}
-                  className="relative z-10 flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
+                   className="relative z-10 flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-xl text-[11px] font-extrabold transition-all"
                 >
                   {isActive && (
                     <motion.div
                       layoutId="lab-tab-pill"
-                      className={`absolute inset-0 rounded-xl shadow-xs ${tab.key === "specialized" ? "bg-amber-100" : "bg-[#0f172a]"}`}
+                      className="absolute inset-0 bg-[#0f172a] rounded-xl shadow-xs"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <span className={`relative tracking-tight ${isActive ? (tab.key === "specialized" ? "text-amber-900" : "text-white") : "text-muted-foreground"}`}>
-                    {tab.key === "specialized" && isActive && <Calendar className="w-3.5 h-3.5 inline mr-1" />}
+                  <span className={`relative tracking-tight ${isActive ? "text-white" : "text-muted-foreground"}`}>
                     {tab.label}
                   </span>
                   <span
                     className={`relative text-[10px] font-black px-2 py-0.5 rounded-full ${
-                      isActive 
-                        ? (tab.key === "specialized" ? "bg-amber-200 text-amber-900" : "bg-white/20 text-white") 
-                        : "bg-muted text-foreground"
+                      isActive ? "bg-white/20 text-white" : "bg-muted text-foreground"
                     }`}
                   >
-                    {tab.count}
+                    {count}
                   </span>
                 </button>
               );
@@ -1064,68 +1060,36 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
-                        {(test as DynamicTest).availabilityType === "SPECIALIZED" && (
-                          <Badge variant="soft" className="text-[9px] bg-orange-500/10 text-orange-600 font-bold px-2 py-0.5">
-                            Specialized
-                          </Badge>
-                        )}
-                        {(test as DynamicTest).reportType === "NABL" && (
-                          <Badge variant="soft" className="text-[9px] bg-emerald-500/10 text-emerald-700 font-bold px-2 py-0.5">
-                            NABL Report
+                        {test.category !== "Health Packages" && (
+                          <Badge variant="outline" className="text-[9px] px-2 py-0.5">
+                            {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" ? "Specialized" : "General"}
                           </Badge>
                         )}
                       </div>
+                      {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" && (
+                        <p className="mt-1.5 text-[11px] font-semibold text-primary">
+                          Available: {formatAvailableDays(test.availableDays) || "Schedule unavailable"}
+                        </p>
+                      )}
+                      {(test.sampleType || test.reportType) && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          {[test.sampleType && `Sample: ${test.sampleType}`, test.reportType && `Report: ${test.reportType}`].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
                         <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                           <span>{test.testsCount} tests included</span>
                         </p>
                       )}
-                      {/* Specialized test: show available days */}
-                      {(test as DynamicTest).availabilityType === "SPECIALIZED" && (test as DynamicTest).availableDays && (test as DynamicTest).availableDays!.length > 0 && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <Calendar className="w-3 h-3 text-orange-500" />
-                          <p className="text-[11px] font-semibold text-orange-600">
-                            Available: {(test as DynamicTest).availableDays!.join(", ")}
-                          </p>
-                        </div>
-                      )}
-                      {/* Requirements info */}
-                      {((test as DynamicTest).fastingRequired || (test as DynamicTest).preparationRequired || (test as DynamicTest).sampleType) && (
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {(test as DynamicTest).fastingRequired && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-lg">
-                              <FlaskConical className="w-2.5 h-2.5" />
-                              Fasting Required
-                            </span>
-                          )}
-                          {(test as DynamicTest).preparationRequired && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
-                              <FileText className="w-2.5 h-2.5" />
-                              Preparation Needed
-                            </span>
-                          )}
-                          {(test as DynamicTest).sampleType && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-lg">
-                              Sample: {(test as DynamicTest).sampleType}
-                            </span>
-                          )}
-                        </div>
-                      )}
                       {expandedTest === test.id && (
-                        <motion.div
+                        <motion.p
                           initial={false}
                           animate={{ opacity: 1, height: "auto" }}
-                          className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium space-y-1"
+                          className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium"
                         >
-                          <p>{test.description ||
-                            `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}</p>
-                          {(test as DynamicTest).fastingRequired && (test as DynamicTest).fastingInstruction && (
-                            <p className="text-violet-600 font-semibold">⚡ Fasting: {(test as DynamicTest).fastingInstruction}</p>
-                          )}
-                          {(test as DynamicTest).preparationRequired && (test as DynamicTest).preparationInstruction && (
-                            <p className="text-blue-600 font-semibold">📋 Preparation: {(test as DynamicTest).preparationInstruction}</p>
-                          )}
-                        </motion.div>
+                          {test.description ||
+                            `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}
+                        </motion.p>
                       )}
                       <div className="flex items-baseline gap-2 mt-3.5 flex-wrap">
                         <span className="text-base font-black text-foreground tabular-nums">₹{test.price}</span>
