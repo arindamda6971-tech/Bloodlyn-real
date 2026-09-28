@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
+import { useCollectionFee } from "@/hooks/useCollectionFee";
 import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -194,8 +195,15 @@ const PaymentScreen = () => {
   }
 
   const discount = Math.round(appliedDiscount);
-  const platformFee = usePlatformFeeFlat();
-  const baseTotal = effectiveSubtotal - discount + platformFee;
+  const rawPlatformFee = usePlatformFeeFlat();
+  const { collectionFee: rawCollectionFee } = useCollectionFee(orderLabId, effectiveSubtotal);
+  
+  const platformFee = isFreeDelivery ? 0 : rawPlatformFee;
+  const collectionFee = isFreeDelivery ? 0 : rawCollectionFee;
+  
+  console.log("[PaymentScreen] isFreeDelivery:", isFreeDelivery, "rawCollectionFee:", rawCollectionFee, "final collectionFee:", collectionFee);
+
+  const baseTotal = effectiveSubtotal - discount + platformFee + collectionFee;
   const total = baseTotal;
 
 
@@ -487,6 +495,7 @@ const PaymentScreen = () => {
             couponApplied,
             discount,
             platformFee,
+            collectionFee,
             total,
             selectedPayment: selectedPaymentMethod.id,
             selectedPaymentName: selectedPaymentMethod.name,
@@ -708,6 +717,9 @@ const PaymentScreen = () => {
                 if (offer.type === 'free_delivery') {
                   title = `Free delivery on orders above ₹${offer.min_order_amount}`;
                   desc = "Waives platform and home collection fees";
+                  if (collectionFee === 0) {
+                    desc = "Waives platform fee";
+                  }
                 } else if (offer.type === 'percentage_discount') {
                   title = `${offer.discount_value}% off on orders above ₹${offer.min_order_amount}`;
                   desc = offer.max_discount_cap ? `Up to ₹${offer.max_discount_cap}` : "";
@@ -825,7 +837,11 @@ const PaymentScreen = () => {
             )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success font-bold">FREE</span>
+              {collectionFee > 0 ? (
+                <span className="text-foreground font-semibold tabular-nums">₹ {collectionFee.toFixed(2)}</span>
+              ) : (
+                <span className="text-success font-bold">FREE</span>
+              )}
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm">
