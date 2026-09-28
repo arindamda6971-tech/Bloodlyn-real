@@ -30,6 +30,9 @@ import {
   Truck,
   Percent,
   Gift,
+  Calendar,
+  FileText,
+  FlaskConical,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -285,11 +288,7 @@ const dbIdToLocalId: Record<string, string> = {
   "apollo": "apollo",
 };
 
-type TabKey = "all" | "packages";
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "all", label: "All Tests" },
-  { key: "packages", label: "Health Packages" },
-];
+type TabKey = "all" | "general" | "specialized" | "packages";
 
 interface DiagnosticCenter {
   id: string;
@@ -325,6 +324,15 @@ interface DynamicTest {
   description?: string;
   testsCount?: number;
   discountPercent?: number;
+  /** Partner-configured fields */
+  availabilityType?: "GENERAL" | "SPECIALIZED";
+  availableDays?: string[];
+  sampleType?: string;
+  preparationRequired?: boolean;
+  preparationInstruction?: string;
+  fastingRequired?: boolean;
+  fastingInstruction?: string;
+  reportType?: string;
 }
 
 // ─── Active Offers Component ───
@@ -479,6 +487,15 @@ const LabDetailScreen = () => {
                 price: Number(p.price),
                 category: p.category || 'Blood Tests',
                 popular: false,
+                // Partner-configured fields (may or may not exist yet)
+                availabilityType: (p.availability_type === 'SPECIALIZED' ? 'SPECIALIZED' : 'GENERAL') as "GENERAL" | "SPECIALIZED",
+                availableDays: Array.isArray(p.available_days) ? p.available_days : [],
+                sampleType: p.sample_type || undefined,
+                preparationRequired: !!p.preparation_required,
+                preparationInstruction: p.preparation_instruction || undefined,
+                fastingRequired: !!p.fasting_required,
+                fastingInstruction: p.fasting_instruction || undefined,
+                reportType: p.report_type || undefined,
               }));
             }
           }
@@ -628,14 +645,47 @@ const LabDetailScreen = () => {
   const minTestPrice = labTests.length > 0 ? Math.min(...labTests.map(t => t.price).filter(p => p > 0)) : 0;
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
   const allTestsCount = labTests.length - packageCount;
+  const specializedCount = labTests.filter((t) => (t as DynamicTest).availabilityType === "SPECIALIZED").length;
+  const generalCount = allTestsCount - specializedCount;
+  
+  // If the active tab is 'all', but we have specialized tests, we should auto-switch to 'general'
+  useEffect(() => {
+    if (specializedCount > 0 && activeTab === "all") {
+      setActiveTab("general");
+    } else if (specializedCount === 0 && (activeTab === "general" || activeTab === "specialized")) {
+      setActiveTab("all");
+    }
+  }, [specializedCount, activeTab]);
+
   const filteredTests = labTests.filter((test) => {
     if (!test || !test.name) return false;
     const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
+    
     const isPackage = test.category === "Health Packages";
-    const matchesTab = activeTab === "packages" ? isPackage : !isPackage;
+    const testType = (test as DynamicTest).availabilityType || "GENERAL";
+    
+    let matchesTab = false;
+    if (activeTab === "packages") matchesTab = isPackage;
+    else if (activeTab === "all") matchesTab = !isPackage;
+    else if (activeTab === "general") matchesTab = !isPackage && testType === "GENERAL";
+    else if (activeTab === "specialized") matchesTab = !isPackage && testType === "SPECIALIZED";
+
     const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
+    
     return matchesSearch && matchesTab && matchesCategory;
   });
+
+  const dynamicTabs = useMemo(() => {
+    const t: { key: TabKey; label: string; count: number }[] = [];
+    if (specializedCount > 0) {
+      t.push({ key: "general", label: "General Tests", count: generalCount });
+      t.push({ key: "specialized", label: "Specialized Tests", count: specializedCount });
+    } else {
+      t.push({ key: "all", label: "All Tests", count: allTestsCount });
+    }
+    t.push({ key: "packages", label: "Health Packages", count: packageCount });
+    return t;
+  }, [specializedCount, generalCount, allTestsCount, packageCount]);
 
   const availableCategories = useMemo(() => {
     const isPackage = activeTab === "packages";
@@ -648,7 +698,7 @@ const LabDetailScreen = () => {
   }, [labTests, activeTab]);
 
   const handleAddTest = (testId: string, testName: string) => {
-    const test = lab.tests.find((t) => t.id === testId);
+    const test = lab.tests.find((t) => t.id === testId) as DynamicTest | undefined;
     if (test) {
       const ok = addToCart({
         id: testId,
@@ -658,6 +708,12 @@ const LabDetailScreen = () => {
         labName: lab.name,
         vendorId: (lab as { vendorId?: string | null }).vendorId || undefined,
         kind: test.category === "Health Packages" ? "package" : "test",
+        availabilityType: test.availabilityType || "GENERAL",
+        availableDays: test.availableDays || [],
+        preparationRequired: test.preparationRequired,
+        preparationInstruction: test.preparationInstruction,
+        fastingRequired: test.fastingRequired,
+        fastingInstruction: test.fastingInstruction,
       });
       if (ok) {
         toast.success(`${testName} added to cart`);
@@ -907,10 +963,9 @@ const LabDetailScreen = () => {
 
         {/* Tab filters - Scrolls away and hides behind sticky search bar */}
         <div className="px-5 pt-3 pb-1">
-          <div className="relative grid grid-cols-2 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
-            {TABS.map((tab) => {
+          <div className="flex gap-2 overflow-x-auto scrollbar-none p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
+            {dynamicTabs.map((tab) => {
               const isActive = activeTab === tab.key;
-              const count = tab.key === "packages" ? packageCount : allTestsCount;
               return (
                 <button
                   key={tab.key}
@@ -918,24 +973,27 @@ const LabDetailScreen = () => {
                     setActiveTab(tab.key);
                     setSelectedCategory(null);
                   }}
-                  className="relative z-10 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
+                  className="relative z-10 flex-shrink-0 flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-extrabold transition-all"
                 >
                   {isActive && (
                     <motion.div
                       layoutId="lab-tab-pill"
-                      className="absolute inset-0 bg-[#0f172a] rounded-xl shadow-xs"
+                      className={`absolute inset-0 rounded-xl shadow-xs ${tab.key === "specialized" ? "bg-amber-100" : "bg-[#0f172a]"}`}
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <span className={`relative tracking-tight ${isActive ? "text-white" : "text-muted-foreground"}`}>
+                  <span className={`relative tracking-tight ${isActive ? (tab.key === "specialized" ? "text-amber-900" : "text-white") : "text-muted-foreground"}`}>
+                    {tab.key === "specialized" && isActive && <Calendar className="w-3.5 h-3.5 inline mr-1" />}
                     {tab.label}
                   </span>
                   <span
                     className={`relative text-[10px] font-black px-2 py-0.5 rounded-full ${
-                      isActive ? "bg-white/20 text-white" : "bg-muted text-foreground"
+                      isActive 
+                        ? (tab.key === "specialized" ? "bg-amber-200 text-amber-900" : "bg-white/20 text-white") 
+                        : "bg-muted text-foreground"
                     }`}
                   >
-                    {count}
+                    {tab.count}
                   </span>
                 </button>
               );
@@ -1006,21 +1064,68 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
+                        {(test as DynamicTest).availabilityType === "SPECIALIZED" && (
+                          <Badge variant="soft" className="text-[9px] bg-orange-500/10 text-orange-600 font-bold px-2 py-0.5">
+                            Specialized
+                          </Badge>
+                        )}
+                        {(test as DynamicTest).reportType === "NABL" && (
+                          <Badge variant="soft" className="text-[9px] bg-emerald-500/10 text-emerald-700 font-bold px-2 py-0.5">
+                            NABL Report
+                          </Badge>
+                        )}
                       </div>
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
                         <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                           <span>{test.testsCount} tests included</span>
                         </p>
                       )}
+                      {/* Specialized test: show available days */}
+                      {(test as DynamicTest).availabilityType === "SPECIALIZED" && (test as DynamicTest).availableDays && (test as DynamicTest).availableDays!.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Calendar className="w-3 h-3 text-orange-500" />
+                          <p className="text-[11px] font-semibold text-orange-600">
+                            Available: {(test as DynamicTest).availableDays!.join(", ")}
+                          </p>
+                        </div>
+                      )}
+                      {/* Requirements info */}
+                      {((test as DynamicTest).fastingRequired || (test as DynamicTest).preparationRequired || (test as DynamicTest).sampleType) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {(test as DynamicTest).fastingRequired && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-lg">
+                              <FlaskConical className="w-2.5 h-2.5" />
+                              Fasting Required
+                            </span>
+                          )}
+                          {(test as DynamicTest).preparationRequired && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg">
+                              <FileText className="w-2.5 h-2.5" />
+                              Preparation Needed
+                            </span>
+                          )}
+                          {(test as DynamicTest).sampleType && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-lg">
+                              Sample: {(test as DynamicTest).sampleType}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {expandedTest === test.id && (
-                        <motion.p
+                        <motion.div
                           initial={false}
                           animate={{ opacity: 1, height: "auto" }}
-                          className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium"
+                          className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium space-y-1"
                         >
-                          {test.description ||
-                            `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}
-                        </motion.p>
+                          <p>{test.description ||
+                            `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}</p>
+                          {(test as DynamicTest).fastingRequired && (test as DynamicTest).fastingInstruction && (
+                            <p className="text-violet-600 font-semibold">⚡ Fasting: {(test as DynamicTest).fastingInstruction}</p>
+                          )}
+                          {(test as DynamicTest).preparationRequired && (test as DynamicTest).preparationInstruction && (
+                            <p className="text-blue-600 font-semibold">📋 Preparation: {(test as DynamicTest).preparationInstruction}</p>
+                          )}
+                        </motion.div>
                       )}
                       <div className="flex items-baseline gap-2 mt-3.5 flex-wrap">
                         <span className="text-base font-black text-foreground tabular-nums">₹{test.price}</span>

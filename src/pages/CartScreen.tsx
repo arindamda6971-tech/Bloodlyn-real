@@ -785,6 +785,27 @@ const CartScreen = () => {
                     <div className="flex-1 min-w-0">
                       
                       <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
+                      {/* Availability & Requirement Badges */}
+                      {(item.availabilityType === "SPECIALIZED" || item.fastingRequired || item.preparationRequired) && (
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {item.availabilityType === "SPECIALIZED" && (
+                            <Badge variant="soft" className="text-[9px] bg-orange-500/10 text-orange-600 font-bold px-1.5 py-0">
+                              Specialized
+                            </Badge>
+                          )}
+                          {item.fastingRequired && (
+                            <Badge variant="soft" className="text-[9px] bg-violet-500/10 text-violet-600 font-bold px-1.5 py-0">
+                              Fasting
+                            </Badge>
+                          )}
+                          {item.preparationRequired && (
+                            <Badge variant="soft" className="text-[9px] bg-blue-500/10 text-blue-600 font-bold px-1.5 py-0">
+                              Prep
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                      
                       {item.price > 0 && !!item.labId && (
                         <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
                       )}
@@ -798,6 +819,34 @@ const CartScreen = () => {
                   </motion.div>
                 ))}
               </div>
+            )}
+
+            {/* Preparation Summary Block */}
+            {items.some(i => i.fastingRequired || i.preparationRequired) && (
+              <motion.div
+                initial={false}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 bg-amber-50 rounded-2xl border border-amber-200 p-4 shadow-sm"
+              >
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-extrabold text-amber-800">Before Collection</h3>
+                    <div className="mt-2 space-y-2">
+                      {items.filter(i => i.fastingRequired).map(item => (
+                        <div key={`fasting-${item.id}`} className="text-xs text-amber-700/90 leading-tight">
+                          <span className="font-bold text-amber-800">{item.name}:</span> Fasting required. {item.fastingInstruction || "Please do not eat or drink anything (except water) for 10-12 hours prior."}
+                        </div>
+                      ))}
+                      {items.filter(i => i.preparationRequired).map(item => (
+                        <div key={`prep-${item.id}`} className="text-xs text-amber-700/90 leading-tight">
+                          <span className="font-bold text-amber-800">{item.name}:</span> {item.preparationInstruction || "Specific preparation required. Please follow instructions given by the lab."}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </motion.div>
 
