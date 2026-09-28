@@ -313,7 +313,6 @@ interface DiagnosticCenter {
   ecg_price?: number | null;
   available_tests: string[] | null;
   pricing: Record<string, number> | null;
-  delivery_fee_rules?: any[] | null;
   is_active: boolean | null;
   closed_days?: string[] | null;
 }
@@ -420,54 +419,6 @@ const ActiveOffers = ({ centerId }: { centerId?: string }) => {
   );
 };
 
-// ─── Delivery Rules Component ───
-const DeliveryRules = ({ rules }: { rules?: any[] | null }) => {
-  if (!rules || rules.length === 0) return null;
-
-  return (
-    <div className="px-5 mb-6">
-      <h2 className="text-[17px] font-black text-foreground tracking-tight mb-3">Home Collection Fees</h2>
-      <div className="flex overflow-x-auto gap-3 pb-2 -mx-5 px-5 scrollbar-none" style={{ WebkitOverflowScrolling: 'touch' }}>
-        {rules.map((rule, idx) => {
-          const colorClass = "bg-blue-50 border-blue-200";
-          const iconColorClass = "text-blue-600 bg-blue-100";
-          const badgeColorClass = "bg-blue-100 text-blue-700";
-
-          let amountRange = "";
-          if (rule.max_mrp) {
-             amountRange = `₹${rule.min_mrp.toLocaleString("en-IN")} - ₹${rule.max_mrp.toLocaleString("en-IN")}`;
-          } else {
-             amountRange = `Above ₹${rule.min_mrp.toLocaleString("en-IN")}`;
-          }
-
-          return (
-            <div key={idx} className={`flex-shrink-0 w-[280px] border rounded-2xl p-4 flex flex-col gap-3 ${colorClass}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColorClass}`}>
-                      <Truck className="w-4 h-4" />
-                   </div>
-                   <Badge variant="outline" className={`border-transparent font-bold ${badgeColorClass}`}>
-                     {Number(rule.fee) === 0 ? "Free Collection" : "Collection Fee"}
-                   </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-[14px] font-bold text-foreground leading-snug">
-                  {Number(rule.fee) === 0 
-                    ? `Free home collection on orders ${amountRange}`
-                    : `₹${Number(rule.fee).toLocaleString("en-IN")} collection fee on orders ${amountRange}`
-                  }
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
 // Simple session cache to prevent showing the skeleton loader on subsequent visits
 const globalLabCache = new Map<string, { labFromDb: any; dynamicTests: DynamicTest[]; packages: DynamicTest[] }>();
 
@@ -513,7 +464,7 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available, home_bp_price, ecg_price, delivery_fee_rules')
+          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available, home_bp_price, ecg_price')
           .eq('id', labId)
           .maybeSingle();
 
@@ -982,9 +933,6 @@ const LabDetailScreen = () => {
 
         {/* Active Offers Section */}
         <ActiveOffers centerId={labFromDb?.vendor_id ?? undefined} />
-
-        {/* Delivery Rules Section */}
-        <DeliveryRules rules={labFromDb?.delivery_fee_rules} />
 
         {/* Schedule Section */}
         <div className="px-5 mb-4">
