@@ -11,3 +11,5 @@
 - [x] Prevent mixed General/Specialized carts and require common Partner-configured weekdays for Specialized tests.
 - [x] Carry exact sample, preparation, fasting, and report information through test details and cart checkout.
 - [x] Refresh Partner test tags on every lab-profile visit and recognize supported Specialized tag variants.
+- [x] Calculate and display Partner-managed MRP collection fees once in checkout and verify them server-side.
+- [ ] Update Partner Pro profile sync to send active `mrp_delivery_rules` as `delivery_fee_rules` (blocked: separate project).
