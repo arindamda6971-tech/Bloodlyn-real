@@ -16,6 +16,7 @@ import { evaluateLabServiceability } from "@/lib/labServiceability";
 import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
+import { calculateDeliveryFee } from "@/lib/delivery-fee";
 
 interface PaymentState {
   cartItems: Array<{
@@ -70,6 +71,7 @@ const PaymentScreen = () => {
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
   const [labOffers, setLabOffers] = useState<any[]>([]);
   const [appliedOffer, setAppliedOffer] = useState<any | null>(null);
+  const [deliveryFeeRules, setDeliveryFeeRules] = useState<unknown>(null);
 
 
 
@@ -112,16 +114,18 @@ const PaymentScreen = () => {
     if (!orderLabId) {
       setBpAddonPrice(null);
       setEcgAddonPrice(null);
+      setDeliveryFeeRules(null);
       return;
     }
 
     (async () => {
       const { data } = await supabase
         .from("diagnostic_centers")
-        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price")
+        .select("offers_home_bp, home_bp_price, offers_home_ecg, ecg_available, ecg_price, delivery_fee_rules")
         .eq("id", orderLabId)
         .maybeSingle();
       if (cancelled) return;
+      setDeliveryFeeRules(data?.delivery_fee_rules ?? null);
 
       if (!alreadyHasBpItem && data?.offers_home_bp === true) {
         // Fall back to 99 instead of 299, but ideally should match Cart
@@ -195,7 +199,8 @@ const PaymentScreen = () => {
 
   const discount = Math.round(appliedDiscount);
   const platformFee = usePlatformFeeFlat();
-  const baseTotal = effectiveSubtotal - discount + platformFee;
+  const collectionFee = isFreeDelivery ? 0 : calculateDeliveryFee(deliveryFeeRules, effectiveSubtotal);
+  const baseTotal = Math.max(0, effectiveSubtotal - discount) + collectionFee + platformFee;
   const total = baseTotal;
 
 
@@ -486,6 +491,7 @@ const PaymentScreen = () => {
             subtotal: effectiveSubtotal,
             couponApplied,
             discount,
+            collectionFee,
             platformFee,
             total,
             selectedPayment: selectedPaymentMethod.id,
@@ -825,7 +831,9 @@ const PaymentScreen = () => {
             )}
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Home Collection</span>
-              <span className="text-success font-bold">FREE</span>
+              <span className={collectionFee > 0 ? "text-foreground font-semibold tabular-nums" : "text-success font-bold"}>
+                {collectionFee > 0 ? `₹ ${collectionFee.toFixed(2)}` : "FREE"}
+              </span>
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm">
@@ -840,7 +848,7 @@ const PaymentScreen = () => {
 
             <div className="mt-3 flex items-center justify-between rounded-xl bg-primary/5 border border-primary/15 px-3.5 py-3">
               <span className="font-bold text-foreground">Payable Amount</span>
-              <span className="font-black text-lg text-primary tabular-nums">₹ {total}.00</span>
+              <span className="font-black text-lg text-primary tabular-nums">₹ {total.toFixed(2)}</span>
             </div>
           </div>
         </motion.div>

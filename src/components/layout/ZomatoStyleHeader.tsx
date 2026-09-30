@@ -79,7 +79,9 @@ export const ZomatoStyleHeader = ({
         try {
           localStorage.setItem("bloodlyn_last_address_title", title);
           localStorage.setItem("bloodlyn_last_address_line", line);
-        } catch {}
+        } catch {
+          // Local storage can be unavailable in restricted browser contexts.
+        }
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
@@ -135,7 +137,9 @@ export const ZomatoStyleHeader = ({
       try {
         localStorage.setItem("bloodlyn_last_address_title", title);
         localStorage.setItem("bloodlyn_last_address_line", line);
-      } catch {}
+      } catch {
+        // Local storage can be unavailable in restricted browser contexts.
+      }
       setSavedAddresses((prev) => prev.map((a) => ({ ...a, is_default: a.id === loc.id })));
       setServicePincode(user.id, loc.pincode);
 

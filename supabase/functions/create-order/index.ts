@@ -40,6 +40,26 @@ interface CreateOrderRequest {
   prescriptionUrl?: string | null;
 }
 
+const calculateDeliveryFee = (value: unknown, mrpTotal: number): number => {
+  if (!Array.isArray(value) || !Number.isFinite(mrpTotal) || mrpTotal < 0) return 0;
+  const matches = value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const row = entry as Record<string, unknown>;
+    const min = Number(row.min_mrp);
+    const max = row.max_mrp == null ? null : Number(row.max_mrp);
+    const fee = Number(row.fee);
+    if (row.is_active === false || !Number.isFinite(min) || min < 0 || !Number.isFinite(fee) || fee < 0) return [];
+    if (max !== null && (!Number.isFinite(max) || max < min)) return [];
+    if (mrpTotal < min || (max !== null && mrpTotal > max)) return [];
+    return [{ min, max, fee }];
+  }).sort((a, b) => {
+    const aWidth = a.max === null ? Number.POSITIVE_INFINITY : a.max - a.min;
+    const bWidth = b.max === null ? Number.POSITIVE_INFINITY : b.max - b.min;
+    return aWidth - bWidth || b.min - a.min;
+  });
+  return matches[0]?.fee ?? 0;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -432,9 +452,23 @@ Deno.serve(async (req) => {
       console.warn("Platform fee lookup failed, using ₹0:", String(e));
     }
 
+    // The selected lab's Partner-managed MRP rule is authoritative. Calculate
+    // against the server-validated MRP before discounts, and add it once.
+    let collectionFee = 0;
+    const selectedLabId = labId || cartItems.find((item) => item.labId)?.labId || null;
+    if (selectedLabId) {
+      const { data: feeCenter, error: feeError } = await adminClient
+        .from("diagnostic_centers")
+        .select("delivery_fee_rules")
+        .eq("id", selectedLabId)
+        .maybeSingle();
+      if (feeError) console.warn("Collection fee lookup failed, using ₹0:", feeError.message);
+      collectionFee = calculateDeliveryFee(feeCenter?.delivery_fee_rules, serverSubtotal);
+    }
+
     const netAmount = Math.max(0, serverSubtotal - serverDiscount);
-    const serverTotal = netAmount + platformFee;
-    console.log(`Flat platform fee: ₹${platformFee}; total ₹${serverTotal}`);
+    const serverTotal = netAmount + collectionFee + platformFee;
+    console.log(`Collection fee: ₹${collectionFee}; flat platform fee: ₹${platformFee}; total ₹${serverTotal}`);
 
     // Accept all payment methods from the client
     // In production, online methods would be verified via a payment gateway callback
@@ -539,6 +573,7 @@ Deno.serve(async (req) => {
           orderNumber: existingOrder.order_number,
           total: serverTotal,
           platformFee,
+          collectionFee,
           paymentStatus,
           status: orderStatus,
           deduplicated: true,
@@ -665,6 +700,8 @@ Deno.serve(async (req) => {
               orderId: existing.id,
               orderNumber: existing.order_number,
               total: Number(existing.total),
+              collectionFee,
+              platformFee,
               paymentStatus: existing.payment_status,
               status: existing.status,
               deduplicated: true,
@@ -845,6 +882,7 @@ Deno.serve(async (req) => {
       orderNumber: orderData.order_number,
       total: serverTotal,
       platformFee,
+      collectionFee,
       paymentStatus,
       status: orderStatus,
     };

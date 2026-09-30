@@ -277,6 +277,7 @@ const PaymentProcessingScreen = () => {
           ...successState,
           total: typeof fnData?.total === "number" ? fnData.total : successState.total,
           platformFee: typeof fnData?.platformFee === "number" ? fnData.platformFee : successState.platformFee,
+          collectionFee: typeof fnData?.collectionFee === "number" ? fnData.collectionFee : successState.collectionFee,
           orderId: fnData?.orderId || null,
           orderNumber: fnData?.orderNumber || null,
         },
