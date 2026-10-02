@@ -1013,7 +1013,6 @@ const BPCheckScreen = () => {
                   <h3 className="text-sm font-black text-foreground flex items-center gap-2">
                     <User className="w-4 h-4 text-blue-600" /> Order & Patient Details
                   </h3>
-                  {orderOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 </button>
                 {orderOpen && (
                   <div className="mt-3 pt-3 border-t border-border/40 space-y-2.5">
