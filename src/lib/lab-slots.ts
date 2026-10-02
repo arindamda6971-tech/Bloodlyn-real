@@ -137,37 +137,64 @@ export interface FixedCollectionSlot {
   note: string;
   startMinutes: number;
   endMinutes: number;
-  /** Value persisted on the order, e.g. "Morning (6 AM - 10 AM)" */
+  /** Value persisted on the order, e.g. "Morning (6 AM - 8 AM)" */
   display: string;
 }
 
 export const FIXED_COLLECTION_SLOTS: FixedCollectionSlot[] = [
   {
-    id: "morning",
+    id: "morning-6-8",
     label: "Morning",
-    time: "6 AM - 10 AM",
-    note: "Fast service",
+    time: "6 AM - 8 AM",
+    note: "Early morning collection",
     startMinutes: 6 * 60,
+    endMinutes: 8 * 60,
+    display: "Morning (6 AM - 8 AM)",
+  },
+  {
+    id: "morning-8-10",
+    label: "Morning",
+    time: "8 AM - 10 AM",
+    note: "Morning collection",
+    startMinutes: 8 * 60,
     endMinutes: 10 * 60,
-    display: "Morning (6 AM - 10 AM)",
+    display: "Morning (8 AM - 10 AM)",
   },
   {
-    id: "afternoon",
-    label: "Afternoon",
-    time: "10 AM - 2 PM",
-    note: "Might be heavy traffic on the road",
+    id: "morning-10-12",
+    label: "Morning",
+    time: "10 AM - 12 PM",
+    note: "Late morning collection",
     startMinutes: 10 * 60,
-    endMinutes: 14 * 60,
-    display: "Afternoon (10 AM - 2 PM)",
+    endMinutes: 12 * 60,
+    display: "Morning (10 AM - 12 PM)",
   },
   {
-    id: "evening",
-    label: "Evening",
-    time: "2 PM - 6 PM",
-    note: "It's a little slow",
+    id: "afternoon-12-2",
+    label: "Afternoon",
+    time: "12 PM - 2 PM",
+    note: "Afternoon collection",
+    startMinutes: 12 * 60,
+    endMinutes: 14 * 60,
+    display: "Afternoon (12 PM - 2 PM)",
+  },
+  {
+    id: "afternoon-2-4",
+    label: "Afternoon",
+    time: "2 PM - 4 PM",
+    note: "Afternoon collection",
     startMinutes: 14 * 60,
+    endMinutes: 16 * 60,
+    display: "Afternoon (2 PM - 4 PM)",
+  },
+  {
+    id: "evening-4-6",
+    label: "Evening",
+    time: "4 PM - 6 PM",
+    note: "Evening collection",
+    startMinutes: 16 * 60,
     endMinutes: 18 * 60,
-    display: "Evening (2 PM - 6 PM)",
+    display: "Evening (4 PM - 6 PM)",
   },
 ];
 
@@ -190,8 +217,24 @@ export function isFixedSlotBookable(
 /** Resolve a stored slot string back to a fixed slot (label match). */
 export function findFixedSlot(value: string | null | undefined): FixedCollectionSlot | undefined {
   if (!value) return undefined;
-  const v = value.toLowerCase();
-  return FIXED_COLLECTION_SLOTS.find((s) => v.includes(s.label.toLowerCase()) || s.id === v);
+  const v = value.toLowerCase().replace(/\s+/g, " ").trim();
+  const exactSlot = FIXED_COLLECTION_SLOTS.find(
+    (slot) => slot.id === v || slot.display.toLowerCase() === v || v.includes(slot.time.toLowerCase())
+  );
+  if (exactSlot) return exactSlot;
+
+  // Existing orders used three wider windows. Keep their original end times so
+  // tracking and the missed-collection action remain backward compatible.
+  if (v.includes("morning")) {
+    return { ...FIXED_COLLECTION_SLOTS[1], id: "legacy-morning", time: "6 AM - 10 AM", startMinutes: 6 * 60, endMinutes: 10 * 60, display: value };
+  }
+  if (v.includes("afternoon")) {
+    return { ...FIXED_COLLECTION_SLOTS[3], id: "legacy-afternoon", time: "10 AM - 2 PM", startMinutes: 10 * 60, endMinutes: 14 * 60, display: value };
+  }
+  if (v.includes("evening")) {
+    return { ...FIXED_COLLECTION_SLOTS[5], id: "legacy-evening", time: "2 PM - 6 PM", startMinutes: 14 * 60, endMinutes: 18 * 60, display: value };
+  }
+  return undefined;
 }
 
 /* ------------------------------------------------------------------
