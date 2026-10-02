@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   bucketForSlotStart,
+  findFixedSlot,
+  FIXED_COLLECTION_SLOTS,
   getLabSlotDates,
+  hasCollectionWindowEnded,
+  isFixedSlotBookable,
   isSameDaySlotBookable,
   parseSlotStartMinutes,
   toSortedSlotItems,
@@ -55,5 +59,40 @@ describe("lab slot bucketing", () => {
 
     expect(isSameDaySlotBookable(eightPm, nowAtNinePmIst)).toBe(false);
     expect(isSameDaySlotBookable(tenPm, nowAtNinePmIst)).toBe(true);
+  });
+
+  it("exposes six consecutive two-hour collection windows", () => {
+    expect(FIXED_COLLECTION_SLOTS.map((slot) => [slot.startMinutes, slot.endMinutes])).toEqual([
+      [360, 480],
+      [480, 600],
+      [600, 720],
+      [720, 840],
+      [840, 960],
+      [960, 1080],
+    ]);
+  });
+
+  it("applies the one-hour lead rule to each two-hour window", () => {
+    const nowAtNineAmIst = new Date("2026-06-01T03:30:00.000Z");
+
+    expect(isFixedSlotBookable(FIXED_COLLECTION_SLOTS[0], 0, nowAtNineAmIst)).toBe(false);
+    expect(isFixedSlotBookable(FIXED_COLLECTION_SLOTS[1], 0, nowAtNineAmIst)).toBe(false);
+    expect(isFixedSlotBookable(FIXED_COLLECTION_SLOTS[2], 0, nowAtNineAmIst)).toBe(true);
+    expect(isFixedSlotBookable(FIXED_COLLECTION_SLOTS[0], 1, nowAtNineAmIst)).toBe(true);
+  });
+
+  it("resolves exact two-hour slots before their repeated day-part labels", () => {
+    expect(findFixedSlot("Morning (10 AM - 12 PM)")?.endMinutes).toBe(720);
+    expect(findFixedSlot("Afternoon (2 PM - 4 PM)")?.endMinutes).toBe(960);
+  });
+
+  it("keeps legacy three-window orders compatible", () => {
+    expect(findFixedSlot("Morning (6 AM - 10 AM)")?.endMinutes).toBe(600);
+    expect(findFixedSlot("Afternoon (10 AM - 2 PM)")?.endMinutes).toBe(840);
+    expect(findFixedSlot("Evening (2 PM - 6 PM)")?.endMinutes).toBe(1080);
+
+    const elevenAmIst = new Date("2026-06-01T05:30:00.000Z");
+    expect(hasCollectionWindowEnded("2026-06-01", "Morning (10 AM - 12 PM)", elevenAmIst)).toBe(false);
+    expect(hasCollectionWindowEnded("2026-06-01", "Morning (6 AM - 10 AM)", elevenAmIst)).toBe(true);
   });
 });

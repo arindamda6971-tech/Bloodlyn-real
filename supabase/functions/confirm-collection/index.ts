@@ -10,7 +10,8 @@
 //   4. mirrors the new status to the Partner project so the lab owner's
 //      booking tile updates without any manual click
 //
-// No existing edge function or booking logic is touched by this function.
+// Collection-window parsing supports both current two-hour slots and legacy
+// three-window orders so existing bookings keep their original timing.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -28,10 +29,21 @@ const json = (body: unknown, status = 200) =>
 // BloodLyn Partner Real project
 const PARTNER_URL = "https://wkhwuzsiehrcvlxfeytf.supabase.co";
 
-/** Slot end time in minutes-from-midnight for the three fixed collection slots. */
+/** Slot end time in minutes-from-midnight for current and legacy collection slots. */
 function slotEndMinutes(slot: string | null): number | null {
   if (!slot) return null;
   const s = slot.toLowerCase();
+  const range = s.match(/-\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+  if (range) {
+    let hour = Number(range[1]);
+    const minute = Number(range[2] ?? "0");
+    const meridiem = range[3].toLowerCase();
+    if (hour >= 1 && hour <= 12 && minute >= 0 && minute <= 59) {
+      if (meridiem === "pm" && hour !== 12) hour += 12;
+      if (meridiem === "am" && hour === 12) hour = 0;
+      return hour * 60 + minute;
+    }
+  }
   if (s.includes("morning")) return 10 * 60;
   if (s.includes("afternoon")) return 14 * 60;
   if (s.includes("evening")) return 18 * 60;
