@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, CreditCard, ChevronRight, HeartPulse, Activity, Star, CheckCircle2 } from "lucide-react";
+import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, CreditCard, ChevronRight, HeartPulse, Activity, Star, CheckCircle2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -530,51 +530,42 @@ const PaymentScreen = () => {
 
       <div className="px-4 pb-6">
         {/* Appointment Details */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-3">
-          <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden />
-          <div className="p-3.5 pl-5">
-            <div className="w-full flex items-center justify-between pb-1">
-              <h3 className="text-base font-bold text-foreground tracking-tight">Appointment Details</h3>
-            </div>
-            {appointmentOpen && (
-              <div className="mt-4 flex flex-col gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                    <MapPin className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0 pr-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Lab</p>
-                    <p className="text-sm font-bold text-foreground break-words leading-tight">{paymentState?.selectedLabName || "Home Collection"}</p>
-                  </div>
+        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
+          <div className="w-full flex items-center justify-between pb-3 border-b border-border/40">
+            <h3 className="text-base font-bold text-foreground tracking-tight">Appointment Details</h3>
+          </div>
+          {appointmentOpen && (
+            <div className="mt-4 flex flex-col gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-blue-50/50 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4 text-blue-500" strokeWidth={2.5} />
                 </div>
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-border/50">
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Calendar className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Date</p>
-                      <p className="text-[13px] font-bold text-foreground break-words leading-tight">{formatDate(paymentState?.scheduledDate)}</p>
-                    </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-foreground break-words">{paymentState?.selectedLabName || "Home Collection"}</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50/50 flex items-center justify-center shrink-0">
+                    <Calendar className="w-4 h-4 text-blue-500" strokeWidth={2.5} />
                   </div>
-                  <div className="flex items-start gap-2.5">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Clock className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Time</p>
-                      <p className="text-[13px] font-bold text-foreground break-words leading-tight">{paymentState?.scheduledTimeSlot || "Any time"}</p>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground break-words">
+                      {formatDate(paymentState?.scheduledDate)}
+                      {paymentState?.scheduledTimeSlot 
+                        ? ` ${paymentState.scheduledTimeSlot.includes('(') ? paymentState.scheduledTimeSlot.substring(paymentState.scheduledTimeSlot.indexOf('(')) : `(${paymentState.scheduledTimeSlot})`}`
+                        : ""}
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Order Details */}
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
-          <div className="w-full flex items-center justify-between pb-1">
+          <div className="w-full flex items-center justify-between pb-3 border-b border-border/40">
             <h3 className="text-base font-bold text-foreground tracking-tight">Order Details</h3>
           </div>
           {orderOpen && (
@@ -593,7 +584,10 @@ const PaymentScreen = () => {
               <div className="space-y-2">
                 {(paymentState?.cartItems || []).map((item) => (
                   <div key={item.id} className="flex justify-between items-center gap-3 text-sm">
-                    <span className="text-foreground font-semibold flex-1 truncate">{item.name}</span>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-foreground font-semibold truncate">{item.name}</span>
+                    </div>
                     <span className="text-foreground font-bold tabular-nums shrink-0">₹ {item.price * item.quantity}</span>
                   </div>
                 ))}
@@ -604,11 +598,11 @@ const PaymentScreen = () => {
 
         {/* Recommended Add-ons Section */}
         {(bpAddonPrice !== null || ecgAddonPrice !== null) && (
-          <div className="mb-4">
-            <h3 className="text-sm font-bold text-foreground tracking-tight mb-2.5 px-1 flex items-center gap-1.5">
-              <Star className="w-4 h-4 text-primary fill-primary/20" /> Recommended Add-ons
-            </h3>
-            <div className="grid gap-2.5">
+          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
+            <div className="w-full flex items-center justify-between pb-2 border-b border-border/40">
+              <h3 className="text-base font-bold text-foreground tracking-tight">Recommended Add-ons</h3>
+            </div>
+            <div className="mt-2 flex flex-col gap-0.5">
               {/* Home BP Check */}
               {bpAddonPrice !== null && (
                 <motion.button
@@ -617,14 +611,14 @@ const PaymentScreen = () => {
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setBpAddonSelected((v) => !v)}
                   aria-pressed={bpAddonSelected}
-                  className={`w-full text-left relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-                    bpAddonSelected ? "border-primary bg-primary/[0.03] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]" : "border-border/60 bg-card active:scale-[0.98]"
+                  className={`w-full text-left relative transition-all duration-300 ${
+                    bpAddonSelected ? "bg-primary/[0.03]" : "active:bg-muted/50"
                   }`}
                 >
                   {bpAddonSelected && (
-                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
+                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />
                   )}
-                  <div className="p-3.5 flex items-center gap-3.5">
+                  <div className="py-2 px-1 flex items-center gap-3.5">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                       bpAddonSelected ? "bg-primary text-primary-foreground shadow-sm" : "bg-primary/10 text-primary"
                     }`}>
@@ -632,11 +626,8 @@ const PaymentScreen = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-bold text-foreground">Home BP Check</p>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-1">
-                        Digital measurement at home
-                      </p>
                     </div>
-                    <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
+                    <div className="flex items-center gap-3 shrink-0 pl-2">
                       <p className="text-[13px] font-bold text-foreground">{bpAddonPrice > 0 ? `₹${bpAddonPrice}` : "FREE"}</p>
                       <div
                         className={`h-7 px-3.5 text-[11px] font-bold rounded-full transition-all flex items-center justify-center ${
@@ -660,14 +651,14 @@ const PaymentScreen = () => {
                   animate={{ opacity: 1, y: 0 }}
                   onClick={() => setEcgAddonSelected((v) => !v)}
                   aria-pressed={ecgAddonSelected}
-                  className={`w-full text-left relative overflow-hidden rounded-2xl border transition-all duration-300 ${
-                    ecgAddonSelected ? "border-primary bg-primary/[0.03] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.1)]" : "border-border/60 bg-card active:scale-[0.98]"
+                  className={`w-full text-left relative transition-all duration-300 ${
+                    ecgAddonSelected ? "bg-primary/[0.03]" : "active:bg-muted/50"
                   }`}
                 >
                   {ecgAddonSelected && (
-                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
+                    <div className="absolute top-0 left-0 bottom-0 w-1 bg-primary" />
                   )}
-                  <div className="p-3.5 flex items-center gap-3.5">
+                  <div className="py-2 px-1 flex items-center gap-3.5">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                       ecgAddonSelected ? "bg-primary text-primary-foreground shadow-sm" : "bg-primary/10 text-primary"
                     }`}>
@@ -675,11 +666,8 @@ const PaymentScreen = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-bold text-foreground">Home ECG Check</p>
-                      <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-1">
-                        12-lead ECG & expert analysis
-                      </p>
                     </div>
-                    <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
+                    <div className="flex items-center gap-3 shrink-0 pl-2">
                       <p className="text-[13px] font-bold text-foreground">{ecgAddonPrice > 0 ? `₹${ecgAddonPrice}` : "FREE"}</p>
                       <div
                         className={`h-7 px-3.5 text-[11px] font-bold rounded-full transition-all flex items-center justify-center ${
@@ -695,7 +683,7 @@ const PaymentScreen = () => {
                 </motion.button>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Lab Offers */}
