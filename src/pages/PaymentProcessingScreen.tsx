@@ -532,21 +532,8 @@ const PaymentProcessingScreen = () => {
           </div>
         )}
 
-        {/* Security badge */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-          className="mt-10 flex items-center gap-2"
-        >
-          <ShieldCheck size={14} style={{ color: "hsl(142, 50%, 50%)" }} />
-          <span
-            className="text-xs font-medium"
-            style={{ color: "hsl(220, 10%, 55%)" }}
-          >
-            256-bit SSL encrypted
-          </span>
-        </motion.div>
+
+
       </motion.div>
     </div>
   );

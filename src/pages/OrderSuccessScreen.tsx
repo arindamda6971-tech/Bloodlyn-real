@@ -94,6 +94,7 @@ const OrderSuccessScreen = () => {
   const bookingState = location.state as BookingState | undefined;
 
   const orderId = bookingState?.orderId ?? null;
+  const orderNumber = bookingState?.orderNumber ?? null;
   const [showConfetti, setShowConfetti] = useState(false);
 
   const [fetchedAddress, setFetchedAddress] = useState<string | null>(null);
@@ -203,7 +204,7 @@ const OrderSuccessScreen = () => {
               <div className="flex-1 min-w-0 flex items-center justify-between">
                 <div>
                   <p className="text-[11px] text-slate-500 font-medium mb-0.5">Order ID</p>
-                  <p className="text-[14px] font-bold text-slate-800 tracking-tight truncate">{orderId.slice(0, 8).toUpperCase()}</p>
+                  <p className="text-[14px] font-bold text-slate-800 tracking-tight truncate">{orderNumber || orderId?.slice(0, 8).toUpperCase()}</p>
                 </div>
                 <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full border border-green-100/50">
                   <CheckCircle className="w-3 h-3" />
@@ -350,15 +351,10 @@ const OrderSuccessScreen = () => {
                   <span className="font-bold text-slate-800">₹{bookingState.subtotal.toLocaleString()}</span>
                 </div>
               )}
-              {bookingState?.discount ? (
+              {bookingState?.discount > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate-500 font-medium">Discount</span>
                   <span className="font-bold text-green-600">- ₹{bookingState.discount.toLocaleString()}</span>
-                </div>
-              ) : (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-slate-500 font-medium">Discount</span>
-                  <span className="font-bold text-green-600">₹0</span>
                 </div>
               )}
               <div className="flex justify-between text-[13px]">
@@ -383,7 +379,6 @@ const OrderSuccessScreen = () => {
             {bookingState?.total != null && (
               <div className="bg-[#f0fdf4] rounded-xl p-3 flex justify-between items-center border border-green-200 mt-2">
                 <div className="flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-green-600" />
                   <span className="text-[14px] font-bold text-green-800">Amount Paid</span>
                 </div>
                 <span className="text-[18px] font-black text-green-900">₹{bookingState.total.toLocaleString()}</span>
