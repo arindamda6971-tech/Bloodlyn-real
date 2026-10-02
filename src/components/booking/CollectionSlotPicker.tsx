@@ -1,8 +1,9 @@
-import { Clock, Loader2 } from "lucide-react";
+import { Clock, Loader2, Check } from "lucide-react";
 import {
   FIXED_COLLECTION_SLOTS,
   isFixedSlotBookable,
   type LabSlotDate,
+  type FixedCollectionSlot,
 } from "@/lib/lab-slots";
 import { hapticSelection } from "@/utils/haptics";
 
@@ -21,6 +22,138 @@ interface CollectionSlotPickerProps {
   selectedSlot: string;
   onSelectSlot: (display: string) => void;
 }
+
+/* ------------------------------------------------------------------ */
+/*  Group fixed slots into First Half (before noon) / Second Half      */
+/* ------------------------------------------------------------------ */
+const FIRST_HALF_SLOTS = FIXED_COLLECTION_SLOTS.filter(
+  (s) => s.startMinutes < 12 * 60
+);
+const SECOND_HALF_SLOTS = FIXED_COLLECTION_SLOTS.filter(
+  (s) => s.startMinutes >= 12 * 60
+);
+
+/* ------------------------------------------------------------------ */
+/*  Compact slot chip                                                   */
+/* ------------------------------------------------------------------ */
+const SlotChip = ({
+  slot,
+  isAvailable,
+  isSelected,
+  onSelect,
+}: {
+  slot: FixedCollectionSlot;
+  isAvailable: boolean;
+  isSelected: boolean;
+  onSelect: () => void;
+}) => (
+  <button
+    onClick={() => {
+      if (!isAvailable) return;
+      hapticSelection();
+      onSelect();
+    }}
+    disabled={!isAvailable}
+    className={`
+      relative px-4 py-3 rounded-xl border text-left transition-all duration-200
+      ${
+        !isAvailable
+          ? "bg-muted/20 border-transparent opacity-40 cursor-not-allowed"
+          : isSelected
+          ? "bg-primary/8 border-primary shadow-sm ring-1 ring-primary/30"
+          : "bg-card border-slate-200/80 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]"
+      }
+    `}
+  >
+    {isSelected && (
+      <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+      </span>
+    )}
+    <span
+      className={`block text-[13px] font-bold leading-tight ${
+        !isAvailable
+          ? "text-foreground/40 line-through"
+          : isSelected
+          ? "text-primary"
+          : "text-slate-800"
+      }`}
+    >
+      {slot.time}
+    </span>
+    {!isAvailable && (
+      <span className="block text-[9px] text-muted-foreground mt-0.5">
+        Too late
+      </span>
+    )}
+  </button>
+);
+
+/* ------------------------------------------------------------------ */
+/*  Section with label + badge                                          */
+/* ------------------------------------------------------------------ */
+const SlotSection = ({
+  title,
+  badge,
+  badgeColor,
+  slots,
+  selectedSlot,
+  onSelectSlot,
+  selectedIndex,
+}: {
+  title: string;
+  badge: string;
+  badgeColor: "green" | "orange" | "red";
+  slots: FixedCollectionSlot[];
+  selectedSlot: string;
+  onSelectSlot: (display: string) => void;
+  selectedIndex: number;
+}) => {
+  const anyAvailable = slots.some((s) => isFixedSlotBookable(s, selectedIndex));
+
+  return (
+    <div
+      className={`rounded-2xl border p-3.5 transition-all ${
+        anyAvailable
+          ? "bg-card border-slate-200/70"
+          : "bg-muted/20 border-transparent opacity-60"
+      }`}
+    >
+      {/* Section header */}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-sm font-bold text-slate-800">{title}</span>
+        <span
+          className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+            badgeColor === "green"
+              ? "bg-emerald-50 text-emerald-600 border border-emerald-200/60"
+              : badgeColor === "red"
+              ? "bg-red-50 text-red-500 border border-red-200/60"
+              : "bg-orange-50 text-orange-500 border border-orange-200/60"
+          }`}
+        >
+          {badge}
+        </span>
+      </div>
+
+      {/* Grid of chip buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        {slots.map((slot) => {
+          const isAvailable = isFixedSlotBookable(slot, selectedIndex);
+          const isSelected = selectedSlot === slot.display && isAvailable;
+          return (
+            <SlotChip
+              key={slot.id}
+              slot={slot}
+              isAvailable={isAvailable}
+              isSelected={isSelected}
+              onSelect={() => onSelectSlot(slot.display)}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 /**
  * Exact same date + time-slot selection interface the blood-test booking flow
@@ -91,7 +224,7 @@ const CollectionSlotPicker = ({
 
       {/* Time Selection */}
       <div className="mt-4">
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
           SELECT TIME SLOT
         </h2>
 
@@ -110,53 +243,28 @@ const CollectionSlotPicker = ({
             <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {FIXED_COLLECTION_SLOTS.map((slot) => {
-              const isAvailable = isFixedSlotBookable(slot, selectedIndex);
-              const isSelected = selectedSlot === slot.display && isAvailable;
-              return (
-                <button
-                  key={slot.id}
-                  onClick={() => {
-                    if (!isAvailable) return;
-                    hapticSelection();
-                    onSelectSlot(slot.display);
-                  }}
-                  disabled={!isAvailable}
-                  className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
-                    !isAvailable
-                      ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                      : isSelected
-                      ? "bg-primary/5 border-primary shadow-sm"
-                      : "bg-card border-slate-200/80 hover:border-primary/40"
-                  }`}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                      !isAvailable
-                        ? "bg-muted/50"
-                        : isSelected
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-slate-100/90 text-slate-600"
-                    }`}
-                  >
-                    <Clock className="w-4 h-4" strokeWidth={2} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className={`block text-[14px] font-bold ${
-                        !isAvailable ? "text-foreground/50 line-through" : "text-slate-800"
-                      }`}
-                    >
-                      {slot.label} · {slot.time}
-                    </span>
-                    <span className="block text-[10px] font-medium text-muted-foreground truncate">
-                      {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="space-y-3">
+            {/* First Half — Morning */}
+            <SlotSection
+              title="First Half"
+              badge="(Busy time, so avoid this time slot)"
+              badgeColor="red"
+              slots={FIRST_HALF_SLOTS}
+              selectedSlot={selectedSlot}
+              onSelectSlot={onSelectSlot}
+              selectedIndex={selectedIndex}
+            />
+
+            {/* Second Half — Afternoon / Evening */}
+            <SlotSection
+              title="Second Half"
+              badge="(If possible, select this time slot)"
+              badgeColor="green"
+              slots={SECOND_HALF_SLOTS}
+              selectedSlot={selectedSlot}
+              onSelectSlot={onSelectSlot}
+              selectedIndex={selectedIndex}
+            />
 
             {FIXED_COLLECTION_SLOTS.every(
               (slot) => !isFixedSlotBookable(slot, selectedIndex)

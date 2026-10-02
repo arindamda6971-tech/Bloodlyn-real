@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { hapticSelection } from "@/utils/haptics";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Star, Clock, AlertCircle, Loader2 } from "lucide-react";
+import { Building2, Star, Clock, AlertCircle, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -476,37 +476,98 @@ const LabSelectionScreen = () => {
               <p className="text-xs text-muted-foreground mt-1">Please pick a different date.</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {allSlotItems.map((slot) => {
-                const isAvailable = getSlotAvailability(slot);
-                const isSelected = selectedTime === slot.id;
-                return (
-                  <button
-                    key={slot.id}
-                    onClick={() => { if (!isAvailable) return; hapticSelection(); setSelectedTime(slot.id); }}
-                    disabled={!isAvailable}
-                    className={`w-full p-3.5 rounded-2xl border transition-all flex items-center gap-3 text-left ${
-                      !isAvailable
-                        ? "bg-muted/30 border-transparent opacity-50 cursor-not-allowed"
-                        : isSelected
-                        ? "bg-primary/5 border-primary shadow-sm"
-                        : "bg-card border-slate-200/80 hover:border-primary/40"
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${!isAvailable ? "bg-muted/50" : isSelected ? "bg-primary text-primary-foreground" : "bg-slate-100/90 text-slate-600"}`}>
-                      <Clock className="w-4 h-4" strokeWidth={2} />
+            <div className="space-y-3">
+              {/* First Half — Morning slots */}
+              {(() => {
+                const firstHalfSlots = allSlotItems.filter((s) => s.startMinutes < 12 * 60);
+                const anyAvailable = firstHalfSlots.some((s) => getSlotAvailability(s));
+                return firstHalfSlots.length > 0 ? (
+                  <div className={`rounded-2xl border p-3.5 transition-all ${anyAvailable ? "bg-card border-slate-200/70" : "bg-muted/20 border-transparent opacity-60"}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-bold text-slate-800">First Half</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200/60">Fasting available</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <span className={`block text-[14px] font-bold ${!isAvailable ? "text-foreground/50 line-through" : "text-slate-800"}`}>
-                        {slot.label} · {slot.time}
-                      </span>
-                      <span className="block text-[10px] font-medium text-muted-foreground truncate">
-                        {isAvailable ? slot.note : "Too late — needs 1 hour lead time"}
-                      </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {firstHalfSlots.map((slot) => {
+                        const isAvailable = getSlotAvailability(slot);
+                        const isSelected = selectedTime === slot.id;
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => { if (!isAvailable) return; hapticSelection(); setSelectedTime(slot.id); }}
+                            disabled={!isAvailable}
+                            className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 ${
+                              !isAvailable
+                                ? "bg-muted/20 border-transparent opacity-40 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-primary/8 border-primary shadow-sm ring-1 ring-primary/30"
+                                : "bg-card border-slate-200/80 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]"
+                            }`}
+                          >
+                            {isSelected && (
+                              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                              </span>
+                            )}
+                            <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
+                              {slot.time}
+                            </span>
+                            {!isAvailable && (
+                              <span className="block text-[9px] text-muted-foreground mt-0.5">Too late</span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
-                  </button>
-                );
-              })}
+                  </div>
+                ) : null;
+              })()}
+
+              {/* Second Half — Afternoon / Evening slots */}
+              {(() => {
+                const secondHalfSlots = allSlotItems.filter((s) => s.startMinutes >= 12 * 60);
+                const anyAvailable = secondHalfSlots.some((s) => getSlotAvailability(s));
+                return secondHalfSlots.length > 0 ? (
+                  <div className={`rounded-2xl border p-3.5 transition-all ${anyAvailable ? "bg-card border-slate-200/70" : "bg-muted/20 border-transparent opacity-60"}`}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-bold text-slate-800">Second Half</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-500 border border-orange-200/60">No fasting available</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {secondHalfSlots.map((slot) => {
+                        const isAvailable = getSlotAvailability(slot);
+                        const isSelected = selectedTime === slot.id;
+                        return (
+                          <button
+                            key={slot.id}
+                            onClick={() => { if (!isAvailable) return; hapticSelection(); setSelectedTime(slot.id); }}
+                            disabled={!isAvailable}
+                            className={`relative px-4 py-3 rounded-xl border text-left transition-all duration-200 ${
+                              !isAvailable
+                                ? "bg-muted/20 border-transparent opacity-40 cursor-not-allowed"
+                                : isSelected
+                                ? "bg-primary/8 border-primary shadow-sm ring-1 ring-primary/30"
+                                : "bg-card border-slate-200/80 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]"
+                            }`}
+                          >
+                            {isSelected && (
+                              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                              </span>
+                            )}
+                            <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
+                              {slot.time}
+                            </span>
+                            {!isAvailable && (
+                              <span className="block text-[9px] text-muted-foreground mt-0.5">Too late</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : null;
+              })()}
 
               {allSlotItems.every((slot) => !getSlotAvailability(slot)) && (
                 <p className="text-xs text-muted-foreground pt-1">
