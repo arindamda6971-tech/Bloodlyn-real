@@ -301,7 +301,7 @@ const TrackingScreen = () => {
                     <span className="text-xs font-medium text-muted-foreground">Booking time</span>
                     <span className="text-sm font-bold text-foreground text-right">
                       {order.scheduled_date && format(new Date(order.scheduled_date), "MMM dd, yyyy")}
-                      {order.scheduled_time_slot && ` • ${order.scheduled_time_slot}`}
+                      {order.scheduled_time_slot && ` • ${order.scheduled_time_slot.includes('(') ? order.scheduled_time_slot.substring(order.scheduled_time_slot.indexOf('(')) : order.scheduled_time_slot}`}
                     </span>
                   </div>
                   {(order as any).is_rescheduled && (order as any).rescheduled_date && (
@@ -309,7 +309,7 @@ const TrackingScreen = () => {
                       <span className="text-xs font-medium text-muted-foreground">Rescheduled time</span>
                       <span className="text-sm font-bold text-amber-600 text-right">
                         {format(new Date((order as any).rescheduled_date), "MMM dd, yyyy")}
-                        {(order as any).rescheduled_time_slot && ` • ${(order as any).rescheduled_time_slot}`}
+                        {(order as any).rescheduled_time_slot && ` • ${(order as any).rescheduled_time_slot.includes('(') ? (order as any).rescheduled_time_slot.substring((order as any).rescheduled_time_slot.indexOf('(')) : (order as any).rescheduled_time_slot}`}
                       </span>
                     </div>
                   )}
@@ -322,8 +322,15 @@ const TrackingScreen = () => {
               <div className="flex items-center gap-2.5 py-3">
                 <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
                 <span className="text-xs font-medium text-muted-foreground flex-1">Payment</span>
-                <span className="text-sm font-bold text-foreground capitalize text-right">
-                  {order.payment_method.replace(/_/g, ' ')}
+                <span className="text-sm font-bold text-foreground text-right">
+                  {(() => {
+                    const m = order.payment_method.toLowerCase();
+                    if (m === 'cod') return 'Pay after blood collection';
+                    if (m === 'upi') return 'UPI';
+                    if (m === 'card') return 'Credit / Debit Card';
+                    if (m === 'online') return 'Pay Online';
+                    return order.payment_method.replace(/_/g, ' ');
+                  })()}
                 </span>
               </div>
             )}
