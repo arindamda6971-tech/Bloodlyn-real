@@ -26,6 +26,7 @@ import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
 import { TermsConsent } from "@/components/TermsConsent";
+import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -428,7 +429,8 @@ const ECGTestScreen = () => {
 
   const rawPrice = selectedLab?.home_ecg_price ?? 599;
   const discount = couponApplied ? 100 : 0;
-  const price = Math.max(0, rawPrice - discount);
+  const platformFee = usePlatformFeeFlat();
+  const price = Math.max(0, rawPrice - discount) + platformFee;
 
   const applyCoupon = () => {
     const code = couponCode.trim().toUpperCase();
@@ -534,6 +536,7 @@ const ECGTestScreen = () => {
           scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
           discount,
+          platformFee,
           total: price,
           paymentMethod: selectedPaymentMethod.id || "cod",
           couponCode: couponApplied ? "ECG100" : null,
@@ -570,6 +573,7 @@ const ECGTestScreen = () => {
           subtotal: rawPrice,
           couponApplied,
           discount,
+          platformFee,
           total: price,
           selectedPayment: selectedPaymentMethod.id,
           selectedPaymentName: selectedPaymentMethod.name,
@@ -1066,6 +1070,10 @@ const ECGTestScreen = () => {
                   <span className="text-muted-foreground">Home Visit Fee</span>
                   <span className="text-emerald-600 font-bold">FREE</span>
                 </div>
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Platform Fee</span>
+                  <span className="text-foreground font-bold">₹{platformFee}.00</span>
+                </div>
                 {couponApplied && (
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="text-muted-foreground">Coupon Discount</span>
@@ -1146,7 +1154,8 @@ const ECGTestScreen = () => {
               <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
                 <h3 className="text-[13px] font-black uppercase tracking-widest text-muted-foreground mb-4">Payment Details</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{price}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{rawPrice - discount}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Platform Fee</span><span className="font-bold text-foreground">₹{platformFee}</span></div>
                   <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Convenience Fee</span><span className="font-bold text-success">Free</span></div>
                   <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-rose-600 text-lg">₹{price}</span></div>
                 </div>

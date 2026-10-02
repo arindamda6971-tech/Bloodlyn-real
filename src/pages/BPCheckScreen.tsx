@@ -25,6 +25,7 @@ import { FIXED_COLLECTION_SLOTS, isFixedSlotBookable, type FixedCollectionSlot }
 import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
+import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 
 const confettiColors = [
   "hsl(var(--primary))",
@@ -445,7 +446,8 @@ const BPCheckScreen = () => {
 
   const rawPrice = selectedLab?.home_bp_price ?? 299;
   const discount = couponApplied ? 100 : 0;
-  const price = Math.max(0, rawPrice - discount);
+  const platformFee = usePlatformFeeFlat();
+  const price = Math.max(0, rawPrice - discount) + platformFee;
 
   const applyCoupon = () => {
     const code = couponCode.trim().toUpperCase();
@@ -533,6 +535,7 @@ const BPCheckScreen = () => {
           scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
           discount,
+          platformFee,
           total: price,
           paymentMethod: selectedPaymentMethod.id,
           couponCode: couponApplied ? "HEALTH100" : null,
@@ -567,6 +570,7 @@ const BPCheckScreen = () => {
           subtotal: rawPrice,
           couponApplied,
           discount,
+          platformFee,
           total: price,
           selectedPayment: selectedPaymentMethod.id,
           selectedPaymentName: selectedPaymentMethod.name,
@@ -1064,6 +1068,10 @@ const BPCheckScreen = () => {
                   <span className="text-muted-foreground">Home Visit Fee</span>
                   <span className="text-emerald-600 font-bold">FREE</span>
                 </div>
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-muted-foreground">Platform Fee</span>
+                  <span className="text-foreground font-bold">₹{platformFee}.00</span>
+                </div>
                 {couponApplied && (
                   <div className="flex justify-between text-xs font-semibold">
                     <span className="text-muted-foreground">Coupon Discount</span>
@@ -1144,7 +1152,8 @@ const BPCheckScreen = () => {
               <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
                 <h3 className="text-[13px] font-black uppercase tracking-widest text-muted-foreground mb-4">Payment Details</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{price}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{rawPrice - discount}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Platform Fee</span><span className="font-bold text-foreground">₹{platformFee}</span></div>
                   <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Convenience Fee</span><span className="font-bold text-success">Free</span></div>
                   <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-blue-600 text-lg">₹{price}</span></div>
                 </div>
