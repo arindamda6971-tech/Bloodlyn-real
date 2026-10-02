@@ -72,7 +72,7 @@ describe("lab slot bucketing", () => {
     ]);
   });
 
-  it("applies the one-hour lead rule to each two-hour window", () => {
+  it("closes the slot immediately when its start time arrives", () => {
     const nowAtNineAmIst = new Date("2026-06-01T03:30:00.000Z");
 
     expect(isFixedSlotBookable(FIXED_COLLECTION_SLOTS[0], 0, nowAtNineAmIst)).toBe(false);

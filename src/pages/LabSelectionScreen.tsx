@@ -504,17 +504,11 @@ const LabSelectionScreen = () => {
                                 : "bg-card border-slate-200/80 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]"
                             }`}
                           >
-                            {isSelected && (
-                              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                              </span>
-                            )}
+
                             <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
                               {slot.time}
                             </span>
-                            {!isAvailable && (
-                              <span className="block text-[9px] text-muted-foreground mt-0.5">Too late</span>
-                            )}
+
                           </button>
                         );
                       })}
@@ -550,17 +544,11 @@ const LabSelectionScreen = () => {
                                 : "bg-card border-slate-200/80 hover:border-primary/40 hover:shadow-sm active:scale-[0.97]"
                             }`}
                           >
-                            {isSelected && (
-                              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                              </span>
-                            )}
+
                             <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
                               {slot.time}
                             </span>
-                            {!isAvailable && (
-                              <span className="block text-[9px] text-muted-foreground mt-0.5">Too late</span>
-                            )}
+
                           </button>
                         );
                       })}

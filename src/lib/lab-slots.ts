@@ -198,20 +198,20 @@ export const FIXED_COLLECTION_SLOTS: FixedCollectionSlot[] = [
   },
 ];
 
-/** Collection partner needs at least this much lead time before a slot ends. */
-export const SLOT_MIN_LEAD_MINUTES = 60;
+/** Slots close exactly when their start time arrives (e.g. 10:00 AM slot closes at 10:00 AM) */
+export const SLOT_MIN_LEAD_MINUTES = 0;
 
 /**
- * A slot is bookable only if it ends more than 1 hour from now.
+ * A slot is bookable only if its start time hasn't passed yet.
  * Future days (offset > 0) are always bookable.
  */
 export function isFixedSlotBookable(
-  slot: Pick<FixedCollectionSlot, "endMinutes">,
+  slot: Pick<FixedCollectionSlot, "startMinutes">,
   dayOffset: number,
   now: Date = new Date()
 ): boolean {
   if (dayOffset > 0) return true;
-  return slot.endMinutes - getCurrentLabSlotMinutes(now) > SLOT_MIN_LEAD_MINUTES;
+  return slot.startMinutes - getCurrentLabSlotMinutes(now) > SLOT_MIN_LEAD_MINUTES;
 }
 
 /** Resolve a stored slot string back to a fixed slot (label match). */

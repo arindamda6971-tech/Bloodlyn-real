@@ -256,10 +256,9 @@ export const ZomatoStyleHeader = ({
           if (o) loadAddresses();
         }}
       >
-        <DrawerContent className="px-6 pb-8 bg-background border-border rounded-t-[2rem] shadow-2xl">
+        <DrawerContent className="px-6 pb-8 bg-background border-border rounded-t-[2rem] shadow-2xl mx-auto md:max-w-[430px]">
           <DrawerHeader className="px-0 pt-6 text-left">
-            <DrawerTitle className="text-xl font-black text-foreground tracking-tight">Select Delivery Location</DrawerTitle>
-            <DrawerDescription className="text-xs font-medium mt-1">Select sample pickup address for instant home collection</DrawerDescription>
+            <DrawerTitle className="text-xl font-black text-foreground tracking-tight">Select Sample Pickup Location</DrawerTitle>
           </DrawerHeader>
 
 

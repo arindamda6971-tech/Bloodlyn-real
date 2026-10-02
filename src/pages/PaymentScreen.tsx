@@ -533,10 +533,9 @@ const PaymentScreen = () => {
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="relative bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden mb-3">
           <span className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-r-full" aria-hidden />
           <div className="p-3.5 pl-5">
-            <button onClick={() => setAppointmentOpen(!appointmentOpen)} className="w-full flex items-center justify-between">
+            <div className="w-full flex items-center justify-between pb-1">
               <h3 className="text-base font-bold text-foreground tracking-tight">Appointment Details</h3>
-              {appointmentOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-            </button>
+            </div>
             {appointmentOpen && (
               <div className="mt-4 flex flex-col gap-3">
                 <div className="flex items-start gap-3">
@@ -575,10 +574,9 @@ const PaymentScreen = () => {
 
         {/* Order Details */}
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
-          <button onClick={() => setOrderOpen(!orderOpen)} className="w-full flex items-center justify-between">
+          <div className="w-full flex items-center justify-between pb-1">
             <h3 className="text-base font-bold text-foreground tracking-tight">Order Details</h3>
-            {orderOpen ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
-          </button>
+          </div>
           {orderOpen && (
             <div className="mt-3">
               {paymentState?.patientName && (

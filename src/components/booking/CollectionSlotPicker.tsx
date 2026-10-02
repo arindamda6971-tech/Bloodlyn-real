@@ -65,11 +65,7 @@ const SlotChip = ({
       }
     `}
   >
-    {isSelected && (
-      <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
-        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-      </span>
-    )}
+
     <span
       className={`block text-[13px] font-bold leading-tight ${
         !isAvailable
@@ -81,11 +77,7 @@ const SlotChip = ({
     >
       {slot.time}
     </span>
-    {!isAvailable && (
-      <span className="block text-[9px] text-muted-foreground mt-0.5">
-        Too late
-      </span>
-    )}
+
   </button>
 );
 
