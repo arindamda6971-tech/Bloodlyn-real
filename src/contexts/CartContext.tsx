@@ -115,6 +115,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>(getLocalCart);
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null);
   const [showAvailabilityError, setShowAvailabilityError] = useState(false);
+  const [blockedItem, setBlockedItem] = useState<Omit<CartItem, "quantity"> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isInitialized = useRef(false);
   const isSyncing = useRef(false);
@@ -335,6 +336,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       );
       
       if (existingTypes.some((type) => type !== incomingType)) {
+        setBlockedItem(item);
         setShowAvailabilityError(true);
         return false;
       }
@@ -524,7 +526,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   return (
     <CartContext.Provider value={value}>
       {children}
-      <AlertDialog open={showAvailabilityError} onOpenChange={setShowAvailabilityError}>
+      <AlertDialog open={showAvailabilityError} onOpenChange={(open) => { setShowAvailabilityError(open); if (!open) setBlockedItem(null); }}>
         <AlertDialogContent className="w-[90%] max-w-[400px] rounded-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>Cannot add test</AlertDialogTitle>
@@ -532,8 +534,29 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
               General test, specialized test, and health packages cannot be added together. You have to place separate orders.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row items-center gap-3 mt-4">
-            <AlertDialogAction onClick={() => setShowAvailabilityError(false)} className="flex-1 text-white">
+          <AlertDialogFooter className="flex-col sm:flex-col items-stretch gap-2 mt-4 sm:space-x-0">
+            <AlertDialogAction
+              onClick={() => {
+                if (blockedItem) {
+                  const newItems = [{ ...blockedItem, quantity: 1 }];
+                  setItems(newItems);
+                  setLocalCart(newItems);
+                  syncCartToSupabase(newItems);
+                  Analytics.trackAddToCart({ id: blockedItem.id, name: blockedItem.name, price: blockedItem.price, kind: blockedItem.kind });
+                  triggerHaptic('success');
+                  toast.success("Cart cleared & new test added");
+                }
+                setBlockedItem(null);
+                setShowAvailabilityError(false);
+              }}
+              className="w-full bg-destructive hover:bg-destructive/90 text-white"
+            >
+              Clear cart & add this test
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={() => { setShowAvailabilityError(false); setBlockedItem(null); }}
+              className="w-full text-white"
+            >
               Got it
             </AlertDialogAction>
           </AlertDialogFooter>
