@@ -351,10 +351,10 @@ const OrderSuccessScreen = () => {
                   <span className="font-bold text-slate-800">₹{bookingState.subtotal.toLocaleString()}</span>
                 </div>
               )}
-              {bookingState?.discount > 0 && (
+              {(bookingState?.discount ?? 0) > 0 && (
                 <div className="flex justify-between text-[13px]">
                   <span className="text-slate-500 font-medium">Discount</span>
-                  <span className="font-bold text-green-600">- ₹{bookingState.discount.toLocaleString()}</span>
+                  <span className="font-bold text-green-600">- ₹{(bookingState?.discount ?? 0).toLocaleString()}</span>
                 </div>
               )}
               <div className="flex justify-between text-[13px]">

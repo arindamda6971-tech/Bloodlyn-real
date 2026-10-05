@@ -10,13 +10,18 @@ export const COLLECTION_SLOTS = [
 export type CollectionSlotId = typeof COLLECTION_SLOTS[number]["id"];
 
 const compact = (value: string) => value.toLowerCase().replace(/\s+/g, " ").trim();
+const timeToken = (value: string) => value
+  .replace(/\b0(\d):/g, "$1:")
+  .replace(/:00\s*/g, " ")
+  .replace(/\s+/g, " ")
+  .trim();
 
 export function normalizeCollectionSlot(value: unknown) {
   if (typeof value !== "string") return null;
-  const normalized = compact(value);
+  const normalized = timeToken(compact(value));
   return COLLECTION_SLOTS.find((slot) => {
     if (normalized === slot.id || normalized === slot.normalized) return true;
-    const range = compact(slot.display.slice(slot.display.indexOf("(") + 1, -1));
+    const range = timeToken(compact(slot.display.slice(slot.display.indexOf("(") + 1, -1)));
     return normalized.includes(range);
   }) ?? null;
 }
