@@ -1,3 +1,6 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { COLLECTION_SLOTS, normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
+
 // Edge function: fetch lab_time_slots rows from the Partner Supabase project.
 // Public read (no auth required); caller passes ?lab_user_id=<uuid>.
 const corsHeaders = {
@@ -38,7 +41,7 @@ Deno.serve(async (req) => {
 
     const url =
       `${PARTNER_URL}/rest/v1/lab_time_slots` +
-      `?select=day_of_week,is_open,slots&lab_user_id=eq.${labUserId}&order=day_of_week.asc`;
+      `?select=day_of_week,is_open,slots,slot_capacities&lab_user_id=eq.${labUserId}&order=day_of_week.asc`;
 
     const res = await fetch(url, {
       headers: {
@@ -59,7 +62,52 @@ Deno.serve(async (req) => {
     // Partner-dashboard schedule. An empty list means "no schedule published".
     const rows = Array.isArray(data) ? data : [];
 
-    return new Response(JSON.stringify({ rows, source: "partner" }), {
+    // Availability is date-specific: Partner owns capacity, while this project
+    // owns the authoritative bookings that consume it.
+    const now = new Date();
+    const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    const dates = Array.from({ length: 3 }, (_, offset) => {
+      const target = new Date(now.getTime() + offset * 86_400_000);
+      return dateFormatter.format(target);
+    });
+    const localUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const bookedByDateSlot: Record<string, number> = {};
+    if (localUrl && serviceKey) {
+      const admin = createClient(localUrl, serviceKey);
+      const { data: bookedOrders, error: bookedError } = await admin
+        .from("orders")
+        .select("scheduled_date,scheduled_time_slot,status")
+        .eq("vendor_id", labUserId)
+        .in("scheduled_date", dates)
+        .neq("status", "cancelled");
+      if (bookedError) throw bookedError;
+      for (const order of bookedOrders ?? []) {
+        const slot = normalizeCollectionSlot(order.scheduled_time_slot);
+        if (!slot || !order.scheduled_date) continue;
+        const key = `${String(order.scheduled_date).slice(0, 10)}|${slot.id}`;
+        bookedByDateSlot[key] = (bookedByDateSlot[key] ?? 0) + 1;
+      }
+    }
+
+    const availabilityByDate = Object.fromEntries(dates.map((date) => {
+      const weekday = new Date(`${date}T12:00:00+05:30`).getUTCDay();
+      const row = rows.find((candidate: Record<string, unknown>) => candidate.day_of_week === weekday);
+      const capacities = parseSlotCapacities(row?.slot_capacities);
+      return [date, Object.fromEntries(COLLECTION_SLOTS.map((slot) => {
+        const capacity = capacities[slot.id];
+        const booked = bookedByDateSlot[`${date}|${slot.id}`] ?? 0;
+        return [slot.id, {
+          capacity,
+          booked,
+          remaining: capacity === null ? null : Math.max(0, capacity - booked),
+        }];
+      }))];
+    }));
+
+    return new Response(JSON.stringify({ rows, availability_by_date: availabilityByDate, source: "partner" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -844,6 +844,7 @@ const BPCheckScreen = () => {
                 hasLab={!!selectedLab}
                 selectedSlot={appointment.timeSlot}
                 onSelectSlot={(display) => setAppointment((a) => ({ ...a, timeSlot: display }))}
+                availabilityByDate={labDays.availabilityByDate}
               />
 
 
