@@ -60,5 +60,6 @@ export function useLabOpenDays(
     vendorId: resolvedVendorId,
     isLoading: !!resolvedVendorId && isLoading,
     scheduleKnown,
+    availabilityByDate: labSlots?.availabilityByDate ?? {},
   };
 }

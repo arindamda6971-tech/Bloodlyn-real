@@ -116,8 +116,8 @@ const LabSelectionScreen = () => {
 
   const labSlotsByDay = useMemo(() => {
     if (isGenericService) {
-      const map: Record<number, { is_open: boolean; slots: string[] }> = {};
-      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: [] };
+      const map: Record<number, { is_open: boolean; slots: string[]; slotCapacities: Record<string, number | null> }> = {};
+      for (let i = 0; i <= 6; i++) map[i] = { is_open: true, slots: [], slotCapacities: {} };
       return map;
     }
     return labSlots?.byDay ?? {};
@@ -137,8 +137,9 @@ const LabSelectionScreen = () => {
     [labIsClosedOnDate, testIsUnavailableOnDate]
   );
 
+  const selectedSlotCapacity = labSlots?.availabilityByDate?.[dates[selectedDate].fullDate] ?? {};
   const getSlotAvailability = (slot: FixedCollectionSlot) =>
-    isFixedSlotBookable(slot, selectedDate);
+    isFixedSlotBookable(slot, selectedDate) && selectedSlotCapacity[slot.id]?.remaining !== 0;
 
 
 
@@ -508,6 +509,11 @@ const LabSelectionScreen = () => {
                             <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
                               {slot.time}
                             </span>
+                            {selectedSlotCapacity[slot.id]?.remaining != null && (
+                              <span className={`block text-[10px] mt-1 font-semibold ${selectedSlotCapacity[slot.id].remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                {selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
+                              </span>
+                            )}
 
                           </button>
                         );
@@ -548,6 +554,11 @@ const LabSelectionScreen = () => {
                             <span className={`block text-[13px] font-bold leading-tight ${!isAvailable ? "text-foreground/40 line-through" : isSelected ? "text-primary" : "text-slate-800"}`}>
                               {slot.time}
                             </span>
+                            {selectedSlotCapacity[slot.id]?.remaining != null && (
+                              <span className={`block text-[10px] mt-1 font-semibold ${selectedSlotCapacity[slot.id].remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                                {selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
+                              </span>
+                            )}
 
                           </button>
                         );

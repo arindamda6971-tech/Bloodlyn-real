@@ -4,12 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 export interface LabDaySchedule {
   is_open: boolean;
   slots: string[];
+  slotCapacities: Record<string, number | null>;
+}
+
+export interface SlotCapacityAvailability {
+  capacity: number | null;
+  booked: number;
+  remaining: number | null;
 }
 
 export type LabSlotsByDay = Record<number, LabDaySchedule>;
 
 export interface LabSlotsResult {
   byDay: LabSlotsByDay;
+  availabilityByDate: Record<string, Record<string, SlotCapacityAvailability>>;
   /** true when the Partner dashboard has a real schedule for this lab */
   hasSchedule: boolean;
 }
@@ -30,7 +38,7 @@ export function useLabSlots(labUserId: string | null | undefined) {
       });
       if (error) throw error;
 
-      const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null }> =
+      const rows: Array<{ day_of_week: number; is_open: boolean; slots: string[] | null; slot_capacities?: Record<string, number> | null }> =
         Array.isArray(data?.rows) ? data.rows : [];
 
       const byDay: LabSlotsByDay = {};
@@ -39,10 +47,14 @@ export function useLabSlots(labUserId: string | null | undefined) {
         byDay[r.day_of_week] = {
           is_open: !!r.is_open,
           slots: Array.isArray(r.slots) ? r.slots.filter((s) => typeof s === "string") : [],
+          slotCapacities: r.slot_capacities && typeof r.slot_capacities === "object" ? r.slot_capacities : {},
         };
       });
 
-      return { byDay, hasSchedule: rows.length > 0 };
+      const availabilityByDate = data?.availability_by_date && typeof data.availability_by_date === "object"
+        ? data.availability_by_date as Record<string, Record<string, SlotCapacityAvailability>>
+        : {};
+      return { byDay, availabilityByDate, hasSchedule: rows.length > 0 };
     },
   });
 }

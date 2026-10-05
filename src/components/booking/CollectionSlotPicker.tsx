@@ -6,6 +6,7 @@ import {
   type FixedCollectionSlot,
 } from "@/lib/lab-slots";
 import { hapticSelection } from "@/utils/haptics";
+import type { SlotCapacityAvailability } from "@/hooks/useLabSlots";
 
 interface CollectionSlotPickerProps {
   /** 3-day strip built in the lab timezone (today, tomorrow, day after). */
@@ -21,6 +22,7 @@ interface CollectionSlotPickerProps {
   /** Currently selected slot `display` value. */
   selectedSlot: string;
   onSelectSlot: (display: string) => void;
+  availabilityByDate?: Record<string, Record<string, SlotCapacityAvailability>>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -41,11 +43,13 @@ const SlotChip = ({
   isAvailable,
   isSelected,
   onSelect,
+  remaining,
 }: {
   slot: FixedCollectionSlot;
   isAvailable: boolean;
   isSelected: boolean;
   onSelect: () => void;
+  remaining?: number | null;
 }) => (
   <button
     onClick={() => {
@@ -77,6 +81,11 @@ const SlotChip = ({
     >
       {slot.time}
     </span>
+    {remaining !== undefined && remaining !== null && (
+      <span className={`block text-[10px] mt-1 font-semibold ${remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
+        {remaining === 0 ? "Full" : `${remaining} ${remaining === 1 ? "place" : "places"} left`}
+      </span>
+    )}
 
   </button>
 );
@@ -92,6 +101,7 @@ const SlotSection = ({
   selectedSlot,
   onSelectSlot,
   selectedIndex,
+  slotAvailability,
 }: {
   title: string;
   badge: string;
@@ -100,8 +110,9 @@ const SlotSection = ({
   selectedSlot: string;
   onSelectSlot: (display: string) => void;
   selectedIndex: number;
+  slotAvailability?: Record<string, SlotCapacityAvailability>;
 }) => {
-  const anyAvailable = slots.some((s) => isFixedSlotBookable(s, selectedIndex));
+  const anyAvailable = slots.some((s) => isFixedSlotBookable(s, selectedIndex) && slotAvailability?.[s.id]?.remaining !== 0);
 
   return (
     <div
@@ -130,7 +141,8 @@ const SlotSection = ({
       {/* Grid of chip buttons */}
       <div className="grid grid-cols-2 gap-2">
         {slots.map((slot) => {
-          const isAvailable = isFixedSlotBookable(slot, selectedIndex);
+          const remaining = slotAvailability?.[slot.id]?.remaining;
+          const isAvailable = isFixedSlotBookable(slot, selectedIndex) && remaining !== 0;
           const isSelected = selectedSlot === slot.display && isAvailable;
           return (
             <SlotChip
@@ -139,6 +151,7 @@ const SlotSection = ({
               isAvailable={isAvailable}
               isSelected={isSelected}
               onSelect={() => onSelectSlot(slot.display)}
+              remaining={remaining}
             />
           );
         })}
@@ -161,9 +174,11 @@ const CollectionSlotPicker = ({
   hasLab = true,
   selectedSlot,
   onSelectSlot,
+  availabilityByDate = {},
 }: CollectionSlotPickerProps) => {
   const selectedIndex = Math.max(0, dateIds.indexOf(selectedDateId));
   const isClosedOnDate = openByOffset[selectedIndex] === false;
+  const slotAvailability = availabilityByDate[dates[selectedIndex]?.fullDate ?? ""];
 
   return (
     <>
@@ -245,6 +260,7 @@ const CollectionSlotPicker = ({
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}
               selectedIndex={selectedIndex}
+              slotAvailability={slotAvailability}
             />
 
             {/* Second Half — Afternoon / Evening */}
@@ -256,10 +272,11 @@ const CollectionSlotPicker = ({
               selectedSlot={selectedSlot}
               onSelectSlot={onSelectSlot}
               selectedIndex={selectedIndex}
+              slotAvailability={slotAvailability}
             />
 
             {FIXED_COLLECTION_SLOTS.every(
-              (slot) => !isFixedSlotBookable(slot, selectedIndex)
+              (slot) => !isFixedSlotBookable(slot, selectedIndex) || slotAvailability?.[slot.id]?.remaining === 0
             ) && (
               <p className="text-xs text-muted-foreground pt-1">
                 All of today's slots have passed. Please book for tomorrow.

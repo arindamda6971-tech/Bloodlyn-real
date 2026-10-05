@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
+import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -655,15 +656,56 @@ Deno.serve(async (req) => {
       console.error("Doctor pre-booking verification error (non-fatal):", verifyErr);
     }
 
-    // Create order using service role (bypasses RLS for insert).
+    // Re-read Partner capacity immediately before insertion. The frontend's
+    // remaining count is informational only and is never trusted here.
+    let slotCapacity: number | null = null;
+    if (orderVendorId && scheduledDate && scheduledTimeSlot) {
+      const normalizedSlot = normalizeCollectionSlot(scheduledTimeSlot);
+      if (!normalizedSlot) {
+        return new Response(JSON.stringify({ error: "Invalid collection time slot", code: "invalid_slot" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const partnerAnon = Deno.env.get("PARTNER_SUPABASE_ANON_KEY");
+      if (!partnerAnon) {
+        return new Response(JSON.stringify({ error: "Slot availability is temporarily unavailable. Please try again.", code: "capacity_unavailable" }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const slotDate = new Date(`${scheduledDate.slice(0, 10)}T12:00:00+05:30`);
+      const dayOfWeek = slotDate.getUTCDay();
+      try {
+        const capacityUrl = new URL("https://wkhwuzsiehrcvlxfeytf.supabase.co/rest/v1/lab_time_slots");
+        capacityUrl.searchParams.set("select", "is_open,slot_capacities");
+        capacityUrl.searchParams.set("lab_user_id", `eq.${orderVendorId}`);
+        capacityUrl.searchParams.set("day_of_week", `eq.${dayOfWeek}`);
+        capacityUrl.searchParams.set("limit", "1");
+        const capacityResponse = await fetch(capacityUrl, {
+          headers: { apikey: partnerAnon, Authorization: `Bearer ${partnerAnon}` },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!capacityResponse.ok) throw new Error(`Partner capacity returned ${capacityResponse.status}`);
+        const capacityRows = await capacityResponse.json();
+        const capacityRow = Array.isArray(capacityRows) ? capacityRows[0] : null;
+        const parsedCapacities = parseSlotCapacities(capacityRow?.slot_capacities);
+        slotCapacity = capacityRow?.is_open === true ? parsedCapacities[normalizedSlot.id] : 0;
+        if (slotCapacity === null) throw new Error("Partner capacity is missing for this slot");
+      } catch (capacityError) {
+        console.error("Partner slot capacity lookup failed:", capacityError);
+        return new Response(JSON.stringify({ error: "Slot availability is temporarily unavailable. Please try again.", code: "capacity_unavailable" }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Create order through an advisory-lock transaction. Concurrent requests
+    // for the same vendor/date/normalized slot are serialized in PostgreSQL.
 
     // The `client_idempotency_key` column has a partial UNIQUE index on
     // (user_id, client_idempotency_key) — if the same checkout retries
     // (double-tap, StrictMode, network retry), Postgres rejects the
     // duplicate with code 23505 and we return the existing order.
-    const { data: orderData, error: orderError } = await adminClient
-      .from("orders")
-      .insert({
+    const orderInsert = {
         user_id: userId,
         address_id: addressId || null,
         scheduled_date: scheduledDate || null,
@@ -680,8 +722,12 @@ Deno.serve(async (req) => {
         lab_name: labName || cartItems[0]?.labName || null,
         test_name: cartItems.map(item => item.name).join(" | "),
         client_idempotency_key: idempotencyKey || null,
+      };
+    const { data: orderData, error: orderError } = await adminClient
+      .rpc("create_order_with_slot_capacity", {
+        _order: orderInsert,
+        _slot_capacity: slotCapacity,
       })
-      .select()
       .single();
 
     if (orderError) {
@@ -709,6 +755,12 @@ Deno.serve(async (req) => {
             { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
           );
         }
+      }
+      if ((orderError as { details?: string; message?: string }).details === "slot_capacity_reached" || orderError.message?.includes("fully booked")) {
+        return new Response(
+          JSON.stringify({ error: "This collection slot has just filled up. Please choose another time.", code: "slot_capacity_reached" }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
       console.error("Order creation error:", orderError);
       return new Response(
