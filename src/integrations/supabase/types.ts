@@ -1373,6 +1373,50 @@ export type Database = {
         }
         Returns: boolean
       }
+      reschedule_order_with_slot_capacity: {
+        Args: {
+          _order_id: string
+          _scheduled_date: string
+          _scheduled_time_slot: string
+          _slot_capacity: number
+          _user_id: string
+        }
+        Returns: {
+          address_id: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          client_idempotency_key: string | null
+          coupon_code: string | null
+          created_at: string
+          delivery_partner_name: string | null
+          delivery_partner_phone: string | null
+          discount: number | null
+          family_member_id: string | null
+          id: string
+          lab_name: string | null
+          order_number: string | null
+          payment_method: string | null
+          payment_status: string | null
+          phlebotomist_id: string | null
+          report_url: string | null
+          scheduled_date: string | null
+          scheduled_time_slot: string | null
+          special_instructions: string | null
+          status: string | null
+          subtotal: number
+          test_name: string | null
+          total: number
+          updated_at: string
+          user_id: string
+          vendor_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "vendor" | "user"
