@@ -18,9 +18,12 @@ const timeToken = (value: string) => value
 
 export function normalizeCollectionSlot(value: unknown) {
   if (typeof value !== "string") return null;
-  const normalized = timeToken(compact(value));
+  const raw = compact(value);
+  if (COLLECTION_SLOTS.some((slot) => raw === slot.id || raw === slot.normalized)) {
+    return COLLECTION_SLOTS.find((slot) => raw === slot.id || raw === slot.normalized) ?? null;
+  }
+  const normalized = timeToken(raw);
   return COLLECTION_SLOTS.find((slot) => {
-    if (normalized === slot.id || normalized === slot.normalized) return true;
     const range = timeToken(compact(slot.display.slice(slot.display.indexOf("(") + 1, -1)));
     return normalized.includes(range);
   }) ?? null;
