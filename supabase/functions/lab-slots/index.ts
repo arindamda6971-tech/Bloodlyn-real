@@ -81,10 +81,10 @@ Deno.serve(async (req) => {
         .from("orders")
         .select("scheduled_date,scheduled_time_slot,status")
         .eq("vendor_id", labUserId)
-        .in("scheduled_date", dates)
-        .neq("status", "cancelled");
+        .in("scheduled_date", dates);
       if (bookedError) throw bookedError;
       for (const order of bookedOrders ?? []) {
+        if (String(order.status ?? "").toLowerCase() === "cancelled") continue;
         const slot = normalizeCollectionSlot(order.scheduled_time_slot);
         if (!slot || !order.scheduled_date) continue;
         const key = `${String(order.scheduled_date).slice(0, 10)}|${slot.id}`;

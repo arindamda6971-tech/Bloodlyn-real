@@ -1,17 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, "Content-Type": "application/json" },
 });
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
