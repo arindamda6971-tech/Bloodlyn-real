@@ -62,7 +62,7 @@ const CancelOrderDialog = ({
   const [slot, setSlot] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { dates, openByOffset, scheduleKnown } = useLabOpenDays(labId, null, 7);
+  const { dates, openByOffset, scheduleKnown, availabilityByDate } = useLabOpenDays(labId, null, 7);
 
 
   const slots = availableTimeSlots && availableTimeSlots.length > 0 ? availableTimeSlots : DEFAULT_SLOTS;
@@ -84,15 +84,14 @@ const CancelOrderDialog = ({
   const submitReschedule = async (targetDate: Date, targetSlot: string) => {
     setSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          scheduled_date: format(targetDate, "yyyy-MM-dd"),
-          scheduled_time_slot: targetSlot,
-        })
-        .eq("id", orderId)
-        .eq("user_id", userId);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("reschedule-order", {
+        body: {
+          orderId,
+          scheduledDate: format(targetDate, "yyyy-MM-dd"),
+          scheduledTimeSlot: targetSlot,
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Please try again.");
       toast.success("Order rescheduled successfully", {
         description: `${format(targetDate, "MMM dd, yyyy")} • ${targetSlot}`,
       });
@@ -115,6 +114,12 @@ const CancelOrderDialog = ({
     }
     return addDays(new Date(), offset);
   }, [dates, scheduleKnown, openByOffset]);
+
+  const nextDateKey = format(nextAvailableDate, "yyyy-MM-dd");
+  const remainingForSlot = (value: string) => {
+    const normalized = FIXED_COLLECTION_SLOTS.find((candidate) => candidate.display === value);
+    return normalized ? availabilityByDate[nextDateKey]?.[normalized.id]?.remaining : null;
+  };
 
   const handlePreparationConfirm = async () => {
     if (!slot) {
@@ -240,19 +245,27 @@ const CancelOrderDialog = ({
                   Select your preferred time slot for <span className="text-primary">{format(nextAvailableDate, "MMM dd")}</span>:
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {slots.map((s) => (
+                  {slots.map((s) => {
+                    const remaining = remainingForSlot(s);
+                    const full = remaining === 0;
+                    return (
                     <button
                       key={s}
-                      onClick={() => setSlot(s)}
+                      onClick={() => { if (!full) setSlot(s); }}
+                      disabled={full}
                       className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
+                        full
+                          ? "border-border bg-muted text-muted-foreground opacity-50"
+                          :
                         slot === s
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border bg-background text-foreground hover:border-primary/50"
                       }`}
                     >
                       {s}
+                      {remaining != null && <span className="block mt-0.5 text-[9px]">{full ? "Full" : `${remaining} left`}</span>}
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
 
@@ -289,19 +302,27 @@ const CancelOrderDialog = ({
                   Select your preferred time slot for <span className="text-primary">{format(nextAvailableDate, "MMM dd")}</span>:
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {slots.map((s) => (
+                  {slots.map((s) => {
+                    const remaining = remainingForSlot(s);
+                    const full = remaining === 0;
+                    return (
                     <button
                       key={s}
-                      onClick={() => setSlot(s)}
+                      onClick={() => { if (!full) setSlot(s); }}
+                      disabled={full}
                       className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all ${
+                        full
+                          ? "border-border bg-muted text-muted-foreground opacity-50"
+                          :
                         slot === s
                           ? "border-primary bg-primary text-primary-foreground"
                           : "border-border bg-background text-foreground hover:border-primary/50"
                       }`}
                     >
                       {s}
+                      {remaining != null && <span className="block mt-0.5 text-[9px]">{full ? "Full" : `${remaining} left`}</span>}
                     </button>
-                  ))}
+                  )})}
                 </div>
               </div>
 

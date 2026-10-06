@@ -15,3 +15,4 @@
 - [ ] Update Partner Pro profile sync to send active `mrp_delivery_rules` as `delivery_fee_rules` (blocked: apply the supplied prompt in the separate Partner Pro project).
 - [x] Split shared Blood Test, ECG, BP, and rescheduling availability into six two-hour collection windows while preserving legacy order tracking.
 - [x] Display Partner slot capacity and atomically reject concurrent bookings when a two-hour window is full.
+- [x] Route order rescheduling through the same server-side Partner capacity enforcement.
