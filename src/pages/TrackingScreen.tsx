@@ -146,8 +146,10 @@ const TrackingScreen = () => {
     );
   }
 
-  const isVitalsOrder = /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(order.test_name || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(order.order_number || "") || /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i.test(testNames.join(" ") || "");
-
+  const vitalRegex = /(?:home\s*bp|bp\s*check|blood\s*pressure|ecg|electrocardiogram)/i;
+  const isVitalsOrder = testNames.length > 0
+    ? testNames.every(name => vitalRegex.test(name))
+    : (vitalRegex.test(order.test_name || "") || vitalRegex.test(order.order_number || ""));
   const activeWorkflowSteps = isVitalsOrder ? [
     { key: "confirmed", label: "Ordered", icon: CheckCircle },
     { key: "completed", label: "Checked", icon: CheckCircle },
