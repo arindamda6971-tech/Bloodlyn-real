@@ -1,0 +1,1 @@
+CREATE POLICY "Service manages no show deliveries" ON public.no_show_deliveries FOR ALL TO service_role USING (true) WITH CHECK (true);
