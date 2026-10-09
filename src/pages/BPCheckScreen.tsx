@@ -374,10 +374,6 @@ const BPCheckScreen = () => {
           // Temporarily removed to fix local preview: .eq("is_active", true)
           .eq("offers_home_bp", true);
 
-        if (pincode && /^\d{6}$/.test(pincode)) {
-          query = query.contains("service_pincodes", [pincode]);
-        }
-
         const { data, error } = await query.order("rating", { ascending: false });
 
         if (cancelled) return;
@@ -396,11 +392,7 @@ const BPCheckScreen = () => {
             home_bp_price: l.home_bp_price || 249,
           }));
 
-        if (dbLabs.length === 0) {
-          setLabs(DEFAULT_BP_LABS);
-        } else {
-          setLabs(dbLabs);
-        }
+        setLabs(dbLabs);
       } catch (err) {
         console.warn("Error loading BP labs:", err);
         setLabs([]);
