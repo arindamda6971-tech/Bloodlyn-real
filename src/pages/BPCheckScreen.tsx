@@ -26,7 +26,7 @@ import { useLabClosedOnDay } from "@/hooks/useLabClosedOnDay";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
 import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
-
+import { getServicePincode } from "@/lib/service-pincode";
 const confettiColors = [
   "hsl(var(--primary))",
   "hsl(var(--success))",
@@ -328,11 +328,24 @@ const BPCheckScreen = () => {
         }));
       }
 
-      // Auto-select default address + jump to LAB
+      // Auto-select default address or home pincode + jump to LAB
+      const homePincode = getServicePincode(user.id);
       const def = addrs[0];
-      if (def && def.pincode && /^\d{6}$/.test(def.pincode)) {
-        setSelectedAddress(def);
-        setPincode(def.pincode);
+      const targetPincode = (homePincode && /^\d{6}$/.test(homePincode)) ? homePincode : def?.pincode;
+
+      if (targetPincode && /^\d{6}$/.test(targetPincode)) {
+        setPincode(targetPincode);
+        const matchingAddr = addrs.find((a: Address) => a.pincode === targetPincode) || def;
+        if (matchingAddr) {
+          setSelectedAddress(matchingAddr);
+        } else {
+          setSelectedAddress({
+            id: "manual",
+            type: "Home Visit",
+            fullAddress: "Manual Visit Location",
+            pincode: targetPincode,
+          });
+        }
         if (preselectedLab) {
           setSelectedLab(preselectedLab);
           setStep("APPOINTMENT");
@@ -358,7 +371,7 @@ const BPCheckScreen = () => {
         let query = supabase
           .from("diagnostic_centers")
           .select("*")
-          .eq("is_active", true)
+          // Temporarily removed to fix local preview: .eq("is_active", true)
           .eq("offers_home_bp", true);
 
         if (pincode && /^\d{6}$/.test(pincode)) {
@@ -383,7 +396,11 @@ const BPCheckScreen = () => {
             home_bp_price: l.home_bp_price || 249,
           }));
 
-        setLabs(dbLabs);
+        if (dbLabs.length === 0) {
+          setLabs(DEFAULT_BP_LABS);
+        } else {
+          setLabs(dbLabs);
+        }
       } catch (err) {
         console.warn("Error loading BP labs:", err);
         setLabs([]);

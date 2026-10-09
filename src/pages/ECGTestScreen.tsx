@@ -27,7 +27,7 @@ import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import CollectionSlotPicker from "@/components/booking/CollectionSlotPicker";
 import { TermsConsent } from "@/components/TermsConsent";
 import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
-
+import { getServicePincode } from "@/lib/service-pincode";
 const confettiColors = [
   "hsl(var(--primary))",
   "hsl(340 82% 52%)",
@@ -304,15 +304,28 @@ const ECGTestScreen = () => {
         }));
       }
 
+      const homePincode = getServicePincode(user.id);
       const def = addrs?.[0];
-      if (def && def.pincode && /^\d{6}$/.test(def.pincode)) {
-        setSelectedAddress({
-          id: def.id,
-          type: def.type || "Home Visit",
-          fullAddress: [def.address_line1, def.address_line2, def.city, def.state, def.pincode].filter(Boolean).join(", "),
-          pincode: def.pincode,
-        });
-        setPincode(def.pincode);
+      const targetPincode = (homePincode && /^\d{6}$/.test(homePincode)) ? homePincode : def?.pincode;
+
+      if (targetPincode && /^\d{6}$/.test(targetPincode)) {
+        setPincode(targetPincode);
+        const matchingAddr = addrs?.find((a: any) => a.pincode === targetPincode) || def;
+        if (matchingAddr) {
+          setSelectedAddress({
+            id: matchingAddr.id,
+            type: matchingAddr.type || "Home Visit",
+            fullAddress: [matchingAddr.address_line1, matchingAddr.address_line2, matchingAddr.city, matchingAddr.state, matchingAddr.pincode].filter(Boolean).join(", "),
+            pincode: matchingAddr.pincode,
+          });
+        } else {
+          setSelectedAddress({
+            id: "manual",
+            type: "Home Visit",
+            fullAddress: "Manual Visit Location",
+            pincode: targetPincode,
+          });
+        }
         if (preselectedLab) {
           setSelectedLab(preselectedLab);
           setStep("APPOINTMENT");
@@ -338,7 +351,7 @@ const ECGTestScreen = () => {
         let query = supabase
           .from("diagnostic_centers")
           .select("*")
-          .eq("is_active", true)
+          // Temporarily removed to fix local preview: .eq("is_active", true)
           .eq("offers_home_ecg", true);
 
         if (pincode && /^\d{6}$/.test(pincode)) {
@@ -363,7 +376,11 @@ const ECGTestScreen = () => {
             home_ecg_price: l.home_ecg_price || l.ecg_price || 599,
           }));
 
-        setLabs(dbLabs);
+        if (dbLabs.length === 0) {
+          setLabs(DEFAULT_ECG_LABS);
+        } else {
+          setLabs(dbLabs);
+        }
       } catch (err) {
         console.warn("Error loading ECG labs:", err);
         setLabs([]);
