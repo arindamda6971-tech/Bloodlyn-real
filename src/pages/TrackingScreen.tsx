@@ -487,6 +487,7 @@ const TrackingScreen = () => {
                                 orderId={order.id}
                                 scheduledDate={order.scheduled_date}
                                 scheduledTimeSlot={order.scheduled_time_slot}
+                                partnerPhone={order.delivery_partner_phone}
                                 onConfirmed={(status) => {
                                   queryClient.setQueryData(
                                     ["order", order.id, supabaseUserId],

@@ -47,3 +47,7 @@ verify_jwt = false
 [functions.reschedule-order]
 verify_jwt = false
 # JWT validated in code; Partner capacity is enforced through a server-only locked transaction
+
+[functions.report-no-show]
+verify_jwt = false
+# Separate no-show endpoint validates the caller with Supabase Auth.
