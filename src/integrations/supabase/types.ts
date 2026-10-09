@@ -399,6 +399,44 @@ export type Database = {
         }
         Relationships: []
       }
+      no_show_deliveries: {
+        Row: {
+          comment: string
+          created_at: string
+          delivered_at: string | null
+          order_id: string
+          reported_at: string
+          updated_at: string
+          vendor_id: string
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          delivered_at?: string | null
+          order_id: string
+          reported_at?: string
+          updated_at?: string
+          vendor_id: string
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          delivered_at?: string | null
+          order_id?: string
+          reported_at?: string
+          updated_at?: string
+          vendor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "no_show_deliveries_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -465,8 +503,11 @@ export type Database = {
           delivery_partner_name: string | null
           delivery_partner_phone: string | null
           discount: number | null
+          escalated_at: string | null
+          escalation_comment: string | null
           family_member_id: string | null
           id: string
+          is_escalated: boolean
           lab_name: string | null
           order_number: string | null
           payment_method: string | null
@@ -494,8 +535,11 @@ export type Database = {
           delivery_partner_name?: string | null
           delivery_partner_phone?: string | null
           discount?: number | null
+          escalated_at?: string | null
+          escalation_comment?: string | null
           family_member_id?: string | null
           id?: string
+          is_escalated?: boolean
           lab_name?: string | null
           order_number?: string | null
           payment_method?: string | null
@@ -523,8 +567,11 @@ export type Database = {
           delivery_partner_name?: string | null
           delivery_partner_phone?: string | null
           discount?: number | null
+          escalated_at?: string | null
+          escalation_comment?: string | null
           family_member_id?: string | null
           id?: string
+          is_escalated?: boolean
           lab_name?: string | null
           order_number?: string | null
           payment_method?: string | null
@@ -1340,8 +1387,52 @@ export type Database = {
           delivery_partner_name: string | null
           delivery_partner_phone: string | null
           discount: number | null
+          escalated_at: string | null
+          escalation_comment: string | null
           family_member_id: string | null
           id: string
+          is_escalated: boolean
+          lab_name: string | null
+          order_number: string | null
+          payment_method: string | null
+          payment_status: string | null
+          phlebotomist_id: string | null
+          report_url: string | null
+          scheduled_date: string | null
+          scheduled_time_slot: string | null
+          special_instructions: string | null
+          status: string | null
+          subtotal: number
+          test_name: string | null
+          total: number
+          updated_at: string
+          user_id: string
+          vendor_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      escalate_no_show: {
+        Args: { _comment: string; _order_id: string; _user_id: string }
+        Returns: {
+          address_id: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          client_idempotency_key: string | null
+          coupon_code: string | null
+          created_at: string
+          delivery_partner_name: string | null
+          delivery_partner_phone: string | null
+          discount: number | null
+          escalated_at: string | null
+          escalation_comment: string | null
+          family_member_id: string | null
+          id: string
+          is_escalated: boolean
           lab_name: string | null
           order_number: string | null
           payment_method: string | null
@@ -1391,8 +1482,11 @@ export type Database = {
           delivery_partner_name: string | null
           delivery_partner_phone: string | null
           discount: number | null
+          escalated_at: string | null
+          escalation_comment: string | null
           family_member_id: string | null
           id: string
+          is_escalated: boolean
           lab_name: string | null
           order_number: string | null
           payment_method: string | null
