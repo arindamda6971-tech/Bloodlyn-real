@@ -1,5 +1,9 @@
 # Current work
 
+- [ ] Add isolated, secure no-show cancellation with strike/comment and Call Partner UI; preserve Yes and existing Edge Functions.
+- [ ] Verify no-show UI tests and server authorization; provide Partner Pro receiver/sorting/flag integration prompt.
+- [ ] Apply no-show priority tiles and receiver in Partner Pro (blocked: separate project requires the supplied integration prompt).
+
 - [x] Show a blocking progress state while support tickets are created.
 - [x] Keep the Home address heading and full saved address synchronized after navigation and edits.
 - [x] Add secure favorite partner labs, a real Profile Saved count, and a Saved Labs page.
