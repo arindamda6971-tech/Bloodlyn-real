@@ -24,19 +24,19 @@ afterEach(cleanup);
 describe('No-show escalation', () => {
   it('No reveals options without submitting or changing an order', () => {
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'No', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^No$/ }));
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.invoke).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: 'Yes', exact: true })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Yes$/ })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Call Partner' })).toHaveAttribute('href', 'tel:+919876543210');
   });
   it('keeps No disabled before the collection slot ends', () => {
     mount('2099-01-01');
-    expect(screen.getByRole('button', { name: 'No', exact: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^No$/ })).toBeDisabled();
   });
   it('requires a comment, submits once and confirms cancellation', async () => {
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'No', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^No$/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Report Lab' }));
     expect(screen.getByRole('button', { name: 'Submit report' })).toBeDisabled();
     fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'The collector did not arrive.' } });
@@ -49,7 +49,7 @@ describe('No-show escalation', () => {
   it('retains comment and order when reporting fails', async () => {
     mocks.invoke.mockResolvedValue({ data: { error: 'Please try again' }, error: new Error('offline') });
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'No', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^No$/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Report Lab' }));
     fireEvent.change(screen.getByLabelText('Comment'), { target: { value: 'The collector did not arrive.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Submit report' }));
@@ -59,7 +59,7 @@ describe('No-show escalation', () => {
   });
   it('preserves the existing Yes mutation', async () => {
     mount();
-    fireEvent.click(screen.getByRole('button', { name: 'Yes', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^Yes$/ }));
     await waitFor(() => expect(onConfirmed).toHaveBeenCalledWith('sample_collected'));
     expect(mocks.update).toHaveBeenCalledWith({ status: 'sample_collected' });
     expect(mocks.invoke).not.toHaveBeenCalled();
