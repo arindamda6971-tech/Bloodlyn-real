@@ -166,19 +166,27 @@ const LabSelectionScreen = () => {
 
         // Also fetch products for all vendor_ids to cross-match
         const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
-        const vendorProducts: Record<string, {name: string, price: number}[]> = {};
+        const vendorProducts: Record<string, {name: string, price: number, availabilityType?: string, availableDays?: string[], sampleType?: string, preparationRequired?: boolean, preparationInstruction?: string, fastingRequired?: boolean, fastingInstruction?: string, reportType?: string}[]> = {};
         if (vendorIds.length > 0) {
           const { data: products } = await supabase
             .from("products")
-            .select("vendor_id, product_name, price")
+            .select("*")
             .in("vendor_id", vendorIds)
             .eq("availability", true);
           if (products) {
             products.forEach((p) => {
               if (!vendorProducts[p.vendor_id]) vendorProducts[p.vendor_id] = [];
               vendorProducts[p.vendor_id].push({
-                name: p.product_name.trim().toLowerCase(),
-                price: Number(p.price) || 0
+                name: (p.name || p.product_name || "").trim().toLowerCase(),
+                price: Number(p.price) || 0,
+                availabilityType: p.availability_type || undefined,
+                availableDays: p.available_days || undefined,
+                sampleType: p.sample_type || undefined,
+                preparationRequired: p.preparation_required ?? undefined,
+                preparationInstruction: p.preparation_instruction || undefined,
+                fastingRequired: p.fasting_required ?? undefined,
+                fastingInstruction: p.fasting_instruction || undefined,
+                reportType: p.report_type || undefined,
               });
             });
           }
@@ -188,7 +196,18 @@ const LabSelectionScreen = () => {
         const mappedLabs = pincodeFiltered.map((lab) => {
           const baseTests = Array.isArray(lab.available_tests) ? lab.available_tests : [];
           const additionalTests = (lab.vendor_id && vendorProducts[lab.vendor_id])
-            ? vendorProducts[lab.vendor_id].map(vp => ({ test_name: vp.name, price: vp.price }))
+            ? vendorProducts[lab.vendor_id].map(vp => ({
+                test_name: vp.name,
+                price: vp.price,
+                availabilityType: vp.availabilityType,
+                availableDays: vp.availableDays,
+                sampleType: vp.sampleType,
+                preparationRequired: vp.preparationRequired,
+                preparationInstruction: vp.preparationInstruction,
+                fastingRequired: vp.fastingRequired,
+                fastingInstruction: vp.fastingInstruction,
+                reportType: vp.reportType,
+              }))
             : [];
           
           const available_tests = [...baseTests, ...additionalTests];

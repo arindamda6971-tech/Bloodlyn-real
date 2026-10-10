@@ -28,30 +28,29 @@ export const useFavoriteLabs = () => {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (labId: string) => {
+    mutationFn: async ({ labId, action }: { labId: string, action: 'add' | 'remove' }) => {
       if (!user?.id) throw new Error("Please sign in to save a lab");
-      const isFavorite = (favoritesQuery.data ?? []).includes(labId);
-      const result = isFavorite
+      const result = action === 'remove'
         ? await supabase.from("favorite_labs").delete().eq("user_id", user.id).eq("lab_id", labId)
         : await supabase.from("favorite_labs").insert({ user_id: user.id, lab_id: labId });
       if (result.error) throw result.error;
-      return { labId, isFavorite: !isFavorite };
+      return { labId, action };
     },
-    onMutate: async (labId) => {
+    onMutate: async ({ labId, action }) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData<string[]>(queryKey) ?? [];
-      const next = previous.includes(labId)
-        ? previous.filter((id) => id !== labId)
-        : [labId, ...previous];
+      const next = action === 'add'
+        ? [labId, ...previous]
+        : previous.filter((id) => id !== labId);
       queryClient.setQueryData(queryKey, next);
       return { previous };
     },
-    onError: (error, _labId, context) => {
+    onError: (error, _variables, context) => {
       queryClient.setQueryData(queryKey, context?.previous ?? []);
       toast.error(error instanceof Error ? error.message : "Could not update saved labs");
     },
-    onSuccess: ({ isFavorite }) => {
-      toast.success(isFavorite ? "Lab saved to your profile" : "Lab removed from saved");
+    onSuccess: ({ action }) => {
+      toast.success(action === 'add' ? "Lab saved to your profile" : "Lab removed from saved");
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
@@ -62,7 +61,10 @@ export const useFavoriteLabs = () => {
     favoriteCount: favoriteLabIds.length,
     isLoading: favoritesQuery.isLoading,
     isFavorite: (labId: string) => favoriteLabIds.includes(labId),
-    toggleFavorite: (labId: string) => toggleMutation.mutate(labId),
+    toggleFavorite: (labId: string) => {
+      const isFav = favoriteLabIds.includes(labId);
+      toggleMutation.mutate({ labId, action: isFav ? 'remove' : 'add' });
+    },
     isToggling: toggleMutation.isPending,
   };
 };
