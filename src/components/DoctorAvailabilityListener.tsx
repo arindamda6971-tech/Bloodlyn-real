@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
@@ -71,6 +71,11 @@ export const evictDoctorFromCaches = (
 const DoctorAvailabilityListener = () => {
   const queryClient = useQueryClient();
   const { items, removeFromCart } = useCart();
+  const itemsRef = useRef(items);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
 
   useEffect(() => {
     const channel = supabase
@@ -90,7 +95,7 @@ const DoctorAvailabilityListener = () => {
         if (isAvailable === false || !approved || !active) {
           evictDoctorFromCaches(queryClient, doctorId);
           // Cancel any in-flight booking: drop matching cart items
-          items.forEach((it) => {
+          itemsRef.current.forEach((it) => {
             if (typeof it.id === "string" && it.id.includes(doctorId)) {
               removeFromCart(it.id);
             }
@@ -109,7 +114,7 @@ const DoctorAvailabilityListener = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [queryClient, items, removeFromCart]);
+  }, [queryClient, removeFromCart]);
 
   return null;
 };

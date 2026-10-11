@@ -14,14 +14,16 @@ export function AppointmentStatusListener() {
     // Build filter query for user appointments
     const userPhone = user?.phone ? user.phone.replace(/\D/g, "").slice(-10) : "";
 
+    const channelName = `appointment-status-${user?.id || "anon"}`;
     const channel = supabase
-      .channel("appointment-status-changes")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
           event: "UPDATE",
           schema: "public",
           table: "appointments",
+          ...(user?.id ? { filter: `user_id=eq.${user.id}` } : {}),
         },
         (payload: any) => {
           const newAppt = payload.new;

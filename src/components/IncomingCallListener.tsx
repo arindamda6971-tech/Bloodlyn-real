@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -10,11 +10,17 @@ export function IncomingCallListener() {
   const navigate = useNavigate();
   const [incomingCall, setIncomingCall] = useState<{ id: string; doctorName?: string } | null>(null);
 
+  const incomingCallRef = useRef<{ id: string; doctorName?: string } | null>(null);
+
+  useEffect(() => {
+    incomingCallRef.current = incomingCall;
+  }, [incomingCall]);
+
   useEffect(() => {
     if (!user?.id) return;
 
     const channel = supabase
-      .channel("public:orders")
+      .channel(`incoming-calls-${user.id}`)
       .on(
         "postgres_changes",
         {
@@ -24,18 +30,12 @@ export function IncomingCallListener() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const newOrder = payload.new;
+          const newOrder = payload.new as any;
           if (newOrder.call_status === "ringing") {
-            // Check if we are already in the call to avoid re-ringing
             if (window.location.pathname.includes(`/call/${newOrder.id}`)) return;
-            
             const doctorName = newOrder.lab_name || newOrder.test_name || "Doctor";
             setIncomingCall({ id: newOrder.id, doctorName });
-            
-            // Optional: Play a ringing sound here
-            // const audio = new Audio('/ringtone.mp3');
-            // audio.play().catch(e => console.log(e));
-          } else if (newOrder.call_status === "ended" && incomingCall?.id === newOrder.id) {
+          } else if (newOrder.call_status === "ended" && incomingCallRef.current?.id === newOrder.id) {
             setIncomingCall(null);
           }
         }
@@ -45,7 +45,7 @@ export function IncomingCallListener() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, incomingCall?.id]);
+  }, [user?.id]);
 
   const handleAccept = async (mode: 'audio' | 'video') => {
     if (!incomingCall) return;

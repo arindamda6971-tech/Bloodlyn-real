@@ -103,17 +103,6 @@ const HealthPackagesSection = () => {
 
   useEffect(() => {
     fetchPackages();
-    const channel = supabase
-      .channel("home-health-packages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "test_packages" },
-        () => fetchPackages()
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [fetchPackages]);
 
   const labs: LabGroup[] = useMemo(() => {

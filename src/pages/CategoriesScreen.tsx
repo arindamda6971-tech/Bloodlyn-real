@@ -58,21 +58,30 @@ const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
 };
 
 // Hand-picked icons and colors for specific known categories
-const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string }> = {
-  "cardiac": { icon: HeartPulse, color: "bg-rose-100 text-rose-600" },
+const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string; image?: string }> = {
+  "cardiac": { icon: HeartPulse, color: "bg-rose-100 text-rose-600", image: "/categories/cardiac.jpg" },
   "diabetes": { icon: Activity, color: "bg-sky-100 text-sky-600" },
   "kidney": { icon: Droplets, color: "bg-amber-100 text-amber-600" },
   "liver": { icon: Beaker, color: "bg-emerald-100 text-emerald-600" },
   "thyroid": { icon: Activity, color: "bg-purple-100 text-purple-600" },
   "fever": { icon: Thermometer, color: "bg-orange-100 text-orange-600" },
   "full body": { icon: Scan, color: "bg-indigo-100 text-indigo-600" },
-  "vitamin": { icon: Pill, color: "bg-yellow-100 text-yellow-600" },
+  "vitamin": { icon: Pill, color: "bg-yellow-100 text-yellow-600", image: "/categories/vitamin.jpg" },
   "bone": { icon: Bone, color: "bg-slate-100 text-slate-700" },
   "pregnancy": { icon: Baby, color: "bg-pink-100 text-pink-600" },
   "neurology": { icon: Brain, color: "bg-cyan-100 text-cyan-600" },
   "infection": { icon: ShieldCheck, color: "bg-red-100 text-red-600" },
   "immunity": { icon: ShieldCheck, color: "bg-teal-100 text-teal-600" },
-  "blood": { icon: Syringe, color: "bg-red-50 text-red-500" },
+  "blood": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
+  "chemistry": { icon: Beaker, color: "bg-blue-100 text-blue-600", image: "/categories/chemistry.jpg" },
+  "coagulation": { icon: Droplets, color: "bg-red-100 text-red-600", image: "/categories/coagulation.jpg" },
+  "cytology": { icon: Microscope, color: "bg-purple-100 text-purple-600", image: "/categories/cytology.jpg" },
+  "genetics": { icon: Dna, color: "bg-indigo-100 text-indigo-600", image: "/categories/genetics.jpg" },
+  "hematology": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
+  "microbiology": { icon: Scan, color: "bg-teal-100 text-teal-600", image: "/categories/microbiology.jpg" },
+  "urine": { icon: Beaker, color: "bg-yellow-100 text-yellow-600", image: "/categories/urine.jpg" },
+  "stool": { icon: Beaker, color: "bg-orange-100 text-orange-600", image: "/categories/urine.jpg" }, // reusing urine container for stool 
+  "allergy": { icon: Wind, color: "bg-sky-100 text-sky-600", image: "/categories/allergy.jpg" },
 };
 
 const iconPool: LucideIcon[] = [
@@ -106,15 +115,25 @@ const getCategoryStyle = (name: string, slug: string) => {
 const CategoryTile = memo(({ category, index, onClick }: { category: any, index: number, onClick: () => void }) => (
   <div
     onClick={onClick}
-    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press"
-    style={{ contain: 'content' }}
+    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press flex flex-col justify-between"
+    style={{ contain: 'content', minHeight: '160px' }}
   >
     <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out`}>
-      <category.icon className="w-7 h-7" />
+    
+    {category.image ? (
+      <div className="w-16 h-16 mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 ease-out flex-shrink-0">
+        <img src={category.image} alt={category.name} className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
+      </div>
+    ) : (
+      <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out flex-shrink-0`}>
+        <category.icon className="w-7 h-7" />
+      </div>
+    )}
+    
+    <div className="relative z-10 mt-auto">
+      <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1">{category.name}</h3>
+      <p className="text-[12px] font-bold text-muted-foreground/60">{category.subtitle}</p>
     </div>
-    <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1 relative z-10">{category.name}</h3>
-    <p className="text-[12px] font-bold text-muted-foreground/60 relative z-10">{category.subtitle}</p>
   </div>
 ));
 
@@ -199,7 +218,7 @@ const CategoriesScreen = () => {
   const { addToCart, items, hasItem } = useCart();
 
   const categories = useMemo(() => {
-    let cats: { icon: LucideIcon; name: string; subtitle: string; color: string; slug: string }[];
+    let cats: { icon: LucideIcon; name: string; subtitle: string; color: string; slug: string; image?: string }[];
     if (categoryData?.categories?.length) {
       cats = categoryData.categories.map((cat) => {
         const style = getCategoryStyle(cat.name, cat.slug);
@@ -215,6 +234,7 @@ const CategoriesScreen = () => {
           subtitle: `${fakeCount} tests`,
           color: style.color,
           slug: cat.slug,
+          image: style.image,
         };
       });
     } else {
