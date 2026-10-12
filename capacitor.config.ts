@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
     backgroundColor: "#f8fafc",
     webContentsDebuggingEnabled: false,
-    captureInput: true,
+    captureInput: false,
     useLegacyBridge: false,
     buildOptions: {
       releaseType: "APK",
