@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -112,9 +113,10 @@ const getCategoryStyle = (name: string, slug: string) => {
   };
 };
 
-const CategoryTile = memo(({ category, index, onClick }: { category: any, index: number, onClick: () => void }) => (
+const CategoryTile = memo(({ category, index, onClick, onPointerDown }: { category: any, index: number, onClick: () => void, onPointerDown?: () => void }) => (
   <div
     onClick={onClick}
+    onPointerDown={onPointerDown}
     className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press flex flex-col justify-between"
     style={{ contain: 'content', minHeight: '160px' }}
   >
@@ -122,7 +124,7 @@ const CategoryTile = memo(({ category, index, onClick }: { category: any, index:
     
     {category.image ? (
       <div className="w-16 h-16 mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 ease-out flex-shrink-0">
-        <img src={category.image} alt={category.name} className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
+        <img src={category.image} alt={category.name} loading="lazy" decoding="async" className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
       </div>
     ) : (
       <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out flex-shrink-0`}>
@@ -175,8 +177,18 @@ import { matchToDictionary } from "@/lib/medical-dictionary";
 const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const handlePrefetchCategory = useCallback((slug: string) => {
+    if (!slug) return;
+    const p = { category: slug === "all" ? undefined : slug, limit: 5000 };
+    queryClient.prefetchQuery({
+      queryKey: ["bridge-tests-v2", JSON.stringify(p)],
+      staleTime: 10 * 60 * 1000,
+    });
+  }, [queryClient]);
 
   // Search Intelligence: Map colloquial terms to scientific database keywords
   const backendSearchTerm = useMemo(() => {
@@ -344,7 +356,7 @@ const CategoriesScreen = () => {
             {showLoading ? (
               <div className="grid grid-cols-2 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm aspect-square">
+                  <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm" style={{ minHeight: '160px' }}>
                     <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
                     <Skeleton className="w-20 h-3 mb-1" />
                     <Skeleton className="w-16 h-2" />
@@ -363,6 +375,7 @@ const CategoriesScreen = () => {
                     category={category}
                     index={index}
                     onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
+                    onPointerDown={() => handlePrefetchCategory(category.slug)}
                   />
                 ))}
               </div>

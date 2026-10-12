@@ -58,6 +58,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
       style={{
         zIndex: zIndex,
         WebkitOverflowScrolling: "touch",
+        contain: "layout paint",
+        backfaceVisibility: "hidden",
+        transform: "translate3d(0, 0, 0)",
       }}
     >
       {children}

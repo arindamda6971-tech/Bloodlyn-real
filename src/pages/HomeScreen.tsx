@@ -405,6 +405,11 @@ const HomeScreen = () => {
             <div
               key={action.label}
               onClick={() => navigate(action.path)}
+              onPointerDown={() => {
+                if (action.path === "/doctor-consult") import("../pages/DoctorConsultScreen");
+                else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
+                else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
+              }}
               className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
             >
               {/* Custom background image for specific tiles */}

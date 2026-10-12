@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { motion } from "framer-motion";
 import { Loader2, FlaskConical, ShoppingCart, Plus, Search, ChevronRight } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -36,11 +35,11 @@ const TestItem = React.memo(({
     className="soft-card p-4 transition-transform active:scale-[0.98] cursor-pointer"
   >
     <div className="flex items-center gap-3">
-      <motion.div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
         <FlaskConical className="w-5 h-5 text-primary" />
-      </motion.div>
+      </div>
       <div className="flex-1 min-w-0">
-        <motion.h3 className="font-semibold text-foreground text-sm truncate">{simplifyTestName(test.test_name)}</motion.h3>
+        <h3 className="font-semibold text-foreground text-sm truncate">{simplifyTestName(test.test_name)}</h3>
       </div>
       <div className="flex-shrink-0">
         <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
@@ -48,7 +47,6 @@ const TestItem = React.memo(({
     </div>
   </div>
 ));
-
 
 TestItem.displayName = "TestItem";
 
@@ -185,7 +183,7 @@ const CategoryTestsScreen = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-3 list-virtual-lg">
+          <div className="space-y-3 list-virtual-test">
             {tests.map((test) => (
               <TestItem
                 key={test.id}

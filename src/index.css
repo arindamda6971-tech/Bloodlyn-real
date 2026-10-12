@@ -766,6 +766,11 @@ input[type="number"] {
     contain-intrinsic-size: auto 200px;
   }
 
+  .list-virtual-test > * {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 76px;
+  }
+
   /* Off-screen page sections skip rendering work entirely. */
   .section-defer {
     content-visibility: auto;

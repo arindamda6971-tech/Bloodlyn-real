@@ -25,9 +25,14 @@ export function intelligentSearch(
 
   // 1. Try to find a medical dictionary match for the intent
   const dictMatch = matchToDictionary(q, 0.4); // lower threshold for broad intent
+  const canonical = dictMatch?.canonical.toLowerCase();
+  const dictConfidence = dictMatch?.confidencePct ?? 0;
 
   // 2. Score and filter the test pool
-  for (const test of testPool) {
+  for (let i = 0; i < testPool.length; i++) {
+    const test = testPool[i];
+    if (!test || seenIds.has(test.id)) continue;
+
     const testName = (test.name || test.test_name || "").toLowerCase();
     let score = 0;
     let isDictMatch = false;
@@ -42,12 +47,9 @@ export function intelligentSearch(
     }
 
     // Dictionary intent match
-    if (dictMatch) {
-      const canonical = dictMatch.canonical.toLowerCase();
-      if (testName.includes(canonical) || canonical.includes(testName)) {
-        score = Math.max(score, dictMatch.confidencePct);
-        isDictMatch = true;
-      }
+    if (canonical && (testName.includes(canonical) || canonical.includes(testName))) {
+      score = Math.max(score, dictConfidence);
+      isDictMatch = true;
     }
 
     if (score > 40) {

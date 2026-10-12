@@ -66,8 +66,13 @@ const METHOD_SUFFIXES = [
 // Measurement unit brackets like [Mass/volume], [Moles/time], [Presence], etc.
 const BRACKET_REGEX = /\s*\[[^\]]*\]\s*/g;
 
+// In-memory cache to eliminate repeated regex and string operations on 60/120fps scroll ticks
+const simplifyCache = new Map<string, string>();
+
 export function simplifyTestName(rawName: string): string {
   if (!rawName) return rawName;
+  const cached = simplifyCache.get(rawName);
+  if (cached !== undefined) return cached;
 
   let name = rawName.trim();
 
@@ -138,9 +143,7 @@ export function simplifyTestName(rawName: string): string {
   }
 
   // 10. If the simplified name is too short or empty, fall back to original
-  if (name.length < 3) {
-    return rawName.trim();
-  }
-
-  return name;
+  const result = name.length < 3 ? rawName.trim() : name;
+  simplifyCache.set(rawName, result);
+  return result;
 }

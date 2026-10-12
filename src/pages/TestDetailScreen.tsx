@@ -645,7 +645,7 @@ const TestDetailScreen = () => {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         {lab.logo_url ? (
-                          <img src={lab.logo_url} alt={lab.name} className="w-10 h-10 rounded-full object-contain bg-white border" />
+                          <img src={lab.logo_url} alt={lab.name} loading="lazy" decoding="async" className="w-10 h-10 rounded-full object-contain bg-white border" />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center border">
                             <span className="font-bold text-muted-foreground text-sm">{lab.name.charAt(0)}</span>

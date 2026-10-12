@@ -7,6 +7,7 @@ const TakeChargeBanner = () => {
           alt="Take Charge of Your Health" 
           className="w-full h-auto object-cover"
           loading="eager"
+          decoding="async"
           fetchPriority="high"
           style={{ 
             imageRendering: '-webkit-optimize-contrast',

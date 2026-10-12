@@ -59,7 +59,8 @@ export function useBridgeTests(params?: BridgeTestsParams) {
   return useQuery({
     queryKey: ["bridge-tests-v2", JSON.stringify(params || {})],
     queryFn: () => fetchBridgeTests(params),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    gcTime: 30 * 60 * 1000, // Keep in memory for 30 minutes
     retry: 2,
   });
 }
