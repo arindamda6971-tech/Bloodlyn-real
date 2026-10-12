@@ -61,6 +61,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         contain: "layout paint",
         backfaceVisibility: "hidden",
         transform: "translate3d(0, 0, 0)",
+        pointerEvents: isPresent ? "auto" : "none",
       }}
     >
       {children}
