@@ -1,9 +1,8 @@
 import { ReactNode, useEffect } from "react";
-import { useLocation, useNavigationType } from "react-router-dom";
-import { motion, usePresence } from "framer-motion";
+import { useLocation } from "react-router-dom";
+import { usePresence } from "framer-motion";
 import { Analytics } from "@/lib/analytics";
-
-const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
+import { getTransitionClass, getTransitionDuration, getEffectiveNavType } from "@/lib/navigation-transition";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -13,37 +12,27 @@ interface PageTransitionProps {
 /**
  * Ultra-Smooth Native App Page Transition.
  * Bypasses Framer Motion JS locking and uses pure CSS compositing
- * to guarantee 60fps even when React blocks the main thread.
+ * to guarantee 60/120fps even when React blocks the main thread.
  */
 const PageTransition = ({ children, location: propLocation }: PageTransitionProps) => {
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
-  const navType = useNavigationType();
   const [isPresent, safeToRemove] = usePresence();
 
   useEffect(() => {
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
   }, [location.pathname, location.search]);
 
-  // Keep unmounted page in DOM for 450ms so the CSS exit animation can play
+  // Keep unmounted page in DOM for the exact duration so the CSS exit animation completes
   useEffect(() => {
     if (!isPresent) {
-      const timer = setTimeout(safeToRemove, 450);
+      const timer = setTimeout(safeToRemove, getTransitionDuration());
       return () => clearTimeout(timer);
     }
   }, [isPresent, safeToRemove]);
 
-  const isTab = TAB_PATHS.includes(location.pathname);
-  const isPop = navType === "POP";
-
-  // Determine the pure CSS compositor class
-  let animClass = "";
-  if (isPresent) {
-    animClass = isTab ? "page-anim-fade" : isPop ? "page-anim-pop" : "page-anim-push";
-  } else {
-    // When popping, the exiting screen slides right (pop-exit). When pushing, the exiting screen slides left (push-exit).
-    animClass = isTab ? "page-anim-fade-exit" : isPop ? "page-anim-pop-exit" : "page-anim-push-exit";
-  }
+  const animClass = getTransitionClass(isPresent);
+  const isPop = getEffectiveNavType() === "POP";
 
   // Z-Index logic:
   // - Pushing: Incoming (isPresent) is 10, Outgoing (!isPresent) is 1
@@ -53,8 +42,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   return (
     <div
       key={location.pathname}
-      data-scroll-container
-      className={`w-full h-full absolute top-0 left-0 bg-background overflow-y-auto overflow-x-hidden ${animClass}`}
+      className={`w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${animClass}`}
       style={{
         zIndex: zIndex,
         WebkitOverflowScrolling: "touch",

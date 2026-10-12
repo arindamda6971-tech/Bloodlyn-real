@@ -4,8 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
+import { recordNavigation } from "@/lib/navigation-transition";
 
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -102,6 +103,8 @@ const CapacitorInitializer = () => {
  */
 const AnimatedRoutes = () => {
   const location = useLocation();
+  const navType = useNavigationType();
+  recordNavigation(location.pathname, navType);
   
   return (
     <AnimatePresence initial={false}>

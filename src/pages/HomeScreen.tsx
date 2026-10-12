@@ -267,10 +267,8 @@ const HomeScreen = () => {
   };
 
   return (
-    <div className="relative bg-background min-h-screen">
+    <MobileLayout>
       {StaticBackground}
-
-      <MobileLayout>
         {/* Zomato / Swiggy Style Top Header - Scrolls away naturally */}
         <div className="px-5 pb-0">
           <ZomatoStyleHeader
@@ -393,13 +391,13 @@ const HomeScreen = () => {
             <AdvancedSkeleton type="lab-card" count={2} />
           </div>
         ) : diagnosticCenters.length > 0 && (
-          <div className="mt-4 transform-gpu list-virtual-lg">
+          <div className="mt-4 transform-gpu list-virtual-lg" style={{ contain: "content" }}>
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
         )}
 
         {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 flex flex-col gap-4 section-defer list-virtual-lg">
+        <section className="px-4 mt-8 flex flex-col gap-4 section-defer list-virtual-lg" style={{ contain: "content" }}>
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {quickActions.map((action, idx) => (
             <div
@@ -410,7 +408,7 @@ const HomeScreen = () => {
                 else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
                 else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
               }}
-              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-all"
+              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-transform duration-150"
             >
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
@@ -544,7 +542,6 @@ const HomeScreen = () => {
 
 
       </MobileLayout>
-    </div>
   );
 };
 
