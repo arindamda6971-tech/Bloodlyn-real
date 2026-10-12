@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { usePresence } from "framer-motion";
 import { Analytics } from "@/lib/analytics";
@@ -18,6 +18,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
   const [isPresent, safeToRemove] = usePresence();
+  const [isAnimating, setIsAnimating] = useState(true);
 
   useEffect(() => {
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
@@ -28,10 +29,14 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
     if (!isPresent) {
       const timer = setTimeout(safeToRemove, getTransitionDuration());
       return () => clearTimeout(timer);
+    } else {
+      // Clear animation class when entering finishes so GPU compositor layer is freed
+      const timer = setTimeout(() => setIsAnimating(false), getTransitionDuration() + 30);
+      return () => clearTimeout(timer);
     }
   }, [isPresent, safeToRemove]);
 
-  const animClass = getTransitionClass(isPresent);
+  const animClass = isAnimating ? getTransitionClass(isPresent) : "";
   const isPop = getEffectiveNavType() === "POP";
 
   // Z-Index logic:
@@ -48,7 +53,6 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         WebkitOverflowScrolling: "touch",
         contain: "layout paint",
         backfaceVisibility: "hidden",
-        transform: "translate3d(0, 0, 0)",
         pointerEvents: isPresent ? "auto" : "none",
       }}
     >

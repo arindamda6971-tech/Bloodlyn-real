@@ -51,5 +51,5 @@ export function getTransitionClass(isPresent: boolean): string {
  * Returns the exact duration in ms for the active transition.
  */
 export function getTransitionDuration(): number {
-  return isTabToTabTransition() ? 250 : 450;
+  return isTabToTabTransition() ? 250 : 350;
 }

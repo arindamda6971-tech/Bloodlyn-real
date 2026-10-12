@@ -875,25 +875,22 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push {
-  animation: pagePushEnter 0.45s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pagePushEnter 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
-  box-shadow: -12px 0 32px -4px rgba(0, 0, 0, 0.08);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .page-anim-pop {
-  animation: pagePopEnter 0.45s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pagePopEnter 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
 }
 
 .page-anim-fade {
-  animation: pageFadeEnter 0.25s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pageFadeEnter 0.25s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: opacity;
   backface-visibility: hidden;
-  transform: translate3d(0, 0, 0);
 }
 
 @keyframes pagePushExit {
@@ -912,20 +909,20 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit 0.45s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pagePushExit 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit 0.45s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pagePopExit 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
-  box-shadow: -12px 0 32px -4px rgba(0, 0, 0, 0.08);
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .page-anim-fade-exit {
-  animation: pageFadeExit 0.25s cubic-bezier(0.28, 0.9, 0.28, 1) forwards;
+  animation: pageFadeExit 0.25s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: opacity;
   backface-visibility: hidden;
 }

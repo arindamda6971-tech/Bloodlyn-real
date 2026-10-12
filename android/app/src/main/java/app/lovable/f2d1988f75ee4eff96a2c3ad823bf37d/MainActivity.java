@@ -1,7 +1,10 @@
 package app.lovable.f2d1988f75ee4eff96a2c3ad823bf37d;
 
+import android.os.Build;
 import android.os.Bundle;
+import android.view.Display;
 import android.view.View;
+import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.core.view.WindowCompat;
@@ -14,6 +17,36 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         // Enable edge-to-edge rendering so the WebView extends behind system bars
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // Guarantee Hardware Acceleration on the Window
+        getWindow().setFlags(
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+            WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
+        );
+
+        // Unlock 90Hz / 120Hz display refresh rate
+        // By default Android OS throttles WebViews to 60Hz. Setting preferred display mode unlocks full panel speed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Display display = getDisplay();
+            if (display != null) {
+                Display.Mode[] modes = display.getSupportedModes();
+                Display.Mode maxMode = null;
+                for (Display.Mode mode : modes) {
+                    if (maxMode == null || mode.getRefreshRate() > maxMode.getRefreshRate()) {
+                        maxMode = mode;
+                    }
+                }
+                if (maxMode != null) {
+                    WindowManager.LayoutParams params = getWindow().getAttributes();
+                    params.preferredDisplayModeId = maxMode.getModeId();
+                    getWindow().setAttributes(params);
+                }
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            WindowManager.LayoutParams params = getWindow().getAttributes();
+            params.preferredRefreshRate = 120.0f;
+            getWindow().setAttributes(params);
+        }
     }
 
     @Override
@@ -21,11 +54,6 @@ public class MainActivity extends BridgeActivity {
         super.onStart();
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
-            // CRITICAL FOR 60/120 FPS:
-            // Do NOT use LAYER_TYPE_HARDWARE on the Android View level.
-            // LAYER_TYPE_HARDWARE forces an offscreen double-buffering pass in Java memory.
-            // LAYER_TYPE_NONE lets Chromium's internal GPU rasterization pipeline draw
-            // directly to the hardware surface (identically to standalone Chrome).
             webView.setLayerType(View.LAYER_TYPE_NONE, null);
 
             WebSettings settings = webView.getSettings();
@@ -33,6 +61,9 @@ public class MainActivity extends BridgeActivity {
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
+
+            // Pre-raster offscreen contents so sliding page transitions are pre-rendered without frame drops
+            settings.setOffscreenPreRaster(true);
         }
     }
 }

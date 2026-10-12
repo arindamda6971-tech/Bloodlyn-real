@@ -35,41 +35,43 @@ import AppointmentStatusListener from "@/components/AppointmentStatusListener";
 import { useNavigate } from "react-router-dom";
 import { Capacitor } from "@capacitor/core";
 
-// Lazy loaded screens — chunks are preloaded by RoutePrefetcher so
-// Suspense resolves synchronously on navigations after the first idle period.
+// Core Navigation & High-Traffic Screens imported statically
+// Guaranteed in memory at boot: 0ms delay, no Suspense skeleton flash mid-slide!
+import HomeScreen from "./pages/HomeScreen";
+import CategoriesScreen from "./pages/CategoriesScreen";
+import CategoryTestsScreen from "./pages/CategoryTestsScreen";
+import TestDetailScreen from "./pages/TestDetailScreen";
+import CartScreen from "./pages/CartScreen";
+import BookingsScreen from "./pages/BookingsScreen";
+import ReportsScreen from "./pages/ReportsScreen";
+import ProfileScreen from "./pages/ProfileScreen";
+import DoctorConsultScreen from "./pages/DoctorConsultScreen";
+import ECGTestScreen from "./pages/ECGTestScreen";
+import BPCheckScreen from "./pages/BPCheckScreen";
+import PhysioConsultScreen from "./pages/PhysioConsultScreen";
+import LabSelectionScreen from "./pages/LabSelectionScreen";
+import PaymentScreen from "./pages/PaymentScreen";
+
+// Secondary & Rare screens remain lazy loaded
 import { lazy, Suspense } from "react";
 
 const SplashScreen = lazy(() => import("./pages/SplashScreen"));
 const OnboardingScreen = lazy(() => import("./pages/OnboardingScreen"));
 const LoginScreen = lazy(() => import("./pages/LoginScreen"));
-const HomeScreen = lazy(() => import("./pages/HomeScreen"));
-const CategoriesScreen = lazy(() => import("./pages/CategoriesScreen"));
-const ProfileScreen = lazy(() => import("./pages/ProfileScreen"));
-const BookingsScreen = lazy(() => import("./pages/BookingsScreen"));
-const TestDetailScreen = lazy(() => import("./pages/TestDetailScreen"));
-const CartScreen = lazy(() => import("./pages/CartScreen"));
 const InstallScreen = lazy(() => import("./pages/InstallScreen"));
-const CategoryTestsScreen = lazy(() => import("./pages/CategoryTestsScreen"));
 const TestSelectionScreen = lazy(() => import("./pages/TestSelectionScreen"));
-const LabSelectionScreen = lazy(() => import("./pages/LabSelectionScreen"));
-const PaymentScreen = lazy(() => import("./pages/PaymentScreen"));
 const PaymentProcessingScreen = lazy(() => import("./pages/PaymentProcessingScreen"));
-const ReportsScreen = lazy(() => import("./pages/ReportsScreen"));
 const ReportDetailScreen = lazy(() => import("./pages/ReportDetailScreen"));
 const EditProfileScreen = lazy(() => import("./pages/EditProfileScreen"));
 const NotificationsScreen = lazy(() => import("./pages/NotificationsScreen"));
 const SubscriptionScreen = lazy(() => import("./pages/SubscriptionScreen"));
 const SavedAddressesScreen = lazy(() => import("./pages/SavedAddressesScreen"));
 const SavedLabsScreen = lazy(() => import("./pages/SavedLabsScreen"));
-const DoctorConsultScreen = lazy(() => import("./pages/DoctorConsultScreen"));
 const PartnerLabsScreen = lazy(() => import("./pages/PartnerLabsScreen"));
 const LabDetailScreen = lazy(() => import("./pages/LabDetailScreen"));
 const PackagesScreen = lazy(() => import("./pages/PackagesScreen"));
 const PackageDetailScreen = lazy(() => import("./pages/PackageDetailScreen"));
 const SupportScreen = lazy(() => import("./pages/SupportScreen"));
-const PhysioConsultScreen = lazy(() => import("./pages/PhysioConsultScreen"));
-const ECGTestScreen = lazy(() => import("./pages/ECGTestScreen"));
-const BPCheckScreen = lazy(() => import("./pages/BPCheckScreen"));
 const ConsultationCallScreen = lazy(() => import("./pages/ConsultationCallScreen"));
 const EmbeddedCallScreen = lazy(() => import("./pages/EmbeddedCallScreen"));
 const OrderSuccessScreen = lazy(() => import("./pages/OrderSuccessScreen"));
