@@ -1,8 +1,14 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { usePresence } from "framer-motion";
 import { Analytics } from "@/lib/analytics";
-import { getTransitionClass, getTransitionDuration, getEffectiveNavType } from "@/lib/navigation-transition";
+import {
+  getTransitionClass,
+  getTransitionDuration,
+  getEffectiveNavType,
+  beginTransition,
+  endTransition,
+} from "@/lib/navigation-transition";
 
 interface PageTransitionProps {
   children: ReactNode;
@@ -19,24 +25,86 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const location = propLocation || currentLoc;
   const [isPresent, safeToRemove] = usePresence();
   const [isAnimating, setIsAnimating] = useState(true);
+  const [isExited, setIsExited] = useState(false);
+  const elRef = useRef<HTMLDivElement>(null);
+  const gateHeldRef = useRef(false);
 
   useEffect(() => {
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
   }, [location.pathname, location.search]);
 
-  // Keep unmounted page in DOM for the exact duration so the CSS exit animation completes
+  // Hold the transition gate while entering page is sliding
   useEffect(() => {
+    if (isPresent && isAnimating && !gateHeldRef.current) {
+      gateHeldRef.current = true;
+      beginTransition();
+    }
+    return () => {
+      if (gateHeldRef.current) {
+        gateHeldRef.current = false;
+        endTransition();
+      }
+    };
+  }, [isPresent, isAnimating]);
+
+  const releaseEnter = () => {
+    if (gateHeldRef.current) {
+      gateHeldRef.current = false;
+      endTransition();
+    }
+    setIsAnimating(false);
+  };
+
+  const releaseExit = () => {
+    setIsExited(true);
+    const ric = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }).requestIdleCallback;
+
+    if (safeToRemove) {
+      if (ric) {
+        ric(() => safeToRemove(), { timeout: 250 });
+      } else {
+        setTimeout(() => safeToRemove(), 0);
+      }
+    }
+  };
+
+  // Fallback timer (duration + 400ms) in case animationend does not fire
+  useEffect(() => {
+    const fallbackMs = getTransitionDuration() + 400;
+
     if (!isPresent) {
-      const timer = setTimeout(safeToRemove, getTransitionDuration());
+      const timer = setTimeout(() => {
+        releaseExit();
+      }, fallbackMs);
       return () => clearTimeout(timer);
-    } else {
-      // Clear animation class when entering finishes so GPU compositor layer is freed
-      const timer = setTimeout(() => setIsAnimating(false), getTransitionDuration() + 30);
+    } else if (isAnimating) {
+      const timer = setTimeout(() => {
+        releaseEnter();
+      }, fallbackMs);
       return () => clearTimeout(timer);
     }
-  }, [isPresent, safeToRemove]);
+  }, [isPresent, isAnimating]);
 
-  const animClass = isAnimating ? getTransitionClass(isPresent) : "";
+  const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
+    // Ignore bubbled events from children
+    if (e.target !== elRef.current) return;
+    if (!e.animationName.startsWith("page")) return;
+
+    if (!isPresent) {
+      releaseExit();
+    } else {
+      releaseEnter();
+    }
+  };
+
+  // When exiting (!isPresent), ALWAYS play the exit slide animation!
+  // When entering (isPresent), play the enter slide animation until settled, then release compositor layers.
+  const animClass = !isPresent 
+    ? getTransitionClass(false) 
+    : (isAnimating ? getTransitionClass(true) : "");
+
   const isPop = getEffectiveNavType() === "POP";
 
   // Z-Index logic:
@@ -46,7 +114,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
 
   return (
     <div
+      ref={elRef}
       key={location.pathname}
+      onAnimationEnd={handleAnimationEnd}
       className={`w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${animClass}`}
       style={{
         zIndex: zIndex,
@@ -54,6 +124,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         contain: "layout paint",
         backfaceVisibility: "hidden",
         pointerEvents: isPresent ? "auto" : "none",
+        visibility: isExited ? "hidden" : "visible",
       }}
     >
       {children}

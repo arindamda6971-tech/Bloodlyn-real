@@ -1,4 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
+import { whenTransitionSettled } from "@/lib/navigation-transition";
 
 interface DeferredMountProps {
   children: ReactNode;
@@ -9,8 +10,8 @@ interface DeferredMountProps {
 }
 
 /**
- * Mounts children only after the browser is idle, so below-the-fold sections
- * never compete with the route transition frame or the first paint.
+ * Mounts children only after the browser is idle and page transitions have settled,
+ * so below-the-fold sections never compete with the route transition frame or the first paint.
  *
  * Purely a scheduling primitive — no data, no logic, no visual change once
  * mounted. A fixed-height placeholder holds the space to avoid reflow.
@@ -20,29 +21,35 @@ const DeferredMount = ({ children, minHeight = 0, delay = 0 }: DeferredMountProp
 
   useEffect(() => {
     let timer: number | undefined;
-    const mount = () => {
-      if (delay > 0) {
-        timer = window.setTimeout(() => setShow(true), delay);
-      } else {
-        setShow(true);
-      }
-    };
+    let cancelIdle: (() => void) | undefined;
 
-    const ric = (window as unknown as {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-    }).requestIdleCallback;
-
-    if (ric) {
-      const id = ric(mount, { timeout: 500 });
-      return () => {
-        if (timer) clearTimeout(timer);
-        (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+    const unsubscribe = whenTransitionSettled(() => {
+      const mount = () => {
+        if (delay > 0) {
+          timer = window.setTimeout(() => setShow(true), delay);
+        } else {
+          setShow(true);
+        }
       };
-    }
 
-    const raf = requestAnimationFrame(() => requestAnimationFrame(mount));
+      const ric = (window as unknown as {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }).requestIdleCallback;
+
+      if (ric) {
+        const id = ric(mount, { timeout: 500 });
+        cancelIdle = () => {
+          (window as unknown as { cancelIdleCallback?: (id: number) => void }).cancelIdleCallback?.(id);
+        };
+      } else {
+        const raf = requestAnimationFrame(() => requestAnimationFrame(mount));
+        cancelIdle = () => cancelAnimationFrame(raf);
+      }
+    });
+
     return () => {
-      cancelAnimationFrame(raf);
+      unsubscribe();
+      if (cancelIdle) cancelIdle();
       if (timer) clearTimeout(timer);
     };
   }, [delay]);

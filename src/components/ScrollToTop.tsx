@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import { whenTransitionSettled } from "@/lib/navigation-transition";
 
 const SCROLL_CACHE_KEY = 'bloodlyn_scroll_offsets';
 
@@ -15,14 +16,33 @@ const initialOffsets = (): Map<string, number> => {
 };
 
 const offsets = initialOffsets();
+let saveScheduled = false;
 
-const saveOffsets = () => {
+const performSave = () => {
+  saveScheduled = false;
   try {
     const obj = Object.fromEntries(offsets.entries());
     localStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(obj));
   } catch (e) {
     // ignore
   }
+};
+
+const saveOffsets = () => {
+  if (saveScheduled) return;
+  saveScheduled = true;
+
+  whenTransitionSettled(() => {
+    const ric = (window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+    }).requestIdleCallback;
+
+    if (ric) {
+      ric(() => performSave(), { timeout: 1000 });
+    } else {
+      setTimeout(() => performSave(), 100);
+    }
+  });
 };
 
 const ScrollToTop = () => {
