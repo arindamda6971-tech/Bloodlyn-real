@@ -1,5 +1,8 @@
 # Current work
 
+- [x] Add BP/ECG accept → service-partner assignment → customer Yes/No → completion tracking without changing blood-test workflows.
+- [ ] Apply BP/ECG Accept/Assign and completion synchronization in Partner Pro (blocked: separate project requires `PARTNER_BP_ECG_ASSIGNMENT_PROMPT.md`).
+
 - [x] Add isolated, secure no-show cancellation with strike/comment and Call Partner UI; preserve Yes and existing Edge Functions.
 - [x] Verify no-show UI tests and server authorization; provide Partner Pro receiver/sorting/flag integration prompt (authenticated end-to-end verification unavailable on externally managed Supabase).
 - [ ] Apply no-show priority tiles and receiver in Partner Pro (blocked: separate project requires the supplied integration prompt).

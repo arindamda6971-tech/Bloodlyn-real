@@ -21,6 +21,7 @@ type OrderStatus =
   | "report_ready"
   | "report_delivered"
   | "completed"
+  | "checked"
   | "cancelled";
 
 interface OrderUpdate {
@@ -99,6 +100,7 @@ export const useRealtimeOrders = (orderId?: string) => {
               report_ready: "Your report is ready! 📋",
               report_delivered: "Your report is ready! 📋",
               completed: "Your order has been completed! ✅",
+              checked: "Your check has been completed! ✅",
               cancelled: "Your order has been cancelled",
             };
 

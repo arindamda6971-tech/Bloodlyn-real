@@ -19,6 +19,7 @@ interface CollectionConfirmPromptProps {
   scheduledDate: string | null;
   scheduledTimeSlot: string | null;
   partnerPhone?: string | null;
+  serviceType?: "blood" | "vitals";
   onConfirmed: (status: string) => void;
 }
 
@@ -27,6 +28,7 @@ const CollectionConfirmPrompt = ({
   scheduledDate,
   scheduledTimeSlot,
   partnerPhone,
+  serviceType = "blood",
   onConfirmed,
 }: CollectionConfirmPromptProps) => {
   const [pinOpen, setPinOpen] = useState(false);
@@ -76,8 +78,30 @@ const CollectionConfirmPrompt = ({
 
   const submit = async (action: "collected" | "not_collected", pinValue?: string) => {
     setSubmitting(true);
+    setErrorMessage("");
     try {
-      const newStatus = action === "collected" ? "sample_collected" : "collection_pending";
+      const newStatus = action === "collected"
+        ? serviceType === "vitals" ? "completed" : "sample_collected"
+        : "collection_pending";
+
+      if (serviceType === "vitals" && action === "collected") {
+        const { data, error } = await supabase.functions.invoke("confirm-vitals-service", {
+          body: { orderId },
+        });
+        const payload = (data ?? {}) as { success?: boolean; status?: string; error?: string };
+        if (error || !payload.success) {
+          let message = payload.error || "Could not complete your service. Please try again.";
+          const response = (error as unknown as { context?: Response })?.context;
+          if (response) {
+            const body = await response.json().catch(() => null);
+            message = body?.error || message;
+          }
+          throw new Error(message);
+        }
+        toast.success("Thanks! Your service is complete.");
+        onConfirmed(payload.status || "completed");
+        return;
+      }
       
       // Try Option 2 first: Direct Database Update (if RLS is enabled)
       const { data: directData, error: directError } = await supabase
@@ -127,6 +151,10 @@ const CollectionConfirmPrompt = ({
           : "We've told the lab your sample wasn't collected yet."
       );
       onConfirmed(payload.status || newStatus);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not update your order. Please try again.";
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -135,7 +163,9 @@ const CollectionConfirmPrompt = ({
   return (
     <div className="mt-2 rounded-2xl border border-primary/25 bg-primary/5 p-3">
       <p className="text-sm font-semibold text-foreground">
-        Is your blood collected by our partner?
+        {serviceType === "vitals"
+          ? "Was your BP or ECG check completed by our partner?"
+          : "Is your blood collected by our partner?"}
       </p>
 
       {errorMessage && (

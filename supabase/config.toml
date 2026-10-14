@@ -44,6 +44,10 @@ verify_jwt = false
 verify_jwt = false
 # JWT validated in code via getClaims(); uses service role key to update order status
 
+[functions.confirm-vitals-service]
+verify_jwt = false
+# Separate BP/ECG completion endpoint validates ownership and assignment in code
+
 [functions.reschedule-order]
 verify_jwt = false
 # JWT validated in code; Partner capacity is enforced through a server-only locked transaction
