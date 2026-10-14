@@ -152,21 +152,31 @@ const TrackingScreen = () => {
     : (vitalRegex.test(order.test_name || "") || vitalRegex.test(order.order_number || ""));
   const activeWorkflowSteps = isVitalsOrder ? [
     { key: "confirmed", label: "Ordered", icon: CheckCircle },
+    { key: "accepted", label: "Accepted", icon: CheckCircle },
+    { key: "collection", label: "Service Partner Assigned", icon: UserCheck },
     { key: "completed", label: "Checked", icon: CheckCircle },
   ] : workflowSteps;
 
   const completedIndex = isVitalsOrder
-    ? (["completed", "report_ready", "report_delivered", "checked"].includes(order.status?.toLowerCase() || "") ? 1 : 0)
+    ? (["completed", "report_ready", "report_delivered", "checked"].includes(order.status?.toLowerCase() || "")
+      ? 3
+      : ASSIGNED_STATUSES.includes(order.status?.toLowerCase() || "") || !!order.delivery_partner_name
+        ? 2
+        : order.status?.toLowerCase() === "accepted" || order.status?.toLowerCase() === "collection_pending"
+          ? 1
+          : 0)
     : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
   const statusInfo = getDisplayStatus(order.status);
 
   const statusLower = order.status?.toLowerCase() || "";
-  const labAccepted = !isVitalsOrder && isLabAccepted(order.status, order.delivery_partner_name);
+  const labAccepted = isLabAccepted(order.status, order.delivery_partner_name);
   const partnerAssigned =
-    !isVitalsOrder && (ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name);
+    ASSIGNED_STATUSES.includes(statusLower) || !!order.delivery_partner_name;
   const collectionDone =
-    !isVitalsOrder && (COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower));
+    isVitalsOrder
+      ? ["completed", "checked", "report_ready", "report_delivered"].includes(statusLower)
+      : COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower);
   const showCollectionPrompt =
     !isCancelled &&
     statusLower !== "collection_pending" &&
@@ -393,8 +403,14 @@ const TrackingScreen = () => {
                 <FlaskConical className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-foreground">Direct Lab Collection</p>
-                <p className="text-xs text-muted-foreground mt-0.5">A lab professional will collect your sample directly</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {labAccepted ? "Service Partner Assignment Pending" : "Awaiting Lab Acceptance"}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {labAccepted
+                    ? `The lab will assign a ${isVitalsOrder ? "service" : "collection"} partner shortly`
+                    : "Your order will be accepted by the lab shortly"}
+                </p>
               </div>
             </div>
           )}
@@ -488,6 +504,7 @@ const TrackingScreen = () => {
                                 scheduledDate={order.scheduled_date}
                                 scheduledTimeSlot={order.scheduled_time_slot}
                                 partnerPhone={order.delivery_partner_phone}
+                                serviceType={isVitalsOrder ? "vitals" : "blood"}
                                 onConfirmed={(status) => {
                                   queryClient.setQueryData(
                                     ["order", order.id, supabaseUserId],
@@ -499,11 +516,11 @@ const TrackingScreen = () => {
                               />
                             ) : statusLower === "collection_pending" ? (
                               <p className="text-[11px] text-amber-600 mt-0.5 leading-relaxed">
-                                You reported that your sample wasn’t collected. The lab has been notified.
+                                You reported that your {isVitalsOrder ? "service wasn’t completed" : "sample wasn’t collected"}. The lab has been notified.
                               </p>
                             ) : labAccepted ? (
                               <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
-                                The lab is assigning a collection partner for your sample.
+                                The lab is assigning a {isVitalsOrder ? "service" : "collection"} partner.
                               </p>
                             ) : null}
                           </>
@@ -576,7 +593,7 @@ const TrackingScreen = () => {
                             </Button>
                           </div>
                         )}
-                        {step.key === "completed" && isCompleted && !order.report_url && (
+                        {step.key === "completed" && isCompleted && !order.report_url && !isVitalsOrder && (
                           <Button
                             variant="soft"
                             size="sm"
