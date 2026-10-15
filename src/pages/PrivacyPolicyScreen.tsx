@@ -104,7 +104,7 @@ const PrivacyPolicyScreen = () => {
               initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0}}
-              className="p-5 rounded-3xl bg-/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] transition-all duration-300 group"
+              className="p-5 rounded-3xl bg-card/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] transition-all duration-300 group"
             >
               <div className="flex items-start gap-3.5 mb-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center flex-shrink-0 border border-border">

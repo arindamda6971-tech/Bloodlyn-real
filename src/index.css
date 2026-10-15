@@ -339,7 +339,8 @@ input[type="number"] {
 
   /* Smooth image rendering */
   img {
-    content-visibility: auto;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
 }
 
@@ -752,29 +753,24 @@ input[type="number"] {
   }
 
   /* ----------------------------------------------------------------
-   * Extreme List Optimization
-   * Using content-visibility to skip rendering of off-screen items.
-   * This is a "Zero-JS" virtualization technique.
+   * Isolated rendering boundaries
+   * Uses CSS containment so child DOM mutations / layout never leak
+   * outside the card boundary, preventing full-screen layout passes.
    * ---------------------------------------------------------------- */
   .list-virtual > * {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 100px;
+    contain: layout paint;
   }
 
   .list-virtual-lg > * {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 200px;
+    contain: layout paint;
   }
 
   .list-virtual-test > * {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 76px;
+    contain: layout paint;
   }
 
-  /* Off-screen page sections skip rendering work entirely. */
   .section-defer {
-    content-visibility: auto;
-    contain-intrinsic-size: auto 320px;
+    contain: layout paint;
   }
 }
 
@@ -874,15 +870,19 @@ html.native [data-scroll-container] {
   }
 }
 
+/* Page transition duration — overridden by JS for Capacitor native (shorter) */
+:root {
+  --page-transition-duration: 0.35s;
+}
+
 .page-anim-push {
-  animation: pagePushEnter 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePushEnter var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .page-anim-pop {
-  animation: pagePopEnter 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePopEnter var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -909,16 +909,27 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePushExit var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit 0.35s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePopExit var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
-  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+}
+
+/* Pause child animations strictly on outgoing screens during transit so GPU blits a static texture */
+.page-anim-push-exit *,
+.page-anim-pop-exit * {
+  animation-play-state: paused !important;
+}
+
+/* Also pause children on ENTERING screens to avoid marquee/pulse fighting the slide */
+.page-anim-push *,
+.page-anim-pop * {
+  animation-play-state: paused !important;
 }
 
 .page-anim-fade-exit {
@@ -929,8 +940,23 @@ html.native [data-scroll-container] {
 
 /* GPU Hardware-Accelerated Marquee — remains active and rolling smoothly at all times */
 .animate-marquee {
-  will-change: transform;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   contain: layout paint;
 }
+
+/* Compositor protection while page transitions are running */
+html.is-transitioning .animate-marquee,
+html.is-transitioning .animate-pulse {
+  animation-play-state: paused !important;
+}
+
+html.is-transitioning [class*="backdrop-blur"],
+html.is-transitioning .glass-card,
+html.is-transitioning .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+
+

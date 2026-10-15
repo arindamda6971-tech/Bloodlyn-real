@@ -55,6 +55,22 @@ const DataWarmup = () => {
             return data;
           },
         }),
+        queryClient.prefetchQuery({
+          queryKey: ["home-test-packages"],
+          staleTime: 5 * 60 * 1000,
+          queryFn: async () => {
+            const { data, error } = await supabase
+              .from("test_packages")
+              .select(
+                `id, name, price, discount_percent, is_active, diagnostic_center_id,
+                 diagnostic_centers!diagnostic_center_id ( id, name, logo_url )`
+              )
+              .eq("is_active", true)
+              .order("is_popular", { ascending: false });
+            if (error) throw error;
+            return (data as any) || [];
+          },
+        }),
       ]);
     };
 

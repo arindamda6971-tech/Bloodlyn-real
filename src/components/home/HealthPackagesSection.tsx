@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
+import React, { useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Building2, Package, Sparkles, ChevronRight, HeartPulse } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
 type PkgRow = {
@@ -25,16 +26,13 @@ type LabGroup = {
 };
 
 const LabPackageCard = memo(({ lab, idx, onClick }: { lab: LabGroup, idx: number, onClick: () => void }) => (
-  <motion.button
+  <button
     type="button"
     onClick={onClick}
-    initial={{ opacity: 0, y: 8 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0}}
-    className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:scale-[0.98] transition-transform"
+    className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:opacity-95 transition-opacity w-full"
     style={{ contain: 'content' }}
   >
-    <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+    <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
     <div className="relative z-10 flex items-center gap-3">
       <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 overflow-hidden">
         {lab.logo ? (
@@ -78,32 +76,31 @@ const LabPackageCard = memo(({ lab, idx, onClick }: { lab: LabGroup, idx: number
         <ChevronRight className="w-4 h-4 text-muted-foreground mt-0.5 group-active:translate-x-0.5 transition-transform" />
       </div>
     </div>
-  </motion.button>
+  </button>
 ));
 
 LabPackageCard.displayName = "LabPackageCard";
 
+export const fetchHomeTestPackages = async (): Promise<PkgRow[]> => {
+  const { data, error } = await supabase
+    .from("test_packages")
+    .select(
+      `id, name, price, discount_percent, is_active, diagnostic_center_id,
+       diagnostic_centers!diagnostic_center_id ( id, name, logo_url )`
+    )
+    .eq("is_active", true)
+    .order("is_popular", { ascending: false });
+  if (error) throw error;
+  return (data as any) || [];
+};
+
 const HealthPackagesSection = () => {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<PkgRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchPackages = useCallback(async () => {
-    const { data } = await supabase
-      .from("test_packages")
-      .select(
-        `id, name, price, discount_percent, is_active, diagnostic_center_id,
-         diagnostic_centers!diagnostic_center_id ( id, name, logo_url )`
-      )
-      .eq("is_active", true)
-      .order("is_popular", { ascending: false });
-    setRows((data as any) || []);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchPackages();
-  }, [fetchPackages]);
+  const { data: rows = [], isLoading: loading } = useQuery<PkgRow[]>({
+    queryKey: ["home-test-packages"],
+    queryFn: fetchHomeTestPackages,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const labs: LabGroup[] = useMemo(() => {
     const map = new Map<string, LabGroup>();

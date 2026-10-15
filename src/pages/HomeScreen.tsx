@@ -31,7 +31,6 @@ import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import TakeChargeBanner from "@/components/home/TakeChargeBanner";
-import DeferredMount from "@/components/DeferredMount";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
@@ -391,13 +390,13 @@ const HomeScreen = () => {
             <AdvancedSkeleton type="lab-card" count={2} />
           </div>
         ) : diagnosticCenters.length > 0 && (
-          <div className="mt-4 transform-gpu list-virtual-lg" style={{ contain: "content" }}>
+          <div className="mt-4 transform-gpu" style={{ contain: "content" }}>
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
         )}
 
         {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 flex flex-col gap-4 section-defer list-virtual-lg" style={{ contain: "content" }}>
+        <section className="px-4 mt-8 flex flex-col gap-4" style={{ contain: "content" }}>
           <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
           {quickActions.map((action, idx) => (
             <div
@@ -408,7 +407,7 @@ const HomeScreen = () => {
                 else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
                 else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
               }}
-              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:scale-[0.98] transition-transform duration-150"
+              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:opacity-95"
             >
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
@@ -425,11 +424,29 @@ const HomeScreen = () => {
                 </>
               )}
 
-              {/* Background glowing accent */}
+              {/* Background glowing accent - using zero-cost GPU radial gradients instead of 64px Gaussian blurs */}
               {!action.bgImage && (
                 <>
-                  <div className={`absolute -right-10 -bottom-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none z-0`} />
-                  <div className={`absolute -left-10 -top-10 w-40 h-40 ${action.glow} rounded-full blur-3xl pointer-events-none z-0`} />
+                  <div
+                    className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none z-0"
+                    style={{
+                      background: action.gradient.includes("10b981")
+                        ? "radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)"
+                        : action.gradient.includes("f59e0b")
+                        ? "radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)"
+                        : "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)",
+                    }}
+                  />
+                  <div
+                    className="absolute -left-10 -top-10 w-40 h-40 rounded-full pointer-events-none z-0"
+                    style={{
+                      background: action.gradient.includes("10b981")
+                        ? "radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)"
+                        : action.gradient.includes("f59e0b")
+                        ? "radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)"
+                        : "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)",
+                    }}
+                  />
                 </>
               )}
 
@@ -469,16 +486,11 @@ const HomeScreen = () => {
 
 
 
-        {/* Health Packages (real-time, vendor-driven) — mounted after idle so it
-            never competes with the route transition / first paint. */}
-        {(
-          <DeferredMount minHeight={280}>
-            <HealthPackagesSection />
-          </DeferredMount>
-        )}
+        {/* Health Packages (real-time, vendor-driven) */}
+        <HealthPackagesSection />
 
         {/* Doctor Banner */}
-        <section className="px-4 mt-8 mb-8 section-defer">
+        <section className="px-4 mt-8 mb-8">
           <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate transform-gpu rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
             
             {/* Background Image */}
@@ -516,7 +528,7 @@ const HomeScreen = () => {
 
       {/* Contact Bottom Sheet - using native-feel Drawer */}
       <Drawer open={showCallSheet} onOpenChange={setShowCallSheet}>
-        <DrawerContent className="px-6 pb-10 bg-/98 border-border/80 rounded-t-[2.5rem]">
+        <DrawerContent className="px-6 pb-10 bg-background/98 border-border/80 rounded-t-[2.5rem]">
           <DrawerHeader className="px-0 pt-6 text-left">
             <DrawerTitle className="text-xl font-black text-foreground mb-4">Contact BloodLyn</DrawerTitle>
             <DrawerDescription className="sr-only">Choose a method to contact our support team</DrawerDescription>

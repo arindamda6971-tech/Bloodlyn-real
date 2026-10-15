@@ -180,7 +180,6 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
         data-scroll-container=""
         className="h-full overflow-y-auto overscroll-contain"
         style={{
-          transform: "translate3d(0, 0, 0)",
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-y",
         } as React.CSSProperties}

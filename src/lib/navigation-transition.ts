@@ -60,9 +60,29 @@ export function getTransitionClass(isPresent: boolean): string {
 
 /**
  * Returns the exact duration in ms for the active transition.
+ * Shorter on Capacitor (native APK) because Android WebView's compositor is
+ * weaker than desktop Chrome — fewer frames = less chance of jank.
  */
+let _isNative: boolean | null = null;
+function isNativePlatform(): boolean {
+  if (_isNative !== null) return _isNative;
+  try {
+    const isNat = typeof (window as any)?.Capacitor?.isNativePlatform === "function"
+      ? (window as any).Capacitor.isNativePlatform()
+      : false;
+    _isNative = isNat;
+    if (isNat && typeof document !== "undefined") {
+      document.documentElement.style.setProperty("--page-transition-duration", "0.25s");
+      document.documentElement.classList.add("native");
+    }
+    return isNat;
+  } catch {
+    return false;
+  }
+}
+
 export function getTransitionDuration(): number {
-  return 350;
+  return isNativePlatform() ? 250 : 350;
 }
 
 // ==========================================
@@ -93,6 +113,9 @@ function flushSettledCallbacks(): void {
 
 export function beginTransition(): void {
   activeTransitions++;
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.add("is-transitioning");
+  }
   if (watchdogTimer !== null) {
     clearTimeout(watchdogTimer);
   }
@@ -100,6 +123,9 @@ export function beginTransition(): void {
   watchdogTimer = setTimeout(() => {
     if (activeTransitions > 0) {
       activeTransitions = 0;
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.remove("is-transitioning");
+      }
       flushSettledCallbacks();
     }
   }, 1500);
@@ -110,6 +136,9 @@ export function endTransition(): void {
     activeTransitions--;
   }
   if (activeTransitions === 0) {
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("is-transitioning");
+    }
     flushSettledCallbacks();
   }
 }

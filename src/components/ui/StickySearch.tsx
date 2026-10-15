@@ -48,15 +48,17 @@ const StickySearch = ({
     const shell = shellRef.current;
     if (!shell) return;
 
-    let scroller: HTMLElement | Window = window;
-    let node: HTMLElement | null = shell.parentElement;
-    while (node) {
-      const overflowY = getComputedStyle(node).overflowY;
-      if (overflowY === "auto" || overflowY === "scroll") {
-        scroller = node;
-        break;
+    let scroller: HTMLElement | Window = shell.closest<HTMLElement>("[data-scroll-container]") || window;
+    if (scroller === window) {
+      let node: HTMLElement | null = shell.parentElement;
+      while (node) {
+        const overflowY = getComputedStyle(node).overflowY;
+        if (overflowY === "auto" || overflowY === "scroll") {
+          scroller = node;
+          break;
+        }
+        node = node.parentElement;
       }
-      node = node.parentElement;
     }
 
     let on = false;
@@ -91,7 +93,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-/98 rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
+      className={`sticky top-0 z-40 bg-background/98 rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
       data-testid="sticky-search-shell"
     >
       {header && <div className="px-4 pt-2 pb-0">{header}</div>}

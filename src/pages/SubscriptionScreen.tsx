@@ -229,7 +229,7 @@ const SubscriptionScreen = () => {
       <motion.div
         initial={false}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-/98 border-t border-border px-4 py-4 safe-area-bottom"
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-background/98 border-t border-border px-4 py-4 safe-area-bottom"
       >
         <Button
           variant="hero"

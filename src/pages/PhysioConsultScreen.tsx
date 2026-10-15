@@ -265,7 +265,7 @@ const PhysioConsultScreen = () => {
                   className={`py-3.5 px-2 rounded-2xl flex flex-col items-center gap-2.5 border transition-all duration-300 active:scale-95 ${
                     isSelected
                       ? "bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-6px_hsl(var(--primary)/0.5)] scale-[1.02]"
-                      : `${spec.color} bg-/98 hover:border-primary/40 hover:shadow-sm`
+                      : `${spec.color} bg-card/98 hover:border-primary/40 hover:shadow-sm`
                   }`}
                 >
                   <div className={`p-2 rounded-xl ${isSelected ? 'bg-white/20' : 'bg-background/80 shadow-sm'}`}>
@@ -307,7 +307,7 @@ const PhysioConsultScreen = () => {
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0}}
-                  className="p-5 rounded-3xl bg-/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
+                  className="p-5 rounded-3xl bg-card/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
                   {/* Therapist Header */}
                   <div className="flex items-start gap-4 mb-4">

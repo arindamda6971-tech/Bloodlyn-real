@@ -277,7 +277,7 @@ const DoctorConsultScreen = () => {
   return (
     <MobileLayout showNav={false}>
       {/* Dynamic Header */}
-      <div className="sticky top-0 z-50 bg-/98 border-b border-border/40 pb-2">
+      <div className="sticky top-0 z-50 bg-background/98 border-b border-border/40 pb-2">
         <div className="flex items-center justify-between p-4 pb-2">
           <button onClick={handleBack} className="p-2 -ml-2 rounded-xl active:bg-muted/50 transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />

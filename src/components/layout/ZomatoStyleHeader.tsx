@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { isCompleteCollectionAddress, setServicePincode } from "@/lib/service-pincode";
 import { useUserPincode } from "@/hooks/useUserPincode";
+import { whenTransitionSettled } from "@/lib/navigation-transition";
 
 interface ZomatoStyleHeaderProps {
   unreadCount?: number;
@@ -44,10 +45,27 @@ export const ZomatoStyleHeader = ({
   const cartCount = items.length;
   const { pincode } = useUserPincode();
   const [showLocationModal, setShowLocationModal] = useState(false);
-  const [isAddressLoading, setIsAddressLoading] = useState(true);
-  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>({
-    title: "Delivery PIN",
-    line: "Select your service area",
+  const [currentAddress, setCurrentAddress] = useState<{ title: string; line: string }>(() => {
+    try {
+      const cachedTitle = localStorage.getItem("bloodlyn_last_address_title");
+      const cachedLine = localStorage.getItem("bloodlyn_last_address_line");
+      if (cachedTitle && cachedLine) {
+        return { title: cachedTitle, line: cachedLine };
+      }
+    } catch {
+      // ignore storage errors
+    }
+    return { title: "Delivery PIN", line: pincode || "Select your service area" };
+  });
+  const [isAddressLoading, setIsAddressLoading] = useState<boolean>(() => {
+    try {
+      return !(
+        localStorage.getItem("bloodlyn_last_address_title") &&
+        localStorage.getItem("bloodlyn_last_address_line")
+      );
+    } catch {
+      return true;
+    }
   });
   const [savedAddresses, setSavedAddresses] = useState<AddressItem[]>([]);
   const [switching, setSwitching] = useState<string | null>(null);
@@ -74,7 +92,10 @@ export const ZomatoStyleHeader = ({
         const line = [defaultAddr.address_line1, defaultAddr.address_line2, defaultAddr.city, defaultAddr.state, defaultAddr.pincode]
           .filter(Boolean)
           .join(", ");
-        setCurrentAddress({ title, line });
+        setCurrentAddress((prev) => {
+          if (prev.title === title && prev.line === line) return prev;
+          return { title, line };
+        });
         setSelectedId(defaultAddr.id);
         try {
           localStorage.setItem("bloodlyn_last_address_title", title);
@@ -85,7 +106,11 @@ export const ZomatoStyleHeader = ({
       } else {
         setSavedAddresses([]);
         setSelectedId(null);
-        setCurrentAddress({ title: "Delivery PIN", line: pincode || "Select your service area" });
+        const fallbackLine = pincode || "Select your service area";
+        setCurrentAddress((prev) => {
+          if (prev.title === "Delivery PIN" && prev.line === fallbackLine) return prev;
+          return { title: "Delivery PIN", line: fallbackLine };
+        });
       }
 
 
@@ -97,7 +122,9 @@ export const ZomatoStyleHeader = ({
   }, [user?.id, pincode]);
 
   useEffect(() => {
-    void loadAddresses();
+    const unsub = whenTransitionSettled(() => {
+      void loadAddresses();
+    });
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") void loadAddresses();
     };
@@ -105,6 +132,7 @@ export const ZomatoStyleHeader = ({
     window.addEventListener("pageshow", loadAddresses);
     document.addEventListener("visibilitychange", refreshWhenVisible);
     return () => {
+      unsub();
       window.removeEventListener("focus", loadAddresses);
       window.removeEventListener("pageshow", loadAddresses);
       document.removeEventListener("visibilitychange", refreshWhenVisible);

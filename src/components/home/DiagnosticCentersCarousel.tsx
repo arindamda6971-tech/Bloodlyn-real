@@ -69,9 +69,9 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
             src="/lab-bannernew.webp" 
             alt="Lab Background" 
             className="w-full h-full object-cover transform scale-[1.02]"
-            loading="eager"
+            loading={index < 2 ? "eager" : "lazy"}
             decoding="async"
-            fetchPriority="high"
+            fetchPriority={index < 2 ? "high" : "low"}
           />
           <div className="absolute inset-0 bg-black/5" />
 
@@ -79,7 +79,7 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
             type="button"
             variant="secondary"
             size="icon"
-            className="absolute right-3 top-3 z-20 h-10 w-10 rounded-full border border-border/50 bg-card/95 shadow-md backdrop-blur-sm"
+            className="absolute right-3 top-3 z-20 h-10 w-10 rounded-full border border-border/50 bg-card/95 shadow-md"
             aria-label={favorite ? `Remove ${center.name} from saved labs` : `Save ${center.name}`}
             aria-pressed={favorite}
             onClick={(event) => {
@@ -92,7 +92,7 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
           </Button>
           
           {/* Top Left Pill */}
-          <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+          <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
             <BadgeCheck className="w-3.5 h-3.5 text-[#0d9488]" />
             <span className="text-[10px] font-bold text-slate-700 tracking-wide">NABL • CAP Certified</span>
           </div>
@@ -165,8 +165,8 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
 
   return (
     <div className="relative py-6 my-4">
-      {/* Soft depth background for the entire section */}
-      <div className="absolute inset-0 bg-white/70 backdrop-blur-lg -z-10" />
+      {/* Solid background — backdrop-blur is too expensive on Android WebView during transitions */}
+      <div className="absolute inset-0 bg-white -z-10" />
       
       {/* Header */}
       <div className="flex items-center justify-between mb-4 px-6">

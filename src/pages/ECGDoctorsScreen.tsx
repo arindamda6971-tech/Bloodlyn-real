@@ -364,7 +364,7 @@ const ECGDoctorsScreen = () => {
                   initial={false}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0}}
-                  className="p-5 rounded-3xl bg-/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
+                  className="p-5 rounded-3xl bg-card/98 border border-white/40 dark:border-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
                 >
                   {/* Doctor Header */}
                   <div className="flex items-start gap-4 mb-4">

@@ -317,7 +317,7 @@ export default function EmbeddedCallScreen() {
         {callStatus}
       </div>
 
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 sm:gap-6 bg-/98 px-6 py-4 rounded-full border border-gray-800 z-10">
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 sm:gap-6 bg-card/98 px-6 py-4 rounded-full border border-gray-800 z-10">
         <button 
           onClick={toggleMute}
           className={`p-3 sm:p-4 rounded-full transition-colors ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-gray-800 text-white hover:bg-gray-700'}`}

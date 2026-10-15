@@ -33,11 +33,15 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
     Analytics.trackPageView(location.pathname, location.pathname + location.search);
   }, [location.pathname, location.search]);
 
-  // Hold the transition gate while entering page is sliding
+  // Hold the transition gate while entering OR exiting is active
   useEffect(() => {
-    if (isPresent && isAnimating && !gateHeldRef.current) {
+    const isUnderway = (isPresent && isAnimating) || (!isPresent && !isExited);
+    if (isUnderway && !gateHeldRef.current) {
       gateHeldRef.current = true;
       beginTransition();
+    } else if (!isUnderway && gateHeldRef.current) {
+      gateHeldRef.current = false;
+      endTransition();
     }
     return () => {
       if (gateHeldRef.current) {
@@ -45,7 +49,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         endTransition();
       }
     };
-  }, [isPresent, isAnimating]);
+  }, [isPresent, isAnimating, isExited]);
 
   const releaseEnter = () => {
     if (gateHeldRef.current) {
@@ -56,23 +60,19 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   };
 
   const releaseExit = () => {
+    if (gateHeldRef.current) {
+      gateHeldRef.current = false;
+      endTransition();
+    }
     setIsExited(true);
-    const ric = (window as unknown as {
-      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-    }).requestIdleCallback;
-
     if (safeToRemove) {
-      if (ric) {
-        ric(() => safeToRemove(), { timeout: 250 });
-      } else {
-        setTimeout(() => safeToRemove(), 0);
-      }
+      safeToRemove();
     }
   };
 
-  // Fallback timer (duration + 400ms) in case animationend does not fire
+  // Fallback timer (duration + 80ms) in case animationend does not fire
   useEffect(() => {
-    const fallbackMs = getTransitionDuration() + 400;
+    const fallbackMs = getTransitionDuration() + 80;
 
     if (!isPresent) {
       const timer = setTimeout(() => {

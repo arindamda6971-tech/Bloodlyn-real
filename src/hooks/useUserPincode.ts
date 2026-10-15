@@ -10,15 +10,19 @@ import { getServicePincode, SERVICE_PIN_CHANGED_EVENT, setServicePincode } from 
  */
 export const useUserPincode = () => {
   const { user } = useAuth();
-  const [pincode, setPincode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [pincode, setPincode] = useState<string | null>(() =>
+    user?.id ? getServicePincode(user.id) : null
+  );
+  const [loading, setLoading] = useState<boolean>(() =>
+    !(user?.id && getServicePincode(user.id))
+  );
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       if (!user) {
         if (!cancelled) {
-          setPincode(null);
+          setPincode((prev) => (prev !== null ? null : prev));
           setLoading(false);
         }
         return;
@@ -26,7 +30,7 @@ export const useUserPincode = () => {
       const temporaryPincode = getServicePincode(user.id);
       if (temporaryPincode) {
         if (!cancelled) {
-          setPincode(temporaryPincode);
+          setPincode((prev) => (prev !== temporaryPincode ? temporaryPincode : prev));
           setLoading(false);
         }
         return;
@@ -42,7 +46,7 @@ export const useUserPincode = () => {
         if (cancelled) return;
         const pc = data?.[0]?.pincode?.trim() || null;
         const valid = pc && /^\d{6}$/.test(pc) ? pc : null;
-        setPincode(valid);
+        setPincode((prev) => (prev !== valid ? valid : prev));
         if (valid) setServicePincode(user.id, valid);
       } catch {
         if (!cancelled) setPincode(null);
@@ -52,7 +56,9 @@ export const useUserPincode = () => {
     };
     const handlePincodeChanged = (event: Event) => {
       const next = (event as CustomEvent<string>).detail;
-      if (/^\d{6}$/.test(next)) setPincode(next);
+      if (/^\d{6}$/.test(next)) {
+        setPincode((prev) => (prev !== next ? next : prev));
+      }
     };
     window.addEventListener(SERVICE_PIN_CHANGED_EVENT, handlePincodeChanged);
     load();
