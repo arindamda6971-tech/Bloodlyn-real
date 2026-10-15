@@ -64,12 +64,19 @@ Deno.serve(async (req) => {
       .update({ status: "completed", updated_at: new Date().toISOString() })
       .eq("id", order.id)
       .eq("user_id", auth.user.id)
+      .eq("is_escalated", false)
       .in("status", Array.from(ASSIGNED_STATUSES))
       .select("status")
       .maybeSingle();
 
     if (updateError) return json({ error: "Could not complete your order" }, 500);
-    if (!updated) return json({ error: "Order status changed. Please refresh and try again." }, 409);
+    if (!updated) {
+      const { data: current } = await admin.from("orders").select("status")
+        .eq("id", order.id).eq("user_id", auth.user.id).maybeSingle();
+      if (current?.status === "completed") return json({ success: true, status: "completed" });
+      return json({ error: "Order status changed. Please refresh and try again." }, 409);
+    }
+    if (updated.status !== "completed") return json({ error: "This order cannot be completed" }, 409);
 
     return json({ success: true, status: "completed" });
   } catch (error) {
