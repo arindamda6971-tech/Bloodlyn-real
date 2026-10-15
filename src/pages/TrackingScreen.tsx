@@ -154,7 +154,7 @@ const TrackingScreen = () => {
     { key: "confirmed", label: "Ordered", icon: CheckCircle },
     { key: "accepted", label: "Accepted", icon: CheckCircle },
     { key: "collection", label: "Service Partner Assigned", icon: UserCheck },
-    { key: "completed", label: "Checked", icon: CheckCircle },
+    { key: "completed", label: "Completed", icon: CheckCircle },
   ] : workflowSteps;
 
   const completedIndex = isVitalsOrder
@@ -167,7 +167,9 @@ const TrackingScreen = () => {
           : 0)
     : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
-  const statusInfo = getDisplayStatus(order.status);
+  const statusInfo = isVitalsOrder && ["completed", "checked", "report_ready", "report_delivered"].includes(order.status?.toLowerCase() || "")
+    ? { label: "Completed", color: "bg-success text-success-foreground", pulse: false }
+    : getDisplayStatus(order.status);
 
   const statusLower = order.status?.toLowerCase() || "";
   const labAccepted = isLabAccepted(order.status, order.delivery_partner_name);
@@ -368,7 +370,7 @@ const TrackingScreen = () => {
         >
           <div className="flex items-center gap-2 mb-3">
             <Navigation className="w-5 h-5 text-primary" />
-            <h3 className="font-bold text-foreground">Collection Partner</h3>
+            <h3 className="font-bold text-foreground">{isVitalsOrder ? "Service Partner" : "Collection Partner"}</h3>
           </div>
 
           {order.delivery_partner_name ? (
@@ -630,7 +632,7 @@ const TrackingScreen = () => {
             </Button>
           )}
 
-          {!isCancelled && !partnerAssigned && completedIndex < 1 && (
+          {!isCancelled && !partnerAssigned && (isVitalsOrder ? !collectionDone : completedIndex < 1) && (
             <Button
               variant="outline"
               className="w-full h-12 rounded-2xl gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
@@ -640,7 +642,7 @@ const TrackingScreen = () => {
               Cancel or Reschedule Order
             </Button>
           )}
-          {!isCancelled && (partnerAssigned || completedIndex >= 1) && completedIndex < 3 && (
+          {!isCancelled && (partnerAssigned || (!isVitalsOrder && completedIndex >= 1)) && !collectionDone && (
             <p className="text-xs text-muted-foreground text-center px-4">
               Cancellation is unavailable — a collection partner has been assigned to your order.
             </p>

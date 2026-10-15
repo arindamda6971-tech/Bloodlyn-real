@@ -15,60 +15,27 @@ const steps = [
 
 const OrderStatusTimeline = ({ status, className, isBp }: OrderStatusTimelineProps) => {
   if (isBp) {
-    const isDone = ["completed", "report_ready", "report_delivered", "checked"].includes(status?.toLowerCase() || "");
+    const normalized = status?.toLowerCase() || "";
+    const done = ["completed", "report_ready", "report_delivered", "checked"].includes(normalized);
+    const assigned = ["assigned", "partner_assigned", "processing", "out_for_collection"].includes(normalized);
+    const accepted = assigned || ["accepted", "collection_pending"].includes(normalized);
+    const completedThrough = done ? 3 : assigned ? 2 : accepted ? 1 : 0;
+    const vitalSteps = ["Ordered", "Accepted", "Assigned", "Completed"];
     return (
-      <div className={cn("flex items-center justify-between w-full px-2 py-1", className)}>
-        {/* Ordered */}
-        <div className="flex items-center">
-          <div className="flex flex-col items-center relative">
-            <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/30">
-              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+      <div className={cn("flex items-center w-full px-1", className)}>
+        {vitalSteps.map((label, index) => (
+          <div key={label} className="flex items-center flex-1 last:flex-none">
+            <div className="flex flex-col items-center relative">
+              <div className={cn("w-5 h-5 rounded-full flex items-center justify-center transition-all duration-500",
+                normalized === "cancelled" ? "bg-muted text-muted-foreground" : index <= completedThrough ? "bg-success text-success-foreground" : "bg-muted text-muted-foreground")}
+              >
+                {normalized !== "cancelled" && index <= completedThrough ? <Check className="w-3 h-3" strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />}
+              </div>
+              <span className="text-[9px] font-bold absolute -bottom-5 whitespace-nowrap text-muted-foreground">{label}</span>
             </div>
-            <span className="text-[11px] font-black mt-1.5 absolute -bottom-5 text-blue-600 dark:text-blue-400 tracking-wide whitespace-nowrap">
-              Ordered
-            </span>
+            {index < vitalSteps.length - 1 && <div className="flex-1 h-[2px] mx-2 bg-muted overflow-hidden"><div className={cn("h-full bg-success transition-all duration-700", normalized !== "cancelled" && index < completedThrough ? "w-full" : "w-0")} /></div>}
           </div>
-        </div>
-
-        {/* Connecting line ------------------ */}
-        <div className="flex-1 mx-3 flex items-center justify-center relative">
-          <div className="w-full h-[3px] bg-muted/60 rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full bg-gradient-to-r from-blue-600 to-emerald-500 transition-all duration-700 ease-in-out",
-                isDone ? "w-full" : "w-1/2 animate-pulse"
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Checked */}
-        <div className="flex items-center">
-          <div className="flex flex-col items-center relative">
-            <div
-              className={cn(
-                "w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500",
-                isDone
-                  ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-                  : "bg-muted text-muted-foreground/50 ring-2 ring-border/50"
-              )}
-            >
-              {isDone ? (
-                <Check className="w-3.5 h-3.5" strokeWidth={3} />
-              ) : (
-                <div className="w-2 h-2 rounded-full bg-muted-foreground/30" />
-              )}
-            </div>
-            <span
-              className={cn(
-                "text-[11px] font-black mt-1.5 absolute -bottom-5 tracking-wide whitespace-nowrap transition-colors",
-                isDone ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"
-              )}
-            >
-              Checked
-            </span>
-          </div>
-        </div>
+        ))}
       </div>
     );
   }

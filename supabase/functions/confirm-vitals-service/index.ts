@@ -1,10 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.25.76";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2.110.0/cors";
 
 const BodySchema = z.object({ orderId: z.string().uuid() }).strict();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
@@ -47,12 +43,14 @@ Deno.serve(async (req) => {
     if (!order) return json({ error: "Order not found" }, 404);
 
     const status = String(order.status ?? "").toLowerCase();
-    if (status === "completed" || status === "checked") {
-      return json({ success: true, status: "completed", message: "Already completed" });
-    }
     if (status === "cancelled") return json({ error: "This order was cancelled" }, 409);
-    if (!VITALS_PATTERN.test(String(order.test_name ?? ""))) {
+    const rawNames = String(order.test_name ?? "").trim();
+    const names = rawNames.split(rawNames.includes("|") ? "|" : ",").map((name) => name.trim()).filter(Boolean);
+    if (!names.length || !names.every((name) => VITALS_PATTERN.test(name))) {
       return json({ error: "This confirmation is only available for BP and ECG orders" }, 409);
+    }
+    if (status === "completed" || status === "checked") {
+      return json({ success: true, status, message: "Already completed" });
     }
     if (!ASSIGNED_STATUSES.has(status)) {
       return json({ error: "A service partner must be assigned before completion" }, 409);
@@ -66,12 +64,19 @@ Deno.serve(async (req) => {
       .update({ status: "completed", updated_at: new Date().toISOString() })
       .eq("id", order.id)
       .eq("user_id", auth.user.id)
+      .eq("is_escalated", false)
       .in("status", Array.from(ASSIGNED_STATUSES))
       .select("status")
       .maybeSingle();
 
     if (updateError) return json({ error: "Could not complete your order" }, 500);
-    if (!updated) return json({ error: "Order status changed. Please refresh and try again." }, 409);
+    if (!updated) {
+      const { data: current } = await admin.from("orders").select("status")
+        .eq("id", order.id).eq("user_id", auth.user.id).maybeSingle();
+      if (current?.status === "completed") return json({ success: true, status: "completed" });
+      return json({ error: "Order status changed. Please refresh and try again." }, 409);
+    }
+    if (updated.status !== "completed") return json({ error: "This order cannot be completed" }, 409);
 
     return json({ success: true, status: "completed" });
   } catch (error) {

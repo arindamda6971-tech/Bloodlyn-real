@@ -20,7 +20,7 @@ Use the Main App order UUID stored as `external_order_id`, and verify the logged
 
 4. Disable Accept/Assign while its request is pending, surface remote errors, and reconcile the tile from the authoritative saved row. A successful action must never require a second click.
 5. After assignment, show the assigned person and phone. Hide Accept and Assign unless an explicit reassignment feature already exists.
-6. The customer confirms completion in the Main App. BP/ECG finishes as `completed`; there is no report-upload step. Reflect Main App `completed` in Partner Pro through the existing status synchronization path. If Partner Pro lacks inbound status sync, add a secret-authenticated idempotent receiver that accepts only the matching `external_order_id` + `vendor_id` and changes only status to `completed`.
+6. The customer confirms completion in the Main App through the new `confirm-vitals-service` endpoint. BP/ECG finishes as `completed`; there is no report-upload step. This new endpoint saves Main App status only and does not send an event to Partner Pro. Reflect Main App `completed` through the existing authorized server-to-server status read/synchronization path; if absent, add authorized periodic status reconciliation for assigned BP/ECG orders, matching `external_order_id` + `vendor_id`. Change only status, never payment or patient fields, and never resurrect an escalated order. Do not add a receiver without also implementing and verifying its sender. Verify that confirmation reads back in both apps before claiming the integration is complete.
 7. Customer **No** continues through the existing no-show cancellation/escalation receiver. Escalated orders remain cancelled and immutable.
 
 ## Tests
