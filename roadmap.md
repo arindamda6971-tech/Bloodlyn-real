@@ -1,6 +1,7 @@
 # Current work
 
-- [ ] Fix Home-only slide frame drops while preserving other page animations and all existing Edge Functions.
+- [x] Reduce Home-only slide painting, keep Home visible before the exit frame, and pause inactive Home animations; preserve other page animations and all Edge Functions (8 focused tests and preview build passed).
+- [ ] Verify Home → page → Home frame pacing on a signed-in device (blocked: externally managed authentication provides no test session; isolated browser animation pause/resume checks passed).
 
 - [x] Add BP/ECG accept → service-partner assignment → customer Yes/No → completion tracking without changing blood-test workflows.
 - [ ] Apply BP/ECG Accept/Assign and completion synchronization in Partner Pro (blocked: separate project requires `PARTNER_BP_ECG_ASSIGNMENT_PROMPT.md`).
