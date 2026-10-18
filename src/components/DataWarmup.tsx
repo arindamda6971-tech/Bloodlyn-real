@@ -77,9 +77,9 @@ const DataWarmup = () => {
     const ric =
       (window as unknown as {
         requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      }).requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 800));
+      }).requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1400));
 
-    const handle = ric(() => void warm(), { timeout: 2500 });
+    const handle = ric(() => void warm(), { timeout: 4000 });
 
     return () => {
       cancelled = true;
