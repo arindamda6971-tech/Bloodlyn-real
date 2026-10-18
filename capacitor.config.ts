@@ -36,6 +36,11 @@ const config: CapacitorConfig = {
       layoutName: "launch_screen",
       useDialog: false,
     },
+    LocalNotifications: {
+      smallIcon: "ic_stat_bloodlyn",
+      iconColor: "#4AB3F4",
+      sound: "beep.wav",
+    },
   },
 };
 

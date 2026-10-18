@@ -75,10 +75,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         (payload) => {
           const order = payload.new as { order_number: string; status: string };
           addNotification({
-            title: "Test Booked Successfully!",
-            message: `Your order #${order.order_number || "N/A"} has been placed.`,
+            title: "Booking Confirmed! 🩸",
+            message: "Home sample collection scheduled. A certified phlebotomist will arrive at your address.",
             type: "order",
-            data: { orderId: (payload.new as { id: string }).id },
+            data: { orderId: (payload.new as { id: string }).id, orderNumber: order.order_number },
           });
         }
       )
@@ -95,29 +95,35 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           const oldStatus = (payload.old as { status: string })?.status;
           
           if (order.status !== oldStatus) {
+            let title = "Order Update";
             let message = "";
             switch (order.status) {
               case "confirmed":
-                message = "Your sample collection has been confirmed.";
+                title = "Phlebotomist Assigned 🩺";
+                message = "Your sample collection slot is confirmed. Tap to track live status.";
                 break;
               case "collected":
-                message = "Your sample has been collected successfully.";
+                title = "Sample Collected Safely 🧪";
+                message = "Your sample is on the way to the NABL-certified diagnostic lab.";
                 break;
               case "processing":
-                message = "Your sample is being processed at the lab.";
+                title = "Lab Testing in Progress 🔬";
+                message = "The diagnostic center is processing your sample. Accurate report in progress.";
                 break;
               case "completed":
-                message = "Your test report is ready!";
+                title = "Diagnostic Report Ready! 📄";
+                message = "Your verified test report is ready. Tap to view and download.";
                 break;
               default:
-                message = `Order status updated to ${order.status}`;
+                title = "Booking Status Updated";
+                message = `Your booking status is now ${order.status}.`;
             }
             
             addNotification({
-              title: "Order Update",
-              message: `Order #${order.order_number}: ${message}`,
+              title,
+              message,
               type: "order",
-              data: { orderId: (payload.new as { id: string }).id },
+              data: { orderId: (payload.new as { id: string }).id, orderNumber: order.order_number },
             });
           }
         }
@@ -202,6 +208,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 id: Math.floor(Math.random() * 1000000),
                 schedule: { at: new Date(Date.now() + 1000) },
                 sound: 'beep.wav',
+                smallIcon: 'ic_stat_bloodlyn',
+                iconColor: '#4AB3F4',
                 attachments: [],
                 actionTypeId: '',
                 extra: notification.data
