@@ -350,39 +350,29 @@ const HomeScreen = () => {
 
         {/* Trust & Quality Assurance Bar (Static, Zero-Lag, Seamless Pure White Card) */}
         <div className="px-4 mt-3">
-          <div className="flex items-center justify-between py-3 px-3.5 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="grid grid-cols-3 gap-1 py-3.5 px-2.5 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-8.5 h-8.5 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5 shadow-sm">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">100% NABL</p>
-                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Certified Labs</p>
-              </div>
+              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">100% NABL</p>
+              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Certified Labs</p>
             </div>
 
-            <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
-
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="flex flex-col items-center text-center border-x border-slate-100/70 px-1">
+              <div className="w-8.5 h-8.5 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5 shadow-sm">
                 <Clock className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">Home Pickup</p>
-                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Safe & On-Time</p>
-              </div>
+              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">Home Pickup</p>
+              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Safe & On-Time</p>
             </div>
 
-            <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
-
-            <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-8.5 h-8.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5 shadow-sm">
                 <Award className="w-4 h-4" />
               </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">Fast Reports</p>
-                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Digital in 6-24h</p>
-              </div>
+              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">Fast Reports</p>
+              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Digital in 6-24h</p>
             </div>
           </div>
         </div>
