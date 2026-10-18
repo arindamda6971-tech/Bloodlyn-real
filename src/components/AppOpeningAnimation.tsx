@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AppOpeningAnimationProps {
@@ -13,25 +13,27 @@ interface AppOpeningAnimationProps {
  */
 export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
   onComplete,
-  durationMs = 1300,
+  durationMs = 1150,
 }) => {
   const [isVisible, setIsVisible] = useState(true);
-  const [progress, setProgress] = useState(20);
+  const [progress, setProgress] = useState(25);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    // Smooth, lightweight progress
+    // 1. Kick off progress bar glide
     const progressTimer = setTimeout(() => {
       setProgress(100);
-    }, 100);
+    }, 60);
 
-    // Trigger smooth fade exit before complete
+    // 2. Start gentle fade-out transition
     const exitTimer = setTimeout(() => {
       setIsVisible(false);
-    }, durationMs - 350);
+    }, Math.max(0, durationMs - 320));
 
-    // Call onComplete when fully dissolved
+    // 3. Mark complete and clean up
     const completeTimer = setTimeout(() => {
-      onComplete?.();
+      onCompleteRef.current?.();
     }, durationMs);
 
     return () => {
@@ -39,7 +41,8 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
       clearTimeout(exitTimer);
       clearTimeout(completeTimer);
     };
-  }, [durationMs, onComplete]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [durationMs]); // Never depend on onComplete reference so parent re-renders cannot reset timers!
 
   return (
     <AnimatePresence>
@@ -50,7 +53,7 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
           exit={{ 
             opacity: 0, 
             scale: 1.02,
-            transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } 
+            transition: { duration: 0.32, ease: [0.16, 1, 0.3, 1] } 
           }}
           style={{ willChange: "opacity, transform" }}
           className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-between py-16 px-6 w-full md:max-w-[430px] mx-auto select-none pointer-events-auto"
@@ -79,10 +82,10 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
 
               {/* Seamless Transparent Brand Emblem */}
               <motion.div
-                initial={{ scale: 0.85, opacity: 0 }}
+                initial={{ scale: 0.88, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ 
-                  duration: 0.45, 
+                  duration: 0.42, 
                   ease: [0.16, 1, 0.3, 1] 
                 }}
                 style={{ willChange: "transform, opacity" }}
@@ -108,7 +111,7 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
               animate={{ y: 0, opacity: 1 }}
               transition={{ 
                 duration: 0.4, 
-                delay: 0.15, 
+                delay: 0.12, 
                 ease: [0.16, 1, 0.3, 1] 
               }}
               style={{ willChange: "transform, opacity" }}
@@ -125,7 +128,7 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
               animate={{ y: 0, opacity: 1 }}
               transition={{ 
                 duration: 0.4, 
-                delay: 0.25, 
+                delay: 0.22, 
                 ease: [0.16, 1, 0.3, 1] 
               }}
               style={{ willChange: "transform, opacity" }}
@@ -141,16 +144,16 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.42 }}
+            transition={{ duration: 0.4, delay: 0.32 }}
             className="relative z-10 flex flex-col items-center"
           >
             {/* Sleek minimal pulse loader */}
             <div className="w-28 h-[3px] bg-slate-100 rounded-full overflow-hidden relative mb-2.5">
               <motion.div
                 className="h-full bg-gradient-to-r from-[#38bdf8] to-[#0284c7] rounded-full"
-                initial={{ width: "15%" }}
+                initial={{ width: "20%" }}
                 animate={{ width: `${progress}%` }}
-                transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               />
             </div>
             <span className="text-[11px] font-medium text-slate-400 tracking-wide">

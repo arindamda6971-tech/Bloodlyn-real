@@ -27,7 +27,7 @@ import AppOpeningAnimation from "@/components/AppOpeningAnimation";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -176,7 +176,17 @@ const AnimatedRoutes = () => {
 
   const isHome = location.pathname === "/home";
   const [hasVisitedHome, setHasVisitedHome] = useState(isHome);
-  const [showAppSplash, setShowAppSplash] = useState(true);
+  const [showAppSplash, setShowAppSplash] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !sessionStorage.getItem("bl_opening_shown");
+  });
+
+  const handleSplashComplete = useCallback(() => {
+    try {
+      sessionStorage.setItem("bl_opening_shown", "1");
+    } catch {}
+    setShowAppSplash(false);
+  }, []);
 
   useEffect(() => {
     if (user && isHome && !hasVisitedHome) {
@@ -190,7 +200,7 @@ const AnimatedRoutes = () => {
   return (
     <>
       {showAppSplash && (
-        <AppOpeningAnimation onComplete={() => setShowAppSplash(false)} />
+        <AppOpeningAnimation onComplete={handleSplashComplete} />
       )}
       {hasVisitedHome && <HomeStackLayer active={isHome} />}
       <AnimatePresence initial={false}>
