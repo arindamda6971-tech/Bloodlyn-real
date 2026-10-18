@@ -21,14 +21,14 @@ const ICONS: Record<Notification["type"], any> = {
   order: ShoppingBag,
   report: FileText,
   promo: Gift,
-  system: Info,
+  system: Bell,
 };
 
 const COLOR_CLASSES: Record<Notification["type"], string> = {
   order: "from-primary/20 to-primary/5 text-primary ring-primary/20",
   report: "from-success/20 to-success/5 text-success ring-success/20",
   promo: "from-warning/20 to-warning/5 text-warning ring-warning/20",
-  system: "from-muted to-muted/30 text-muted-foreground ring-border",
+  system: "from-primary/15 to-primary/5 text-primary ring-primary/20",
 };
 
 const groupKey = (iso: string) => {

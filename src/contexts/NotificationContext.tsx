@@ -209,6 +209,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                 schedule: { at: new Date(Date.now() + 1000) },
                 sound: 'beep.wav',
                 smallIcon: 'ic_stat_bloodlyn',
+                largeIcon: 'splash_icon',
                 iconColor: '#4AB3F4',
                 attachments: [],
                 actionTypeId: '',
