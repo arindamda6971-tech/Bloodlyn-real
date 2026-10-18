@@ -72,7 +72,7 @@ function isNativePlatform(): boolean {
       : false;
     _isNative = isNat;
     if (isNat && typeof document !== "undefined") {
-      document.documentElement.style.setProperty("--page-transition-duration", "0.25s");
+      document.documentElement.style.setProperty("--page-transition-duration", "0.45s");
       document.documentElement.classList.add("native");
     }
     return isNat;
@@ -82,7 +82,7 @@ function isNativePlatform(): boolean {
 }
 
 export function getTransitionDuration(): number {
-  return isNativePlatform() ? 250 : 350;
+  return 450;
 }
 
 // ==========================================

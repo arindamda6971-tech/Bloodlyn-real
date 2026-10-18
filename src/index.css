@@ -870,25 +870,25 @@ html.native [data-scroll-container] {
   }
 }
 
-/* Page transition duration — overridden by JS for Capacitor native (shorter) */
+/* Page transition duration — calibrated for silky smooth native feel */
 :root {
-  --page-transition-duration: 0.35s;
+  --page-transition-duration: 0.45s;
 }
 
 .page-anim-push {
-  animation: pagePushEnter var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePushEnter var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop {
-  animation: pagePopEnter var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePopEnter var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-fade {
-  animation: pageFadeEnter 0.25s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pageFadeEnter 0.35s cubic-bezier(0.25, 1, 0.35, 1) forwards;
   will-change: opacity;
   backface-visibility: hidden;
 }
@@ -909,13 +909,13 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePushExit var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit var(--page-transition-duration) cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
+  animation: pagePopExit var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
