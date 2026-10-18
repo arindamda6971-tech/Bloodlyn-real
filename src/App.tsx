@@ -27,7 +27,7 @@ import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
-import { useEffect, useMemo, useRef, useState, memo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -123,7 +123,7 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
   const [stayVisibleWhileExiting, setStayVisibleWhileExiting] = useState(false);
   const prevActiveRef = useRef(active);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const wasActive = prevActiveRef.current;
     prevActiveRef.current = active;
 
@@ -143,7 +143,8 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
 
   return (
     <div
-      className="w-full h-full absolute top-0 left-0 bg-background overflow-hidden"
+      className="home-stack w-full h-full absolute top-0 left-0 bg-background overflow-hidden"
+      data-home-active={active ? "true" : "false"}
       style={{
         zIndex: 1,
         visibility: isVisible ? "visible" : "hidden",
