@@ -12,6 +12,13 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
 
+    // Keep notification icons and splash resources from being stripped by R8 / Proguard
+    public static final int[] KEPT_RESOURCES = new int[] {
+        R.drawable.ic_stat_bloodlyn,
+        R.drawable.splash_icon,
+        R.drawable.splash
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

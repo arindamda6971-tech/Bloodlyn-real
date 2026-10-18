@@ -205,6 +205,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
               {
                 title: notification.title,
                 body: notification.message,
+                largeBody: notification.message,
+                summaryText: 'BloodLyn',
                 id: Math.floor(Math.random() * 1000000),
                 schedule: { at: new Date(Date.now() + 1000) },
                 sound: 'beep.wav',
