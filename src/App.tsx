@@ -23,6 +23,7 @@ import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
 import OfflineBanner from "@/components/OfflineBanner";
+import AppOpeningAnimation from "@/components/AppOpeningAnimation";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
@@ -175,6 +176,7 @@ const AnimatedRoutes = () => {
 
   const isHome = location.pathname === "/home";
   const [hasVisitedHome, setHasVisitedHome] = useState(isHome);
+  const [showAppSplash, setShowAppSplash] = useState(true);
 
   useEffect(() => {
     if (user && isHome && !hasVisitedHome) {
@@ -187,6 +189,9 @@ const AnimatedRoutes = () => {
 
   return (
     <>
+      {showAppSplash && (
+        <AppOpeningAnimation onComplete={() => setShowAppSplash(false)} />
+      )}
       {hasVisitedHome && <HomeStackLayer active={isHome} />}
       <AnimatePresence initial={false}>
         {!isHome && (
