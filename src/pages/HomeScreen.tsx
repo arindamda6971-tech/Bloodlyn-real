@@ -167,12 +167,7 @@ const HomeScreen = () => {
     }));
   }, [centersData]);
 
-  const StaticBackground = useMemo(() => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-      <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-primary/5 via-primary/5 to-transparent" />
-      <div className="absolute top-[-50px] left-[-50px] w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)" }} />
-    </div>
-  ), []);
+  const StaticBackground = null;
 
   // Compute the intelligent search term (dictionary-mapped)
   const backendSearchTerm = useMemo(() => {
@@ -290,7 +285,7 @@ const HomeScreen = () => {
           placeholder="Search health tests..."
           results={
             showSearchResults && searchQuery.trim() ? (
-              <div className="bg-card border border-border/50 shadow-2xl shadow-black/5 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+              <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
                 {searchResults.length > 0 ? (
                   <div className="flex flex-col">
                     {searchResults.map((test) => {
@@ -353,11 +348,11 @@ const HomeScreen = () => {
 
         <TakeChargeBanner />
 
-        {/* Trust & Quality Assurance Bar (Static, Zero-Lag, Pure White Card) */}
+        {/* Trust & Quality Assurance Bar (Static, Zero-Lag, Seamless Pure White Card) */}
         <div className="px-4 mt-3">
-          <div className="flex items-center justify-between py-3 px-3.5 rounded-2xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-between py-3 px-3.5 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -369,7 +364,7 @@ const HomeScreen = () => {
             <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
 
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -381,7 +376,7 @@ const HomeScreen = () => {
             <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
 
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100/80">
+              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                 <Award className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -499,7 +494,7 @@ const HomeScreen = () => {
 
         {/* Doctor Banner */}
         <section className="home-render-section px-4 mt-8 mb-8">
-          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
+          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px]">
             
             {/* Background Image */}
             <OptimizedImage

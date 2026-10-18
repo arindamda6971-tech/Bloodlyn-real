@@ -57,7 +57,7 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
       className="flex-shrink-0 w-[280px] snap-start"
     >
       <div
-        className={`relative rounded-[24px] overflow-hidden border border-border/40 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
+        className={`relative rounded-[24px] overflow-hidden bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
         style={{
           touchAction: 'pan-x pan-y',
           contain: 'paint' // Native-level rendering isolation

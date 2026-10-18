@@ -93,7 +93,7 @@ const StickySearch = ({
   return (
     <div
       ref={shellRef}
-      className={`sticky top-0 z-40 bg-background/98 rounded-b-2xl transition-shadow duration-200 overflow-visible ${className}`}
+      className={`sticky top-0 z-40 bg-background/95 backdrop-blur-sm transition-shadow duration-200 overflow-visible ${className}`}
       data-testid="sticky-search-shell"
     >
       {header && <div className="px-4 pt-2 pb-0">{header}</div>}
@@ -108,7 +108,7 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className="w-full h-12 rounded-2xl bg-muted/60 border-none pl-11 pr-11 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50 shadow-none"
+            className="w-full h-12 rounded-2xl bg-white border-0 shadow-[0_2px_12px_rgba(0,0,0,0.04)] pl-11 pr-11 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50"
           />
           {value && (
             <button

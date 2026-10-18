@@ -23,7 +23,6 @@ import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
 import OfflineBanner from "@/components/OfflineBanner";
-import PerformanceMonitor from "@/components/PerformanceMonitor";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
@@ -332,7 +331,6 @@ const App = () => {
                     <Toaster />
                     <Sonner />
                     <OfflineBanner />
-                    <PerformanceMonitor />
                       <BrowserRouter>
                         <IncomingCallListener />
                         <DoctorAvailabilityListener />

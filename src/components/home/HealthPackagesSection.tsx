@@ -29,7 +29,7 @@ const LabPackageCard = memo(({ lab, idx, onClick }: { lab: LabGroup, idx: number
   <button
     type="button"
     onClick={onClick}
-    className="group relative overflow-hidden text-left bg-card border border-border/50 rounded-3xl p-4 shadow-sm active:opacity-95 transition-opacity w-full"
+    className="group relative overflow-hidden text-left bg-white rounded-3xl p-4 shadow-[0_4px_20px_rgba(0,0,0,0.05)] active:opacity-95 transition-opacity w-full"
     style={{ contain: 'content' }}
   >
     <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%)" }} />
