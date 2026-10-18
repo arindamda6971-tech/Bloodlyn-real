@@ -19,6 +19,17 @@ export const AppOpeningAnimation: React.FC<AppOpeningAnimationProps> = ({
   const [progress, setProgress] = useState(15);
 
   useEffect(() => {
+    // Pre-decode critical home images in background worker threads without UI interruption
+    try {
+      ["/hero-banner.webp", "/lab-bannernew.webp"].forEach((src) => {
+        const img = new Image();
+        img.src = src;
+        img.decode?.().catch(() => {});
+      });
+    } catch {
+      /* ignore */
+    }
+
     // Smooth progress animation from 15% to 100%
     const progressTimer = setTimeout(() => {
       setProgress(100);
