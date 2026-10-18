@@ -19,6 +19,9 @@ import {
   Plus,
   Phone,
   MessageCircle,
+  ShieldCheck,
+  Clock,
+  Award,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -350,37 +353,42 @@ const HomeScreen = () => {
 
         <TakeChargeBanner />
 
-        {/* Running Features Marquee */}
-        <div className="mt-4 flex overflow-hidden whitespace-nowrap bg-primary/5 py-3 border-y border-primary/10 relative">
-          {/* Gradient masks for smooth fade effect at edges */}
-          <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-background to-transparent z-10" />
-          <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent z-10" />
-          
-          <div className="animate-marquee inline-flex gap-8 px-4 items-center min-w-max">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="flex gap-8 items-center shrink-0">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#ef4444] animate-pulse" />
-                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">ECG at Home</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#3b82f6] animate-pulse" />
-                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Pressure Check</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
-                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Blood Test Booking</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#a855f7] animate-pulse" />
-                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">Doctor Consultations</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse" />
-                  <span className="text-[12px] font-black text-foreground/80 uppercase tracking-widest">NABL Certified Labs</span>
-                </div>
+        {/* Trust & Quality Assurance Bar (Static, Zero-Lag, Pure White Card) */}
+        <div className="px-4 mt-3">
+          <div className="flex items-center justify-between py-3 px-3.5 rounded-2xl bg-white border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.05)]">
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100/80">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-            ))}
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">100% NABL</p>
+                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Certified Labs</p>
+              </div>
+            </div>
+
+            <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
+
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100/80">
+                <Clock className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">Home Pickup</p>
+                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Safe & On-Time</p>
+              </div>
+            </div>
+
+            <div className="h-7 w-px bg-slate-100 mx-2 shrink-0" />
+
+            <div className="flex items-center gap-2.5 flex-1 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 border border-amber-100/80">
+                <Award className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold text-slate-800 leading-none truncate">Fast Reports</p>
+                <p className="text-[9px] text-slate-500 mt-1 truncate font-medium">Digital in 6-24h</p>
+              </div>
+            </div>
           </div>
         </div>
 
