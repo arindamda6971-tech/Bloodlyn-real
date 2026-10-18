@@ -1,5 +1,7 @@
 # Project architecture rules
 
+- Keep the cached Home viewport on one stable compositor layer, pause its CSS animations while inactive or transitioning, and skip offscreen section painting; preserve visibility before paint so Home navigation does not flash or rasterize every card during a slide.
+
 - Complete BP/ECG orders through a dedicated authenticated confirmation endpoint after service-partner assignment, because on-site vitals need no report-upload stage and blood-test confirmation must remain unchanged.
 
 - Route no-show reports through a separate authenticated endpoint and row-locked transaction with a durable Partner delivery queue, because existing confirmation functions and financial workflows must remain unchanged.

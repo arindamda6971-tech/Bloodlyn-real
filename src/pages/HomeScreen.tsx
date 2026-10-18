@@ -165,7 +165,7 @@ const HomeScreen = () => {
   }, [centersData]);
 
   const StaticBackground = useMemo(() => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" style={{ transform: "translateZ(0)" }}>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
       <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-primary/5 via-primary/5 to-transparent" />
       <div className="absolute top-[-50px] left-[-50px] w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 70%)" }} />
     </div>
@@ -390,7 +390,7 @@ const HomeScreen = () => {
             <AdvancedSkeleton type="lab-card" count={2} />
           </div>
         ) : diagnosticCenters.length > 0 && (
-          <div className="mt-4 transform-gpu" style={{ contain: "content" }}>
+          <div className="home-render-section mt-4" style={{ contain: "content" }}>
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
         )}
@@ -407,7 +407,7 @@ const HomeScreen = () => {
                 else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
                 else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
               }}
-              className="w-full relative overflow-hidden isolate transform-gpu bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:opacity-95"
+              className="home-render-section w-full relative overflow-hidden isolate bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:opacity-95"
             >
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
@@ -490,8 +490,8 @@ const HomeScreen = () => {
         <HealthPackagesSection />
 
         {/* Doctor Banner */}
-        <section className="px-4 mt-8 mb-8">
-          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate transform-gpu rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
+        <section className="home-render-section px-4 mt-8 mb-8">
+          <button onClick={() => navigate('/categories')} className="w-full relative overflow-hidden isolate rounded-3xl group active:scale-[0.98] transition-transform shadow-xl shadow-black/5 h-[200px] border border-border/50">
             
             {/* Background Image */}
             <OptimizedImage

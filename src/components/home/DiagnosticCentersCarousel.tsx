@@ -192,9 +192,6 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
           scrollPaddingLeft: '1.5rem',
           scrollPaddingRight: '1.5rem',
           touchAction: 'pan-x pan-y',
-          // Force layers for the entire carousel container
-          transform: 'translateZ(0)',
-          willChange: 'scroll-position'
         }}
       >
         {sortedCenters.map((center, index) => (

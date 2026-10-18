@@ -11,8 +11,6 @@ const TakeChargeBanner = () => {
           fetchPriority="high"
           style={{ 
             imageRendering: '-webkit-optimize-contrast',
-            transform: 'translateZ(0)',
-            backfaceVisibility: 'hidden'
           }}
         />
       </div>

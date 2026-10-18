@@ -938,7 +938,25 @@ html.native [data-scroll-container] {
   backface-visibility: hidden;
 }
 
-/* GPU Hardware-Accelerated Marquee — remains active and rolling smoothly at all times */
+/* Keep the cached Home viewport composited instead of promoting every card. */
+.home-stack {
+  transform: translateZ(0);
+}
+
+/* Hidden Home remains mounted; its infinite animations must not run off-route. */
+.home-stack[data-home-active="false"] *,
+html.is-transitioning .home-stack * {
+  animation-play-state: paused !important;
+}
+
+/* Skip offscreen card painting without unmounting data, controls or scroll state.
+   Remember the measured size after the first render to preserve scroll geometry. */
+.home-stack .home-render-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}
+
+/* GPU Hardware-Accelerated Marquee — runs while Home is active and settled */
 .animate-marquee {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
