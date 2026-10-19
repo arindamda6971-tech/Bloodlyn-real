@@ -222,7 +222,7 @@ export const ZomatoStyleHeader = ({
                <div className="h-6 w-32 bg-muted/60 rounded animate-pulse" />
              ) : (
                <>
-                 <h2 className="text-[22px] font-black text-foreground tracking-tight truncate leading-none">
+                 <h2 className="text-[18px] sm:text-[22px] font-black text-foreground tracking-tight truncate leading-none">
                    {addressTitle}
                  </h2>
                  <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />

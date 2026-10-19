@@ -350,29 +350,29 @@ const HomeScreen = () => {
 
         {/* Trust & Quality Assurance Bar (Static, Zero-Lag, Seamless Pure White Card) */}
         <div className="px-4 mt-3">
-          <div className="grid grid-cols-3 gap-1 py-3.5 px-2.5 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-8.5 h-8.5 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1.5 shadow-sm">
+          <div className="grid grid-cols-3 gap-1 py-3 px-1.5 rounded-2xl bg-white shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+            <div className="flex flex-col items-center text-center px-1">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-1 shadow-sm">
                 <ShieldCheck className="w-4 h-4" />
               </div>
-              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">100% NABL</p>
-              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Certified Labs</p>
+              <p className="text-[11px] sm:text-[11.5px] font-bold text-slate-800 leading-tight truncate max-w-full">100% NABL</p>
+              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-medium mt-0.5 leading-tight truncate max-w-full">Certified Labs</p>
             </div>
 
             <div className="flex flex-col items-center text-center border-x border-slate-100/70 px-1">
-              <div className="w-8.5 h-8.5 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1.5 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-1 shadow-sm">
                 <Clock className="w-4 h-4" />
               </div>
-              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">Home Pickup</p>
-              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Safe & On-Time</p>
+              <p className="text-[11px] sm:text-[11.5px] font-bold text-slate-800 leading-tight truncate max-w-full">Home Pickup</p>
+              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-medium mt-0.5 leading-tight truncate max-w-full">Safe & On-Time</p>
             </div>
 
-            <div className="flex flex-col items-center text-center">
-              <div className="w-8.5 h-8.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1.5 shadow-sm">
+            <div className="flex flex-col items-center text-center px-1">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-1 shadow-sm">
                 <Award className="w-4 h-4" />
               </div>
-              <p className="text-[11.5px] font-bold text-slate-800 leading-tight">Fast Reports</p>
-              <p className="text-[10px] text-slate-500 font-medium mt-0.5 leading-tight">Digital in 6-24h</p>
+              <p className="text-[11px] sm:text-[11.5px] font-bold text-slate-800 leading-tight truncate max-w-full">Fast Reports</p>
+              <p className="text-[9.5px] sm:text-[10px] text-slate-500 font-medium mt-0.5 leading-tight truncate max-w-full">Digital in 6-24h</p>
             </div>
           </div>
         </div>
@@ -405,14 +405,14 @@ const HomeScreen = () => {
               {/* Custom background image for specific tiles */}
               {action.bgImage && (
                 <>
-                  <div className="absolute right-0 top-0 bottom-0 w-[45%] z-0">
+                  <div className="absolute right-0 top-0 bottom-0 w-[40%] sm:w-[45%] z-0">
                     <OptimizedImage
                       src={action.bgImage}
                       alt="Background"
                       containerClassName="absolute inset-0 w-full h-full"
                       className="w-full h-full object-cover object-center"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-white via-transparent to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
                   </div>
                 </>
               )}
@@ -443,14 +443,14 @@ const HomeScreen = () => {
                 </>
               )}
 
-              <div className="relative z-10">
-                <div className="flex items-start justify-between mb-3">
+              <div className="relative z-10 max-w-[62%] sm:max-w-[70%]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
                   <div className="flex items-center">
-                    <h3 className="text-foreground text-[16px] font-black tracking-tight leading-tight">
+                    <h3 className="text-foreground text-[15px] sm:text-[16px] font-black tracking-tight leading-tight">
                       {action.label}
                     </h3>
                   </div>
-                  <span className={`${action.badgeColor} border text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-md shrink-0`}>
+                  <span className={`${action.badgeColor} border text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md self-start sm:self-auto shrink-0`}>
                     {action.badge}
                   </span>
                 </div>

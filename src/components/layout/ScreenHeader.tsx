@@ -34,40 +34,34 @@ const ScreenHeader = ({
 
   return (
     <motion.header
-      initial={{ y: -15, opacity: 0 }}
+      initial={{ y: -10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className={`sticky top-0 z-50 px-4 py-4 transition-colors duration-300 ${
+      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+      className={`sticky top-0 z-40 px-3 sm:px-4 h-14 flex items-center transition-colors duration-200 ${
         transparent
           ? "bg-transparent"
-          : "bg-background border-none shadow-none rounded-b-2xl"
+          : "bg-background/95 backdrop-blur-md border-b border-border/40"
       }`}
-      style={{
-        paddingTop: "calc(var(--sat) + 16px)",
-        height: "calc(var(--sat) + 64px)",
-        display: "flex",
-        alignItems: "center"
-      }}
     >
       <div className="flex items-center justify-between w-full">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           {showBack && (
             <button
               onClick={handleBack}
-              className="w-10 h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors shrink-0"
               aria-label="Go back"
             >
               <ArrowLeft className="w-5 h-5 text-foreground" />
             </button>
           )}
-          <h1 className="text-xl font-bold text-foreground truncate pt-0.5">
+          <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
             {title}
           </h1>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {rightAction}
           {showMenu && (
-            <button className="w-10 h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors">
+            <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-full hover:bg-accent flex items-center justify-center transition-colors">
               <MoreVertical className="w-5 h-5 text-foreground" />
             </button>
           )}

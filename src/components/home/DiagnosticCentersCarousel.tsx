@@ -54,7 +54,7 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
           .maybeSingle();
         return data;
       }}
-      className="flex-shrink-0 w-[280px] snap-start"
+      className="flex-shrink-0 w-[78vw] sm:w-[280px] max-w-[290px] snap-start"
     >
       <div
         className={`relative rounded-[24px] overflow-hidden bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
@@ -169,7 +169,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
       <div className="absolute inset-0 bg-white -z-10" />
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 px-6">
+      <div className="flex items-center justify-between mb-4 px-4 sm:px-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Building2 className="w-4 h-4 text-primary" />
@@ -186,11 +186,11 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
 
       {/* Horizontal Scroll List (Native feel) */}
       <div
-        className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-6 gap-4"
+        className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-4 sm:px-6 gap-3 sm:gap-4"
         style={{
           WebkitOverflowScrolling: 'touch',
-          scrollPaddingLeft: '1.5rem',
-          scrollPaddingRight: '1.5rem',
+          scrollPaddingLeft: '1rem',
+          scrollPaddingRight: '1rem',
           touchAction: 'pan-x pan-y',
         }}
       >

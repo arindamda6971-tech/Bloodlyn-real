@@ -515,7 +515,7 @@ input[type="number"] {
 
   /* Header styles */
   .screen-header {
-    @apply sticky top-0 z-50 bg-/98 border-b border-border/40 px-4 pb-3;
+    @apply sticky top-0 z-50 bg-background/98 border-b border-border/40 px-4 pb-3;
     padding-top: calc(var(--sat) + 8px);
   }
 

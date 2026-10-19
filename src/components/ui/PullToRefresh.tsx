@@ -40,7 +40,22 @@ const PullToRefresh = ({ children, onRefresh, threshold = 80 }: PullToRefreshPro
 
       if (content) {
         content.style.transition = animate ? "transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)" : "none";
-        content.style.transform = `translate3d(0, ${d}px, 0)`;
+        if (d === 0) {
+          if (animate) {
+            content.style.transform = "translate3d(0, 0px, 0)";
+            setTimeout(() => {
+              if (content && distance.current === 0 && !isPulling.current) {
+                content.style.transform = "";
+                content.style.transition = "";
+              }
+            }, 400);
+          } else {
+            content.style.transform = "";
+            content.style.transition = "";
+          }
+        } else {
+          content.style.transform = `translate3d(0, ${d}px, 0)`;
+        }
       }
       if (indicator) {
         indicator.style.transition = animate ? "opacity 0.3s ease, transform 0.3s ease" : "none";
