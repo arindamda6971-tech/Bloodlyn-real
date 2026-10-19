@@ -91,45 +91,42 @@ const UploadPrescriptionScreen = () => {
 
   if (isSuccess) {
     return (
-      <div className="relative bg-background min-h-screen flex flex-col">
-        <MobileLayout>
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-            <motion.div
-              initial={false}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", bounce: 0.5 }}
-              className="w-24 h-24 bg-success/10 rounded-full flex items-center justify-center mb-6"
-            >
-              <CheckCircle2 className="w-12 h-12 text-success" />
-            </motion.div>
-            <h2 className="text-2xl font-black text-foreground mb-3">Request Received!</h2>
-            <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
-              We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">+91 {phone.replace(/\D/g, "").slice(-10)}</span> to arrange the tests.
+      <MobileLayout showNav={false}>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <motion.div
+            initial={false}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", bounce: 0.5 }}
+            className="w-24 h-24 bg-success/10 rounded-full flex items-center justify-center mb-6"
+          >
+            <CheckCircle2 className="w-12 h-12 text-success" />
+          </motion.div>
+          <h2 className="text-2xl font-black text-foreground mb-3">Request Received!</h2>
+          <p className="text-muted-foreground font-medium mb-4 leading-relaxed">
+            We've successfully received your prescription. Our support team will call you shortly at <span className="font-bold text-foreground">+91 {phone.replace(/\D/g, "").slice(-10)}</span> to arrange the tests.
+          </p>
+          {ticketNumber && (
+            <p className="text-xs font-bold text-muted-foreground mb-8">
+              Reference: <span className="text-foreground">{ticketNumber}</span>
             </p>
-            {ticketNumber && (
-              <p className="text-xs font-bold text-muted-foreground mb-8">
-                Reference: <span className="text-foreground">{ticketNumber}</span>
-              </p>
-            )}
-            {!ticketNumber && <div className="mb-8" />}
+          )}
+          {!ticketNumber && <div className="mb-8" />}
 
-            <button
-              onClick={() => navigate("/home")}
-              className="w-full bg-primary text-white font-bold h-14 rounded-2xl active:scale-95 transition-transform"
-            >
-              Back to Home
-            </button>
-          </div>
-        </MobileLayout>
-      </div>
+          <button
+            onClick={() => navigate("/home")}
+            className="w-full bg-primary text-white font-bold h-14 rounded-2xl active:scale-95 transition-transform"
+          >
+            Back to Home
+          </button>
+        </div>
+      </MobileLayout>
     );
   }
 
   return (
-    <div className="relative bg-background min-h-screen flex flex-col">
-      <MobileLayout>
-        {/* Header */}
-        <div className="sticky top-0 z-40 bg-background/98 border-b border-border/50 px-4 py-3 flex items-center gap-3">
+    <MobileLayout showNav={false}>
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-background/98 border-b border-border/50 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-muted/50 hover:bg-muted active:scale-95 transition-all"
@@ -272,8 +269,7 @@ const UploadPrescriptionScreen = () => {
           </form>
         </div>
       </MobileLayout>
-    </div>
-  );
-};
+    );
+  };
 
 export default UploadPrescriptionScreen;

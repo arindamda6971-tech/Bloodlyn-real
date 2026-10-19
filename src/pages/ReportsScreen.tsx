@@ -197,23 +197,23 @@ const ReportsScreen = () => {
                       <FileText className="w-6 h-6 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
-                      <h3 className="font-semibold text-foreground text-base leading-tight">
+                      <h3 className="font-semibold text-foreground text-base leading-tight line-clamp-2 break-words">
                         {label}
                       </h3>
                     
                     <div className="flex flex-col gap-1.5 mt-2">
                       {/* Patient Name & Lab */}
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5" />
-                          <span className="font-medium text-foreground truncate max-w-[120px]">
+                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <User className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-medium text-foreground truncate max-w-[90px] sm:max-w-[130px]">
                             {order.family_members?.full_name || user?.user_metadata?.full_name || "Patient"}
                           </span>
                         </div>
                         {order.lab_name && (
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-border"></div>
-                            <span className="truncate max-w-[120px]">By <span className="font-medium text-foreground">{order.lab_name}</span></span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="w-1 h-1 rounded-full bg-border shrink-0"></div>
+                            <span className="truncate max-w-[90px] sm:max-w-[130px]">By <span className="font-medium text-foreground">{order.lab_name}</span></span>
                           </div>
                         )}
                       </div>

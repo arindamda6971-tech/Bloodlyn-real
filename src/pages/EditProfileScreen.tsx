@@ -236,7 +236,8 @@ const EditProfileScreen = () => {
       <motion.div
         initial={false}
         animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto p-6 bg-gradient-to-t from-background via-background to-transparent pointer-events-none"
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto px-6 pt-6 bg-gradient-to-t from-background via-background to-transparent pointer-events-none z-30"
+        style={{ paddingBottom: 'max(var(--sab), 24px)' }}
       >
         <Button
           className="w-full h-14 rounded-2xl bg-primary text-white text-md font-black shadow-xl shadow-primary/25 active:scale-95 transition-all pointer-events-auto"

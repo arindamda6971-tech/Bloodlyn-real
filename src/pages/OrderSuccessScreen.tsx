@@ -390,7 +390,10 @@ const OrderSuccessScreen = () => {
 
         {/* 3. Action Buttons */}
         {/* We use mt-auto so if the content is short, buttons stick to bottom of available space, but if long they just flow below */}
-        <div className="flex flex-col gap-3 mt-auto shrink-0 pb-safe pb-4">
+        <div 
+          className="flex flex-col gap-3 mt-auto shrink-0 pt-4"
+          style={{ paddingBottom: 'max(var(--sab), 16px)' }}
+        >
           <Button
             className="w-full h-[48px] rounded-2xl bg-[#0f172a] hover:bg-[#1e293b] text-white text-[15px] font-bold shadow-sm flex items-center justify-center gap-2"
             onClick={() => navigate("/home")}

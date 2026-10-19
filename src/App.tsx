@@ -188,14 +188,15 @@ const AnimatedRoutes = () => {
     setShowAppSplash(false);
   }, []);
 
+  if (isHome && !hasVisitedHome) {
+    setHasVisitedHome(true);
+  }
+
   useEffect(() => {
-    if (user && isHome && !hasVisitedHome) {
-      setHasVisitedHome(true);
-    }
     if (!user && hasVisitedHome) {
       setHasVisitedHome(false);
     }
-  }, [user, isHome, hasVisitedHome]);
+  }, [user, hasVisitedHome]);
 
   return (
     <>

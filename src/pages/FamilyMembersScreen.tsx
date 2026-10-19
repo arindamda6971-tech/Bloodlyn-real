@@ -40,7 +40,7 @@ const FamilyMembersScreen = () => {
   };
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <ScreenHeader
         title="Family Members"
         rightAction={

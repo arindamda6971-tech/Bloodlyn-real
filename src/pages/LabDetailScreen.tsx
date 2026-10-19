@@ -1123,8 +1123,9 @@ const LabDetailScreen = () => {
                           ? "bg-success text-white shadow-md"
                           : "bg-[#38bdf8] text-white shadow-md"
                       }`}
+                      aria-label={isAdded ? "View item in cart" : "Add test to cart"}
                     >
-                      {isAdded ? <ShoppingCart className="w-4 h-4" /> : <Plus className="w-5 h-5" />}
+                      {isAdded ? <Check className="w-5 h-5 stroke-[2.5]" /> : <Plus className="w-5 h-5" />}
                     </button>
                   </div>
                 </motion.div>

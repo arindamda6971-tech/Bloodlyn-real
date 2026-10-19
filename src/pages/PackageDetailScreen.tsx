@@ -228,7 +228,7 @@ const PackageDetailScreen = () => {
 
   if (loading) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Package Details" />
         <div className="flex items-center justify-center h-[60vh]">
           <LoadingSpinner size="lg" />
@@ -239,7 +239,7 @@ const PackageDetailScreen = () => {
 
   if (error || !packageData) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Package Details" />
         <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />

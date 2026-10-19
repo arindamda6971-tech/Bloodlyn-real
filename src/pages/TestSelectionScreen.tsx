@@ -174,7 +174,7 @@ const TestSelectionScreen = () => {
 
   if (loading) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Select Lab" />
         <div className="flex items-center justify-center h-[60vh]">
           <LoadingSpinner size="lg" />
@@ -185,7 +185,7 @@ const TestSelectionScreen = () => {
 
   if (error || !test) {
     return (
-      <MobileLayout>
+      <MobileLayout showNav={false}>
         <ScreenHeader title="Select Lab" />
         <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
@@ -204,7 +204,7 @@ const TestSelectionScreen = () => {
   }
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <ScreenHeader title="Select Lab" />
 
       <div className="px-4 pb-32">
@@ -305,11 +305,14 @@ const TestSelectionScreen = () => {
                         <Button
                           variant="softSuccess"
                           size="sm"
-                          disabled
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate("/cart");
+                          }}
                           className="px-3"
                         >
                           <Check className="w-3 h-3 mr-1" />
-                          Added
+                          View Cart
                         </Button>
                       ) : (
                         <Button

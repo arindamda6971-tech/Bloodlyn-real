@@ -82,6 +82,12 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
             className="absolute right-3 top-3 z-20 h-10 w-10 rounded-full border border-border/50 bg-card/95 shadow-md"
             aria-label={favorite ? `Remove ${center.name} from saved labs` : `Save ${center.name}`}
             aria-pressed={favorite}
+            onTouchStart={(event) => {
+              event.stopPropagation();
+            }}
+            onMouseDown={(event) => {
+              event.stopPropagation();
+            }}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();

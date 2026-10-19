@@ -204,34 +204,34 @@ const BookingsScreen = () => {
             : "bg-card border-border/50"
         }`}>
           {/* Top Row: Icon & Status */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border ${
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border shrink-0 ${
                 isVitals 
                   ? "bg-gradient-to-tr from-blue-600 to-indigo-600 border-blue-500/30 text-white shadow-lg shadow-blue-500/20" 
                   : "bg-primary/5 border-primary/10 text-primary"
               }`}>
                 {isVitals ? <Heart className="w-5 h-5 fill-white/20 animate-pulse" /> : <BookingIcon className="w-5 h-5" />}
               </div>
-              <div>
+              <div className="flex-1 min-w-0 pr-1">
                 {isVitals && (
                   <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase px-2 py-0.5 mb-1 inline-flex items-center gap-1">
                     {isEcg ? "🫀 At-Home ECG" : "🫀 Home BP Check"}
                   </Badge>
                 )}
-                <h3 className="font-bold text-foreground text-[15px] leading-tight">
+                <h3 className="font-bold text-foreground text-[15px] leading-tight truncate">
                   {formatTestsLabel(order.test_name, bookingType)}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-1">
-                    <User className="w-3 h-3 text-muted-foreground/60" />
-                    <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase">
+                    <User className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+                    <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase truncate">
                       Patient: {patientName}
                     </p>
                 </div>
               </div>
             </div>
-            <div className="flex flex-col items-end gap-1">
-              <Badge variant="secondary" className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wide shadow-sm ${statusInfo.color}`}>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Badge variant="secondary" className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wide shadow-sm whitespace-nowrap ${statusInfo.color}`}>
                 <span className="flex items-center gap-1.5">
                   {statusInfo.pulse && (
                     <span className="relative flex h-1.5 w-1.5">

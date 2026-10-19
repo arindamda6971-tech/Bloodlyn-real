@@ -40,6 +40,7 @@ const groupKey = (iso: string) => {
 
 const NotificationsScreen = () => {
   const navigate = useNavigate();
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const { notifications, markAsRead, markAllAsRead, clearNotifications, unreadCount } =
     useNotifications();
 
@@ -53,12 +54,23 @@ const NotificationsScreen = () => {
     return Array.from(map.entries());
   }, [notifications]);
 
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const handleClick = (n: Notification) => {
     markAsRead(n.id);
     if (n.type === "order" && n.data?.orderId) {
       navigate(`/tracking/${n.data.orderId}`);
     } else if (n.type === "report" && n.data?.reportId) {
       navigate("/report-detail", { state: { reportId: n.data.reportId } });
+    } else {
+      toggleExpand(n.id);
     }
   };
 
@@ -111,6 +123,8 @@ const NotificationsScreen = () => {
                   <div className="space-y-2.5">
                     {items.map((n, i) => {
                       const Icon = ICONS[n.type];
+                      const isExpanded = expandedIds.has(n.id);
+                      const hasNavAction = (n.type === "order" && !!n.data?.orderId) || (n.type === "report" && !!n.data?.reportId);
                       return (
                         <motion.button
                           key={n.id}
@@ -145,10 +159,15 @@ const NotificationsScreen = () => {
                                 <span className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
                               )}
                             </div>
-                            <p className="text-[13px] text-muted-foreground mt-1 line-clamp-2 leading-snug">
+                            <p className={`text-[13px] text-muted-foreground mt-1 leading-snug transition-all ${isExpanded ? "" : "line-clamp-2"}`}>
                               {n.message}
                             </p>
-                            <p className="text-[11px] text-muted-foreground/80 mt-2">
+                            {!hasNavAction && n.message.length > 70 && (
+                              <span className="text-[11px] font-semibold text-primary/90 mt-1 inline-block">
+                                {isExpanded ? "Show less" : "Show more"}
+                              </span>
+                            )}
+                            <p className="text-[11px] text-muted-foreground/80 mt-1.5">
                               {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                             </p>
                           </div>

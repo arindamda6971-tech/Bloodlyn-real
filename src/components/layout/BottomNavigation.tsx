@@ -40,7 +40,9 @@ const BottomNavigation = React.memo(() => {
     >
       <div className="flex items-center justify-between px-1.5 py-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === "/categories"
+            ? location.pathname === "/categories" || location.pathname === "/category-tests"
+            : location.pathname === item.path;
           const Icon = item.icon;
           
           return (
