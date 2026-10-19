@@ -449,7 +449,7 @@ input[type="number"] {
   }
 
   .safe-area-bottom {
-    padding-bottom: var(--sab);
+    padding-bottom: max(var(--sab), 16px);
   }
 
   /* Category card hover */

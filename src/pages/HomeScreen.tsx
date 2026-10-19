@@ -294,14 +294,20 @@ const HomeScreen = () => {
                       const testName = test.name || test.test_name || "Unknown Test";
                       const inCart = isInCart(test.id, testName);
                       return (
-                        <button
+                        <div
                           key={test.id}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            // Aggressive prefetch on touch/down
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
                             navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
                           }}
-                          className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
+                            }
+                          }}
+                          className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center cursor-pointer"
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
@@ -310,7 +316,14 @@ const HomeScreen = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={(e) => handleQuickAdd(e, { ...test, name: testName })}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                if (!inCart) {
+                                  handleQuickAdd(e, { ...test, name: testName });
+                                }
+                              }}
                               disabled={inCart}
                               className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                                 inCart
@@ -321,7 +334,7 @@ const HomeScreen = () => {
                               {inCart ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                             </button>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
                   </div>

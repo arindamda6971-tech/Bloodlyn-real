@@ -28,6 +28,7 @@ import {
   HeartPulse,
   Wind,
   Plus,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -141,32 +142,35 @@ const CategoryTile = memo(({ category, index, onClick, onPointerDown }: { catego
 
 CategoryTile.displayName = "CategoryTile";
 
-const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => (
-  <div
-    onClick={onNavigate}
-    className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
-    style={{ contain: 'content' }}
-  >
-    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-      <Beaker className="w-5 h-5 text-primary" />
+const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => {
+  const navigate = useNavigate();
+  return (
+    <div
+      onClick={onNavigate}
+      className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
+      style={{ contain: 'content' }}
+    >
+      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <Beaker className="w-5 h-5 text-primary" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{simplifyTestName(test.test_name)}</h3>
+        <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
+      </div>
+      <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        {alreadyInCart ? (
+          <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/cart")}>
+            <Check className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={onAddToCart}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
     </div>
-    <div className="flex-1 min-w-0">
-      <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{simplifyTestName(test.test_name)}</h3>
-      <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
-    </div>
-    <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-      {alreadyInCart ? (
-        <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => window.location.href = "/cart"}>
-          <Plus className="w-4 h-4" />
-        </Button>
-      ) : (
-        <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={onAddToCart}>
-          <Plus className="w-4 h-4" />
-        </Button>
-      )}
-    </div>
-  </div>
-));
+  );
+});
 
 TestResultCard.displayName = "TestResultCard";
 

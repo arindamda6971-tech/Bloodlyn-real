@@ -127,7 +127,7 @@ const defaultIncludes = [
 const PackageDetailScreen = () => {
   const navigate = useNavigate();
   const { packageId } = useParams<{ packageId: string }>();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, hasItem } = useCart();
   
   const [packageData, setPackageData] = useState<PackageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -268,13 +268,17 @@ const PackageDetailScreen = () => {
       ? Math.round((1 - displayPrice / packageData.original_price) * 100) 
       : 0);
 
+  const isAlreadyInCart = packageData ? hasItem(packageData.id, packageData.name) : false;
+
   const handleAddToCart = () => {
+    if (!packageData) return;
     const success = addToCart({
-      id: `${packageData.id}-${selectedLab.id}`,
+      id: packageData.id,
       name: packageData.name,
       price: displayPrice,
       labId: selectedLab.id,
       labName: selectedLab.name,
+      kind: "package",
     });
 
     if (success) {
@@ -288,7 +292,7 @@ const PackageDetailScreen = () => {
   };
 
   return (
-    <MobileLayout>
+    <MobileLayout showNav={false}>
       <ScreenHeader title="Package Details" />
 
       <div className="pb-32">
@@ -604,20 +608,20 @@ const PackageDetailScreen = () => {
       <motion.div
         initial={false}
         animate={{ y: 0 }}
-        className="fixed left-0 right-0 bg-gradient-to-t from-background via-background to-transparent border-t border-border/40 p-4 z-40"
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-background/95 backdrop-blur-md border-t border-border/40 p-4 z-40"
         style={{
-          bottom: "calc(var(--sab) + 72px)",
-          paddingBottom: "calc(1rem + var(--sab))",
+          paddingBottom: "max(var(--sab), 16px)",
         }}
       >
-        <div className="mx-auto max-w-lg">
+        <div className="w-full">
           <Button
             className="w-full flex items-center justify-center gap-3 h-14 rounded-full shadow-xl text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all px-5"
-            onClick={handleAddToCart}
+            onClick={isAlreadyInCart ? () => navigate("/cart") : handleAddToCart}
+            variant={isAlreadyInCart ? "softSuccess" : "default"}
           >
             <div className="flex items-center gap-3">
-              <ShoppingCart className="w-5 h-5" />
-              <span>Add Package to Cart</span>
+              {isAlreadyInCart ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+              <span>{isAlreadyInCart ? "Package in Cart — View Cart" : "Add Package to Cart"}</span>
             </div>
           </Button>
         </div>

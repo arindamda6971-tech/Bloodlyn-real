@@ -8,6 +8,7 @@ import {
   Shield,
   AlertCircle,
   ShoppingCart,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -147,11 +148,20 @@ const TestSelectionScreen = () => {
 
   
 
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, hasItem, currentLabId } = useCart();
 
   const handleAddToCart = (labId: string, labName: string, labPrice: number) => {
     if (!test) return;
-    const success = addToCart({ id: `${test.id}-${labId}`, name: test.name, price: labPrice, labId, labName });
+    const success = addToCart({
+      id: test.id,
+      name: test.name,
+      price: labPrice,
+      labId,
+      labName,
+      category: "Blood Tests",
+      kind: "test",
+      sampleType: test.sample_type || undefined,
+    });
     if (success) {
       toast.success(`${test.name} added to cart (${labName})`);
     }
@@ -291,15 +301,27 @@ const TestSelectionScreen = () => {
                       <p className="text-[10px] text-success">Save ₹{Math.round(test.price - labPrice)}</p>
                     )}
                     <div className="mt-2 flex items-center justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => { e.stopPropagation(); handleAddToCart(lab.id, lab.name, labPrice); }}
-                        className="px-3"
-                      >
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                        Add
-                      </Button>
+                      {hasItem(test.id, test.name) && currentLabId === lab.id ? (
+                        <Button
+                          variant="softSuccess"
+                          size="sm"
+                          disabled
+                          className="px-3"
+                        >
+                          <Check className="w-3 h-3 mr-1" />
+                          Added
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => { e.stopPropagation(); handleAddToCart(lab.id, lab.name, labPrice); }}
+                          className="px-3"
+                        >
+                          <ShoppingCart className="w-3 h-3 mr-1" />
+                          Add
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

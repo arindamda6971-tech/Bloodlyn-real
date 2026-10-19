@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getCommonSpecializedDays, normalizeAvailabilityType, normalizeAvailableDays } from "@/lib/test-availability";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface CartItem {
   id: string;
@@ -36,6 +37,26 @@ interface CartItem {
   fastingInstruction?: string;
   reportType?: string;
 }
+
+export const isSameCartItem = (
+  a: { id: string; name: string },
+  b: { id: string; name?: string }
+): boolean => {
+  if (a.id && b.id) {
+    if (a.id === b.id) return true;
+    // Handle composite IDs like "test-123-lab-456" vs "test-123"
+    if (a.id.startsWith(b.id + "-") || b.id.startsWith(a.id + "-")) return true;
+  }
+  if (a.name && b.name) {
+    const cleanA = a.name.trim().toLowerCase();
+    const cleanB = b.name.trim().toLowerCase();
+    if (cleanA === cleanB) return true;
+    const simA = simplifyTestName(a.name).trim().toLowerCase();
+    const simB = simplifyTestName(b.name).trim().toLowerCase();
+    if (simA && simB && simA === simB) return true;
+  }
+  return false;
+};
 
 
 interface PendingItem {
@@ -93,7 +114,16 @@ const LOCAL_STORAGE_KEY = "BloodLyn_cart_items";
 const getLocalCart = (): CartItem[] => {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    const parsed: CartItem[] = JSON.parse(saved);
+    if (!Array.isArray(parsed)) return [];
+    const unique: CartItem[] = [];
+    for (const item of parsed) {
+      if (!unique.some((u) => isSameCartItem(u, item))) {
+        unique.push(item);
+      }
+    }
+    return unique;
   } catch {
     return [];
   }
@@ -159,9 +189,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           await supabase.from("cart_items").delete().in("id", staleIds);
         }
 
-        const cartItems: CartItem[] = freshData
+        const rawCartItems = freshData
           .filter((item: CartItemDBRow) => item.test_name && item.test_name.trim() !== "" && (Number(item.price) || 0) > 0)
-          .map((item: CartItemDBRow) => ({
+          .map((item: CartItemDBRow): CartItem => ({
             id: item.package_id || item.test_id || item.id,
             name: item.test_name!,
             price: Number(item.price) || 0,
@@ -180,6 +210,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             fastingInstruction: item.fasting_instruction || undefined,
             reportType: item.report_type || undefined,
           }));
+
+        const cartItems: CartItem[] = [];
+        for (const item of rawCartItems) {
+          if (!cartItems.some((existing) => isSameCartItem(existing, item))) {
+            cartItems.push(item);
+          }
+        }
+
         setItems(cartItems);
         setLocalCart(cartItems);
       } else {
@@ -309,7 +347,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const currentLabName = items.length > 0 ? items[0].labName || null : null;
 
   const hasItem = useCallback((testId: string, testName?: string) => {
-    return items.some((i) => i.id === testId || (testName && i.name === testName));
+    return items.some((i) => isSameCartItem(i, { id: testId, name: testName }));
   }, [items]);
 
   const addToCart = useCallback((item: Omit<CartItem, "quantity">): boolean => {
@@ -371,7 +409,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
     setItems((prev) => {
       // Defensive guard inside setter as well (handles race conditions)
-      if (prev.some((i) => i.id === item.id || (item.name && i.name === item.name))) return prev;
+      if (prev.some((i) => isSameCartItem(i, item))) return prev;
       const updated = [...prev, { ...item, quantity: 1 }];
       setLocalCart(updated);
       syncCartToSupabase(updated);

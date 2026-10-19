@@ -111,36 +111,36 @@ const ProfileScreen = () => {
       <div className="relative z-10 px-4 pt-10 pb-4">
         
         {/* Profile Info Row */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="flex items-center justify-between mb-6 gap-3">
+          <div className="flex-1 min-w-0">
             <p className="text-slate-500 text-sm font-medium mb-0.5">Hello,</p>
-            <h1 className="text-2xl font-black text-slate-900 mb-1 tracking-tight">{displayName}</h1>
-            {user?.email && <p className="text-xs text-slate-500 font-medium">{user.email}</p>}
-            {contactInfo !== user?.email && <p className="text-xs text-slate-500 mt-0.5 font-medium">{contactInfo}</p>}
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 mb-1 tracking-tight truncate">{displayName}</h1>
+            {user?.email && <p className="text-xs text-slate-500 font-medium truncate">{user.email}</p>}
+            {contactInfo !== user?.email && <p className="text-xs text-slate-500 mt-0.5 font-medium truncate">{contactInfo}</p>}
           </div>
           <button 
             onClick={() => navigate("/edit-profile")}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-900 text-white font-medium text-xs active:scale-95 transition-transform shadow-md"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-full bg-slate-900 text-white font-medium text-xs active:scale-95 transition-transform shadow-md"
           >
             <Pencil className="w-3.5 h-3.5" />
-            Edit Profile
+            <span className="whitespace-nowrap">Edit Profile</span>
           </button>
         </div>
 
         {/* 4-Item Quick Stats Grid */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3 mb-6">
           {[
             { icon: CalendarDays, count: bookingsCount, label: "Bookings", path: "/bookings", iconColor: "text-blue-500", iconBg: "bg-blue-50" },
             { icon: FileText, count: reportsCount, label: "Reports", path: "/reports", iconColor: "text-emerald-500", iconBg: "bg-emerald-50" },
             { icon: Users, count: familyMembers.length, label: "Family", path: "/family-members", iconColor: "text-orange-500", iconBg: "bg-orange-50" },
             { icon: Heart, count: favoriteCount, label: "Saved", path: "/saved-labs", iconColor: "text-rose-500", iconBg: "bg-rose-50" },
           ].map((item, idx) => (
-            <button key={idx} onClick={() => navigate(item.path)} className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-sm active:scale-95 transition-transform border border-slate-100">
-              <div className={`w-10 h-10 rounded-full ${item.iconBg} flex items-center justify-center mb-2`}>
-                <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+            <button key={idx} onClick={() => navigate(item.path)} className="bg-white rounded-2xl p-2 sm:p-3 flex flex-col items-center justify-center shadow-sm active:scale-95 transition-transform border border-slate-100 min-w-0">
+              <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full ${item.iconBg} flex items-center justify-center mb-1.5 sm:mb-2`}>
+                <item.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${item.iconColor}`} />
               </div>
-              <span className="text-lg font-black text-slate-900 leading-tight">{item.count}</span>
-              <span className="text-[9px] text-slate-500 text-center font-bold uppercase tracking-wider mt-0.5 leading-tight">{item.label}</span>
+              <span className="text-base sm:text-lg font-black text-slate-900 leading-tight">{item.count}</span>
+              <span className="text-[9px] text-slate-500 text-center font-bold uppercase tracking-wider mt-0.5 leading-tight truncate w-full">{item.label}</span>
             </button>
           ))}
         </div>
