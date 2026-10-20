@@ -57,33 +57,29 @@ const getGreeting = () => {
   return "Good night";
 };
 
-// Each service tile gets a soft pastel background and a matching label colour,
-// with a 3D illustration (Fluent Emoji 3D, MIT — see public/icons/3d) in the
-// corner, matching the "Shop by health concern" and "How it works" sections.
-const SERVICE_TONES = {
-  emerald: { tile: "bg-emerald-50 ring-emerald-100", tag: "text-emerald-700" },
-  red: { tile: "bg-rose-50 ring-rose-100", tag: "text-rose-700" },
-  blue: { tile: "bg-sky-50 ring-sky-100", tag: "text-sky-700" },
-  violet: { tile: "bg-violet-50 ring-violet-100", tag: "text-violet-700" },
-  amber: { tile: "bg-amber-50 ring-amber-100", tag: "text-amber-700" },
-} as const;
-
-type ServiceTone = keyof typeof SERVICE_TONES;
+// Service cards are full-bleed photos with a dark fade and white text, matching
+// the "Full Body Health Checkup" banner. Photos are requested at 480px (cards are
+// ~170px wide, so sharp at 2x+) to keep downloads small on mobile data.
+const servicePhoto = (base: string) => `${base}?auto=format&fit=crop&w=480&h=440&q=70`;
 
 const quickActions: {
-  icon3d: string;
   label: string;
   path: string;
   badge: string;
   price?: string;
   cta?: string;
-  tone: ServiceTone;
+  photo: string;
 }[] = [
-  { icon3d: "stethoscope", label: "Consult Doctor", path: "/doctor-consult", badge: "Live video", price: "From ₹299", tone: "emerald" },
-  { icon3d: "beating-heart", label: "ECG Test", path: "/ecg-test", badge: "At home", price: "From ₹499", tone: "red" },
-  { icon3d: "stopwatch", label: "BP Check", path: "/bp-check", badge: "Home visit", price: "From ₹199", tone: "blue" },
-  { icon3d: "flexed-biceps", label: "Physiotherapy", path: "/physio-consult", badge: "Expert care", price: "From ₹599", tone: "violet" },
-  { icon3d: "memo", label: "Upload Prescription", path: "/upload-prescription", badge: "We'll call you to book", cta: "Upload", tone: "amber" },
+  { label: "Consult Doctor", path: "/doctor-consult", badge: "Live video", price: "From ₹299",
+    photo: servicePhoto("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d") },
+  { label: "ECG Test", path: "/ecg-test", badge: "At home", price: "From ₹499",
+    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973") },
+  { label: "BP Check", path: "/bp-check", badge: "Home visit", price: "From ₹199",
+    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2") },
+  { label: "Physiotherapy", path: "/physio-consult", badge: "Expert care", price: "From ₹599",
+    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198") },
+  { label: "Upload Prescription", path: "/upload-prescription", badge: "We'll call you to book", cta: "Upload",
+    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9") },
 ];
 
 
@@ -375,7 +371,8 @@ const HomeScreen = () => {
           </div>
         )}
 
-        {/* Our services — compact two-column grid; Upload Prescription spans full width */}
+        {/* Our services — full photo cards (same style as the Full Body banner);
+            Upload Prescription spans the full width */}
         <section className="px-4 mt-8" style={{ contain: "content" }}>
           <div className="mb-3">
             <h2 className="text-[19px] font-extrabold text-foreground tracking-tight">Our services</h2>
@@ -383,20 +380,7 @@ const HomeScreen = () => {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {quickActions.map((action) => {
-              const tone = SERVICE_TONES[action.tone];
               const wide = !!action.cta;
-              const illustration = (
-                <img
-                  src={`/icons/3d/${action.icon3d}.webp`}
-                  alt=""
-                  width={64}
-                  height={64}
-                  loading="lazy"
-                  decoding="async"
-                  draggable={false}
-                  className={wide ? "w-12 h-12 object-contain shrink-0" : "absolute right-2.5 bottom-2.5 w-[60px] h-[60px] object-contain"}
-                />
-              );
               return (
                 <button
                   type="button"
@@ -407,28 +391,49 @@ const HomeScreen = () => {
                     else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
                     else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
                   }}
-                  className={`home-render-section relative overflow-hidden text-left rounded-2xl ring-1 active:scale-[0.98] transition-transform duration-150 ${tone.tile} ${
-                    wide ? "col-span-2 flex items-center gap-3.5 px-4 py-3.5" : "flex flex-col min-h-[132px] p-3.5"
+                  className={`home-render-section relative overflow-hidden isolate text-left rounded-2xl bg-slate-800 shadow-card active:scale-[0.98] transition-transform duration-150 ${
+                    wide ? "col-span-2 h-[96px]" : "h-[168px]"
                   }`}
                 >
-                  {wide && illustration}
-                  <span className={wide ? "flex-1 min-w-0" : "flex flex-col flex-1"}>
-                    <span className="block text-[15px] font-bold text-foreground leading-snug">{action.label}</span>
-                    <span className={`block text-[12px] font-semibold mt-0.5 ${tone.tag}`}>{action.badge}</span>
-                    {action.price && (
-                      <span className="mt-auto pt-3 flex items-center gap-0.5 text-[13px] font-bold text-foreground/75">
-                        {action.price}
+                  <OptimizedImage
+                    src={action.photo}
+                    alt=""
+                    containerClassName="absolute inset-0 w-full h-full -z-10"
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Fade for readable white text */}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute inset-0 -z-10 ${
+                      wide
+                        ? "bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-slate-950/10"
+                        : "bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent"
+                    }`}
+                  />
+                  <span
+                    className={`absolute inset-0 flex p-3.5 ${
+                      wide ? "items-center justify-between gap-3" : "flex-col justify-end"
+                    }`}
+                  >
+                    <span className="min-w-0">
+                      <span className="inline-block text-[10px] font-bold text-white bg-white/15 ring-1 ring-white/25 rounded-full px-2 py-0.5 mb-1.5">
+                        {action.badge}
+                      </span>
+                      <span className="block text-[16px] font-bold text-white leading-tight">{action.label}</span>
+                      {action.price && (
+                        <span className="mt-1 flex items-center gap-0.5 text-[12.5px] font-semibold text-white/80">
+                          {action.price}
+                          <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </span>
+                      )}
+                    </span>
+                    {action.cta && (
+                      <span className="flex items-center gap-0.5 text-[13px] font-bold text-foreground bg-white rounded-full pl-3.5 pr-2.5 py-2 shadow-md shrink-0">
+                        {action.cta}
                         <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                       </span>
                     )}
                   </span>
-                  {!wide && illustration}
-                  {action.cta && (
-                    <span className="flex items-center gap-0.5 text-[13px] font-bold text-primary bg-white rounded-full pl-3 pr-2 py-1.5 shadow-sm shrink-0">
-                      {action.cta}
-                      <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-                    </span>
-                  )}
                 </button>
               );
             })}
