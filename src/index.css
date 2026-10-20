@@ -873,16 +873,17 @@ html.native [data-scroll-container] {
 /* Page transition duration — calibrated for silky smooth native feel */
 :root {
   --page-transition-duration: 0.45s;
+  --page-transition-ease: cubic-bezier(0.25, 1, 0.35, 1);
 }
 
 .page-anim-push {
-  animation: pagePushEnter var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
+  animation: pagePushEnter var(--page-transition-duration) var(--page-transition-ease) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop {
-  animation: pagePopEnter var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
+  animation: pagePopEnter var(--page-transition-duration) var(--page-transition-ease) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -909,13 +910,13 @@ html.native [data-scroll-container] {
 }
 
 .page-anim-push-exit {
-  animation: pagePushExit var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
+  animation: pagePushExit var(--page-transition-duration) var(--page-transition-ease) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
 
 .page-anim-pop-exit {
-  animation: pagePopExit var(--page-transition-duration) cubic-bezier(0.25, 1, 0.35, 1) forwards;
+  animation: pagePopExit var(--page-transition-duration) var(--page-transition-ease) forwards;
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -944,8 +945,7 @@ html.native [data-scroll-container] {
 }
 
 /* Hidden Home remains mounted; its infinite animations must not run off-route. */
-.home-stack[data-home-active="false"] *,
-html.is-transitioning .home-stack * {
+.home-stack[data-home-active="false"] * {
   animation-play-state: paused !important;
 }
 
@@ -963,17 +963,16 @@ html.is-transitioning .home-stack * {
   contain: layout paint;
 }
 
-/* Compositor protection while page transitions are running */
-html.is-transitioning .animate-marquee,
-html.is-transitioning .animate-pulse {
-  animation-play-state: paused !important;
-}
-
-html.is-transitioning [class*="backdrop-blur"],
-html.is-transitioning .glass-card,
-html.is-transitioning .glass {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+/* Touch devices: backdrop blur is expensive on phone GPUs and used to be switched
+   off/on around every slide, causing a repaint "pop". Headers already use a ~95%
+   opaque background, so dropping the blur is visually near-identical. */
+@media (hover: none) and (pointer: coarse) {
+  [class*="backdrop-blur"],
+  .glass-card,
+  .glass {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 

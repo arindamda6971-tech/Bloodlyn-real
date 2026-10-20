@@ -1,8 +1,6 @@
 package app.lovable.f2d1988f75ee4eff96a2c3ad823bf37d;
 
-import android.os.Build;
 import android.os.Bundle;
-import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
@@ -31,29 +29,9 @@ public class MainActivity extends BridgeActivity {
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
         );
 
-        // Unlock 90Hz / 120Hz display refresh rate
-        // By default Android OS throttles WebViews to 60Hz. Setting preferred display mode unlocks full panel speed.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Display display = getDisplay();
-            if (display != null) {
-                Display.Mode[] modes = display.getSupportedModes();
-                Display.Mode maxMode = null;
-                for (Display.Mode mode : modes) {
-                    if (maxMode == null || mode.getRefreshRate() > maxMode.getRefreshRate()) {
-                        maxMode = mode;
-                    }
-                }
-                if (maxMode != null) {
-                    WindowManager.LayoutParams params = getWindow().getAttributes();
-                    params.preferredDisplayModeId = maxMode.getModeId();
-                    getWindow().setAttributes(params);
-                }
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            WindowManager.LayoutParams params = getWindow().getAttributes();
-            params.preferredRefreshRate = 120.0f;
-            getWindow().setAttributes(params);
-        }
+        // Refresh rate is deliberately left to the system. Forcing the panel's highest
+        // mode (90/120Hz) made the WebView miss its ~8ms frame budget on most phones,
+        // so slides judder between 120 and 60fps; Chrome avoids this by adapting itself.
     }
 
     @Override
@@ -64,13 +42,13 @@ public class MainActivity extends BridgeActivity {
             webView.setLayerType(View.LAYER_TYPE_NONE, null);
 
             WebSettings settings = webView.getSettings();
-            settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
             settings.setCacheMode(WebSettings.LOAD_DEFAULT);
             settings.setDomStorageEnabled(true);
             settings.setDatabaseEnabled(true);
 
-            // Pre-raster offscreen contents so sliding page transitions are pre-rendered without frame drops
-            settings.setOffscreenPreRaster(true);
+            // Offscreen pre-raster is intentionally off: it only helps when the WebView
+            // itself is moved on-screen, and otherwise rasters every tile of the page,
+            // eating GPU memory the in-page slide transitions need.
         }
     }
 }

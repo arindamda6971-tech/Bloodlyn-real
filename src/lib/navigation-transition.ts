@@ -112,10 +112,9 @@ function flushSettledCallbacks(): void {
 }
 
 export function beginTransition(): void {
+  // No global class toggle here: a class on <html> forces a style recalc of the
+  // entire document on the first and last frame of every slide, which janks mobile.
   activeTransitions++;
-  if (typeof document !== "undefined") {
-    document.documentElement.classList.add("is-transitioning");
-  }
   if (watchdogTimer !== null) {
     clearTimeout(watchdogTimer);
   }
@@ -123,9 +122,6 @@ export function beginTransition(): void {
   watchdogTimer = setTimeout(() => {
     if (activeTransitions > 0) {
       activeTransitions = 0;
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.remove("is-transitioning");
-      }
       flushSettledCallbacks();
     }
   }, 1500);
@@ -136,9 +132,6 @@ export function endTransition(): void {
     activeTransitions--;
   }
   if (activeTransitions === 0) {
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.remove("is-transitioning");
-    }
     flushSettledCallbacks();
   }
 }

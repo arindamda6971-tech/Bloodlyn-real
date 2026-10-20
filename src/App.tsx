@@ -27,7 +27,7 @@ import AppOpeningAnimation from "@/components/AppOpeningAnimation";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback, memo } from "react";
+import { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -118,36 +118,27 @@ interface HomeStackLayerProps {
  * crossfade for the "reveal" effect.
  */
 const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
-  // When active is true, it is ALWAYS visible immediately.
-  // When navigating away (active becomes false), keep it visible until the push transition settles.
-  const [stayVisibleWhileExiting, setStayVisibleWhileExiting] = useState(false);
-  const prevActiveRef = useRef(active);
+  // Home stays painted underneath other screens (they are opaque and sit above it).
+  // Toggling `visibility` made mobile GPUs drop Home's raster tiles, so coming back
+  // re-painted the whole screen on the first frames of the slide — the visible jitter.
+  //
+  // Pausing/resuming Home's own animations restyles its whole subtree, so that flip
+  // is deferred until the slide has finished instead of landing on its first frame.
+  const [animationsActive, setAnimationsActive] = useState(active);
 
-  useLayoutEffect(() => {
-    const wasActive = prevActiveRef.current;
-    prevActiveRef.current = active;
-
-    if (!active && wasActive) {
-      // Navigating away from home — keep layer visible until incoming screen finishes sliding in
-      setStayVisibleWhileExiting(true);
-      const timer = setTimeout(() => {
-        setStayVisibleWhileExiting(false);
-      }, getTransitionDuration() + 40);
-      return () => clearTimeout(timer);
-    } else if (active) {
-      setStayVisibleWhileExiting(false);
-    }
-  }, [active]);
-
-  const isVisible = active || stayVisibleWhileExiting;
+  useEffect(() => {
+    if (active === animationsActive) return;
+    const timer = setTimeout(() => setAnimationsActive(active), getTransitionDuration() + 40);
+    return () => clearTimeout(timer);
+  }, [active, animationsActive]);
 
   return (
     <div
       className="home-stack w-full h-full absolute top-0 left-0 bg-background overflow-hidden"
-      data-home-active={active ? "true" : "false"}
+      data-home-active={animationsActive ? "true" : "false"}
+      aria-hidden={active ? undefined : true}
       style={{
         zIndex: 1,
-        visibility: isVisible ? "visible" : "hidden",
         pointerEvents: active ? "auto" : "none",
         WebkitOverflowScrolling: "touch",
         contain: "layout paint",
