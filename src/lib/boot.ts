@@ -9,6 +9,21 @@
  * Purely a UI timing primitive: no data, no auth logic, no network.
  */
 
+/**
+ * True when this launch plays AppOpeningAnimation (first open of the session).
+ * That screen hides the native splash itself once its logo is painted, so the
+ * HTML loader / app-ready paths must not hide it earlier — doing so left a
+ * blank white gap between the native logo and the web logo.
+ * Must match the `bl_opening_shown` check in App.tsx.
+ */
+export const openingAnimationWillShow: boolean = (() => {
+  try {
+    return typeof window !== "undefined" && !sessionStorage.getItem("bl_opening_shown");
+  } catch {
+    return false;
+  }
+})();
+
 let ready = false;
 const listeners = new Set<() => void>();
 

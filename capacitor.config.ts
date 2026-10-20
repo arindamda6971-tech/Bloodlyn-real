@@ -21,9 +21,12 @@ const config: CapacitorConfig = {
       backgroundColor: "#00000000",
     },
     SplashScreen: {
+      // The system splash is a plain white screen (styles.xml uses an empty icon).
+      // Keep it up until the HTML opening in index.html has painted, which then
+      // hides it, so there is no gap and no second splash before the animation.
       launchShowDuration: 0,
-      launchAutoHide: true,
-      launchFadeOutDuration: 150,
+      launchAutoHide: false,
+      launchFadeOutDuration: 120,
       backgroundColor: "#ffffff",
       androidSplashResourceName: "splash",
       androidScaleType: "CENTER_INSIDE",

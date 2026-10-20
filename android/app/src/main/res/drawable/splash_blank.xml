@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty icon for the system launch splash: the phone shows a plain white screen
+     and the first logo the user sees is the animated one in index.html, instead of
+     a frozen logo while the WebView starts up. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#00000000" />
+    <size android:width="1dp" android:height="1dp" />
+</shape>

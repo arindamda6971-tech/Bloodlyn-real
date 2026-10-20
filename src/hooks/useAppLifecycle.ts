@@ -4,7 +4,7 @@ import { SplashScreen } from '@capacitor/splash-screen';
 import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
 import { onlineManager } from '@tanstack/react-query';
-import { onAppReady } from '@/lib/boot';
+import { onAppReady, openingAnimationWillShow } from '@/lib/boot';
 
 /**
  * Manages app-wide lifecycle events for native platforms.
@@ -40,24 +40,23 @@ export const useAppLifecycle = () => {
       localStorage.setItem('bloodlyn_last_route', window.location.pathname + window.location.search);
     };
 
-    // Show splash screen on startup and hide it only when app is ready
-    SplashScreen.show({
-      autoHide: false,
-    });
-
-    // Hide the native splash the moment the first real screen is ready (the
-    // splash route resolves the session, then signals). Fixed timers either cut
-    // the splash before content exists (white flash) or hold it too long.
+    // The launch splash is already on screen (launchAutoHide: false). Calling
+    // SplashScreen.show() here used to put up a *second*, differently sized
+    // full-screen splash image on top of it, causing a visible logo "blink".
+    //
+    // Fallback hide once the first real screen is ready, for launches that skip
+    // AppOpeningAnimation (which normally hides the splash itself).
     let hidden = false;
     const hide = () => {
       if (hidden) return;
       hidden = true;
       SplashScreen.hide();
     };
-    const offReady = onAppReady(() =>
-      requestAnimationFrame(() => requestAnimationFrame(hide)),
-    );
-    const timer = setTimeout(hide, 2000);
+    const offReady = openingAnimationWillShow
+      ? () => {}
+      : onAppReady(() => requestAnimationFrame(() => requestAnimationFrame(hide)));
+    // Safety net so the splash can never get stuck.
+    const timer = setTimeout(hide, 3000);
 
 
     // Listen for app state changes (Background/Foreground)

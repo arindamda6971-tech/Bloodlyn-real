@@ -42,6 +42,8 @@
     <!-- DNS Prefetch & Critical Hero Banner Preload -->
     <link rel="dns-prefetch" href="https://dmfqfswgnfpqeseqswhl.supabase.co" />
     <link rel="preload" as="image" href="/hero-banner.webp" type="image/webp" />
+    <!-- Opening-animation logo: must be decoded before the zoom-in starts -->
+    <link rel="preload" as="image" href="/logo.png" type="image/png" />
 
     <!-- font-display:swap is set by @fontsource; preload hint added by Vite modulepreload -->
     <style>
@@ -82,17 +84,121 @@
 </head>
 
   <body style="margin: 0; overscroll-behavior: none;">
-    <div id="root">
-      <!-- Clean background to prevent white flash before React mounts -->
-      <div id="app-loading-screen" style="position: fixed; inset: 0; background: #ffffff; z-index: 9999;"></div>
+    <!--
+      App opening. Lives in plain HTML/CSS (not React) so it starts playing the
+      moment the page is parsed, instead of after ~1.5 MB of JavaScript has
+      loaded — on low-end phones that wait used to show a frozen static logo.
+      Only transform/opacity animate, so it runs on the GPU even while the JS
+      bundle is busy. React (AppOpeningAnimation.tsx) only decides when to leave.
+    -->
+    <style>
+      .bl-open { position: fixed; inset: 0; z-index: 99999; background: #ffffff; overflow: hidden;
+        -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+      .bl-open__stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        transform: translateY(var(--bl-open-offset, 0px)); }
+      .bl-open__logo { position: relative; width: 192px; height: 192px; }
+      .bl-open__img { display: block; width: 100%; height: 100%; object-fit: contain; }
+      /* Shine: a light band clipped to the logo's own shape, swept across once. */
+      .bl-open__shine { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+        -webkit-mask: url(/logo.png) center / contain no-repeat; mask: url(/logo.png) center / contain no-repeat; }
+      .bl-open__shine::before { content: ""; position: absolute; top: -25%; bottom: -25%; left: 0; width: 45%;
+        background: linear-gradient(100deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0) 100%);
+        transform: translate3d(-160%, 0, 0) skewX(-18deg); }
+      .bl-open__words { position: absolute; left: 0; right: 0; top: calc(50% + 108px); text-align: center;
+        font-family: Manrope, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+      .bl-open__title { margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; color: #0f172a; }
+      .bl-open__title span { color: #0284c7; }
+      .bl-open__tagline { margin: 10px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.22em;
+        text-transform: uppercase; color: #94a3b8; }
+      /* Hidden until .bl-open--play: the logo zooms in rather than sitting still. */
+      .bl-open__logo, .bl-open__title, .bl-open__tagline { opacity: 0; }
+
+      /* Logo zooms in, then one heartbeat while a light glints across it and the name rises. */
+      .bl-open--play .bl-open__logo { animation: blOpenEnter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both, blOpenBeat 0.75s cubic-bezier(0.33, 0, 0.2, 1) 0.5s forwards; will-change: transform, opacity; }
+      .bl-open--play .bl-open__shine::before { animation: blOpenShine 0.75s cubic-bezier(0.45, 0, 0.25, 1) 0.55s both; will-change: transform; }
+      .bl-open--play .bl-open__title { animation: blOpenRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.32s both; }
+      .bl-open--play .bl-open__tagline { animation: blOpenRise 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.44s both; }
+      /* Re-opened within the same session: no show, just a static cover until the app paints. */
+      .bl-open--static .bl-open__logo, .bl-open--static .bl-open__title, .bl-open--static .bl-open__tagline { opacity: 1; }
+      .bl-open--exit { animation: blOpenFadeOut 0.32s cubic-bezier(0.4, 0, 1, 1) both; pointer-events: none; }
+      .bl-open--exit .bl-open__logo { animation: blOpenLogoOut 0.32s cubic-bezier(0.4, 0, 0.2, 1) both; }
+
+      @keyframes blOpenEnter { from { transform: scale(0.82); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+      @keyframes blOpenBeat { 0% { transform: scale(1); } 16% { transform: scale(1.07); } 30% { transform: scale(0.98); }
+        46% { transform: scale(1.04); } 70%, 100% { transform: scale(1); } }
+      @keyframes blOpenShine { from { transform: translate3d(-160%, 0, 0) skewX(-18deg); } to { transform: translate3d(330%, 0, 0) skewX(-18deg); } }
+      @keyframes blOpenRise { from { transform: translate3d(0, 10px, 0); opacity: 0; } to { transform: translate3d(0, 0, 0); opacity: 1; } }
+      @keyframes blOpenFadeOut { to { opacity: 0; } }
+      @keyframes blOpenLogoOut { from { opacity: 1; } to { transform: scale(1.12); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .bl-open--play .bl-open__shine::before { animation: none; }
+        .bl-open--play .bl-open__logo { animation: none; opacity: 1; }
+        .bl-open--play .bl-open__title, .bl-open--play .bl-open__tagline { animation: none; opacity: 1; }
+      }
+    </style>
+    <div id="bl-opening" class="bl-open" aria-hidden="true">
+      <div class="bl-open__stage">
+        <div class="bl-open__logo">
+          <img class="bl-open__img" src="/logo.png" width="192" height="192" alt="" decoding="sync" draggable="false" />
+          <span class="bl-open__shine"></span>
+        </div>
+        <div class="bl-open__words">
+          <h1 class="bl-open__title">Blood<span>Lyn</span></h1>
+          <p class="bl-open__tagline">Diagnostics. Faster. Smarter.</p>
+        </div>
+      </div>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Fallback only: main.tsx removes the loader as soon as React paints.
-      // No artificial delay here — the splash should never outlive first paint.
-      window.addEventListener('load', () => {
-        setTimeout(() => window.__blHideLoader && window.__blHideLoader(), 0);
-      });
+      (function () {
+        var el = document.getElementById("bl-opening");
+        var cap = window.Capacitor;
+        var isNative = false;
+        try { isNative = !!(cap && cap.isNativePlatform && cap.isNativePlatform()); } catch (e) {}
+
+        var alreadyShown = false;
+        try { alreadyShown = !!sessionStorage.getItem("bl_opening_shown"); } catch (e) {}
+        if (alreadyShown) el.classList.add("bl-open--static");
+
+        // The native splash centres its logo on the whole screen; the WebView may
+        // stop above the navigation bar. Shift down by half that gap to line up.
+        if (isNative) {
+          var gap = (screen.height || innerHeight) - innerHeight;
+          el.style.setProperty("--bl-open-offset", Math.max(0, Math.min(60, Math.round(gap / 2))) + "px");
+        }
+
+        var started = false;
+        var start = function () {
+          if (started) return;
+          started = true;
+          window.__blOpeningStart = performance.now();
+          if (alreadyShown) return;
+          // Start once the (plain white) native splash has faded, so the logo
+          // zoom-in is the first thing the user sees.
+          setTimeout(function () { el.classList.add("bl-open--play"); }, isNative ? 120 : 0);
+        };
+        var handedOver = false;
+        var doHandOver = function () {
+          if (handedOver) return;
+          handedOver = true;
+          try {
+            if (isNative && cap.nativePromise) {
+              cap.nativePromise("SplashScreen", "hide", {}).catch(function () {});
+            }
+          } catch (e) {}
+          start();
+        };
+        var handOver = function () {
+          // Wait for the logo to be painted (two frames); the timer covers
+          // WebViews that throttle animation frames during startup.
+          requestAnimationFrame(function () { requestAnimationFrame(doHandOver); });
+          setTimeout(doHandOver, 120);
+        };
+        var img = el.querySelector("img");
+        if (img && img.decode) img.decode().then(handOver, handOver); else handOver();
+        setTimeout(handOver, 700);
+      })();
     </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

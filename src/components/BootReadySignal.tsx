@@ -13,7 +13,12 @@ const BootReadySignal = () => {
   useEffect(() => {
     if (pathname === "/") return;
     const id = requestAnimationFrame(() => requestAnimationFrame(markAppReady));
-    return () => cancelAnimationFrame(id);
+    // Fallback for WebViews that throttle animation frames during startup.
+    const timer = setTimeout(markAppReady, 200);
+    return () => {
+      cancelAnimationFrame(id);
+      clearTimeout(timer);
+    };
   }, [pathname]);
 
   return null;

@@ -3,7 +3,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
-import { onAppReady } from "./lib/boot";
+import { onAppReady, openingAnimationWillShow } from "./lib/boot";
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
 // per browser. Guarded by localStorage so the workbox precache and font caches
@@ -56,23 +56,35 @@ function setupMemoryManagement() {
 runOneTimeCacheMigration();
 setupMemoryManagement();
 
-// Remove the static HTML loader the moment React has painted its first frame.
-function hideBootLoader() {
-  const loader = document.getElementById("app-loading-screen");
+// Remove the HTML opening cover (index.html #bl-opening) once React has painted.
+// On a session's first launch AppOpeningAnimation plays the exit itself, so this
+// only acts on re-opens — or as a last-resort safety net (`force`).
+function hideBootLoader(force = false) {
+  if (openingAnimationWillShow && !force) return;
+  const loader = document.getElementById("bl-opening");
   if (!loader) return;
   loader.style.transition = "opacity 220ms ease";
   loader.style.opacity = "0";
+  loader.style.pointerEvents = "none";
   setTimeout(() => {
     if (loader.parentNode) loader.remove();
-    // Also hide the native splash screen if it's still up
     SplashScreen.hide().catch(() => {});
   }, 230);
 }
-(window as unknown as { __blHideLoader?: () => void }).__blHideLoader = hideBootLoader;
 
 createRoot(document.getElementById("root")!).render(<App />);
 
-// Hide the HTML loader when the first real screen is ready.
-onAppReady(() => requestAnimationFrame(() => requestAnimationFrame(hideBootLoader)));
-// Safety cap: never leave the user stranded on the loader.
-setTimeout(hideBootLoader, 3500);
+// Hide the HTML cover when the first real screen is ready.
+// (Timer fallback: some WebViews throttle animation frames during startup.)
+onAppReady(() => {
+  let done = false;
+  const run = () => {
+    if (done) return;
+    done = true;
+    hideBootLoader();
+  };
+  requestAnimationFrame(() => requestAnimationFrame(run));
+  setTimeout(run, 150);
+});
+// Safety cap: never leave the user stranded on the cover, even if React fails.
+setTimeout(() => hideBootLoader(true), 6000);
