@@ -54,6 +54,7 @@ export default {
           foreground: "hsl(var(--warning-foreground))",
           light: "hsl(var(--warning-light))",
         },
+        "brand-red": "hsl(var(--brand-red))",
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -79,6 +80,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         "2xl": "1rem",
         "3xl": "1.5rem",
+      },
+      backgroundImage: {
+        brand: "var(--gradient-brand)",
       },
       boxShadow: {
         "card": "var(--shadow-card)",

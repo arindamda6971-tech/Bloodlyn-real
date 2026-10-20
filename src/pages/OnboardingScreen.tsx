@@ -34,11 +34,11 @@ const OnboardingScreen = () => {
           {/* Dotted connecting circle */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 280 250" aria-hidden="true">
             <ellipse cx="140" cy="125" rx="108" ry="96" fill="none" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4 4" />
-            <circle cx="140" cy="29" r="2.5" fill="#c7d2fe" />
-            <circle cx="234" cy="72" r="2.5" fill="#c7d2fe" />
-            <circle cx="234" cy="178" r="2.5" fill="#c7d2fe" />
-            <circle cx="46" cy="178" r="2.5" fill="#c7d2fe" />
-            <circle cx="46" cy="72" r="2.5" fill="#c7d2fe" />
+            <circle cx="140" cy="29" r="2.5" fill="#bae6fd" />
+            <circle cx="234" cy="72" r="2.5" fill="#bae6fd" />
+            <circle cx="234" cy="178" r="2.5" fill="#bae6fd" />
+            <circle cx="46" cy="178" r="2.5" fill="#bae6fd" />
+            <circle cx="46" cy="72" r="2.5" fill="#bae6fd" />
             <line x1="140" y1="29" x2="140" y2="66" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 3" />
             <line x1="234" y1="72" x2="194" y2="97" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 3" />
             <line x1="234" y1="178" x2="194" y2="155" stroke="#e5e7eb" strokeWidth="1" strokeDasharray="3 3" />
@@ -73,8 +73,8 @@ const OnboardingScreen = () => {
           </div>
 
           {/* Orbit bubbles */}
-          <div className="absolute top-[6px] left-1/2 -translate-x-1/2 w-[44px] h-[44px] rounded-full bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100/60 z-20">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute top-[6px] left-1/2 -translate-x-1/2 w-[44px] h-[44px] rounded-full bg-sky-50 flex items-center justify-center shadow-sm border border-sky-100/60 z-20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5h0c-1.4 0-2.5-1.1-2.5-2.5V2" /><path d="M8.5 2h7" /><path d="M14.5 16h-5" />
             </svg>
           </div>
@@ -83,8 +83,8 @@ const OnboardingScreen = () => {
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
             </svg>
           </div>
-          <div className="absolute bottom-[16px] right-0 w-[44px] h-[44px] rounded-full bg-purple-50 flex items-center justify-center shadow-sm border border-purple-100/60 z-20">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a855f7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute bottom-[16px] right-0 w-[44px] h-[44px] rounded-full bg-red-50 flex items-center justify-center shadow-sm border border-red-100/60 z-20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
               <rect x="8" y="2" width="8" height="4" rx="1" ry="1" /><path d="M9 14h6" /><path d="M9 18h6" /><path d="M9 10h6" />
             </svg>
@@ -94,8 +94,8 @@ const OnboardingScreen = () => {
               <circle cx="12" cy="12" r="10" /><path d="M12 8v8" /><path d="M8 12h8" />
             </svg>
           </div>
-          <div className="absolute top-[50px] left-0 w-[44px] h-[44px] rounded-full bg-indigo-50 flex items-center justify-center shadow-sm border border-indigo-100/60 z-20">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div className="absolute top-[50px] left-0 w-[44px] h-[44px] rounded-full bg-sky-50 flex items-center justify-center shadow-sm border border-sky-100/60 z-20">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3" />
               <path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4" /><circle cx="20" cy="10" r="2" />
             </svg>
@@ -116,7 +116,7 @@ const OnboardingScreen = () => {
           <button
             onClick={handleNext}
             className="w-full h-[54px] rounded-full text-white font-bold text-[16px] shadow-lg transition-transform active:scale-[0.98]"
-            style={{ background: "linear-gradient(90deg, #4338ca 0%, #c084fc 100%)" }}
+            style={{ background: "var(--gradient-brand)" }}
           >
             Get Started
           </button>

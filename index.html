@@ -51,14 +51,10 @@
       body { font-family: system-ui, sans-serif; }
     </style>
     <script>
-      (function() {
-        try {
-          var isDark = localStorage.getItem('vite-ui-theme') === 'dark' || (!('vite-ui-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          if (isDark) {
-            document.documentElement.classList.add('dark');
-          }
-        } catch (e) {}
-      })();
+      // The app is light-only (ThemeContext always applies "light"). Matching that
+      // here stops phones in system dark mode from painting dark first and then
+      // fading to light during startup.
+      document.documentElement.classList.add('light');
     </script>
     
   

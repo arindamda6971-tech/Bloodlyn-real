@@ -244,7 +244,7 @@ export const ZomatoStyleHeader = ({
           <button
             type="button"
             onClick={() => navigate("/cart")}
-            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:border-primary/40 hover:shadow-md"
+            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-[transform,box-shadow,border-color] duration-150 hover:border-primary/40 hover:shadow-md"
             aria-label="Cart"
             title="Cart"
           >
@@ -264,7 +264,7 @@ export const ZomatoStyleHeader = ({
           <button
             type="button"
             onClick={() => navigate("/notifications")}
-            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-all hover:border-primary/40 hover:shadow-md"
+            className="w-[42px] h-[42px] rounded-full bg-card shadow-sm border border-border/40 text-foreground/80 flex items-center justify-center relative active:scale-90 transition-[transform,box-shadow,border-color] duration-150 hover:border-primary/40 hover:shadow-md"
             aria-label="Notifications"
             title="Notifications"
           >

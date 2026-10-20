@@ -10,12 +10,9 @@ import {
   Search,
   Bell,
   ChevronRight,
-  HeartPulse,
   Activity,
   X,
   Check,
-  FileUp,
-  Stethoscope,
   Plus,
   Phone,
   MessageCircle,
@@ -33,6 +30,8 @@ import { useCart } from "@/contexts/CartContext";
 import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
+import HealthConcernsGrid from "@/components/home/HealthConcernsGrid";
+import HowItWorks from "@/components/home/HowItWorks";
 import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
@@ -58,67 +57,33 @@ const getGreeting = () => {
   return "Good night";
 };
 
-const quickActions = [
-  { 
-    icon: Stethoscope, 
-    label: "Consult Doctor", 
-    path: "/doctor-consult", 
-    badge: "Live Video",
-    desc: "Connect with specialized doctors instantly via secure video call.",
-    price: "Starts at ₹299",
-    gradient: "from-[#10b981] to-[#0d9488]",
-    glow: "bg-[#10b981]/20",
-    badgeColor: "bg-[#ecfdf5] text-[#059669] border-[#d1fae5]",
-    bgImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format,webp&q=80&w=800"
-  },
-  { 
-    icon: HeartPulse, 
-    label: "ECG Test", 
-    path: "/ecg-test", 
-    badge: "At Home",
-    desc: "Clinical-grade resting ECG test performed by certified technicians.",
-    price: "Starts at ₹499",
-    gradient: "from-[#f43f5e] to-[#dc2626]",
-    glow: "bg-[#f43f5e]/20",
-    badgeColor: "bg-[#fff1f2] text-[#e11d48] border-[#ffe4e6]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973?auto=format,webp&w=800&q=80"
-  },
-  {
-    icon: HeartPulse,
-    label: "BP Check",
-    path: "/bp-check",
-    badge: "Home Visit",
-    desc: "Book a trained professional to measure your blood pressure accurately.",
-    price: "Starts at ₹199",
-    gradient: "from-[#f43f5e] to-[#3b82f6]",
-    glow: "bg-[#3b82f6]/20",
-    badgeColor: "bg-[#eff6ff] text-[#2563eb] border-[#dbeafe]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2?auto=format,webp&w=800&q=80"
-  },
-  { 
-    icon: Activity, 
-    label: "Consult Physiotherapist", 
-    path: "/physio-consult", 
-    badge: "Expert Care",
-    desc: "Personalized physiotherapy sessions at your doorstep for fast recovery.",
-    price: "Starts at ₹599",
-    gradient: "from-[#6366f1] to-[#2563eb]",
-    glow: "bg-[#6366f1]/20",
-    badgeColor: "bg-[#eef2ff] text-[#4f46e5] border-[#e0e7ff]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198?auto=format,webp&w=800&q=80"
-  },
-  { 
-    icon: FileUp, 
-    label: "Upload Prescription", 
-    path: "/upload-prescription", 
-    badge: "Get a Call",
-    desc: "Simply upload your prescription and our experts will call you to arrange the tests.",
-    cta: "Take a Photo",
-    gradient: "from-[#f59e0b] to-[#d97706]",
-    glow: "bg-[#f59e0b]/20",
-    badgeColor: "bg-[#fef3c7] text-[#b45309] border-[#fde68a]",
-    bgImage: "https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9?auto=format,webp&w=800&q=80"
-  },
+// Each service tile gets a soft pastel background and a matching label colour,
+// with a 3D illustration (Fluent Emoji 3D, MIT — see public/icons/3d) in the
+// corner, matching the "Shop by health concern" and "How it works" sections.
+const SERVICE_TONES = {
+  emerald: { tile: "bg-emerald-50 ring-emerald-100", tag: "text-emerald-700" },
+  red: { tile: "bg-rose-50 ring-rose-100", tag: "text-rose-700" },
+  blue: { tile: "bg-sky-50 ring-sky-100", tag: "text-sky-700" },
+  violet: { tile: "bg-violet-50 ring-violet-100", tag: "text-violet-700" },
+  amber: { tile: "bg-amber-50 ring-amber-100", tag: "text-amber-700" },
+} as const;
+
+type ServiceTone = keyof typeof SERVICE_TONES;
+
+const quickActions: {
+  icon3d: string;
+  label: string;
+  path: string;
+  badge: string;
+  price?: string;
+  cta?: string;
+  tone: ServiceTone;
+}[] = [
+  { icon3d: "stethoscope", label: "Consult Doctor", path: "/doctor-consult", badge: "Live video", price: "From ₹299", tone: "emerald" },
+  { icon3d: "beating-heart", label: "ECG Test", path: "/ecg-test", badge: "At home", price: "From ₹499", tone: "red" },
+  { icon3d: "stopwatch", label: "BP Check", path: "/bp-check", badge: "Home visit", price: "From ₹199", tone: "blue" },
+  { icon3d: "flexed-biceps", label: "Physiotherapy", path: "/physio-consult", badge: "Expert care", price: "From ₹599", tone: "violet" },
+  { icon3d: "memo", label: "Upload Prescription", path: "/upload-prescription", badge: "We'll call you to book", cta: "Upload", tone: "amber" },
 ];
 
 
@@ -151,6 +116,15 @@ const HomeScreen = () => {
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
+
+  // "Shop by health concern": run the Home search for that concern's tests and
+  // bring the search bar (with its results) into view.
+  const searchForConcern = useCallback((term: string) => {
+    setSearchQuery(term);
+    setShowSearchResults(true);
+    const scroller = document.querySelector<HTMLElement>(".home-stack [data-scroll-container]");
+    scroller?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const { pincode: userPincode } = useUserPincode();
   const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
@@ -401,99 +375,72 @@ const HomeScreen = () => {
           </div>
         )}
 
-        {/* Quick Actions (Premium Banners) */}
-        <section className="px-4 mt-8 flex flex-col gap-4" style={{ contain: "content" }}>
-          <h2 className="text-xl font-black text-foreground tracking-tight mb-1">Our Services 🩺</h2>
-          {quickActions.map((action, idx) => (
-            <div
-              key={action.label}
-              onClick={() => navigate(action.path)}
-              onPointerDown={() => {
-                if (action.path === "/doctor-consult") import("../pages/DoctorConsultScreen");
-                else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
-                else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
-              }}
-              className="home-render-section w-full relative overflow-hidden isolate bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.08)] cursor-pointer group active:opacity-95"
-            >
-              {/* Custom background image for specific tiles */}
-              {action.bgImage && (
-                <>
-                  <div className="absolute right-0 top-0 bottom-0 w-[40%] sm:w-[45%] z-0">
-                    <OptimizedImage
-                      src={action.bgImage}
-                      alt="Background"
-                      containerClassName="absolute inset-0 w-full h-full"
-                      className="w-full h-full object-cover object-center"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 to-transparent z-10 pointer-events-none" />
-                  </div>
-                </>
-              )}
-
-              {/* Background glowing accent - using zero-cost GPU radial gradients instead of 64px Gaussian blurs */}
-              {!action.bgImage && (
-                <>
-                  <div
-                    className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full pointer-events-none z-0"
-                    style={{
-                      background: action.gradient.includes("10b981")
-                        ? "radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)"
-                        : action.gradient.includes("f59e0b")
-                        ? "radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)"
-                        : "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)",
-                    }}
-                  />
-                  <div
-                    className="absolute -left-10 -top-10 w-40 h-40 rounded-full pointer-events-none z-0"
-                    style={{
-                      background: action.gradient.includes("10b981")
-                        ? "radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)"
-                        : action.gradient.includes("f59e0b")
-                        ? "radial-gradient(circle, rgba(245,158,11,0.2) 0%, transparent 70%)"
-                        : "radial-gradient(circle, rgba(59,130,246,0.2) 0%, transparent 70%)",
-                    }}
-                  />
-                </>
-              )}
-
-              <div className="relative z-10 max-w-[62%] sm:max-w-[70%]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-                  <div className="flex items-center">
-                    <h3 className="text-foreground text-[15px] sm:text-[16px] font-black tracking-tight leading-tight">
-                      {action.label}
-                    </h3>
-                  </div>
-                  <span className={`${action.badgeColor} border text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md self-start sm:self-auto shrink-0`}>
-                    {action.badge}
+        {/* Our services — compact two-column grid; Upload Prescription spans full width */}
+        <section className="px-4 mt-8" style={{ contain: "content" }}>
+          <div className="mb-3">
+            <h2 className="text-[19px] font-extrabold text-foreground tracking-tight">Our services</h2>
+            <p className="text-[13px] text-muted-foreground mt-0.5">Care at home, booked in minutes</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {quickActions.map((action) => {
+              const tone = SERVICE_TONES[action.tone];
+              const wide = !!action.cta;
+              const illustration = (
+                <img
+                  src={`/icons/3d/${action.icon3d}.webp`}
+                  alt=""
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  className={wide ? "w-12 h-12 object-contain shrink-0" : "absolute right-2.5 bottom-2.5 w-[60px] h-[60px] object-contain"}
+                />
+              );
+              return (
+                <button
+                  type="button"
+                  key={action.label}
+                  onClick={() => navigate(action.path)}
+                  onPointerDown={() => {
+                    if (action.path === "/doctor-consult") import("../pages/DoctorConsultScreen");
+                    else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
+                    else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
+                  }}
+                  className={`home-render-section relative overflow-hidden text-left rounded-2xl ring-1 active:scale-[0.98] transition-transform duration-150 ${tone.tile} ${
+                    wide ? "col-span-2 flex items-center gap-3.5 px-4 py-3.5" : "flex flex-col min-h-[132px] p-3.5"
+                  }`}
+                >
+                  {wide && illustration}
+                  <span className={wide ? "flex-1 min-w-0" : "flex flex-col flex-1"}>
+                    <span className="block text-[15px] font-bold text-foreground leading-snug">{action.label}</span>
+                    <span className={`block text-[12px] font-semibold mt-0.5 ${tone.tag}`}>{action.badge}</span>
+                    {action.price && (
+                      <span className="mt-auto pt-3 flex items-center gap-0.5 text-[13px] font-bold text-foreground/75">
+                        {action.price}
+                        <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
+                      </span>
+                    )}
                   </span>
-                </div>
-                
-                <div className="flex items-center justify-start gap-1 mt-2 group/btn">
-                  {action.price && (
-                    <span className="text-[13px] font-bold text-foreground/70 mr-2">
-                      {action.price}
+                  {!wide && illustration}
+                  {action.cta && (
+                    <span className="flex items-center gap-0.5 text-[13px] font-bold text-primary bg-white rounded-full pl-3 pr-2 py-1.5 shadow-sm shrink-0">
+                      {action.cta}
+                      <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
                     </span>
                   )}
-                  {(action as any).cta && (
-                    <span className={`text-[12px] font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r ${action.gradient} mr-0.5`}>
-                      {(action as any).cta}
-                    </span>
-                  )}
-                  <ChevronRight 
-                    className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" 
-                    color={action.gradient.match(/from-\[([^\]]+)\]/)?.[1] || 'currentColor'} 
-                    strokeWidth={2.5}
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
+                </button>
+              );
+            })}
+          </div>
         </section>
 
-
+        <HealthConcernsGrid onSelect={searchForConcern} />
 
         {/* Health Packages (real-time, vendor-driven) */}
         <HealthPackagesSection />
+
+        <HowItWorks />
 
         {/* Doctor Banner */}
         <section className="home-render-section px-4 mt-8 mb-8">

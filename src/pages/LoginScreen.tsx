@@ -279,7 +279,7 @@ const LoginScreen = () => {
                       placeholder="nicholas@ergemlia.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                     />
                   </div>
 
@@ -293,7 +293,7 @@ const LoginScreen = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEmailAuth(); } }}
-                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                       />
                       <button
                         type="button"
@@ -317,7 +317,7 @@ const LoginScreen = () => {
                         if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); }
                         else { toast({ title: "Check Your Email", description: "Password reset link sent to your email." }); }
                       }}
-                      className="text-[13px] font-semibold text-[#4338ca] hover:text-[#3730a3] transition-colors"
+                      className="text-[13px] font-semibold text-primary hover:text-primary/80 transition-colors"
                     >
                       Forgot your password?
                     </button>
@@ -328,7 +328,7 @@ const LoginScreen = () => {
                     <Button
                       onClick={handleEmailAuth}
                       className="w-full h-[46px] rounded-full text-white font-bold text-[15px] shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(90deg, #4338ca 0%, #c084fc 100%)' }}
+                      style={{ background: 'var(--gradient-brand)' }}
                       disabled={isLoading}
                     >
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Log In"}
@@ -364,7 +364,7 @@ const LoginScreen = () => {
                   <div className="text-center pt-2">
                     <button onClick={() => setIsSignUp(true)} className="text-[13px] text-gray-500">
                       Don't have an account?{" "}
-                      <span className="font-bold text-[#4338ca] underline underline-offset-2">Sign up</span>
+                      <span className="font-bold text-primary underline underline-offset-2">Sign up</span>
                     </button>
                   </div>
                 </div>
@@ -381,7 +381,7 @@ const LoginScreen = () => {
                       placeholder="Nicholas Ergemlia"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                     />
                   </div>
 
@@ -393,7 +393,7 @@ const LoginScreen = () => {
                       placeholder="nicholas@ergemlia.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                     />
                   </div>
 
@@ -407,7 +407,7 @@ const LoginScreen = () => {
                       placeholder="+91 98765 43210"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(sanitizeInternationalPhone(e.target.value))}
-                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                      className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                     />
                   </div>
 
@@ -420,7 +420,7 @@ const LoginScreen = () => {
                         placeholder="••••••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-32 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-32 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                       />
                       {password.length > 0 && (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -445,7 +445,7 @@ const LoginScreen = () => {
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         onKeyPress={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleEmailAuth(); } }}
-                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-[#4338ca]/20 focus-visible:border-[#4338ca] transition-all"
+                        className="h-[52px] rounded-2xl border border-gray-100 bg-gray-50 px-4 pr-12 text-[15px] placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-all"
                       />
                       <button
                         type="button"
@@ -463,7 +463,7 @@ const LoginScreen = () => {
                     <Button
                       onClick={handleEmailAuth}
                       className="w-full h-[46px] rounded-full text-white font-bold text-[15px] shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                      style={{ background: 'linear-gradient(90deg, #4338ca 0%, #c084fc 100%)' }}
+                      style={{ background: 'var(--gradient-brand)' }}
                       disabled={isLoading}
                     >
                       {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
@@ -474,7 +474,7 @@ const LoginScreen = () => {
                   <div className="text-center pt-1 pb-2">
                     <button onClick={() => setIsSignUp(false)} className="text-[13px] text-gray-500">
                       Already have an account?{" "}
-                      <span className="font-bold text-[#4338ca] underline underline-offset-2">Log in</span>
+                      <span className="font-bold text-primary underline underline-offset-2">Log in</span>
                     </button>
                   </div>
                 </div>

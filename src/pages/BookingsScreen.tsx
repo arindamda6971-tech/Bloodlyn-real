@@ -358,7 +358,7 @@ const BookingsScreen = () => {
                   <button
                     key={f.key}
                     onClick={() => setActiveFilter(f.key)}
-                    className={`flex-1 py-2 px-2 rounded-full text-[10px] font-black tracking-wide uppercase transition-all duration-300 flex items-center justify-center text-center shrink-0 ${
+                    className={`flex-1 py-2 px-2 rounded-full text-[12px] font-semibold transition-all duration-300 flex items-center justify-center text-center shrink-0 ${
                       activeFilter === f.key
                         ? "bg-primary text-primary-foreground shadow-md scale-[1.02]"
                         : "text-muted-foreground hover:text-foreground"
@@ -428,7 +428,7 @@ const BookingsScreen = () => {
               </p>
               <button
                 onClick={() => navigate("/home")}
-                className="bg-primary text-primary-foreground px-8 py-3.5 rounded-[1.5rem] text-[13px] font-black tracking-wider uppercase shadow-xl shadow-primary/20 active:scale-95 transition-transform"
+                className="bg-primary text-primary-foreground px-8 py-3.5 rounded-2xl text-[15px] font-bold shadow-xl shadow-primary/20 active:scale-95 transition-transform"
               >
                 Book Your First Test
               </button>

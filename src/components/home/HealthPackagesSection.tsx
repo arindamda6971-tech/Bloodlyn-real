@@ -132,9 +132,10 @@ const HealthPackagesSection = () => {
     <section className="home-render-section px-4 mt-8 section-defer">
       <div className="flex items-end justify-between mb-3">
         <div>
-          <h2 className="text-xl font-black text-foreground tracking-tight">
-            Health Packages 💎
+          <h2 className="text-[19px] font-extrabold text-foreground tracking-tight">
+            Health packages
           </h2>
+          <p className="text-[13px] text-muted-foreground mt-0.5">Bundled checkups from partner labs</p>
         </div>
         {labs.length > 0 && (
           <button

@@ -70,6 +70,18 @@ const DataAttributionScreen = () => {
               </p>
             </div>
           </motion.section>
+
+          <section className="mt-4 p-5 rounded-3xl bg-card/98 border border-border/60 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)]">
+            <h2 className="text-base font-bold text-foreground tracking-tight">Icon Credits</h2>
+            <div className="text-[12px] text-muted-foreground leading-relaxed font-medium space-y-3 mt-3">
+              <p>
+                Some 3D icons in BloodLyn are from Fluent Emoji by Microsoft Corporation (<a href="https://github.com/microsoft/fluentui-emoji" target="_blank" rel="noreferrer" className="text-primary hover:underline">github.com/microsoft/fluentui-emoji</a>), used under the MIT License.
+              </p>
+              <p className="italic bg-muted/30 p-3 rounded-xl border border-border/50 text-[11px] leading-relaxed">
+                Copyright © Microsoft Corporation. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions: The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+              </p>
+            </div>
+          </section>
         </div>
       </div>
     </MobileLayout>

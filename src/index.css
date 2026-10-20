@@ -44,9 +44,18 @@ input[type="number"] {
     --popover: 0 0% 100%;
     --popover-foreground: 210 50% 15%;
 
-    /* Sky Blue - Primary */
-    --primary: 201 88% 62%;
+    /* Brand Blue - Primary (the "Lyn" blue from the logo, #0284c7).
+       Darker than the old sky blue (#4AB3F4) so white text on buttons is
+       readable (~4.6:1 contrast instead of ~2.4:1). */
+    --primary: 200 98% 39%;
     --primary-foreground: 0 0% 100%;
+
+    /* Brand Red - the blood drop in the logo. For brand accents only;
+       use --destructive for errors. */
+    --brand-red: 0 72% 51%;
+
+    /* One brand gradient for hero buttons and highlights. */
+    --gradient-brand: linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%);
 
     /* Navy Blue - Secondary */
     --secondary: 210 40% 16%;
@@ -57,8 +66,8 @@ input[type="number"] {
     --muted-foreground: 210 20% 45%;
 
     /* Accent - lighter blue */
-    --accent: 201 88% 95%;
-    --accent-foreground: 201 88% 35%;
+    --accent: 200 94% 95%;
+    --accent-foreground: 200 98% 32%;
 
     /* Success - Soft Green */
     --success: 153 52% 53%;
@@ -77,7 +86,7 @@ input[type="number"] {
 
     --border: 210 20% 90%;
     --input: 210 20% 90%;
-    --ring: 201 88% 62%;
+    --ring: 200 98% 39%;
 
     /* Status indicators - New Pastel Palette */
     --status-success-bg: 153 52% 95%;
@@ -96,7 +105,7 @@ input[type="number"] {
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 20px hsl(201 88% 62% / 0.3);
+    --shadow-glow: 0 6px 18px -4px hsl(200 98% 39% / 0.35);
     --shadow-card: 0 2px 12px rgb(0 0 0 / 0.08);
 
     /* Gold Theme */
@@ -128,7 +137,7 @@ input[type="number"] {
     --popover: 210 40% 12%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 201 88% 55%;
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 30% 20%;
@@ -137,8 +146,8 @@ input[type="number"] {
     --muted: 210 30% 18%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 201 50% 20%;
-    --accent-foreground: 201 88% 75%;
+    --accent: 200 60% 18%;
+    --accent-foreground: 199 92% 74%;
 
     --success: 153 52% 45%;
     --success-foreground: 0 0% 100%;
@@ -154,9 +163,9 @@ input[type="number"] {
 
     --border: 210 30% 20%;
     --input: 210 30% 20%;
-    --ring: 201 88% 55%;
+    --ring: 199 89% 48%;
 
-    --shadow-glow: 0 0 20px hsl(201 88% 55% / 0.4);
+    --shadow-glow: 0 6px 18px -4px hsl(199 89% 48% / 0.4);
     --shadow-card: 0 2px 12px rgb(0 0 0 / 0.3);
 
     --gradient-primary: linear-gradient(135deg, hsl(201 88% 55%) 0%, hsl(201 88% 45%) 100%);
@@ -370,9 +379,9 @@ input[type="number"] {
 
   /* Primary gradient button */
   .btn-primary-gradient {
-    background: linear-gradient(135deg, #4AB3F4 0%, #2D9CDB 100%);
+    background: var(--gradient-brand);
     @apply text-white font-bold rounded-2xl px-6 py-4 transition-all duration-300;
-    box-shadow: 0 10px 20px -5px rgba(74, 179, 244, 0.4);
+    box-shadow: 0 10px 20px -6px rgba(2, 132, 199, 0.35);
     backface-visibility: hidden;
     transform: translateZ(0);
   }

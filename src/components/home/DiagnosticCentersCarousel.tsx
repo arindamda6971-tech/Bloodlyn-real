@@ -180,7 +180,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
             <Building2 className="w-4 h-4 text-primary" />
           </div>
-          <h3 className="font-bold text-lg text-foreground tracking-tight">Partner Labs</h3>
+          <h2 className="text-[19px] font-extrabold text-foreground tracking-tight">Partner labs</h2>
         </div>
         <button
           onClick={() => navigate('/partner-labs')}
