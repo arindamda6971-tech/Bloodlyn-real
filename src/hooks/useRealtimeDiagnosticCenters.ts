@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { createBurstDebouncer } from "@/lib/realtimeBurst";
 
 /**
  * Subscribe to real-time updates on the diagnostic_centers table.
@@ -12,6 +13,13 @@ export const useRealtimeDiagnosticCenters = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // One refresh per burst: partner syncs can update a center several times in a row.
+    const refresh = createBurstDebouncer(() => {
+      queryClient.invalidateQueries({ queryKey: ["diagnostic-centers"] });
+      queryClient.invalidateQueries({ queryKey: ["labs"] });
+      queryClient.invalidateQueries({ queryKey: ["partner-labs"] });
+    });
+
     const channel = supabase
       .channel("diagnostic-centers-realtime")
       .on(
@@ -22,12 +30,8 @@ export const useRealtimeDiagnosticCenters = () => {
           table: "diagnostic_centers",
         },
         (payload) => {
-          console.log("Diagnostic centers realtime update:", payload);
-
           // Invalidate diagnostic center queries to refresh UI
-          queryClient.invalidateQueries({ queryKey: ["diagnostic-centers"] });
-          queryClient.invalidateQueries({ queryKey: ["labs"] });
-          queryClient.invalidateQueries({ queryKey: ["partner-labs"] });
+          refresh.trigger();
 
           // Show toast for significant changes
           if (payload.eventType === "UPDATE") {
@@ -46,6 +50,7 @@ export const useRealtimeDiagnosticCenters = () => {
       .subscribe();
 
     return () => {
+      refresh.cancel();
       supabase.removeChannel(channel);
     };
   }, [queryClient]);

@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useLabSlots } from "@/hooks/useLabSlots";
 import { formatAvailableDays, normalizeAvailabilityType } from "@/lib/test-availability";
 
@@ -525,19 +526,22 @@ const LabDetailScreen = () => {
     const vendorId = labFromDb?.vendor_id;
     if (!labId || !vendorId) return;
 
+    // A partner catalogue sync updates many product rows at once: reload once per burst.
+    const reload = createBurstDebouncer(() => {
+      globalLabCache.delete(labId);
+      setCatalogueRefresh((value) => value + 1);
+    });
     const channel = supabase
       .channel(`lab-products-${vendorId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "products", filter: `vendor_id=eq.${vendorId}` },
-        () => {
-          globalLabCache.delete(labId);
-          setCatalogueRefresh((value) => value + 1);
-        },
+        () => reload.trigger(),
       )
       .subscribe();
 
     return () => {
+      reload.cancel();
       supabase.removeChannel(channel);
     };
   }, [labFromDb?.vendor_id, labId]);
@@ -593,16 +597,18 @@ const LabDetailScreen = () => {
 
     loadPackages();
 
+    const reloadPackages = createBurstDebouncer(() => loadPackages());
     const channel = supabase
       .channel(`test_packages-${centerId}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'test_packages', filter: `diagnostic_center_id=eq.${centerId}` },
-        () => loadPackages()
+        () => reloadPackages.trigger()
       )
       .subscribe();
 
     return () => {
+      reloadPackages.cancel();
       supabase.removeChannel(channel);
     };
   }, [labFromDb?.id, labId]);

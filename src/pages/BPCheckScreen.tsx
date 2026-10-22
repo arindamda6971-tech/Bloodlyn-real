@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
@@ -404,14 +405,17 @@ const BPCheckScreen = () => {
 
     loadLabs();
 
-    // Subscribe to realtime database changes on diagnostic_centers
+    // Subscribe to realtime database changes on diagnostic_centers.
+    // Debounced: a burst of center updates triggers one reload, not one per row.
+    const reload = createBurstDebouncer(() => loadLabs());
     const channel = supabase
       .channel("bp_labs_realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => loadLabs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "diagnostic_centers" }, () => reload.trigger())
       .subscribe();
 
     return () => {
       cancelled = true;
+      reload.cancel();
       supabase.removeChannel(channel);
     };
   }, [step, pincode]);

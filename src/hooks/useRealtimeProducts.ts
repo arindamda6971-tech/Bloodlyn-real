@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { createBurstDebouncer } from "@/lib/realtimeBurst";
 
 /**
  * Subscribe to real-time updates on the products table.
@@ -12,6 +13,13 @@ export const useRealtimeProducts = () => {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // One refresh per burst: a partner catalogue sync changes many rows at once.
+    const refresh = createBurstDebouncer(() => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["labs"] });
+      queryClient.invalidateQueries({ queryKey: ["tests"] });
+    });
+
     const channel = supabase
       .channel("products-realtime")
       .on(
@@ -22,12 +30,8 @@ export const useRealtimeProducts = () => {
           table: "products",
         },
         (payload) => {
-          console.log("Products realtime update:", payload);
-
           // Invalidate product-related queries to refresh UI
-          queryClient.invalidateQueries({ queryKey: ["products"] });
-          queryClient.invalidateQueries({ queryKey: ["labs"] });
-          queryClient.invalidateQueries({ queryKey: ["tests"] });
+          refresh.trigger();
 
           // Show toast for significant changes
           if (payload.eventType === "UPDATE") {
@@ -41,6 +45,7 @@ export const useRealtimeProducts = () => {
       .subscribe();
 
     return () => {
+      refresh.cancel();
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
