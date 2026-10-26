@@ -2,20 +2,20 @@ import { memo } from "react";
 
 /**
  * "Shop by health concern" — the entry point diagnostics apps lead with.
- * Static (no database call): each concern runs the smart test search (see
- * lib/test-search.ts), which expands it to the tests for that concern.
+ * Static (no database call): each concern runs a Home search for its key tests,
+ * so it keeps working whatever categories the labs publish.
  *
  * Icons: Microsoft Fluent Emoji 3D (MIT, see public/icons/3d/LICENSE-fluent-emoji.txt),
  * bundled as 144px WebP so they load instantly and offline.
  */
 const CONCERNS = [
-  { label: "Diabetes", icon: "drop-of-blood", search: "diabetes" },
-  { label: "Heart", icon: "anatomical-heart", search: "heart" },
+  { label: "Diabetes", icon: "drop-of-blood", search: "glucose" },
+  { label: "Heart", icon: "anatomical-heart", search: "lipid" },
   { label: "Thyroid", icon: "butterfly", search: "thyroid" },
-  { label: "Lungs", icon: "lungs", search: "lungs" },
-  { label: "Vitamins", icon: "pill", search: "vitamins" },
-  { label: "Fever", icon: "thermometer", search: "fever" },
-  { label: "Bones", icon: "bone", search: "bone" },
+  { label: "Lungs", icon: "lungs", search: "lung" },
+  { label: "Vitamins", icon: "pill", search: "vitamin" },
+  { label: "Fever", icon: "thermometer", search: "CBC" },
+  { label: "Bones", icon: "bone", search: "calcium" },
   { label: "Full body", icon: "dna", search: "full body" },
 ] as const;
 

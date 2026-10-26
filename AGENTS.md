@@ -12,5 +12,3 @@
 - Define the six two-hour collection windows centrally in `lab-slots`, because Blood Tests, ECG, BP, rescheduling, and tracking must use identical boundaries.
 - Enforce Partner slot capacities inside a database-locked server operation keyed by vendor, date, and normalized slot, because client checks cannot prevent concurrent overbooking.
 - Render one app-wide bottom bar outside the sliding page layers and switch bottom tabs with a short fade-through that removes the outgoing tab at once, because per-page bars slid in stacked and sliding tabs kept several full screens mounted until the WebView froze.
-- Load the Admin test catalogue once (`all=true`, memory-only query) and search it on-device with the concept/typo engine in `lib/test-search`, building its index in yielding slices, because per-category paging capped lists at 500 tests and per-keystroke proxy searches hit the shared rate limit.
-- Send every test "Add" through the shared `LabPickerSheet`, because a test may enter the cart only with a nearby lab that offers it, at that lab's price.

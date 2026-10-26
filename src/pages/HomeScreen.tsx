@@ -2,11 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
-import { useTestCatalogue, useTestSearchIndex } from "@/hooks/useTestCatalogue";
-import { searchTests } from "@/lib/test-search";
-import { formatCount, getTestDisplayName } from "@/lib/test-display";
-import { useLabPicker } from "@/components/tests/useLabPicker";
-import LabConflictDialog from "@/components/tests/LabConflictDialog";
+import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,8 +19,6 @@ import {
   ShieldCheck,
   Clock,
   Award,
-  Loader2,
-  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,6 +36,9 @@ import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
+import { intelligentSearch } from "@/utils/search-intelligence";
+import { matchToDictionary } from "@/lib/medical-dictionary";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
@@ -50,8 +47,6 @@ import { ZomatoStyleHeader } from "@/components/layout/ZomatoStyleHeader";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
-
-const HOME_SEARCH_LIMIT = 20;
 
 // Optimized greeting
 const getGreeting = () => {
@@ -112,7 +107,7 @@ const HomeScreen = () => {
   const { user } = useAuth();
   const { addToCart, items, clearCart, replaceCart, hasItem } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 150);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -144,34 +139,87 @@ const HomeScreen = () => {
 
   const StaticBackground = null;
 
-  // Smart on-device search over the cached catalogue ("sugar" → glucose, HbA1c, GTT…).
-  // Only the dropdown's first rows are shown; "See all" opens the full list in Explore.
-  const { data: catalogue, isError: catalogueError } = useTestCatalogue();
-  // Index only once the search is opened: Home itself never pays for it.
-  const searchIndex = useTestSearchIndex(catalogue?.tests, showSearchResults || !!searchQuery);
-  const search = useMemo(() => {
+  // Compute the intelligent search term (dictionary-mapped)
+  const backendSearchTerm = useMemo(() => {
     const q = debouncedSearchQuery.trim();
-    return q && searchIndex ? searchTests(searchIndex, q) : null;
-  }, [debouncedSearchQuery, searchIndex]);
-  const searchResults = useMemo(() => (search ? search.results.slice(0, HOME_SEARCH_LIMIT) : []), [search]);
-  const searchPending = !!searchQuery.trim() && (!search || debouncedSearchQuery !== searchQuery) && !catalogueError;
+    if (!q) return "";
+
+    const dictMatch = matchToDictionary(q, 0.5);
+    if (dictMatch) {
+      const canonical = dictMatch.canonical.toLowerCase();
+      
+      // Extract the most significant scientific keyword from the canonical name
+      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
+      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
+      
+      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
+      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
+      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
+      
+      return words[0] || dictMatch.canonical.split(" ")[0]; 
+    }
+    return "";
+  }, [debouncedSearchQuery]);
+
+  const rawQuery = debouncedSearchQuery.trim();
+
+  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
+  const { data: dictBridgeData } = useBridgeTests(
+    backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
+  );
+  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
+  const { data: rawBridgeData } = useBridgeTests(
+    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
+  );
+
+  const searchResults = useMemo(() => {
+    if (!debouncedSearchQuery.trim()) return [];
+    
+    const dictResults = dictBridgeData?.tests || [];
+    const rawResults = rawBridgeData?.tests || [];
+    
+    // Merge and deduplicate by test ID
+    const seen = new Set<string>();
+    const merged: any[] = [];
+    for (const test of [...rawResults, ...dictResults]) {
+      if (!seen.has(test.id)) {
+        seen.add(test.id);
+        merged.push(test);
+      }
+    }
+    
+    // Client-side filter: match against original, friendly name, AND mapped synonym
+    const q = debouncedSearchQuery.trim().toLowerCase();
+    const mappedQ = backendSearchTerm?.toLowerCase();
+    
+    return merged.filter((test) => {
+      const originalName = (test.test_name || test.name || "").toLowerCase();
+      const friendlyName = simplifyTestName(test.test_name || test.name || "").toLowerCase();
+      
+      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
+      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
+      
+      return matchesRaw || matchesMapped;
+    });
+  }, [debouncedSearchQuery, backendSearchTerm, dictBridgeData, rawBridgeData]);
 
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
-  // "+" opens the same "Select a Lab" sheet as the test page; a test never enters the
-  // cart without a lab that offers it.
-  const labPicker = useLabPicker();
-  const handleQuickAdd = (e: React.MouseEvent, test: { id: string; name: string; price: number; category?: string }) => {
+  const handleQuickAdd = (e: React.MouseEvent, test: any) => {
     e.stopPropagation();
-    setShowSearchResults(false);
-    labPicker.open(test);
+    const ok = addToCart({
+      id: test.id,
+      name: test.name,
+      price: test.price,
+    });
+    if (ok) {
+      toast.success(`${test.name} added to cart!`);
+    }
   };
 
   const HighlightText = ({ text, highlight }: { text: string; highlight: string }) => {
     if (!highlight.trim()) return <span>{text}</span>;
-    // Escape the query: a "(" or "+" typed in search must not throw an invalid-RegExp error.
-    const escaped = highlight.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
     return (
       <span>
         {parts.map((part, i) => 
@@ -210,15 +258,10 @@ const HomeScreen = () => {
               <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
                 {searchResults.length > 0 ? (
                   <div className="flex flex-col">
-                    {search && search.concepts.length > 0 && (
-                      <div className="flex items-center gap-1.5 px-4 pt-3 pb-1 text-[11.5px] font-semibold text-primary">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span className="truncate">Showing {search.concepts.slice(0, 2).join(" · ")} tests</span>
-                      </div>
-                    )}
                     {searchResults.map((test) => {
-                      const testName = test.test_name || "Unknown Test";
-                      const { title, specimen } = getTestDisplayName(test.display_name || testName);
+                      const discount = test.discount_percent || 0;
+                      const finalPrice = Math.round(test.price * (1 - discount / 100));
+                      const testName = test.name || test.test_name || "Unknown Test";
                       const inCart = isInCart(test.id, testName);
                       return (
                         <div
@@ -238,11 +281,8 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                              <HighlightText text={title} highlight={searchQuery} />
+                              <HighlightText text={simplifyTestName(testName)} highlight={searchQuery} />
                             </p>
-                            {specimen && (
-                              <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{specimen}</p>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <button
@@ -251,12 +291,7 @@ const HomeScreen = () => {
                                 e.stopPropagation();
                                 e.preventDefault();
                                 if (!inCart) {
-                                  handleQuickAdd(e, {
-                                    id: test.id,
-                                    name: testName,
-                                    price: test.price > 0 ? test.price : test.collection_fee || 0,
-                                    category: test.category,
-                                  });
+                                  handleQuickAdd(e, { ...test, name: testName });
                                 }
                               }}
                               disabled={inCart}
@@ -272,24 +307,6 @@ const HomeScreen = () => {
                         </div>
                       );
                     })}
-                    {search && search.results.length > searchResults.length && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          // Same history marker as the bottom bar, so Back / the Home tab return here.
-                          navigate(`/categories?q=${encodeURIComponent(searchQuery.trim())}`, { state: { fromHomeTab: true } })
-                        }
-                        className="flex items-center justify-center gap-1 px-4 py-3 text-[13px] font-bold text-primary bg-primary/5 active:bg-primary/10"
-                      >
-                        See all {formatCount(search.results.length)} results
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ) : searchPending ? (
-                  <div className="flex items-center gap-2 px-4 py-4 text-[13px] font-medium text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                    Searching tests…
                   </div>
                 ) : (
                   <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
@@ -492,8 +509,8 @@ const HomeScreen = () => {
         </DrawerContent>
       </Drawer>
 
-      {labPicker.sheet}
-      <LabConflictDialog />
+
+
       </MobileLayout>
   );
 };

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
-import { testCatalogueQueryOptions } from "@/hooks/useTestCatalogue";
 
 /**
  * Aggressive background warm-up of the data every screen needs first.
@@ -40,9 +39,22 @@ const DataWarmup = () => {
               : data ?? [];
           },
         }),
-        // The full test catalogue (one request): Explore Tests, categories and the
-        // Home search all read it, so they open with real data and search instantly.
-        queryClient.prefetchQuery(testCatalogueQueryOptions),
+        queryClient.prefetchQuery({
+          queryKey: ["bridge-tests-v2", "{}"],
+          staleTime: 5 * 60 * 1000,
+          queryFn: async () => {
+            const { data, error } = await supabase.functions.invoke("bridge-proxy", {
+              body: {
+                endpoint: "bridge-tests",
+                method: "GET",
+                params: { status: "active", limit: "0" },
+              },
+            });
+            if (error) throw new Error(error.message || "Failed to fetch tests");
+            if (!data?.success) throw new Error("Bridge API returned unsuccessful response");
+            return data;
+          },
+        }),
         queryClient.prefetchQuery({
           queryKey: ["home-test-packages"],
           staleTime: 5 * 60 * 1000,
