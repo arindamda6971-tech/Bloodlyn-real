@@ -26,3 +26,4 @@
 - [x] Split shared Blood Test, ECG, BP, and rescheduling availability into six two-hour collection windows while preserving legacy order tracking.
 - [x] Display Partner slot capacity and atomically reject concurrent bookings when a two-hour window is full.
 - [x] Route order rescheduling through the same server-side Partner capacity enforcement.
+- [x] GitHub sync trigger note (no app change).
