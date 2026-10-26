@@ -1,391 +1,294 @@
-import { memo, useMemo, useState, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Droplets,
-  Activity,
-  Pill,
-  Sun,
-  Heart,
-  UserCheck,
-  Stethoscope,
-  Baby,
-  Brain,
-  Bone,
-  Search,
-  Loader2,
-  Microscope,
-  Dna,
-  ShieldCheck,
-  Thermometer,
-  Eye,
-  Ear,
-  Syringe,
-  Beaker,
-  TestTubes,
-  Scan,
-  HeartPulse,
-  Wind,
-  Plus,
-  Check,
-  type LucideIcon,
-} from "lucide-react";
+import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronRight, FlaskConical, Loader2, RefreshCw, SearchX } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
-import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
-import { useCart } from "@/contexts/CartContext";
+import IconTile from "@/components/tests/IconTile";
+import TestCard, { TestList, TestListSkeleton } from "@/components/tests/TestCard";
+import LabConflictDialog from "@/components/tests/LabConflictDialog";
+import { useIncrementalList } from "@/components/tests/useIncrementalList";
+import { useTestListActions } from "@/components/tests/useTestListActions";
+import { useTestCatalogue, useTestSearchIndex, type CatalogueTest } from "@/hooks/useTestCatalogue";
+import { searchTests, type TestSearchResult } from "@/lib/test-search";
+import { compareCategories, getTestCategoryStyle, HEALTH_CONCERNS, POPULAR_SEARCHES } from "@/lib/test-categories";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
-import { Skeleton } from "@/components/ui/skeleton";
-import { simplifyTestName } from "@/utils/simplify-test-name";
-import { useEffect } from "react";
 
-const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
-  const [showLoading, setShowLoading] = useState(false);
+const EMPTY_RESULT: TestSearchResult<CatalogueTest> = { results: [], concepts: [], corrections: [] };
 
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => setShowLoading(true), delayMs);
-      return () => clearTimeout(timer);
-    } else {
-      setShowLoading(false);
-    }
-  }, [isLoading, delayMs]);
+interface CategoryEntry {
+  slug: string;
+  name: string;
+  count: number;
+}
 
-  return showLoading;
-};
-
-// Hand-picked icons and colors for specific known categories
-const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string; image?: string }> = {
-  "cardiac": { icon: HeartPulse, color: "bg-rose-100 text-rose-600", image: "/categories/cardiac.jpg" },
-  "diabetes": { icon: Activity, color: "bg-sky-100 text-sky-600" },
-  "kidney": { icon: Droplets, color: "bg-amber-100 text-amber-600" },
-  "liver": { icon: Beaker, color: "bg-emerald-100 text-emerald-600" },
-  "thyroid": { icon: Activity, color: "bg-purple-100 text-purple-600" },
-  "fever": { icon: Thermometer, color: "bg-orange-100 text-orange-600" },
-  "full body": { icon: Scan, color: "bg-indigo-100 text-indigo-600" },
-  "vitamin": { icon: Pill, color: "bg-yellow-100 text-yellow-600", image: "/categories/vitamin.jpg" },
-  "bone": { icon: Bone, color: "bg-slate-100 text-slate-700" },
-  "pregnancy": { icon: Baby, color: "bg-pink-100 text-pink-600" },
-  "neurology": { icon: Brain, color: "bg-cyan-100 text-cyan-600" },
-  "infection": { icon: ShieldCheck, color: "bg-red-100 text-red-600" },
-  "immunity": { icon: ShieldCheck, color: "bg-teal-100 text-teal-600" },
-  "blood": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
-  "chemistry": { icon: Beaker, color: "bg-blue-100 text-blue-600", image: "/categories/chemistry.jpg" },
-  "coagulation": { icon: Droplets, color: "bg-red-100 text-red-600", image: "/categories/coagulation.jpg" },
-  "cytology": { icon: Microscope, color: "bg-purple-100 text-purple-600", image: "/categories/cytology.jpg" },
-  "genetics": { icon: Dna, color: "bg-indigo-100 text-indigo-600", image: "/categories/genetics.jpg" },
-  "hematology": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
-  "microbiology": { icon: Scan, color: "bg-teal-100 text-teal-600", image: "/categories/microbiology.jpg" },
-  "urine": { icon: Beaker, color: "bg-yellow-100 text-yellow-600", image: "/categories/urine.jpg" },
-  "stool": { icon: Beaker, color: "bg-orange-100 text-orange-600", image: "/categories/urine.jpg" }, // reusing urine container for stool 
-  "allergy": { icon: Wind, color: "bg-sky-100 text-sky-600", image: "/categories/allergy.jpg" },
-};
-
-const iconPool: LucideIcon[] = [
-  Stethoscope, Activity, Heart, Scan, Microscope, TestTubes, Dna, Eye, Ear, Wind
-];
-
-const colorPool: string[] = [
-  "bg-primary/10 text-primary",
-  "bg-secondary/10 text-secondary",
-  "bg-blue-100 text-blue-600",
-  "bg-indigo-100 text-indigo-600",
-  "bg-teal-100 text-teal-600",
-];
-
-const getCategoryStyle = (name: string, slug: string) => {
-  const key = name.toLowerCase();
-  for (const [k, v] of Object.entries(CATEGORY_MAP)) {
-    if (key.includes(k) || (slug && slug.includes(k))) return v;
-  }
-  
-  // Deterministic fallback
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
-  h = Math.abs(h);
-  return {
-    icon: iconPool[h % iconPool.length],
-    color: colorPool[h % colorPool.length],
-  };
-};
-
-const CategoryTile = memo(({ category, index, onClick, onPointerDown }: { category: any, index: number, onClick: () => void, onPointerDown?: () => void }) => (
-  <div
-    onClick={onClick}
-    onPointerDown={onPointerDown}
-    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press flex flex-col justify-between"
-    style={{ contain: 'content', minHeight: '160px' }}
-  >
-    <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    
-    {category.image ? (
-      <div className="w-16 h-16 mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 ease-out flex-shrink-0">
-        <img src={category.image} alt={category.name} loading="lazy" decoding="async" className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
-      </div>
-    ) : (
-      <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out flex-shrink-0`}>
-        <category.icon className="w-7 h-7" />
-      </div>
-    )}
-    
-    <div className="relative z-10 mt-auto">
-      <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1">{category.name}</h3>
-      <p className="text-[12px] font-bold text-muted-foreground/60">{category.subtitle}</p>
-    </div>
+const SectionTitle = ({ title, aside }: { title: string; aside?: string }) => (
+  <div className="mb-3 flex items-baseline justify-between px-1">
+    <h2 className="text-[17px] font-bold tracking-tight text-foreground">{title}</h2>
+    {aside && <span className="text-[12px] font-medium text-muted-foreground">{aside}</span>}
   </div>
-));
+);
 
-CategoryTile.displayName = "CategoryTile";
-
-const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => {
-  const navigate = useNavigate();
-  return (
-    <div
-      onClick={onNavigate}
-      className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
-      style={{ contain: 'content' }}
-    >
-      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Beaker className="w-5 h-5 text-primary" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{simplifyTestName(test.test_name)}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
-      </div>
-      <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        {alreadyInCart ? (
-          <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/cart")}>
-            <Check className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={onAddToCart}>
-            <Plus className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
+const PopularSearches = memo(({ onPick }: { onPick: (term: string) => void }) => (
+  <section className="mt-4">
+    <h2 className="mb-2.5 px-5 text-[13px] font-semibold text-muted-foreground">Popular searches</h2>
+    <div className="hide-scrollbar flex gap-2 overflow-x-auto px-4 pb-1" style={{ touchAction: "pan-x" }}>
+      {POPULAR_SEARCHES.map((term) => (
+        <button
+          key={term}
+          type="button"
+          onClick={() => onPick(term)}
+          className="h-8 shrink-0 rounded-full border border-border bg-card px-3.5 text-[13px] font-medium text-foreground/85 transition-colors active:bg-muted"
+        >
+          {term}
+        </button>
+      ))}
     </div>
-  );
-});
+  </section>
+));
+PopularSearches.displayName = "PopularSearches";
 
-TestResultCard.displayName = "TestResultCard";
+const HealthConcerns = memo(({ onPick }: { onPick: (term: string) => void }) => (
+  <section className="mt-7 px-4">
+    <SectionTitle title="Browse by health concern" />
+    <div className="grid grid-cols-2 gap-2.5">
+      {HEALTH_CONCERNS.map(({ label, hint, search, icon }) => (
+        <button
+          key={label}
+          type="button"
+          onClick={() => onPick(search)}
+          className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 text-left transition-colors active:bg-muted/60"
+        >
+          <IconTile icon={icon} />
+          <span className="min-w-0">
+            <span className="line-clamp-2 text-[13.5px] font-semibold leading-tight text-foreground">{label}</span>
+            <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{hint}</span>
+          </span>
+        </button>
+      ))}
+    </div>
+  </section>
+));
+HealthConcerns.displayName = "HealthConcerns";
 
-import { matchToDictionary } from "@/lib/medical-dictionary";
+const CategoryList = memo(
+  ({ categories, onOpen }: { categories: CategoryEntry[]; onOpen: (c: CategoryEntry) => void }) => (
+    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card divide-y divide-border/60">
+      {categories.map((category) => {
+        const { icon, blurb } = getTestCategoryStyle(category.slug);
+        return (
+          <button
+            key={category.slug}
+            type="button"
+            onClick={() => onOpen(category)}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors active:bg-muted/60"
+          >
+            <IconTile icon={icon} />
+            <span className="min-w-0 flex-1">
+              <span className="line-clamp-2 text-[14.5px] font-semibold leading-tight text-foreground">{category.name}</span>
+              <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">{blurb}</span>
+            </span>
+            <span className="shrink-0 text-[12px] font-medium tabular-nums text-muted-foreground">
+              {category.count.toLocaleString("en-IN")} tests
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+          </button>
+        );
+      })}
+    </div>
+  ),
+);
+CategoryList.displayName = "CategoryList";
 
-// ... inside the file, find the CategoriesScreen component ...
+const CategoryListSkeleton = () => (
+  <div className="overflow-hidden rounded-2xl border border-border/70 bg-card divide-y divide-border/60">
+    {Array.from({ length: 7 }, (_, i) => (
+      <div key={i} className="flex items-center gap-3 px-4 py-3.5">
+        <div className="h-9 w-9 animate-pulse rounded-lg bg-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3.5 w-1/2 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-2/3 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const LoadError = ({ onRetry, retrying }: { onRetry: () => void; retrying: boolean }) => (
+  <div className="flex flex-col items-center rounded-2xl border border-border/70 bg-card px-6 py-10 text-center">
+    <p className="text-[15px] font-semibold text-foreground">Couldn't load tests</p>
+    <p className="mt-1 text-[13px] text-muted-foreground">Check your connection and try again.</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      disabled={retrying}
+      className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-5 text-[14px] font-semibold text-primary-foreground active:scale-95 disabled:opacity-60"
+    >
+      {retrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+      Retry
+    </button>
+  </div>
+);
 
 const CategoriesScreen = () => {
-  useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
+  useSEO({
+    title: "Explore Tests | BloodLyn",
+    description: "Search 3,000+ lab tests — sugar, thyroid, CBC, vitamins and more — with home sample collection.",
+  });
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  // Searching is on-device and takes a few ms, so results follow every keystroke;
+  // deferring keeps the input itself responsive on slow phones.
+  const deferredQuery = useDeferredValue(query.trim());
 
-  const handlePrefetchCategory = useCallback((slug: string) => {
-    if (!slug) return;
-    const p = { category: slug === "all" ? undefined : slug, limit: 5000 };
-    queryClient.prefetchQuery({
-      queryKey: ["bridge-tests-v2", JSON.stringify(p)],
-      staleTime: 10 * 60 * 1000,
-    });
-  }, [queryClient]);
+  // Keep the search in the URL so coming back from a test restores it.
+  const debouncedQuery = useDebounce(query.trim(), 400);
+  useEffect(() => {
+    if ((searchParams.get("q") ?? "") === debouncedQuery) return;
+    // Keep the bottom bar's history marker so Back still returns to Home.
+    setSearchParams(debouncedQuery ? { q: debouncedQuery } : {}, { replace: true, state: location.state });
+  }, [debouncedQuery, searchParams, setSearchParams, location.state]);
 
-  // Search Intelligence: Map colloquial terms to scientific database keywords
-  const backendSearchTerm = useMemo(() => {
-    const q = debouncedSearchQuery.trim();
-    if (!q) return undefined;
-    
-    const dictMatch = matchToDictionary(q, 0.5);
-    if (dictMatch) {
-      const canonical = dictMatch.canonical.toLowerCase();
-      
-      // Extract the most significant scientific keyword from the canonical name
-      // This is dynamic, so we don't need hardcoded if-statements.
-      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
-      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
-      
-      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
-      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
-      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
-      
-      return words[0] || dictMatch.canonical.split(" ")[0]; 
-    }
-    return undefined; // No dictionary match — raw query will be sent separately
-  }, [debouncedSearchQuery]);
+  const { data: catalogue, isError, refetch, isFetching } = useTestCatalogue();
+  const index = useTestSearchIndex(catalogue?.tests);
+  const actions = useTestListActions();
 
-  const rawQuery = debouncedSearchQuery.trim() || undefined;
-
-  const { data: categoryData, isLoading: isCategoriesLoading } = useBridgeTests({});
-
-  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
-  const { data: dictSearchData } = useBridgeTests(
-    backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
+  const categoryNames = useMemo(
+    () => new Map((catalogue?.categories ?? []).map((c) => [c.slug, c.name])),
+    [catalogue],
   );
-  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
-  const { data: rawSearchData, isLoading: isSearchLoading } = useBridgeTests(
-    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
+
+  const categories = useMemo<CategoryEntry[]>(() => {
+    if (!catalogue) return [];
+    return catalogue.categories
+      .map((c) => ({ slug: c.slug, name: c.name, count: catalogue.countsBySlug.get(c.slug) ?? 0 }))
+      .filter((c) => c.count > 0)
+      .sort(compareCategories);
+  }, [catalogue]);
+
+  const search = useMemo(
+    () => (index && deferredQuery ? searchTests(index, deferredQuery) : EMPTY_RESULT),
+    [index, deferredQuery],
   );
-  
-  const showLoading = useDelayedLoading(isCategoriesLoading);
-  const { addToCart, items, hasItem } = useCart();
+  const { visible, hasMore, sentinelRef } = useIncrementalList(search.results);
 
-  const categories = useMemo(() => {
-    let cats: { icon: LucideIcon; name: string; subtitle: string; color: string; slug: string; image?: string }[];
-    if (categoryData?.categories?.length) {
-      cats = categoryData.categories.map((cat) => {
-        const style = getCategoryStyle(cat.name, cat.slug);
-        
-        // Generate a deterministic random number based on the category name
-        let h = 0;
-        for (let i = 0; i < cat.name.length; i++) h = (h * 31 + cat.name.charCodeAt(i)) | 0;
-        const fakeCount = (Math.abs(h) % 400) + 50; // Random number between 50 and 450
-        
-        return {
-          icon: style.icon,
-          name: cat.name,
-          subtitle: `${fakeCount} tests`,
-          color: style.color,
-          slug: cat.slug,
-          image: style.image,
-        };
-      });
-    } else {
-      cats = [];
-    }
-    return cats;
-  }, [categoryData]);
+  const correctedQuery = useMemo(() => {
+    if (!search.corrections.length) return null;
+    return search.corrections.reduce(
+      (text, { from, to }) => text.replace(new RegExp(`\\b${from}\\b`, "i"), to),
+      deferredQuery.toLowerCase(),
+    );
+  }, [search.corrections, deferredQuery]);
 
-  // Merge results from both queries + filter against friendly names
-  const searchResults = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return [];
-    
-    const dictResults = dictSearchData?.tests || [];
-    const rawResults = rawSearchData?.tests || [];
-    
-    // Merge and deduplicate by test ID
-    const seen = new Set<string>();
-    const merged: BridgeTest[] = [];
-    for (const test of [...rawResults, ...dictResults]) {
-      if (!seen.has(test.id)) {
-        seen.add(test.id);
-        merged.push(test);
-      }
-    }
-    
-    // Also match against the FRIENDLY name client-side, AND the mapped synonym term
-    const q = debouncedSearchQuery.trim().toLowerCase();
-    const mappedQ = backendSearchTerm?.toLowerCase();
-    
-    return merged.filter((test) => {
-      const originalName = (test.test_name || "").toLowerCase();
-      const friendlyName = simplifyTestName(test.test_name || "").toLowerCase();
-      
-      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
-      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
-      
-      return matchesRaw || matchesMapped;
-    });
-  }, [debouncedSearchQuery, backendSearchTerm, dictSearchData, rawSearchData]);
+  const openCategory = (category: CategoryEntry) =>
+    navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`);
 
-  const filteredCategories = useMemo(() => {
-    if (debouncedSearchQuery.trim()) return []; // When searching, hide categories and show test results
-    return categories;
-  }, [debouncedSearchQuery, categories]);
-
-  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
-
-  const handleAddToCart = (test: BridgeTest) => {
-    const price = test.price > 0 ? test.price : test.collection_fee || 0;
-    const success = addToCart({
-      id: test.id,
-      name: test.test_name,
-      price,
-    });
-    if (success) {
-      toast.success(`${test.test_name} added to cart`);
-    }
-  };
+  const totalTests = catalogue?.tests.length ?? 0;
+  const searching = query.trim().length > 0;
+  const resultsReady = !!catalogue && !!index;
 
   return (
     <MobileLayout>
-      {/* Page Header - Scrolls away naturally like Home screen */}
       <div className="px-5 pt-3 pb-1">
         <PremiumPageHeader
           title="Explore Tests"
-          subtitle="Curated diagnostics · NABL certified labs"
-          icon={Beaker}
-          badgeText="Tests"
+          subtitle={
+            totalTests
+              ? `${totalTests.toLocaleString("en-IN")} lab tests · Home sample collection`
+              : "Lab tests with home sample collection"
+          }
+          icon={FlaskConical}
         />
       </div>
 
-      {/* Sticky Search Input Bar - Pins at top-0 */}
-      <StickySearch
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Search tests..."
-        accent="from-sky-500 via-primary to-indigo-600"
-      />
+      <StickySearch value={query} onChange={setQuery} placeholder="Search tests, e.g. sugar, thyroid, CBC" />
 
-
-
-      {/* Search Results — individual tests */}
-      {searchQuery.trim() && (
-        <div className="px-4 mt-4 pb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-            {searchResults.length > 0 ? `${searchResults.length} tests found` : "No tests found"}
-          </h2>
-          <div className="space-y-2 list-virtual">
-            {searchResults.map((test, index) => (
-              <TestResultCard
-                key={test.id}
-                test={test}
-                index={index}
-                alreadyInCart={isInCart(test.id, test.test_name)}
-                onNavigate={() => navigate(`/test/${test.id}`, { state: { bridgeTest: test } })}
-                onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(test); }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Categories Grid */}
-      {!searchQuery.trim() && (
-        <div className="px-5 mt-6 pb-12">
-          <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
-            {showLoading ? (
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm" style={{ minHeight: '160px' }}>
-                    <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
-                    <Skeleton className="w-20 h-3 mb-1" />
-                    <Skeleton className="w-16 h-2" />
-                  </div>
+      {searching ? (
+        <div className="min-h-[75vh] bg-muted/60 px-4 pb-10 pt-3">
+          {!resultsReady ? (
+            isError ? (
+              <LoadError onRetry={() => refetch()} retrying={isFetching} />
+            ) : (
+              <TestListSkeleton />
+            )
+          ) : search.results.length === 0 ? (
+            <div className="flex flex-col items-center px-4 py-12 text-center">
+              <SearchX className="mb-3 h-8 w-8 text-muted-foreground/60" strokeWidth={1.5} />
+              <p className="text-[15px] font-semibold text-foreground">No tests match “{query.trim()}”</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">Try a simpler word, or one of these:</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {POPULAR_SEARCHES.slice(0, 6).map((term) => (
+                  <button
+                    key={term}
+                    type="button"
+                    onClick={() => setQuery(term)}
+                    className="h-8 rounded-full border border-border bg-card px-3.5 text-[13px] font-medium text-foreground/85 active:bg-muted"
+                  >
+                    {term}
+                  </button>
                 ))}
               </div>
-            ) : filteredCategories.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground font-medium">No categories found</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-2.5 px-1 text-[12.5px] leading-relaxed text-muted-foreground">
+                {correctedQuery && (
+                  <p>
+                    Showing results for <span className="font-semibold text-foreground">{correctedQuery}</span>
+                  </p>
+                )}
+                <p>
+                  <span className="font-semibold text-foreground">
+                    {search.results.length.toLocaleString("en-IN")} {search.results.length === 1 ? "test" : "tests"}
+                  </span>
+                  {search.concepts.length > 0 && <> · {search.concepts.slice(0, 2).join(", ")}</>}
+                </p>
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {filteredCategories.map((category, index) => (
-                  <CategoryTile
-                    key={category.slug || category.name}
-                    category={category}
-                    index={index}
-                    onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
-                    onPointerDown={() => handlePrefetchCategory(category.slug)}
+
+              <TestList>
+                {visible.map((test) => (
+                  <TestCard
+                    key={test.id}
+                    test={test}
+                    inCart={actions.isInCart(test)}
+                    categoryLabel={categoryNames.get(test.category)}
+                    onOpen={actions.onOpen}
+                    onAdd={actions.onAdd}
+                    onOpenCart={actions.onOpenCart}
                   />
                 ))}
-              </div>
+              </TestList>
+              {hasMore && (
+                <div ref={sentinelRef} className="flex h-12 items-center justify-center" aria-hidden="true">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="pb-10">
+          <PopularSearches onPick={setQuery} />
+          <HealthConcerns onPick={setQuery} />
+
+          <section className="mt-7 px-4">
+            <SectionTitle title="All categories" aside={categories.length ? `${categories.length} categories` : undefined} />
+            {catalogue ? (
+              <CategoryList categories={categories} onOpen={openCategory} />
+            ) : isError ? (
+              <LoadError onRetry={() => refetch()} retrying={isFetching} />
+            ) : (
+              <CategoryListSkeleton />
             )}
+          </section>
         </div>
       )}
+
+      {actions.labSheet}
+      <LabConflictDialog />
     </MobileLayout>
   );
 };
