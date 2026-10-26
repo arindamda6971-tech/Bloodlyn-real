@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useRef } from "react";
+import { ReactNode, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { usePresence } from "framer-motion";
 import { Analytics } from "@/lib/analytics";
@@ -6,6 +6,8 @@ import {
   getTransitionClass,
   getTransitionDuration,
   getEffectiveNavType,
+  isTabToTabTransition,
+  TAB_ENTER_CLASS,
   beginTransition,
   endTransition,
 } from "@/lib/navigation-transition";
@@ -24,6 +26,12 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
   const currentLoc = useLocation();
   const location = propLocation || currentLoc;
   const [isPresent, safeToRemove] = usePresence();
+  // Bottom-bar tabs use a Material-style fade-through instead of a sideways slide:
+  // the old tab leaves at once and the new one fades and settles in place. Sliding
+  // kept the old tab mounted and animating under the new one, so a few quick taps
+  // piled up several full screens and froze the WebView.
+  const [enteredFromTab] = useState(isTabToTabTransition);
+  const exitsInstantly = !isPresent && isTabToTabTransition();
   const [isAnimating, setIsAnimating] = useState(true);
   const [isExited, setIsExited] = useState(false);
   const elRef = useRef<HTMLDivElement>(null);
@@ -35,7 +43,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
 
   // Hold the transition gate while entering OR exiting is active
   useEffect(() => {
-    const isUnderway = (isPresent && isAnimating) || (!isPresent && !isExited);
+    const isUnderway = (isPresent && isAnimating) || (!isPresent && !isExited && !exitsInstantly);
     if (isUnderway && !gateHeldRef.current) {
       gateHeldRef.current = true;
       beginTransition();
@@ -49,7 +57,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         endTransition();
       }
     };
-  }, [isPresent, isAnimating, isExited]);
+  }, [isPresent, isAnimating, isExited, exitsInstantly]);
 
   const releaseEnter = () => {
     if (gateHeldRef.current) {
@@ -70,11 +78,27 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
     }
   };
 
+  // An instantly-switched tab is already hidden during render; release it right away.
+  // This must be a passive effect: AnimatePresence only starts tracking the exit in
+  // its own layout effect, which runs after ours, and ignores a removal before that,
+  // leaving the hidden screen mounted for good.
+  useEffect(() => {
+    if (exitsInstantly && !isExited) releaseExit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exitsInstantly, isExited]);
+
+  // Tapping back to a tab before its removal lands re-presents the same instance;
+  // it must show again instead of staying hidden as an exited layer.
+  useLayoutEffect(() => {
+    if (isPresent && isExited) setIsExited(false);
+  }, [isPresent, isExited]);
+
   // Fallback timer (duration + 80ms) in case animationend does not fire
   useEffect(() => {
     const fallbackMs = getTransitionDuration() + 80;
 
     if (!isPresent) {
+      if (exitsInstantly) return;
       const timer = setTimeout(() => {
         releaseExit();
       }, fallbackMs);
@@ -85,7 +109,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
       }, fallbackMs);
       return () => clearTimeout(timer);
     }
-  }, [isPresent, isAnimating]);
+  }, [isPresent, isAnimating, exitsInstantly]);
 
   const handleAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
     // Ignore bubbled events from children
@@ -101,9 +125,9 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
 
   // When exiting (!isPresent), ALWAYS play the exit slide animation!
   // When entering (isPresent), play the enter slide animation until settled, then release compositor layers.
-  const animClass = !isPresent 
-    ? getTransitionClass(false) 
-    : (isAnimating ? getTransitionClass(true) : "");
+  const animClass = !isPresent
+    ? (exitsInstantly ? "" : getTransitionClass(false))
+    : (isAnimating ? (enteredFromTab ? TAB_ENTER_CLASS : getTransitionClass(true)) : "");
 
   const isPop = getEffectiveNavType() === "POP";
 
@@ -124,7 +148,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         contain: "layout paint",
         backfaceVisibility: "hidden",
         pointerEvents: isPresent ? "auto" : "none",
-        visibility: isExited ? "hidden" : "visible",
+        visibility: isExited || exitsInstantly ? "hidden" : "visible",
       }}
     >
       {children}

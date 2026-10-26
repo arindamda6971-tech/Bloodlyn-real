@@ -6,7 +6,12 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { recordNavigation, getTransitionDuration } from "@/lib/navigation-transition";
+import {
+  recordNavigation,
+  getTransitionDuration,
+  isTabToTabTransition,
+  TAB_ENTER_CLASS,
+} from "@/lib/navigation-transition";
 
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -22,6 +27,8 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import RouteFallback from "@/components/RouteFallback";
 import RoutePrefetcher from "@/components/RoutePrefetcher";
 import PageTransition from "@/components/PageTransition";
+import PersistentBottomNavigation from "@/components/layout/PersistentBottomNavigation";
+import { ScreenPathContext } from "@/components/layout/screen-path-context";
 import OfflineBanner from "@/components/OfflineBanner";
 import AppOpeningAnimation from "@/components/AppOpeningAnimation";
 import DataWarmup from "@/components/DataWarmup";
@@ -126,6 +133,21 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
   // is deferred until the slide has finished instead of landing on its first frame.
   const [animationsActive, setAnimationsActive] = useState(active);
 
+  // Coming back to Home from another bottom-bar tab gets the same fade-through as
+  // the other tabs; returning from a pushed screen keeps the slide reveal instead.
+  const [wasActive, setWasActive] = useState(active);
+  const [tabEntering, setTabEntering] = useState(false);
+  if (active !== wasActive) {
+    setWasActive(active);
+    setTabEntering(active && isTabToTabTransition());
+  }
+
+  useEffect(() => {
+    if (!tabEntering) return;
+    const timer = setTimeout(() => setTabEntering(false), getTransitionDuration());
+    return () => clearTimeout(timer);
+  }, [tabEntering]);
+
   useEffect(() => {
     if (active === animationsActive) return;
     const timer = setTimeout(() => setAnimationsActive(active), getTransitionDuration() + 40);
@@ -134,7 +156,10 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
 
   return (
     <div
-      className="home-stack w-full h-full absolute top-0 left-0 bg-background overflow-hidden"
+      className={`home-stack w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${tabEntering ? TAB_ENTER_CLASS : ""}`}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget && e.animationName === "pageTabEnter") setTabEntering(false);
+      }}
       data-home-active={animationsActive ? "true" : "false"}
       aria-hidden={active ? undefined : true}
       style={{
@@ -145,9 +170,11 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
         backfaceVisibility: "hidden",
       }}
     >
-      <ProtectedRoute>
-        <HomeScreen />
-      </ProtectedRoute>
+      <ScreenPathContext.Provider value="/home">
+        <ProtectedRoute>
+          <HomeScreen />
+        </ProtectedRoute>
+      </ScreenPathContext.Provider>
     </div>
   );
 });
@@ -267,6 +294,7 @@ const AnimatedRoutes = () => {
           </PageTransition>
         )}
       </AnimatePresence>
+      <PersistentBottomNavigation />
     </>
   );
 };

@@ -11,3 +11,4 @@
 - Calculate collection fees from the selected lab's synced Partner MRP rules on both checkout and `create-order`, because the server must remain authoritative and charge the fee exactly once.
 - Define the six two-hour collection windows centrally in `lab-slots`, because Blood Tests, ECG, BP, rescheduling, and tracking must use identical boundaries.
 - Enforce Partner slot capacities inside a database-locked server operation keyed by vendor, date, and normalized slot, because client checks cannot prevent concurrent overbooking.
+- Render one app-wide bottom bar outside the sliding page layers and switch bottom tabs with a short fade-through that removes the outgoing tab at once, because per-page bars slid in stacked and sliding tabs kept several full screens mounted until the WebView froze.

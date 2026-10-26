@@ -1,5 +1,28 @@
 export const TAB_PATHS = ["/home", "/categories", "/bookings", "/reports", "/profile"];
 
+/**
+ * Screens that show the bottom bar. The bar is rendered once, outside the sliding
+ * page layers, so it stays put instead of riding in (and stacking) with each screen.
+ * Keep in sync with the screens that render <MobileLayout> with the nav on.
+ */
+export const BOTTOM_NAV_PATHS = [
+  ...TAB_PATHS,
+  "/category-tests",
+  "/packages",
+  "/physio-consult",
+  "/ecg-doctors",
+  "/terms",
+  "/privacy",
+  "/data-attribution",
+];
+
+/** Fade-through used when a bottom-bar tab comes in (see `pageTabEnter` in index.css). */
+export const TAB_ENTER_CLASS = "page-anim-tab";
+
+export function hasPersistentBottomNav(pathname: string): boolean {
+  return BOTTOM_NAV_PATHS.includes(pathname);
+}
+
 let previousPathname = typeof window !== "undefined" ? window.location.pathname : "/home";
 let currentPathname = typeof window !== "undefined" ? window.location.pathname : "/home";
 let currentNavType: "PUSH" | "POP" | "REPLACE" = "PUSH";

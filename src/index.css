@@ -944,6 +944,30 @@ html.native [data-scroll-container] {
   animation-play-state: paused !important;
 }
 
+/* Bottom-bar tab switch: Material 3 "fade through". The outgoing tab is removed at
+   once, so only this one cheap opacity/scale layer is ever animating. Ends on
+   translate3d(0,0,0) so Home's own compositing (translateZ(0)) is kept. */
+@keyframes pageTabEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.97) translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.page-anim-tab {
+  animation: pageTabEnter 0.24s cubic-bezier(0.2, 0, 0, 1) both;
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+}
+
+.page-anim-tab * {
+  animation-play-state: paused !important;
+}
+
 .page-anim-fade-exit {
   animation: pageFadeExit 0.25s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: opacity;
