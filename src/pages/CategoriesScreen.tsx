@@ -1,4 +1,4 @@
-import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { memo, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronRight, FlaskConical, Loader2, RefreshCw, SearchX } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -11,7 +11,14 @@ import { useIncrementalList } from "@/components/tests/useIncrementalList";
 import { useTestListActions } from "@/components/tests/useTestListActions";
 import { useTestCatalogue, useTestSearchIndex, type CatalogueTest } from "@/hooks/useTestCatalogue";
 import { searchTests, type TestSearchResult } from "@/lib/test-search";
-import { compareCategories, getTestCategoryStyle, HEALTH_CONCERNS, POPULAR_SEARCHES } from "@/lib/test-categories";
+import { formatCount } from "@/lib/test-display";
+import {
+  compareCategories,
+  EXPLORE_HERO_PHOTO,
+  getTestCategoryStyle,
+  HEALTH_CONCERNS,
+  POPULAR_SEARCHES,
+} from "@/lib/test-categories";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -49,21 +56,57 @@ const PopularSearches = memo(({ onPick }: { onPick: (term: string) => void }) =>
 ));
 PopularSearches.displayName = "PopularSearches";
 
+const HeroBanner = memo(() => (
+  <section className="mt-3 px-4">
+    <div className="relative h-[156px] overflow-hidden rounded-2xl bg-muted">
+      <img
+        src={EXPLORE_HERO_PHOTO}
+        alt=""
+        width={400}
+        height={220}
+        decoding="async"
+        draggable={false}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      {/* Left-weighted shade keeps the white text readable on any part of the photo. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-900/80 via-slate-900/45 to-slate-900/5" />
+      <div className="relative flex h-full max-w-[72%] flex-col justify-center px-5">
+        <p className="text-[19px] font-bold leading-tight text-white">Book lab tests from home</p>
+        <p className="mt-1.5 text-[12.5px] leading-snug text-white/85">
+          Sample collected at your doorstep. Reports online.
+        </p>
+      </div>
+    </div>
+  </section>
+));
+HeroBanner.displayName = "HeroBanner";
+
 const HealthConcerns = memo(({ onPick }: { onPick: (term: string) => void }) => (
   <section className="mt-7 px-4">
     <SectionTitle title="Browse by health concern" />
     <div className="grid grid-cols-2 gap-2.5">
-      {HEALTH_CONCERNS.map(({ label, hint, search, icon }) => (
+      {HEALTH_CONCERNS.map(({ label, hint, search, photo }) => (
         <button
           key={label}
           type="button"
           onClick={() => onPick(search)}
-          className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-3 text-left transition-colors active:bg-muted/60"
+          className="relative h-[112px] overflow-hidden rounded-xl bg-muted text-left transition-transform duration-100 active:scale-[0.98]"
+          style={{ contain: "content" }}
         >
-          <IconTile icon={icon} />
-          <span className="min-w-0">
-            <span className="line-clamp-2 text-[13.5px] font-semibold leading-tight text-foreground">{label}</span>
-            <span className="mt-0.5 block truncate text-[11.5px] text-muted-foreground">{hint}</span>
+          <img
+            src={photo}
+            alt=""
+            width={180}
+            height={140}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <span className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/25 to-transparent" />
+          <span className="absolute inset-x-0 bottom-0 p-3">
+            <span className="block truncate text-[14px] font-semibold leading-tight text-white">{label}</span>
+            <span className="mt-0.5 block truncate text-[11.5px] text-white/80">{hint}</span>
           </span>
         </button>
       ))}
@@ -90,7 +133,7 @@ const CategoryList = memo(
               <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">{blurb}</span>
             </span>
             <span className="shrink-0 text-[12px] font-medium tabular-nums text-muted-foreground">
-              {category.count.toLocaleString("en-IN")} tests
+              {formatCount(category.count)} tests
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
           </button>
@@ -186,6 +229,15 @@ const CategoriesScreen = () => {
   const openCategory = (category: CategoryEntry) =>
     navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`);
 
+  // The category list sits below the fold on a phone, so draw it one frame after the
+  // visible part, at low priority. On a 6x-throttled phone profile this splits the first
+  // open's layout in two smaller pieces; nothing on screen changes.
+  const [belowFoldReady, setBelowFoldReady] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => startTransition(() => setBelowFoldReady(true)));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const totalTests = catalogue?.tests.length ?? 0;
   const searching = query.trim().length > 0;
   const resultsReady = !!catalogue && !!index;
@@ -197,7 +249,7 @@ const CategoriesScreen = () => {
           title="Explore Tests"
           subtitle={
             totalTests
-              ? `${totalTests.toLocaleString("en-IN")} lab tests · Home sample collection`
+              ? `${formatCount(totalTests)} lab tests · Home sample collection`
               : "Lab tests with home sample collection"
           }
           icon={FlaskConical}
@@ -242,7 +294,7 @@ const CategoriesScreen = () => {
                 )}
                 <p>
                   <span className="font-semibold text-foreground">
-                    {search.results.length.toLocaleString("en-IN")} {search.results.length === 1 ? "test" : "tests"}
+                    {formatCount(search.results.length)} {search.results.length === 1 ? "test" : "tests"}
                   </span>
                   {search.concepts.length > 0 && <> · {search.concepts.slice(0, 2).join(", ")}</>}
                 </p>
@@ -271,12 +323,13 @@ const CategoriesScreen = () => {
         </div>
       ) : (
         <div className="pb-10">
+          <HeroBanner />
           <PopularSearches onPick={setQuery} />
           <HealthConcerns onPick={setQuery} />
 
           <section className="mt-7 px-4">
             <SectionTitle title="All categories" aside={categories.length ? `${categories.length} categories` : undefined} />
-            {catalogue ? (
+            {catalogue && belowFoldReady ? (
               <CategoryList categories={categories} onOpen={openCategory} />
             ) : isError ? (
               <LoadError onRetry={() => refetch()} retrying={isFetching} />

@@ -35,3 +35,14 @@ export function getTestDisplayName(name: string | null | undefined): TestDisplay
   cache.set(raw, result);
   return result;
 }
+
+/**
+ * Indian digit grouping ("3,450", "1,04,800") without Intl. The first
+ * toLocaleString("en-IN") in a session loads locale data — measured ~60 ms on a
+ * 6x-throttled phone profile, right as Explore opened.
+ */
+export function formatCount(n: number): string {
+  const s = String(Math.round(n));
+  if (s.length <= 3) return s;
+  return `${s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",")},${s.slice(-3)}`;
+}

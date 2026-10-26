@@ -2,15 +2,12 @@ import {
   Activity,
   Atom,
   Beaker,
-  Bone,
   Bug,
-  ClipboardList,
   Dna,
   Droplet,
   Droplets,
   FlaskConical,
   FlaskRound,
-  Flower2,
   HeartPulse,
   Microscope,
   Pill,
@@ -83,24 +80,37 @@ export const POPULAR_SEARCHES = [
   "Iron",
 ];
 
+/**
+ * A free-licence Unsplash photo (images.unsplash.com — never plus.unsplash.com, whose
+ * premium photos need a paid licence), cropped and served as AVIF/WebP by Unsplash's
+ * CDN at roughly 2× the size it is shown, so each tile is only ~10–30 KB.
+ */
+export const unsplashPhoto = (id: string, width: number, height: number) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${width}&h=${height}&q=70`;
+
+/** Explore Tests hero: a healthcare worker drawing blood. */
+export const EXPLORE_HERO_PHOTO = unsplashPhoto("photo-1615461066159-fea0960485d5", 800, 440);
+
 export interface HealthConcern {
   label: string;
   /** Key tests, so the tile says what it covers. */
   hint: string;
   search: string;
-  icon: LucideIcon;
+  photo: string;
 }
+
+const concernPhoto = (id: string) => unsplashPhoto(id, 360, 280);
 
 /** "Browse by health concern" on Explore Tests; each runs the smart search. */
 export const HEALTH_CONCERNS: HealthConcern[] = [
-  { label: "Diabetes", hint: "Glucose, HbA1c", search: "diabetes", icon: Droplet },
-  { label: "Thyroid", hint: "TSH, T3, T4", search: "thyroid", icon: Activity },
-  { label: "Heart", hint: "Lipids, troponin", search: "heart", icon: HeartPulse },
-  { label: "Liver", hint: "LFT, bilirubin", search: "liver", icon: FlaskConical },
-  { label: "Kidney", hint: "KFT, creatinine", search: "kidney", icon: Beaker },
-  { label: "Vitamins", hint: "D, B12, iron", search: "vitamins", icon: Pill },
-  { label: "Fever", hint: "Dengue, typhoid, CBC", search: "fever", icon: Thermometer },
-  { label: "Women's health", hint: "PCOS, hormones", search: "pcos", icon: Flower2 },
-  { label: "Bones", hint: "Calcium, vitamin D", search: "bone", icon: Bone },
-  { label: "Full body", hint: "Health packages", search: "full body", icon: ClipboardList },
+  { label: "Diabetes", hint: "Glucose, HbA1c", search: "diabetes", photo: concernPhoto("photo-1683727186226-910f31a9da45") },
+  { label: "Thyroid", hint: "TSH, T3, T4", search: "thyroid", photo: concernPhoto("photo-1561228987-8e7379dde477") },
+  { label: "Heart", hint: "Lipids, troponin", search: "heart", photo: concernPhoto("photo-1618939304347-e91b1f33d2ab") },
+  { label: "Liver", hint: "LFT, bilirubin", search: "liver", photo: concernPhoto("photo-1559757175-0828e13882ed") },
+  { label: "Kidney", hint: "KFT, creatinine", search: "kidney", photo: concernPhoto("photo-1559757175-053139280de2") },
+  { label: "Vitamins", hint: "D, B12, iron", search: "vitamins", photo: concernPhoto("photo-1707129785947-ddc627a8bab9") },
+  { label: "Fever", hint: "Dengue, typhoid, CBC", search: "fever", photo: concernPhoto("photo-1580917922805-f8f57e08c0ae") },
+  { label: "Women's health", hint: "PCOS, hormones", search: "pcos", photo: concernPhoto("photo-1638202993928-7267aad84c31") },
+  { label: "Bones", hint: "Calcium, vitamin D", search: "bone", photo: concernPhoto("photo-1530497610245-94d3c16cda28") },
+  { label: "Full body", hint: "Health packages", search: "full body", photo: concernPhoto("photo-1666887360680-9dc27a1d2753") },
 ];

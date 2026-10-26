@@ -5,7 +5,7 @@ import {
   normalizeSearchText,
   searchTests,
 } from "@/lib/test-search";
-import { getTestDisplayName } from "@/lib/test-display";
+import { formatCount, getTestDisplayName } from "@/lib/test-display";
 
 // Real names from the Admin catalogue.
 const NAMES: [string, string][] = [
@@ -118,6 +118,14 @@ describe("normalizeSearchText", () => {
   it("folds British spellings symmetrically", () => {
     expect(normalizeSearchText("Haemoglobin")).toBe("hemoglobin");
     expect(normalizeSearchText("Oestradiol")).toBe("estradiol");
+  });
+});
+
+describe("formatCount", () => {
+  it("groups digits the Indian way, same as toLocaleString('en-IN')", () => {
+    for (const n of [0, 9, 140, 1048, 3450, 99999, 104800, 12345678]) {
+      expect(formatCount(n)).toBe(n.toLocaleString("en-IN"));
+    }
   });
 });
 

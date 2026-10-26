@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
 import { useTestCatalogue, useTestSearchIndex } from "@/hooks/useTestCatalogue";
 import { searchTests } from "@/lib/test-search";
-import { getTestDisplayName } from "@/lib/test-display";
+import { formatCount, getTestDisplayName } from "@/lib/test-display";
 import { useLabPicker } from "@/components/tests/useLabPicker";
 import LabConflictDialog from "@/components/tests/LabConflictDialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -281,7 +281,7 @@ const HomeScreen = () => {
                         }
                         className="flex items-center justify-center gap-1 px-4 py-3 text-[13px] font-bold text-primary bg-primary/5 active:bg-primary/10"
                       >
-                        See all {search.results.length.toLocaleString("en-IN")} results
+                        See all {formatCount(search.results.length)} results
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     )}

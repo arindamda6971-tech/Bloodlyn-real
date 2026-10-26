@@ -10,6 +10,7 @@ import { useIncrementalList } from "@/components/tests/useIncrementalList";
 import { useTestListActions } from "@/components/tests/useTestListActions";
 import { useTestCatalogue, useTestSearchIndex, type CatalogueTest } from "@/hooks/useTestCatalogue";
 import { searchTests } from "@/lib/test-search";
+import { formatCount } from "@/lib/test-display";
 import { getTestCategoryStyle } from "@/lib/test-categories";
 
 const VET_PREFIX = /^(canine|feline|equine|bovine|avian)\b/i;
@@ -60,7 +61,7 @@ const CategoryTestsScreen = () => {
           <IconTile icon={icon} size="lg" />
           <div className="min-w-0">
             <p className="text-[15px] font-semibold text-foreground">
-              {catalogue ? `${categoryTests.length.toLocaleString("en-IN")} tests` : "Loading tests…"}
+              {catalogue ? `${formatCount(categoryTests.length)} tests` : "Loading tests…"}
             </p>
             <p className="truncate text-[12.5px] text-muted-foreground">{blurb}</p>
           </div>
@@ -117,7 +118,7 @@ const CategoryTestsScreen = () => {
           <>
             {deferredQuery && (
               <p className="mb-2.5 px-1 text-[12.5px] font-semibold text-foreground">
-                {filtered.length.toLocaleString("en-IN")} {filtered.length === 1 ? "test" : "tests"}
+                {formatCount(filtered.length)} {filtered.length === 1 ? "test" : "tests"}
               </p>
             )}
             <TestList>
