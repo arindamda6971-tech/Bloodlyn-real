@@ -148,7 +148,7 @@ const OrderSuccessScreen = () => {
         and flex-col with overflow-y-auto so it fits on one screen if small enough, 
         but allows scrolling if the content is too tall.
       */}
-      <div className="relative min-h-[100dvh] w-full max-w-md mx-auto bg-[#F7F9FC] md:bg-white flex flex-col pt-8 pb-6 px-4 sm:px-6 overflow-y-auto">
+      <div className="relative min-h-[100dvh] w-full max-w-md mx-auto bg-background md:bg-white flex flex-col pt-8 pb-6 px-4 sm:px-6 overflow-y-auto">
         
         {/* Background blobs matching the mockup */}
         <div className="absolute top-0 left-0 w-40 h-40 bg-blue-100 rounded-br-full opacity-50 pointer-events-none -z-10 blur-[40px]" />

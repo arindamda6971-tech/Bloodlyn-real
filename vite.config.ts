@@ -52,7 +52,7 @@ export default defineConfig(({ mode }) => ({
          short_name: "BloodLyn",
         description: "Book home health tests in 60 minutes. NABL-certified labs, AI-powered reports, and live tracking.",
         theme_color: "#4AB3F4",
-        background_color: "#F8FAFC",
+        background_color: "#FFFFFF",
         display: "standalone",
         orientation: "portrait",
         scope: "/",

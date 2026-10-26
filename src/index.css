@@ -35,7 +35,9 @@ input[type="number"] {
 
      /* BloodLyn Brand Colors */
 
-    --background: 210 20% 98%;
+    /* Crisp pure white page background (was a light grey, 210 20% 98%, which
+       read as dull/off-white on phones next to the white cards). */
+    --background: 0 0% 100%;
     --foreground: 210 50% 15%;
 
     --card: 0 0% 100%;
