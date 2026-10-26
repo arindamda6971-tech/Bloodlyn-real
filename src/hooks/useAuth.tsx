@@ -16,6 +16,23 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * Supabase re-emits SIGNED_IN with a freshly parsed user every time the app
+ * returns to the foreground, and TOKEN_REFRESHED about once an hour. Swapping
+ * in that new-but-identical object made every effect keyed on `user` (cart,
+ * pincode, subscription, realtime channels...) reload and re-subscribe each
+ * time — a large share of database egress. Keep the current object unless the
+ * user actually changed; profile edits bump `updated_at`, so they still apply.
+ */
+const keepIfUnchanged = (prev: User | null, next: User): User =>
+  prev &&
+  prev.id === next.id &&
+  prev.updated_at === next.updated_at &&
+  prev.email === next.email &&
+  prev.phone === next.phone
+    ? prev
+    : next;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,8 +50,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       if (session?.user) {
-        setUser(session.user);
-        setSupabaseUserId(session.user.id);
+        const next = session.user;
+        setUser((prev) => keepIfUnchanged(prev, next));
+        setSupabaseUserId(next.id);
       } else {
         setUser(null);
         setSupabaseUserId(null);
@@ -50,8 +68,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         supabase.auth.signOut().catch(() => {});
       }
       if (session?.user) {
-        setUser(session.user);
-        setSupabaseUserId(session.user.id);
+        const next = session.user;
+        setUser((prev) => keepIfUnchanged(prev, next));
+        setSupabaseUserId(next.id);
       }
       setLoading(false);
     });
