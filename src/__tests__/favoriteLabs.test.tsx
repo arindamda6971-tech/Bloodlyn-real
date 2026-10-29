@@ -1,3 +1,4 @@
+import type React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent, waitFor } from "@/test-utils";
@@ -64,7 +65,7 @@ const CENTERS = [
 const renderCarousel = () =>
   render(
     <MemoryRouter>
-      <DiagnosticCentersCarousel centers={CENTERS} />
+      <DiagnosticCentersCarousel centers={CENTERS as unknown as React.ComponentProps<typeof DiagnosticCentersCarousel>["centers"]} />
     </MemoryRouter>
   );
 

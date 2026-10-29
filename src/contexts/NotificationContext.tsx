@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useMemo, useCallback, R
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { orderStatusNotification, shouldNotifyStatus } from "@/lib/order-notifications";
 import { Capacitor } from '@capacitor/core';
 
 export interface Notification {
@@ -74,6 +75,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         },
         (payload) => {
           const order = payload.new as { order_number: string; status: string };
+          shouldNotifyStatus((payload.new as { id: string }).id, order.status);
           addNotification({
             title: "Booking Confirmed! 🩸",
             message: "Home sample collection scheduled. A certified phlebotomist will arrive at your address.",
@@ -91,41 +93,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const order = payload.new as { order_number: string; status: string };
-          const oldStatus = (payload.old as { status: string })?.status;
-          
-          if (order.status !== oldStatus) {
-            let title = "Order Update";
-            let message = "";
-            switch (order.status) {
-              case "confirmed":
-                title = "Phlebotomist Assigned 🩺";
-                message = "Your sample collection slot is confirmed. Tap to track live status.";
-                break;
-              case "collected":
-                title = "Sample Collected Safely 🧪";
-                message = "Your sample is on the way to the NABL-certified diagnostic lab.";
-                break;
-              case "processing":
-                title = "Lab Testing in Progress 🔬";
-                message = "The diagnostic center is processing your sample. Accurate report in progress.";
-                break;
-              case "completed":
-                title = "Diagnostic Report Ready! 📄";
-                message = "Your verified test report is ready. Tap to view and download.";
-                break;
-              default:
-                title = "Booking Status Updated";
-                message = `Your booking status is now ${order.status}.`;
-            }
-            
-            addNotification({
-              title,
-              message,
-              type: "order",
-              data: { orderId: (payload.new as { id: string }).id, orderNumber: order.order_number },
-            });
-          }
+          // Realtime sends only the new row (no previous status), so notify once
+          // per order per status — other edits to the row don't repeat it.
+          const order = payload.new as { id: string; order_number: string; status: string };
+          const content = orderStatusNotification(order);
+          if (!content || !shouldNotifyStatus(order.id, order.status)) return;
+          addNotification({
+            ...content,
+            type: "order",
+            data: { orderId: order.id, orderNumber: order.order_number },
+          });
         }
       )
       .subscribe();
