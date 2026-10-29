@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
-import { whenTransitionSettled } from "@/lib/navigation-transition";
+import { TAB_PATHS, whenTransitionSettled } from "@/lib/navigation-transition";
 
 const SCROLL_CACHE_KEY = 'bloodlyn_scroll_offsets';
 
@@ -51,9 +51,9 @@ const ScrollToTop = () => {
   const key = location.key || location.pathname;
 
   useLayoutEffect(() => {
-    // /home is kept alive in its own persistent scroll container; preserve its native
-    // scroll position without resetting it to 0 on POP or PUSH.
-    if (location.pathname === "/home") {
+    // Bottom-bar tabs are kept alive in their own persistent scroll containers; preserve
+    // their native scroll position without resetting it to 0 on POP or PUSH.
+    if (TAB_PATHS.includes(location.pathname)) {
       return;
     }
 

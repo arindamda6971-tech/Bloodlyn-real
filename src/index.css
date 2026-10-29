@@ -979,8 +979,9 @@ html.native [data-scroll-container] {
   transform: translateZ(0);
 }
 
-/* Hidden Home remains mounted; its infinite animations must not run off-route. */
-.home-stack[data-home-active="false"] * {
+/* Hidden tabs remain mounted; their infinite animations must not run off-route. */
+.home-stack[data-home-active="false"] *,
+.tab-stack[data-tab-active="false"] * {
   animation-play-state: paused !important;
 }
 

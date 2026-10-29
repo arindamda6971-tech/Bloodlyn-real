@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, startTransition } from "react";
 import { LayoutGroup, motion } from "framer-motion";
 import { Home, Grid3X3, ShoppingBag, FileText, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -23,6 +23,14 @@ const BottomNavigation = React.memo(({ zIndex = 50 }: BottomNavigationProps) => 
   // Scopes the sliding pill to this bar, so an in-page bar never animates against the app-wide one.
   const layoutGroupId = useId();
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  // The tab just tapped, highlighted at once while its screen renders in the
+  // background (see startTransition below), so a tap never feels ignored.
+  const [pendingPath, setPendingPath] = useState<string | null>(null);
+  const shownPath = pendingPath ?? location.pathname;
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!window.visualViewport) return;
@@ -51,8 +59,8 @@ const BottomNavigation = React.memo(({ zIndex = 50 }: BottomNavigationProps) => 
       <div className="flex items-center justify-between px-1.5 py-1">
         {navItems.map((item) => {
           const isActive = item.path === "/categories"
-            ? location.pathname === "/categories" || location.pathname === "/category-tests"
-            : location.pathname === item.path;
+            ? shownPath === "/categories" || shownPath === "/category-tests"
+            : shownPath === item.path;
           const Icon = item.icon;
           
           return (
@@ -63,18 +71,23 @@ const BottomNavigation = React.memo(({ zIndex = 50 }: BottomNavigationProps) => 
                 if (location.pathname === item.path) return;
                 // Native tap feedback (no-op on web)
                 if (!isActive) void hapticImpact();
+                setPendingPath(item.path);
                 // Leaving Home pushes one entry; later tab hops replace it, so the
                 // history never grows with every tap and Back always lands on Home.
                 const onHome = location.pathname === "/home";
                 const onTab = TAB_PATHS.includes(location.pathname);
                 const cameFromHome = (location.state as { fromHomeTab?: boolean } | null)?.fromHomeTab === true;
-                if (item.path === "/home" && onTab && cameFromHome) {
-                  navigate(-1);
-                  return;
-                }
-                navigate(item.path, {
-                  replace: onTab && !onHome,
-                  state: onHome || (onTab && cameFromHome) ? { fromHomeTab: true } : undefined,
+                // A transition keeps the tap responsive: React renders the next
+                // screen without blocking input and the highlight above paints first.
+                startTransition(() => {
+                  if (item.path === "/home" && onTab && cameFromHome) {
+                    navigate(-1);
+                    return;
+                  }
+                  navigate(item.path, {
+                    replace: onTab && !onHome,
+                    state: onHome || (onTab && cameFromHome) ? { fromHomeTab: true } : undefined,
+                  });
                 });
               }}
               className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 py-1 px-0.5 active:scale-[0.92] transition-transform duration-150"

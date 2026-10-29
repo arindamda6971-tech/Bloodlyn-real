@@ -4,7 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigationType } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  NavigationType,
+  useLocation,
+  useNavigationType,
+  UNSAFE_LocationContext as LocationContext,
+  type Location,
+} from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   recordNavigation,
@@ -34,7 +44,7 @@ import AppOpeningAnimation from "@/components/AppOpeningAnimation";
 import DataWarmup from "@/components/DataWarmup";
 import NativeChrome from "@/components/NativeChrome";
 import LocationCheckScreen from "./pages/LocationCheckScreen";
-import { useEffect, useMemo, useState, useCallback, memo } from "react";
+import { useEffect, useMemo, useState, useCallback, memo, type ComponentType } from "react";
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
@@ -105,38 +115,72 @@ const CapacitorInitializer = () => {
 };
 
 /**
- * High-Performance Native Stack Navigator.
- * Uses PageTransition for physical "Native-Feel" CSS animation.
- * RoutePrefetcher preloads all chunks so Suspense resolves instantly.
+ * The bottom-bar tabs, each kept alive in its own layer after its first visit.
+ * Switching tabs then only shows a layer that is already built, instead of
+ * unmounting one screen and rebuilding the next (the lag and blank flash taps had
+ * on phones), and every tab keeps its scroll position and loaded data.
  */
-interface HomeStackLayerProps {
+const TAB_SCREENS: Record<string, ComponentType> = {
+  "/home": HomeScreen,
+  "/categories": CategoriesScreen,
+  "/bookings": BookingsScreen,
+  "/reports": ReportsScreen,
+  "/profile": ProfileScreen,
+};
+
+const isTabPath = (pathname: string) => pathname in TAB_SCREENS;
+
+// Matches `pageTabEnter` in index.css; the tab being left stays painted under the
+// incoming one until it has faded in, so the switch never shows a blank screen.
+const TAB_FADE_MS = 240;
+
+interface TabStackLayerProps {
+  path: string;
+  /** The tab's own location: the live one while it's on screen, otherwise the last one it had. */
+  location: Location;
+  /** Its route is the current URL. */
   active: boolean;
+  /** It's the tab the user is on (also while a screen pushed from it is on top). */
+  current: boolean;
 }
 
 /**
- * Persistent Base Layer for HomeScreen.
- * Remains mounted in the DOM to preserve DOM tree, decoded GPU image textures,
- * and scroll offset at zero idle cost.
+ * Persistent layer for one tab. It stays mounted and keeps its DOM, decoded images
+ * and scroll offset. A hidden tab renders against its own frozen location, so route
+ * changes elsewhere don't re-render it.
  *
- * IMPORTANT: HomeScreen does NOT play its own slide animation. The incoming/
+ * IMPORTANT: a tab layer does NOT play its own slide animation. The incoming/
  * outgoing PageTransition already animates. Having TWO simultaneous translate3d
  * animations on overlapping layers is the #1 cause of frame drops on Android
- * WebView. Instead, HomeScreen uses instant visibility + a lightweight opacity
- * crossfade for the "reveal" effect.
+ * WebView. Tab-to-tab switches use a lightweight opacity fade-through instead.
  */
-const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
+const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerProps) => {
+  const Screen = TAB_SCREENS[path];
+  const isHome = path === "/home";
+
   // Home stays painted underneath other screens (they are opaque and sit above it).
   // Toggling `visibility` made mobile GPUs drop Home's raster tiles, so coming back
   // re-painted the whole screen on the first frames of the slide — the visible jitter.
-  //
-  // Pausing/resuming Home's own animations restyles its whole subtree, so that flip
+  // Other tabs are hidden while unused, but only after the tab replacing them has
+  // faded in on top.
+  const [shown, setShown] = useState(current);
+  if (current && !shown) setShown(true);
+
+  useEffect(() => {
+    if (current || !shown) return;
+    const timer = setTimeout(() => setShown(false), TAB_FADE_MS + 60);
+    return () => clearTimeout(timer);
+  }, [current, shown]);
+
+  // Pausing/resuming a tab's own animations restyles its whole subtree, so that flip
   // is deferred until the slide has finished instead of landing on its first frame.
   const [animationsActive, setAnimationsActive] = useState(active);
 
-  // Coming back to Home from another bottom-bar tab gets the same fade-through as
-  // the other tabs; returning from a pushed screen keeps the slide reveal instead.
+  // Arriving from another bottom-bar tab fades through; returning from a pushed
+  // screen keeps the slide reveal instead.
+  // A tab's first visit mounts its layer already active, so it fades in from the start.
   const [wasActive, setWasActive] = useState(active);
-  const [tabEntering, setTabEntering] = useState(false);
+  const [tabEntering, setTabEntering] = useState(() => active && isTabToTabTransition());
   if (active !== wasActive) {
     setWasActive(active);
     setTabEntering(active && isTabToTabTransition());
@@ -154,46 +198,69 @@ const HomeStackLayer = memo(({ active }: HomeStackLayerProps) => {
     return () => clearTimeout(timer);
   }, [active, animationsActive]);
 
+  const visible = isHome || shown;
+
+  // Feeds useLocation()/useNavigate() inside the tab. <Routes location> would re-read
+  // the live URL on every navigation and re-render a hidden tab each time; this value
+  // only changes when the tab's own location does.
+  const locationContext = useMemo(
+    () => ({ location, navigationType: NavigationType.Pop }),
+    [location]
+  );
+
   return (
     <div
-      className={`home-stack w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${tabEntering ? TAB_ENTER_CLASS : ""}`}
+      className={`${isHome ? "home-stack" : "tab-stack"} w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${tabEntering ? TAB_ENTER_CLASS : ""}`}
       onAnimationEnd={(e) => {
         if (e.target === e.currentTarget && e.animationName === "pageTabEnter") setTabEntering(false);
       }}
-      data-home-active={animationsActive ? "true" : "false"}
+      data-tab-layer={path}
+      data-tab-active={animationsActive ? "true" : "false"}
+      data-home-active={isHome ? (animationsActive ? "true" : "false") : undefined}
       aria-hidden={active ? undefined : true}
       style={{
-        zIndex: 1,
+        // The tab the user is on sits above the others; pushed screens sit above both.
+        zIndex: current ? 1 : 0,
         pointerEvents: active ? "auto" : "none",
+        visibility: visible ? "visible" : "hidden",
+        // Skips style and layout work for a hidden tab while keeping its rendering state.
+        contentVisibility: visible ? undefined : "hidden",
         WebkitOverflowScrolling: "touch",
         contain: "layout paint",
         backfaceVisibility: "hidden",
       }}
     >
-      <ScreenPathContext.Provider value="/home">
-        <ProtectedRoute>
-          <HomeScreen />
-        </ProtectedRoute>
+      <ScreenPathContext.Provider value={path}>
+        <LocationContext.Provider value={locationContext}>
+          <ProtectedRoute>
+            <Screen />
+          </ProtectedRoute>
+        </LocationContext.Provider>
       </ScreenPathContext.Provider>
     </div>
   );
 });
 
-HomeStackLayer.displayName = "HomeStackLayer";
+TabStackLayer.displayName = "TabStackLayer";
 
 /**
  * High-Performance Native Stack Navigator.
  * Uses PageTransition for physical "Native-Feel" CSS animation.
  * RoutePrefetcher preloads all chunks so Suspense resolves instantly.
  */
-const AnimatedRoutes = () => {
+export const AnimatedRoutes = () => {
   const location = useLocation();
   const navType = useNavigationType();
   const { user } = useAuth();
   recordNavigation(location.pathname, navType);
 
-  const isHome = location.pathname === "/home";
-  const [hasVisitedHome, setHasVisitedHome] = useState(isHome);
+  const isTab = isTabPath(location.pathname);
+  // Each tab's location (live while on it, frozen when left), whose presence also
+  // means the tab has been visited and its layer is mounted.
+  const [tabLocations, setTabLocations] = useState<Record<string, Location>>(() =>
+    isTab ? { [location.pathname]: location } : {}
+  );
+  const [currentTab, setCurrentTab] = useState<string | null>(isTab ? location.pathname : null);
   const [showAppSplash, setShowAppSplash] = useState(() => {
     if (typeof window === "undefined") return false;
     return !sessionStorage.getItem("bl_opening_shown");
@@ -206,24 +273,41 @@ const AnimatedRoutes = () => {
     setShowAppSplash(false);
   }, []);
 
-  if (isHome && !hasVisitedHome) {
-    setHasVisitedHome(true);
+  if (isTab && tabLocations[location.pathname] !== location) {
+    setTabLocations((prev) => ({ ...prev, [location.pathname]: location }));
+  }
+  if (isTab && currentTab !== location.pathname) {
+    setCurrentTab(location.pathname);
   }
 
+  // Signing out drops every kept-alive tab, so the next user starts fresh.
+  const hasTabLayers = Object.keys(tabLocations).length > 0;
   useEffect(() => {
-    if (!user && hasVisitedHome) {
-      setHasVisitedHome(false);
+    if (!user && hasTabLayers) {
+      setTabLocations({});
+      setCurrentTab(null);
     }
-  }, [user, hasVisitedHome]);
+  }, [user, hasTabLayers]);
 
   return (
     <>
       {showAppSplash && (
         <AppOpeningAnimation onComplete={handleSplashComplete} />
       )}
-      {hasVisitedHome && <HomeStackLayer active={isHome} />}
+      {/* Home first: other tabs and pushed screens stack above it. */}
+      {Object.keys(TAB_SCREENS).map((path) =>
+        tabLocations[path] ? (
+          <TabStackLayer
+            key={path}
+            path={path}
+            location={tabLocations[path]}
+            active={location.pathname === path}
+            current={currentTab === path}
+          />
+        ) : null
+      )}
       <AnimatePresence initial={false}>
-        {!isHome && (
+        {!isTab && (
           <PageTransition location={location} key={location.pathname}>
             <Suspense fallback={<RouteFallback />}>
               <Routes location={location}>
@@ -238,7 +322,7 @@ const AnimatedRoutes = () => {
 
                 {/* Protected Routes */}
                 <Route path="/home" element={null} />
-                <Route path="/categories" element={<ProtectedRoute><CategoriesScreen /></ProtectedRoute>} />
+                <Route path="/categories" element={null} />
                 <Route path="/category-tests" element={<ProtectedRoute><CategoryTestsScreen /></ProtectedRoute>} />
                 <Route path="/test/select/:id" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
                 <Route path="/test/select" element={<ProtectedRoute><TestDetailScreen /></ProtectedRoute>} />
@@ -247,11 +331,11 @@ const AnimatedRoutes = () => {
                 <Route path="/lab-selection" element={<ProtectedRoute><LabSelectionScreen /></ProtectedRoute>} />
                 <Route path="/payment" element={<ProtectedRoute><PaymentScreen /></ProtectedRoute>} />
                 <Route path="/payment-processing" element={<ProtectedRoute><PaymentProcessingScreen /></ProtectedRoute>} />
-                <Route path="/bookings" element={<ProtectedRoute><BookingsScreen /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><ReportsScreen /></ProtectedRoute>} />
+                <Route path="/bookings" element={null} />
+                <Route path="/reports" element={null} />
                 <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
                 <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><ProfileScreen /></ProtectedRoute>} />
+                <Route path="/profile" element={null} />
                 <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
                 <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
                 <Route path="/saved-labs" element={<ProtectedRoute><SavedLabsScreen /></ProtectedRoute>} />
