@@ -9,7 +9,7 @@ import { recordNavigation } from "@/lib/navigation-transition";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const Screen = ({ name }: { name: string }) => (
-  <MobileLayout enablePullToRefresh={false}>
+  <MobileLayout>
     <p>{name} screen</p>
   </MobileLayout>
 );

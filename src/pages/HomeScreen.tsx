@@ -1,37 +1,25 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
-import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
-import type { BridgeTest } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
-import { useDebounce } from "@/hooks/useDebounce";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
   Bell,
   ChevronRight,
   Activity,
-  X,
-  Check,
-  Plus,
   Phone,
   MessageCircle,
   ShieldCheck,
   Clock,
   Award,
-  Loader2,
-  Sparkles,
-  ArrowLeft,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
 import { useCart } from "@/contexts/CartContext";
-import { toast } from "sonner";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import HealthConcernsGrid from "@/components/home/HealthConcernsGrid";
@@ -40,12 +28,11 @@ import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
-import { highlightTerms, searchHint } from "@/utils/search-intelligence";
-import { simplifyTestName } from "@/utils/simplify-test-name";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import StickySearch from "@/components/ui/StickySearch";
+import { SearchScreen, useSearchMode } from "@/components/search/SearchScreen";
 import { ZomatoStyleHeader } from "@/components/layout/ZomatoStyleHeader";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import OptimizedImage from "@/components/ui/OptimizedImage";
@@ -102,55 +89,20 @@ type PreviousOrder = {
   created_at: string;
 };
 
-const POPULAR_SEARCHES = ["Sugar", "Thyroid", "CBC", "Vitamin D", "Lipid profile", "Liver function"];
-
 const HomeScreen = () => {
   useSEO({ title: "BloodLyn — Book Health Tests at Home", description: "Book NABL-certified home health tests in 60 minutes." });
   const navigate = useNavigate();
   const carouselRef = useRef<HTMLDivElement>(null);
   const { unreadCount } = useNotifications();
   const { user } = useAuth();
-  const { addToCart, items, clearCart, replaceCart, hasItem } = useCart();
+  const { items, clearCart, replaceCart } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [greeting, setGreeting] = useState(getGreeting());
   const [allTests, setAllTests] = useState<any[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
 
-  // Search mode, as in big apps: the page behind is covered and stops scrolling,
-  // and Back (the arrow or the phone's button) closes it. Opening adds a history
-  // step, so the phone's Back closes search instead of leaving Home.
-  const location = useLocation();
-  const searchInHistory = (location.state as { searchOpen?: boolean } | null)?.searchOpen === true;
-
-  const openSearch = useCallback(() => {
-    setShowSearchResults(true);
-    if (!searchInHistory) {
-      navigate(location.pathname, { state: { ...((location.state as object | null) ?? {}), searchOpen: true } });
-    }
-  }, [navigate, location.pathname, location.state, searchInHistory]);
-
-  const closeSearch = useCallback(() => {
-    (document.activeElement as HTMLElement | null)?.blur();
-    if (searchInHistory) navigate(-1);
-    else setShowSearchResults(false);
-  }, [navigate, searchInHistory]);
-
-  // Opening a result closes search and replaces its history step, so Back from
-  // the test page returns straight to Home instead of to the search screen.
-  const openTestFromSearch = useCallback((test: BridgeTest) => {
-    setShowSearchResults(false);
-    navigate(`/test/${test.id}`, { replace: searchInHistory, state: { bridgeTest: test } });
-  }, [navigate, searchInHistory]);
-
-  // The history step was popped (Back) → leave search mode.
-  useEffect(() => {
-    if (!searchInHistory) {
-      setShowSearchResults(false);
-      (document.activeElement as HTMLElement | null)?.blur();
-    }
-  }, [searchInHistory]);
+  // Full-screen search (shared with Explore Tests): Back closes it, a result opens its test.
+  const { open: searchOpen, openSearch, closeSearch, openTest } = useSearchMode();
 
   // "Shop by health concern": run the search for that concern's tests.
   const searchForConcern = useCallback((term: string) => {
@@ -184,126 +136,7 @@ const HomeScreen = () => {
 
   const StaticBackground = null;
 
-  // Intent-aware search: "sugar" → glucose tests, "liver function test" → LFT + SGPT…
-  const { results: searchResults, understanding, isSearching } = useSmartTestSearch(debouncedSearchQuery, { limit: 25 });
-  const searchHintText = searchHint(understanding);
-  const highlightWords = useMemo(() => highlightTerms(understanding), [understanding]);
-  const searchPending = isSearching || searchQuery.trim() !== debouncedSearchQuery.trim();
 
-  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
-
-  const handleQuickAdd = (e: React.MouseEvent, test: any) => {
-    e.stopPropagation();
-    const ok = addToCart({
-      id: test.id,
-      name: test.name,
-      price: test.price,
-    });
-    if (ok) {
-      toast.success(`${test.name} added to cart!`);
-    }
-  };
-
-  const HighlightText = ({ text, words }: { text: string; words: string[] }) => {
-    if (!words.length) return <span>{text}</span>;
-    const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
-    const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
-    const parts = text.split(pattern);
-    return (
-      <span>
-        {parts.map((part, i) =>
-          i % 2 === 1 ? (
-            <span key={i} className="text-primary font-black">{part}</span>
-          ) : (
-            <span key={i}>{part}</span>
-          )
-        )}
-      </span>
-    );
-  };
-
-  // Results (or popular searches) shown in the full-screen search layer.
-  const searchPanel = (
-              !searchQuery.trim() ? (
-                <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl p-4">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Popular searches</p>
-                  <div className="flex flex-wrap gap-2">
-                    {POPULAR_SEARCHES.map((term) => (
-                      <button
-                        key={term}
-                        type="button"
-                        onClick={() => setSearchQuery(term)}
-                        className="px-3 py-1.5 rounded-full bg-muted/60 text-[12.5px] font-semibold text-foreground active:scale-95 transition-transform"
-                      >
-                        {term}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden">
-                  {searchHintText && searchResults.length > 0 && (
-                    <div className="px-4 py-2 flex items-center gap-1.5 bg-primary/5 border-b border-border/40 text-[11px] font-semibold text-primary">
-                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">{searchHintText}</span>
-                    </div>
-                  )}
-                  {searchResults.length > 0 ? (
-                    <div className="flex flex-col">
-                      {searchResults.map((test: BridgeTest & { name?: string; discount_percent?: number }) => {
-                        const discount = test.discount_percent || 0;
-                        const finalPrice = Math.round(test.price * (1 - discount / 100));
-                        const testName = test.name || test.test_name || "Unknown Test";
-                        const inCart = isInCart(test.id, testName);
-                        return (
-                          <div
-                            key={test.id}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => {
-                              openTestFromSearch(test);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                openTestFromSearch(test);
-                              }
-                            }}
-                            className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center cursor-pointer"
-                          >
-                            <div className="flex-1 min-w-0 pr-3">
-                              <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                                <HighlightText text={simplifyTestName(testName)} words={highlightWords} />
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : searchPending ? (
-                    <div className="px-4 py-6 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Searching tests…
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
-                        <Search className="w-6 h-6 text-muted-foreground/50" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">No tests found</p>
-                        <p className="text-xs font-medium text-muted-foreground mt-1">We couldn't find anything matching "{searchQuery}"</p>
-                      </div>
-                      <div className="flex gap-3 mt-2 w-full max-w-[200px]">
-                        <Button variant="outline" size="sm" className="flex-1 rounded-xl h-10 border-border/50 bg-background hover:bg-muted/30" onClick={() => { setSearchQuery(""); closeSearch(); }}>
-                          Clear Search
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-  );
 
   return (
     <MobileLayout>
@@ -318,48 +151,21 @@ const HomeScreen = () => {
           />
         </div>
 
-        {showSearchResults && createPortal(
-          <div className="fixed inset-0 z-[70] bg-background flex flex-col" style={{ paddingTop: "var(--sat)" }} role="dialog" aria-label="Search tests">
-            <div className="px-3 pt-2 pb-2 flex items-center gap-2 border-b border-border/50">
-              <button
-                type="button"
-                onClick={closeSearch}
-                aria-label="Close search"
-                className="w-10 h-10 rounded-full flex items-center justify-center text-foreground active:bg-muted/60 shrink-0"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="relative flex-1">
-                <input
-                  autoFocus
-                  type="text"
-                  enterKeyHint="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search health tests..."
-                  className="w-full h-11 rounded-xl bg-muted/50 pl-4 pr-10 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/60"
-                />
-                {searchQuery && (
-                  <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear" className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <X className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-28">{searchPanel}</div>
-          </div>,
-          // Inside Home's own full-screen layer, so a page opened from a result slides in above it.
-          document.querySelector<HTMLElement>(".home-stack") ?? document.body
-        )}
+        <SearchScreen
+          open={searchOpen}
+          query={searchQuery}
+          onQueryChange={setSearchQuery}
+          onClose={closeSearch}
+          onOpenTest={openTest}
+        />
 
         {/* Sticky Search Input Bar - Pins at top-0 (tapping it opens the search screen) */}
         <StickySearch
           className="-mt-2"
           value={searchQuery}
-          onChange={(v) => { setSearchQuery(v); if (!showSearchResults) openSearch(); }}
-          onFocus={() => { if (!showSearchResults) openSearch(); }}
+          onChange={(v) => { setSearchQuery(v); if (!searchOpen) openSearch(); }}
+          onFocus={() => { if (!searchOpen) openSearch(); }}
           placeholder="Search health tests..."
-
         />
 
         <TakeChargeBanner />

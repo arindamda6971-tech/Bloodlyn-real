@@ -91,7 +91,7 @@ const UploadPrescriptionScreen = () => {
 
   if (isSuccess) {
     return (
-      <MobileLayout showNav={false} enablePullToRefresh={false} className="pb-[calc(var(--sab)+24px)]">
+      <MobileLayout showNav={false} className="pb-[calc(var(--sab)+24px)]">
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <motion.div
             initial={false}
@@ -124,7 +124,7 @@ const UploadPrescriptionScreen = () => {
   }
 
   return (
-    <MobileLayout showNav={false} enablePullToRefresh={false} className="pb-[calc(var(--sab)+24px)]">
+    <MobileLayout showNav={false} className="pb-[calc(var(--sab)+24px)]">
       {/* Header */}
       <div className="sticky top-0 z-40 bg-background/98 border-b border-border/50 px-4 py-3 flex items-center gap-3">
           <button

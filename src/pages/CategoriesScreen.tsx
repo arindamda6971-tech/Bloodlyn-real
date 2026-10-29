@@ -1,20 +1,14 @@
 import { memo, useMemo, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Sparkles, Beaker, Plus, Check } from "lucide-react";
+import { Beaker } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
-import { categoryTestsQueryOptions, useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
-import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
-import { searchHint } from "@/utils/search-intelligence";
-import { useCart } from "@/contexts/CartContext";
-import { useDebounce } from "@/hooks/useDebounce";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { categoryTestsQueryOptions, useBridgeTests } from "@/hooks/useBridgeTests";
+import { SearchScreen, useSearchMode } from "@/components/search/SearchScreen";
 import { useSEO } from "@/hooks/useSEO";
 import { Skeleton } from "@/components/ui/skeleton";
-import { simplifyTestName } from "@/utils/simplify-test-name";
 import { useEffect } from "react";
 
 const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
@@ -114,44 +108,13 @@ const CategoryTile = memo(({ category, onClick, onPointerDown }: { category: Cat
 
 CategoryTile.displayName = "CategoryTile";
 
-const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCart }: { test: BridgeTest, index: number, alreadyInCart: boolean, onNavigate: () => void, onAddToCart: (e: any) => void }) => {
-  const navigate = useNavigate();
-  return (
-    <div
-      onClick={onNavigate}
-      className="soft-card flex items-center gap-3 cursor-pointer hover:bg-accent/40 active:scale-[0.98] transition-all"
-      style={{ contain: 'content' }}
-    >
-      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-        <Beaker className="w-5 h-5 text-primary" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{simplifyTestName(test.test_name)}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5">{test.category || "General Test"}</p>
-      </div>
-      <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        {alreadyInCart ? (
-          <Button variant="softSuccess" size="sm" className="h-8 w-8 p-0" onClick={() => navigate("/cart")}>
-            <Check className="w-4 h-4" />
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={onAddToCart}>
-            <Plus className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
-    </div>
-  );
-});
-
-TestResultCard.displayName = "TestResultCard";
-
 const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  // Full-screen search (shared with Home): Back closes it, a result opens its test.
+  const { open: searchOpen, openSearch, closeSearch, openTest } = useSearchMode();
 
   const handlePrefetchCategory = useCallback((slug: string) => {
     if (!slug) return;
@@ -161,13 +124,7 @@ const CategoriesScreen = () => {
 
   const { data: categoryData, isLoading: isCategoriesLoading } = useBridgeTests({});
 
-  // Intent-aware search: "sugar" → glucose tests, "liver function test" → LFT + SGPT…
-  const { results: searchResults, understanding, isSearching } = useSmartTestSearch(debouncedSearchQuery, { limit: 40 });
-  const searchHintText = searchHint(understanding);
-  const searchPending = isSearching || searchQuery.trim() !== debouncedSearchQuery.trim();
-
   const showLoading = useDelayedLoading(isCategoriesLoading);
-  const { addToCart, items, hasItem } = useCart();
 
   // Categories come from the admin panel; we only add art and order them.
   const categories = useMemo<CategoryTileData[]>(() => {
@@ -176,24 +133,7 @@ const CategoriesScreen = () => {
       .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
   }, [categoryData]);
 
-  const filteredCategories = useMemo(() => {
-    if (debouncedSearchQuery.trim()) return []; // When searching, hide categories and show test results
-    return categories;
-  }, [debouncedSearchQuery, categories]);
-
-  const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
-
-  const handleAddToCart = (test: BridgeTest) => {
-    const price = test.price > 0 ? test.price : test.collection_fee || 0;
-    const success = addToCart({
-      id: test.id,
-      name: test.test_name,
-      price,
-    });
-    if (success) {
-      toast.success(`${test.test_name} added to cart`);
-    }
-  };
+  const filteredCategories = categories;
 
   return (
     <MobileLayout>
@@ -208,50 +148,28 @@ const CategoriesScreen = () => {
       </div>
 
       {/* Sticky Search Input Bar - Pins at top-0 */}
+      <SearchScreen
+        open={searchOpen}
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onClose={closeSearch}
+        onOpenTest={openTest}
+        placeholder="Search tests..."
+      />
+
+      {/* Sticky Search Input Bar - Pins at top-0 (tapping it opens the search screen) */}
       <StickySearch
         value={searchQuery}
-        onChange={setSearchQuery}
+        onChange={(v) => { setSearchQuery(v); if (!searchOpen) openSearch(); }}
+        onFocus={() => { if (!searchOpen) openSearch(); }}
         placeholder="Search tests..."
         accent="from-sky-500 via-primary to-indigo-600"
       />
 
 
 
-      {/* Search Results — individual tests */}
-      {searchQuery.trim() && (
-        <div className="px-4 mt-4 pb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-            {searchResults.length > 0 ? (
-              `${searchResults.length} tests found`
-            ) : searchPending ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Searching tests…</>
-            ) : (
-              "No tests found"
-            )}
-          </h2>
-          {searchHintText && searchResults.length > 0 && (
-            <p className="-mt-2 mb-3 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
-              <Sparkles className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{searchHintText}</span>
-            </p>
-          )}
-          <div className="space-y-2 list-virtual">
-            {searchResults.map((test, index) => (
-              <TestResultCard
-                key={test.id}
-                test={test}
-                index={index}
-                alreadyInCart={isInCart(test.id, test.test_name)}
-                onNavigate={() => navigate(`/test/${test.id}`, { state: { bridgeTest: test } })}
-                onAddToCart={(e) => { e.stopPropagation(); handleAddToCart(test); }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Categories Grid */}
-      {!searchQuery.trim() && (
+      {(
         <div className="px-4 mt-5 pb-12">
           <h2 className="text-[19px] font-extrabold text-foreground mb-4 tracking-tight px-1">Browse by Category</h2>
             {showLoading ? (
