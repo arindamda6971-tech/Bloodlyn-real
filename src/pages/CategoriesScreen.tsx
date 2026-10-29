@@ -15,6 +15,7 @@ import {
   Bone,
   Search,
   Loader2,
+  Sparkles,
   Microscope,
   Dna,
   ShieldCheck,
@@ -35,6 +36,8 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
+import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
+import { searchHint } from "@/utils/search-intelligence";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "@/components/ui/button";
@@ -174,10 +177,6 @@ const TestResultCard = memo(({ test, index, alreadyInCart, onNavigate, onAddToCa
 
 TestResultCard.displayName = "TestResultCard";
 
-import { matchToDictionary } from "@/lib/medical-dictionary";
-
-// ... inside the file, find the CategoriesScreen component ...
-
 const CategoriesScreen = () => {
   useSEO({ title: "Test Categories | BloodLyn", description: "Browse diagnostic test categories — diabetes, thyroid, heart, vitamins and full-body checkups with home collection." });
   const navigate = useNavigate();
@@ -194,42 +193,13 @@ const CategoriesScreen = () => {
     });
   }, [queryClient]);
 
-  // Search Intelligence: Map colloquial terms to scientific database keywords
-  const backendSearchTerm = useMemo(() => {
-    const q = debouncedSearchQuery.trim();
-    if (!q) return undefined;
-    
-    const dictMatch = matchToDictionary(q, 0.5);
-    if (dictMatch) {
-      const canonical = dictMatch.canonical.toLowerCase();
-      
-      // Extract the most significant scientific keyword from the canonical name
-      // This is dynamic, so we don't need hardcoded if-statements.
-      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
-      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
-      
-      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
-      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
-      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
-      
-      return words[0] || dictMatch.canonical.split(" ")[0]; 
-    }
-    return undefined; // No dictionary match — raw query will be sent separately
-  }, [debouncedSearchQuery]);
-
-  const rawQuery = debouncedSearchQuery.trim() || undefined;
-
   const { data: categoryData, isLoading: isCategoriesLoading } = useBridgeTests({});
 
-  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
-  const { data: dictSearchData } = useBridgeTests(
-    backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
-  );
-  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
-  const { data: rawSearchData, isLoading: isSearchLoading } = useBridgeTests(
-    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
-  );
-  
+  // Intent-aware search: "sugar" → glucose tests, "liver function test" → LFT + SGPT…
+  const { results: searchResults, understanding, isSearching } = useSmartTestSearch(debouncedSearchQuery, { limit: 40 });
+  const searchHintText = searchHint(understanding);
+  const searchPending = isSearching || searchQuery.trim() !== debouncedSearchQuery.trim();
+
   const showLoading = useDelayedLoading(isCategoriesLoading);
   const { addToCart, items, hasItem } = useCart();
 
@@ -258,38 +228,6 @@ const CategoriesScreen = () => {
     }
     return cats;
   }, [categoryData]);
-
-  // Merge results from both queries + filter against friendly names
-  const searchResults = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return [];
-    
-    const dictResults = dictSearchData?.tests || [];
-    const rawResults = rawSearchData?.tests || [];
-    
-    // Merge and deduplicate by test ID
-    const seen = new Set<string>();
-    const merged: BridgeTest[] = [];
-    for (const test of [...rawResults, ...dictResults]) {
-      if (!seen.has(test.id)) {
-        seen.add(test.id);
-        merged.push(test);
-      }
-    }
-    
-    // Also match against the FRIENDLY name client-side, AND the mapped synonym term
-    const q = debouncedSearchQuery.trim().toLowerCase();
-    const mappedQ = backendSearchTerm?.toLowerCase();
-    
-    return merged.filter((test) => {
-      const originalName = (test.test_name || "").toLowerCase();
-      const friendlyName = simplifyTestName(test.test_name || "").toLowerCase();
-      
-      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
-      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
-      
-      return matchesRaw || matchesMapped;
-    });
-  }, [debouncedSearchQuery, backendSearchTerm, dictSearchData, rawSearchData]);
 
   const filteredCategories = useMemo(() => {
     if (debouncedSearchQuery.trim()) return []; // When searching, hide categories and show test results
@@ -335,9 +273,21 @@ const CategoriesScreen = () => {
       {/* Search Results — individual tests */}
       {searchQuery.trim() && (
         <div className="px-4 mt-4 pb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3">
-            {searchResults.length > 0 ? `${searchResults.length} tests found` : "No tests found"}
+          <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+            {searchResults.length > 0 ? (
+              `${searchResults.length} tests found`
+            ) : searchPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Searching tests…</>
+            ) : (
+              "No tests found"
+            )}
           </h2>
+          {searchHintText && searchResults.length > 0 && (
+            <p className="-mt-2 mb-3 flex items-center gap-1.5 text-[11px] font-semibold text-primary">
+              <Sparkles className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{searchHintText}</span>
+            </p>
+          )}
           <div className="space-y-2 list-virtual">
             {searchResults.map((test, index) => (
               <TestResultCard

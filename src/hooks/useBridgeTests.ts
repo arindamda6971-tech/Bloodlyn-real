@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeServerTerm } from "@/utils/search-intelligence";
 
 export interface BridgeCategory {
   id: string;
@@ -31,7 +32,9 @@ export interface BridgeTestsParams {
   offset?: number;
 }
 
-async function fetchBridgeTests(params: BridgeTestsParams = {}): Promise<BridgeTestsResponse> {
+export const bridgeTestsQueryKey = (params?: BridgeTestsParams) => ["bridge-tests-v2", JSON.stringify(params || {})];
+
+export async function fetchBridgeTests(params: BridgeTestsParams = {}): Promise<BridgeTestsResponse> {
   // Use user-provided limit, fallback to 20 for search/category, fallback to 0 if just fetching categories
   const limitStr = params.limit !== undefined ? String(params.limit) : 
                    (params.category || params.search ? "20" : "0");
@@ -42,7 +45,8 @@ async function fetchBridgeTests(params: BridgeTestsParams = {}): Promise<BridgeT
   };
   
   if (params.category) queryParams.category = params.category;
-  if (params.search) queryParams.search = params.search;
+  // The bridge search fails on commas and brackets ("sgpt (alt)", "hemoglobin,").
+  if (params.search) queryParams.search = sanitizeServerTerm(params.search);
   if (params.offset) queryParams.offset = String(params.offset);
 
   const { data, error } = await supabase.functions.invoke("bridge-proxy", {
@@ -57,7 +61,7 @@ async function fetchBridgeTests(params: BridgeTestsParams = {}): Promise<BridgeT
 export function useBridgeTests(params?: BridgeTestsParams) {
   // We stringify the params to make a stable query key
   return useQuery({
-    queryKey: ["bridge-tests-v2", JSON.stringify(params || {})],
+    queryKey: bridgeTestsQueryKey(params),
     queryFn: () => fetchBridgeTests(params),
     staleTime: 10 * 60 * 1000, // 10 minutes
     gcTime: 30 * 60 * 1000, // Keep in memory for 30 minutes

@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
-import { useBridgeTests } from "@/hooks/useBridgeTests";
+import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
+import type { BridgeTest } from "@/hooks/useBridgeTests";
 import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { AnimatePresence, motion } from "framer-motion";
@@ -19,6 +20,8 @@ import {
   ShieldCheck,
   Clock,
   Award,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,8 +39,7 @@ import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
 import { AdvancedSkeleton } from "@/components/ui/AdvancedSkeleton";
-import { intelligentSearch } from "@/utils/search-intelligence";
-import { matchToDictionary } from "@/lib/medical-dictionary";
+import { highlightTerms, searchHint } from "@/utils/search-intelligence";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import LocationChip from "@/components/home/LocationChip";
 import { useSEO } from "@/hooks/useSEO";
@@ -139,69 +141,11 @@ const HomeScreen = () => {
 
   const StaticBackground = null;
 
-  // Compute the intelligent search term (dictionary-mapped)
-  const backendSearchTerm = useMemo(() => {
-    const q = debouncedSearchQuery.trim();
-    if (!q) return "";
-
-    const dictMatch = matchToDictionary(q, 0.5);
-    if (dictMatch) {
-      const canonical = dictMatch.canonical.toLowerCase();
-      
-      // Extract the most significant scientific keyword from the canonical name
-      const stopWords = ["test", "profile", "function", "serum", "blood", "count", "rate", "acid"];
-      const words = canonical.split(" ").filter(w => !stopWords.includes(w) && w.length > 2);
-      
-      if (words.includes("glucose") || words.includes("sugar") || words.includes("hba1c")) return "glucose";
-      if (words.includes("lipid") || words.includes("cholesterol")) return "cholesterol";
-      if (words.includes("thyroid") || words.includes("tsh")) return "thyroid";
-      
-      return words[0] || dictMatch.canonical.split(" ")[0]; 
-    }
-    return "";
-  }, [debouncedSearchQuery]);
-
-  const rawQuery = debouncedSearchQuery.trim();
-
-  // Query 1: Dictionary-mapped term (e.g. "sugar" → "glucose")
-  const { data: dictBridgeData } = useBridgeTests(
-    backendSearchTerm ? { search: backendSearchTerm, limit: 15 } : undefined
-  );
-  // Query 2: Raw user query as-is (e.g. "Hemoglobin A1c" matches the LOINC name directly)
-  const { data: rawBridgeData } = useBridgeTests(
-    rawQuery && rawQuery !== backendSearchTerm ? { search: rawQuery, limit: 15 } : undefined
-  );
-
-  const searchResults = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return [];
-    
-    const dictResults = dictBridgeData?.tests || [];
-    const rawResults = rawBridgeData?.tests || [];
-    
-    // Merge and deduplicate by test ID
-    const seen = new Set<string>();
-    const merged: any[] = [];
-    for (const test of [...rawResults, ...dictResults]) {
-      if (!seen.has(test.id)) {
-        seen.add(test.id);
-        merged.push(test);
-      }
-    }
-    
-    // Client-side filter: match against original, friendly name, AND mapped synonym
-    const q = debouncedSearchQuery.trim().toLowerCase();
-    const mappedQ = backendSearchTerm?.toLowerCase();
-    
-    return merged.filter((test) => {
-      const originalName = (test.test_name || test.name || "").toLowerCase();
-      const friendlyName = simplifyTestName(test.test_name || test.name || "").toLowerCase();
-      
-      const matchesRaw = originalName.includes(q) || friendlyName.includes(q);
-      const matchesMapped = mappedQ ? (originalName.includes(mappedQ) || friendlyName.includes(mappedQ)) : false;
-      
-      return matchesRaw || matchesMapped;
-    });
-  }, [debouncedSearchQuery, backendSearchTerm, dictBridgeData, rawBridgeData]);
+  // Intent-aware search: "sugar" → glucose tests, "liver function test" → LFT + SGPT…
+  const { results: searchResults, understanding, isSearching } = useSmartTestSearch(debouncedSearchQuery, { limit: 25 });
+  const searchHintText = searchHint(understanding);
+  const highlightWords = useMemo(() => highlightTerms(understanding), [understanding]);
+  const searchPending = isSearching || searchQuery.trim() !== debouncedSearchQuery.trim();
 
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
@@ -217,13 +161,15 @@ const HomeScreen = () => {
     }
   };
 
-  const HighlightText = ({ text, highlight }: { text: string; highlight: string }) => {
-    if (!highlight.trim()) return <span>{text}</span>;
-    const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  const HighlightText = ({ text, words }: { text: string; words: string[] }) => {
+    if (!words.length) return <span>{text}</span>;
+    const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+    const parts = text.split(pattern);
     return (
       <span>
-        {parts.map((part, i) => 
-          part.toLowerCase() === highlight.toLowerCase() ? (
+        {parts.map((part, i) =>
+          i % 2 === 1 ? (
             <span key={i} className="text-primary font-black">{part}</span>
           ) : (
             <span key={i}>{part}</span>
@@ -256,9 +202,15 @@ const HomeScreen = () => {
           results={
             showSearchResults && searchQuery.trim() ? (
               <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
+                {searchHintText && searchResults.length > 0 && (
+                  <div className="px-4 py-2 flex items-center gap-1.5 bg-primary/5 border-b border-border/40 text-[11px] font-semibold text-primary">
+                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">{searchHintText}</span>
+                  </div>
+                )}
                 {searchResults.length > 0 ? (
                   <div className="flex flex-col">
-                    {searchResults.map((test) => {
+                    {searchResults.map((test: BridgeTest & { name?: string; discount_percent?: number }) => {
                       const discount = test.discount_percent || 0;
                       const finalPrice = Math.round(test.price * (1 - discount / 100));
                       const testName = test.name || test.test_name || "Unknown Test";
@@ -281,7 +233,7 @@ const HomeScreen = () => {
                         >
                           <div className="flex-1 min-w-0 pr-3">
                             <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                              <HighlightText text={simplifyTestName(testName)} highlight={searchQuery} />
+                              <HighlightText text={simplifyTestName(testName)} words={highlightWords} />
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
@@ -307,6 +259,11 @@ const HomeScreen = () => {
                         </div>
                       );
                     })}
+                  </div>
+                ) : searchPending ? (
+                  <div className="px-4 py-6 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Searching tests…
                   </div>
                 ) : (
                   <div className="p-8 text-center flex flex-col items-center justify-center gap-4">

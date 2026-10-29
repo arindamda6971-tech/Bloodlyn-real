@@ -9,14 +9,15 @@ import { memo } from "react";
  * bundled as 144px WebP so they load instantly and offline.
  */
 const CONCERNS = [
-  { label: "Diabetes", icon: "drop-of-blood", search: "glucose" },
-  { label: "Heart", icon: "anatomical-heart", search: "lipid" },
+  // `search` is an intent the search intelligence understands (see lib/test-knowledge.ts).
+  { label: "Diabetes", icon: "drop-of-blood", search: "diabetes" },
+  { label: "Heart", icon: "anatomical-heart", search: "heart" },
   { label: "Thyroid", icon: "butterfly", search: "thyroid" },
-  { label: "Lungs", icon: "lungs", search: "lung" },
-  { label: "Vitamins", icon: "pill", search: "vitamin" },
-  { label: "Fever", icon: "thermometer", search: "CBC" },
-  { label: "Bones", icon: "bone", search: "calcium" },
-  { label: "Full body", icon: "dna", search: "full body" },
+  { label: "Lungs", icon: "lungs", search: "lungs" },
+  { label: "Vitamins", icon: "pill", search: "vitamins" },
+  { label: "Fever", icon: "thermometer", search: "fever" },
+  { label: "Bones", icon: "bone", search: "bones" },
+  { label: "Full body", icon: "dna", search: "full body checkup" },
 ] as const;
 
 interface HealthConcernsGridProps {
