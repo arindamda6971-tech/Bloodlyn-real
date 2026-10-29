@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { markAppReady } from "@/lib/boot";
 
 const ONBOARDED_KEY = "bloodlyn-onboarded";
+const LEGACY_LAST_ROUTE_KEY = "bloodlyn_last_route";
 
 /**
  * Silent Auth Gateway for Route "/".
@@ -21,15 +22,9 @@ const SplashScreen = () => {
         const { data } = await supabase.auth.getSession();
         if (data?.session?.user) {
           localStorage.setItem(ONBOARDED_KEY, "1");
-
-          const lastRoute = localStorage.getItem("bloodlyn_last_route");
-          if (lastRoute) {
-            localStorage.removeItem("bloodlyn_last_route");
-            const safeToRestore = /^\/(home|categories|reports|profile|bookings|category-tests|test|lab|report-detail|tracking)/;
-            if (safeToRestore.test(lastRoute)) {
-              return lastRoute;
-            }
-          }
+          // A fresh launch always opens Home, never the screen left before the
+          // app was closed. Older versions saved that screen; drop the leftover.
+          localStorage.removeItem(LEGACY_LAST_ROUTE_KEY);
           return "/home";
         }
       } catch {

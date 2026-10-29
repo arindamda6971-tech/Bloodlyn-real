@@ -4,10 +4,13 @@ import { TAB_PATHS, whenTransitionSettled } from "@/lib/navigation-transition";
 
 const SCROLL_CACHE_KEY = 'bloodlyn_scroll_offsets';
 
-// Initialize from memory to survive cold starts
+// Scroll positions last only for the current app session (sessionStorage is
+// cleared when the app is closed or killed), so a fresh launch never reopens
+// screens at old positions. Older versions kept them in localStorage.
 const initialOffsets = (): Map<string, number> => {
   try {
-    const saved = localStorage.getItem(SCROLL_CACHE_KEY);
+    localStorage.removeItem(SCROLL_CACHE_KEY);
+    const saved = sessionStorage.getItem(SCROLL_CACHE_KEY);
     if (saved) return new Map(Object.entries(JSON.parse(saved)));
   } catch (e) {
     // ignore
@@ -22,7 +25,7 @@ const performSave = () => {
   saveScheduled = false;
   try {
     const obj = Object.fromEntries(offsets.entries());
-    localStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(obj));
+    sessionStorage.setItem(SCROLL_CACHE_KEY, JSON.stringify(obj));
   } catch (e) {
     // ignore
   }

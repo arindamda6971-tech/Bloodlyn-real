@@ -35,10 +35,9 @@ export const useAppLifecycle = () => {
     }
 
 
-    // Persist current route to handle cold starts after process kill
-    const saveCurrentRoute = () => {
-      localStorage.setItem('bloodlyn_last_route', window.location.pathname + window.location.search);
-    };
+    // No route is saved on background: a resume keeps the live app (and its
+    // screen) in memory, while a fresh launch after the app was closed or killed
+    // must start on Home, as large apps do (see SplashScreen).
 
     // The launch splash is already on screen (launchAutoHide: false). Calling
     // SplashScreen.show() here used to put up a *second*, differently sized
@@ -66,10 +65,6 @@ export const useAppLifecycle = () => {
         setTimeout(() => {
           SplashScreen.hide();
         }, 100);
-      } else {
-        // App went to background
-        saveCurrentRoute();
-        console.log('App going to background - state saved.');
       }
     });
 
