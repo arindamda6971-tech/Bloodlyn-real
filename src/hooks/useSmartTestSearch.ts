@@ -20,12 +20,17 @@ interface SmartTestSearch {
  * query plus the concept's catalogue searches in parallel (each cached like any
  * other bridge-tests query) and ranks the merged results.
  */
-export function useSmartTestSearch(query: string, { limit = 30, enabled = true } = {}): SmartTestSearch {
+export function useSmartTestSearch(
+  query: string,
+  { limit = 30, enabled = true, category }: { limit?: number; enabled?: boolean; category?: string } = {}
+): SmartTestSearch {
   const understanding = useMemo(() => understandQuery(query), [query]);
+  // Limit the search to one category's tests (server-side, so pages not yet loaded are included).
+  const scope = category && category !== "all" ? category : undefined;
 
   const queries = useQueries({
     queries: understanding.serverTerms.map((term) => {
-      const params = { search: term, limit: PER_TERM_LIMIT };
+      const params = { search: term, limit: PER_TERM_LIMIT, ...(scope ? { category: scope } : {}) };
       return {
         queryKey: bridgeTestsQueryKey(params),
         queryFn: () => fetchBridgeTests(params),

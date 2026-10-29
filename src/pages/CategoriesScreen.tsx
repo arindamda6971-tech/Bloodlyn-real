@@ -1,41 +1,11 @@
 import { memo, useMemo, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Droplets,
-  Activity,
-  Pill,
-  Sun,
-  Heart,
-  UserCheck,
-  Stethoscope,
-  Baby,
-  Brain,
-  Bone,
-  Search,
-  Loader2,
-  Sparkles,
-  Microscope,
-  Dna,
-  ShieldCheck,
-  Thermometer,
-  Eye,
-  Ear,
-  Syringe,
-  Beaker,
-  TestTubes,
-  Scan,
-  HeartPulse,
-  Wind,
-  Plus,
-  Check,
-  type LucideIcon,
-} from "lucide-react";
+import { Loader2, Sparkles, Beaker, Plus, Check } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
-import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
+import { categoryTestsQueryOptions, useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
 import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import { searchHint } from "@/utils/search-intelligence";
 import { useCart } from "@/contexts/CartContext";
@@ -62,85 +32,84 @@ const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
   return showLoading;
 };
 
-// Hand-picked icons and colors for specific known categories
-const CATEGORY_MAP: Record<string, { icon: LucideIcon; color: string; image?: string }> = {
-  "cardiac": { icon: HeartPulse, color: "bg-rose-100 text-rose-600", image: "/categories/cardiac.jpg" },
-  "diabetes": { icon: Activity, color: "bg-sky-100 text-sky-600" },
-  "kidney": { icon: Droplets, color: "bg-amber-100 text-amber-600" },
-  "liver": { icon: Beaker, color: "bg-emerald-100 text-emerald-600" },
-  "thyroid": { icon: Activity, color: "bg-purple-100 text-purple-600" },
-  "fever": { icon: Thermometer, color: "bg-orange-100 text-orange-600" },
-  "full body": { icon: Scan, color: "bg-indigo-100 text-indigo-600" },
-  "vitamin": { icon: Pill, color: "bg-yellow-100 text-yellow-600", image: "/categories/vitamin.jpg" },
-  "bone": { icon: Bone, color: "bg-slate-100 text-slate-700" },
-  "pregnancy": { icon: Baby, color: "bg-pink-100 text-pink-600" },
-  "neurology": { icon: Brain, color: "bg-cyan-100 text-cyan-600" },
-  "infection": { icon: ShieldCheck, color: "bg-red-100 text-red-600" },
-  "immunity": { icon: ShieldCheck, color: "bg-teal-100 text-teal-600" },
-  "blood": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
-  "chemistry": { icon: Beaker, color: "bg-blue-100 text-blue-600", image: "/categories/chemistry.jpg" },
-  "coagulation": { icon: Droplets, color: "bg-red-100 text-red-600", image: "/categories/coagulation.jpg" },
-  "cytology": { icon: Microscope, color: "bg-purple-100 text-purple-600", image: "/categories/cytology.jpg" },
-  "genetics": { icon: Dna, color: "bg-indigo-100 text-indigo-600", image: "/categories/genetics.jpg" },
-  "hematology": { icon: Syringe, color: "bg-red-50 text-red-500", image: "/categories/hematology.jpg" },
-  "microbiology": { icon: Scan, color: "bg-teal-100 text-teal-600", image: "/categories/microbiology.jpg" },
-  "urine": { icon: Beaker, color: "bg-yellow-100 text-yellow-600", image: "/categories/urine.jpg" },
-  "stool": { icon: Beaker, color: "bg-orange-100 text-orange-600", image: "/categories/urine.jpg" }, // reusing urine container for stool 
-  "allergy": { icon: Wind, color: "bg-sky-100 text-sky-600", image: "/categories/allergy.jpg" },
+// Category art: Microsoft Fluent Emoji 3D (MIT, see public/icons/3d/LICENSE-fluent-emoji.txt),
+// the same set as Home's "Shop by health concern", bundled as small WebP files.
+// `hint` says in plain words what's inside (patients don't know "Clinical
+// Chemistry"); `rank` puts everyday categories before specialist ones.
+interface CategoryArt {
+  icon: string;
+  hint: string;
+  tint: string;
+  rank: number;
+}
+
+const CATEGORY_ART: Record<string, CategoryArt> = {
+  "clinical-chemistry": { icon: "test-tube", hint: "Sugar, kidney, cholesterol", tint: "bg-sky-50", rank: 1 },
+  "hematology": { icon: "drop-of-blood", hint: "CBC, platelets, anaemia", tint: "bg-rose-50", rank: 2 },
+  "hormones-endocrinology": { icon: "butterfly", hint: "Thyroid, fertility, insulin", tint: "bg-violet-50", rank: 3 },
+  "vitamins-nutrition": { icon: "carrot", hint: "Vitamins & minerals", tint: "bg-orange-50", rank: 4 },
+  "cardiac-markers": { icon: "anatomical-heart", hint: "Troponin, BNP, heart risk", tint: "bg-red-50", rank: 5 },
+  "infectious-disease": { icon: "microbe", hint: "Hepatitis, HIV, viruses", tint: "bg-lime-50", rank: 6 },
+  "urine-stool-body-fluids": { icon: "droplet", hint: "Urine, stool & fluids", tint: "bg-yellow-50", rank: 7 },
+  "allergy": { icon: "sneezing-face", hint: "Food, dust & pet allergies", tint: "bg-amber-50", rank: 8 },
+  "serology-immunology": { icon: "shield", hint: "Antibodies & immunity", tint: "bg-emerald-50", rank: 9 },
+  "tumor-markers": { icon: "reminder-ribbon", hint: "Cancer screening", tint: "bg-pink-50", rank: 10 },
+  "coagulation": { icon: "adhesive-bandage", hint: "Blood clotting", tint: "bg-orange-50", rank: 11 },
+  "microbiology": { icon: "petri-dish", hint: "Cultures, TB, fungal", tint: "bg-teal-50", rank: 12 },
+  "toxicology-drug-testing": { icon: "pill", hint: "Alcohol & heavy metals", tint: "bg-fuchsia-50", rank: 13 },
+  "cytology": { icon: "microscope", hint: "Pap smear, FNAC", tint: "bg-indigo-50", rank: 14 },
+  "histopathology": { icon: "magnifying-glass", hint: "Biopsy & tissue", tint: "bg-stone-100", rank: 15 },
+  "molecular-diagnostics": { icon: "alembic", hint: "PCR & DNA tests", tint: "bg-cyan-50", rank: 16 },
+  "genetics": { icon: "dna", hint: "Chromosomes & prenatal", tint: "bg-blue-50", rank: 17 },
+  "specialized": { icon: "stethoscope", hint: "Advanced & rare tests", tint: "bg-slate-100", rank: 18 },
 };
 
-const iconPool: LucideIcon[] = [
-  Stethoscope, Activity, Heart, Scan, Microscope, TestTubes, Dna, Eye, Ear, Wind
+// Categories added later in the admin panel: pick art by keyword, else a neutral test tube.
+const ART_BY_KEYWORD: [RegExp, string][] = [
+  [/heart|cardi/, "anatomical-heart"], [/blood|hemat|haemat/, "drop-of-blood"], [/thyroid|hormon/, "butterfly"],
+  [/vitamin|nutri/, "carrot"], [/infect|virus|viral/, "microbe"], [/urine|stool|fluid/, "droplet"],
+  [/allerg/, "sneezing-face"], [/immun|serolog/, "shield"], [/cancer|tumou?r|onco/, "reminder-ribbon"],
+  [/bone|ortho/, "bone"], [/lung|respir/, "lungs"], [/gene|dna|molecul/, "dna"], [/fever/, "thermometer"],
 ];
 
-const colorPool: string[] = [
-  "bg-primary/10 text-primary",
-  "bg-secondary/10 text-secondary",
-  "bg-blue-100 text-blue-600",
-  "bg-indigo-100 text-indigo-600",
-  "bg-teal-100 text-teal-600",
-];
-
-const getCategoryStyle = (name: string, slug: string) => {
-  const key = name.toLowerCase();
-  for (const [k, v] of Object.entries(CATEGORY_MAP)) {
-    if (key.includes(k) || (slug && slug.includes(k))) return v;
-  }
-  
-  // Deterministic fallback
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) | 0;
-  h = Math.abs(h);
-  return {
-    icon: iconPool[h % iconPool.length],
-    color: colorPool[h % colorPool.length],
-  };
+const getCategoryArt = (name: string, slug: string): CategoryArt => {
+  const known = CATEGORY_ART[slug];
+  if (known) return known;
+  const key = `${name} ${slug}`.toLowerCase();
+  const icon = ART_BY_KEYWORD.find(([re]) => re.test(key))?.[1] ?? "test-tube";
+  return { icon, hint: "", tint: "bg-slate-50", rank: 100 };
 };
 
-const CategoryTile = memo(({ category, index, onClick, onPointerDown }: { category: any, index: number, onClick: () => void, onPointerDown?: () => void }) => (
-  <div
+interface CategoryTileData extends CategoryArt {
+  name: string;
+  slug: string;
+}
+
+const CategoryTile = memo(({ category, onClick, onPointerDown }: { category: CategoryTileData, onClick: () => void, onPointerDown?: () => void }) => (
+  <button
+    type="button"
     onClick={onClick}
     onPointerDown={onPointerDown}
-    className="relative overflow-hidden bg-white border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] rounded-3xl p-5 cursor-pointer group active:scale-95 transition-transform duration-100 ease-out press flex flex-col justify-between"
-    style={{ contain: 'content', minHeight: '160px' }}
+    className="flex flex-col items-center text-center rounded-2xl bg-white border border-slate-100 shadow-[0_4px_16px_rgb(0,0,0,0.04)] px-1.5 pt-3.5 pb-3 active:scale-95 transition-transform duration-100 ease-out"
+    style={{ contain: "content" }}
   >
-    <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    
-    {category.image ? (
-      <div className="w-16 h-16 mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all duration-300 ease-out flex-shrink-0">
-        <img src={category.image} alt={category.name} loading="lazy" decoding="async" className="w-full h-full object-contain mix-blend-multiply drop-shadow-sm" />
-      </div>
-    ) : (
-      <div className={`w-14 h-14 rounded-2xl ${category.color} flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out flex-shrink-0`}>
-        <category.icon className="w-7 h-7" />
-      </div>
+    <span className={`w-14 h-14 rounded-full ${category.tint} ring-1 ring-black/[0.04] flex items-center justify-center shrink-0`}>
+      <img
+        src={`/icons/3d/${category.icon}.webp`}
+        alt=""
+        width={36}
+        height={36}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        className="w-9 h-9 object-contain"
+      />
+    </span>
+    <span className="mt-2 text-[12.5px] font-bold text-foreground leading-tight line-clamp-2">{category.name}</span>
+    {category.hint && (
+      <span className="mt-0.5 text-[10.5px] font-medium text-muted-foreground leading-snug line-clamp-2">{category.hint}</span>
     )}
-    
-    <div className="relative z-10 mt-auto">
-      <h3 className="font-extrabold text-foreground text-[16px] tracking-tight leading-tight mb-1">{category.name}</h3>
-      <p className="text-[12px] font-bold text-muted-foreground/60">{category.subtitle}</p>
-    </div>
-  </div>
+  </button>
 ));
 
 CategoryTile.displayName = "CategoryTile";
@@ -186,11 +155,8 @@ const CategoriesScreen = () => {
 
   const handlePrefetchCategory = useCallback((slug: string) => {
     if (!slug) return;
-    const p = { category: slug === "all" ? undefined : slug, limit: 5000 };
-    queryClient.prefetchQuery({
-      queryKey: ["bridge-tests-v2", JSON.stringify(p)],
-      staleTime: 10 * 60 * 1000,
-    });
+    // Warm the first page of the category on touch, so it opens instantly.
+    queryClient.prefetchInfiniteQuery(categoryTestsQueryOptions(slug));
   }, [queryClient]);
 
   const { data: categoryData, isLoading: isCategoriesLoading } = useBridgeTests({});
@@ -203,30 +169,11 @@ const CategoriesScreen = () => {
   const showLoading = useDelayedLoading(isCategoriesLoading);
   const { addToCart, items, hasItem } = useCart();
 
-  const categories = useMemo(() => {
-    let cats: { icon: LucideIcon; name: string; subtitle: string; color: string; slug: string; image?: string }[];
-    if (categoryData?.categories?.length) {
-      cats = categoryData.categories.map((cat) => {
-        const style = getCategoryStyle(cat.name, cat.slug);
-        
-        // Generate a deterministic random number based on the category name
-        let h = 0;
-        for (let i = 0; i < cat.name.length; i++) h = (h * 31 + cat.name.charCodeAt(i)) | 0;
-        const fakeCount = (Math.abs(h) % 400) + 50; // Random number between 50 and 450
-        
-        return {
-          icon: style.icon,
-          name: cat.name,
-          subtitle: `${fakeCount} tests`,
-          color: style.color,
-          slug: cat.slug,
-          image: style.image,
-        };
-      });
-    } else {
-      cats = [];
-    }
-    return cats;
+  // Categories come from the admin panel; we only add art and order them.
+  const categories = useMemo<CategoryTileData[]>(() => {
+    return (categoryData?.categories ?? [])
+      .map((cat) => ({ ...getCategoryArt(cat.name, cat.slug), name: cat.name, slug: cat.slug }))
+      .sort((a, b) => a.rank - b.rank || a.name.localeCompare(b.name));
   }, [categoryData]);
 
   const filteredCategories = useMemo(() => {
@@ -305,15 +252,15 @@ const CategoriesScreen = () => {
 
       {/* Categories Grid */}
       {!searchQuery.trim() && (
-        <div className="px-5 mt-6 pb-12">
-          <h2 className="text-xl font-black text-foreground mb-5 tracking-tight">Browse by Category</h2>
+        <div className="px-4 mt-5 pb-12">
+          <h2 className="text-[19px] font-extrabold text-foreground mb-4 tracking-tight px-1">Browse by Category</h2>
             {showLoading ? (
-              <div className="grid grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex flex-col items-center justify-center p-4 rounded-3xl bg-card border border-border/40 shadow-sm" style={{ minHeight: '160px' }}>
-                    <Skeleton className="w-12 h-12 rounded-2xl mb-3" />
-                    <Skeleton className="w-20 h-3 mb-1" />
-                    <Skeleton className="w-16 h-2" />
+              <div className="grid grid-cols-3 gap-2.5">
+                {Array.from({ length: 9 }, (_, i) => (
+                  <div key={i} className="flex flex-col items-center rounded-2xl bg-card border border-border/40 px-2 pt-3.5 pb-3">
+                    <Skeleton className="w-14 h-14 rounded-full mb-2" />
+                    <Skeleton className="w-16 h-3 mb-1" />
+                    <Skeleton className="w-12 h-2" />
                   </div>
                 ))}
               </div>
@@ -322,12 +269,11 @@ const CategoriesScreen = () => {
                 <p className="text-muted-foreground font-medium">No categories found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
-                {filteredCategories.map((category, index) => (
+              <div className="grid grid-cols-3 gap-2.5">
+                {filteredCategories.map((category) => (
                   <CategoryTile
                     key={category.slug || category.name}
                     category={category}
-                    index={index}
                     onClick={() => navigate(`/category-tests?slug=${encodeURIComponent(category.slug)}&name=${encodeURIComponent(category.name)}`)}
                     onPointerDown={() => handlePrefetchCategory(category.slug)}
                   />

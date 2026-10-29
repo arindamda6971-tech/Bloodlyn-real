@@ -5,11 +5,11 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BannerGraphic from "@/components/BannerGraphic";
 import { Button } from "@/components/ui/button";
-import { useBridgeTests, type BridgeTest } from "@/hooks/useBridgeTests";
+import { useCategoryTests, type BridgeTest } from "@/hooks/useBridgeTests";
+import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
-import { intelligentSearch } from "@/utils/search-intelligence";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import {
   AlertDialog,
@@ -58,63 +58,64 @@ const CategoryTestsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const params = useMemo(() => {
-    const p: { category?: string; limit?: number } = {};
-    if (categorySlug && categorySlug !== "all") {
-      p.category = categorySlug;
-    }
-    p.limit = 5000; // Load all tests for this specific category
-    return p;
-  }, [categorySlug]);
-
-  const { data: bridgeData, isLoading, error } = useBridgeTests(params);
+  // Browsing: the category loads 50 tests at a time as the user scrolls, so it
+  // opens quickly and still reaches every test (the bridge sends ≤500 per call).
+  const {
+    data: pagedData,
+    isLoading: isBrowseLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  } = useCategoryTests(categorySlug);
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
-
-  // Keep the complete catalogue in the query cache, but mount only nearby
-  // rows. The previous requestAnimationFrame loop mounted every test as soon
-  // as the page opened, blocking the route transition back to Home.
-  const [visibleCount, setVisibleCount] = useState(30);
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
-  const allTests = useMemo(() => {
-    if (!bridgeData?.tests) return [];
-    
-    const query = debouncedSearchQuery.trim();
-    if (query) {
-      const matchedIds = new Set(
-        intelligentSearch(query, bridgeData.tests, 50).map((result) => result.id)
-      );
-      return bridgeData.tests.filter((test) => matchedIds.has(test.id));
-    }
-    
-    return bridgeData.tests;
-  }, [bridgeData, debouncedSearchQuery]);
+  // Searching: ask the server within this category, so tests on pages not yet
+  // loaded are found too.
+  const searching = debouncedSearchQuery.trim().length > 0;
+  const { results: searchResults, isSearching } = useSmartTestSearch(debouncedSearchQuery, {
+    category: categorySlug,
+    limit: 50,
+    enabled: searching,
+  });
 
-  const tests = useMemo(() => allTests.slice(0, visibleCount), [allTests, visibleCount]);
+  const browseTests = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: BridgeTest[] = [];
+    for (const page of pagedData?.pages ?? []) {
+      for (const test of page.tests ?? []) {
+        if (!seen.has(test.id)) {
+          seen.add(test.id);
+          merged.push(test);
+        }
+      }
+    }
+    return merged;
+  }, [pagedData]);
+
+  const totalTests = pagedData?.pages[0]?.pagination?.total;
+  const tests = searching ? searchResults : browseTests;
+  const isLoading = searching
+    ? tests.length === 0 && (isSearching || searchQuery.trim() !== debouncedSearchQuery.trim())
+    : isBrowseLoading;
 
   const isInCart = (testId: string, testName: string) => hasItem(testId, testName);
 
   useEffect(() => {
-    setVisibleCount(30);
-  }, [categorySlug, debouncedSearchQuery]);
-
-  const revealNextBatch = useCallback(() => {
-    setVisibleCount((current) => Math.min(current + 30, allTests.length));
-  }, [allTests.length]);
-
-  useEffect(() => {
     const target = loadMoreRef.current;
-    if (!target || visibleCount >= allTests.length) return;
+    if (!target || searching || !hasNextPage || isFetchNextPageError) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) revealNextBatch();
+        if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage();
       },
-      { rootMargin: "240px 0px" }
+      { rootMargin: "600px 0px" }
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [revealNextBatch, visibleCount, allTests.length]);
+  }, [searching, hasNextPage, isFetchingNextPage, isFetchNextPageError, fetchNextPage]);
 
 
   const handleAddToCart = (test: BridgeTest) => {
@@ -128,6 +129,11 @@ const CategoryTestsScreen = () => {
       toast.success(`${test.test_name} added to cart`);
     }
   };
+
+  const handleOpenTest = useCallback(
+    (test: BridgeTest) => navigate(`/test/${test.id}`, { state: { bridgeTest: test } }),
+    [navigate]
+  );
 
   const handleConfirmReplace = () => {
     confirmReplace();
@@ -169,7 +175,7 @@ const CategoryTestsScreen = () => {
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : error ? (
+        ) : !searching && error ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Failed to load tests</p>
           </div>
@@ -184,17 +190,31 @@ const CategoryTestsScreen = () => {
           </div>
         ) : (
           <div className="space-y-3 list-virtual-test">
+            {!searching && totalTests !== undefined && (
+              <p className="text-xs font-semibold text-muted-foreground">
+                {totalTests.toLocaleString("en-IN")} {totalTests === 1 ? "test" : "tests"}
+              </p>
+            )}
             {tests.map((test) => (
               <TestItem
                 key={test.id}
                 test={test}
-                onOpen={(t) => navigate(`/test/${t.id}`, { state: { bridgeTest: t } })}
+                onOpen={handleOpenTest}
               />
             ))}
-            {visibleCount < allTests.length && (
-              <div ref={loadMoreRef} className="h-8 flex items-center justify-center" aria-hidden="true">
-                <Loader2 className="w-4 h-4 animate-spin text-primary" />
-              </div>
+            {!searching && hasNextPage && (
+              isFetchNextPageError ? (
+                <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                  Couldn't load more tests.
+                  <button type="button" className="font-bold text-primary" onClick={() => fetchNextPage()}>
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <div ref={loadMoreRef} className="h-8 flex items-center justify-center" aria-label="Loading more tests">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                </div>
+              )
             )}
           </div>
         )}
