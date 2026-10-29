@@ -335,17 +335,30 @@ Deno.serve(async (req) => {
           vendor_id: order.vendor_id,
           record: order,
         };
-        const resp = await fetch(receiverUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-webhook-secret": webhookSecret,
-          },
-          body: JSON.stringify(forwardPayload),
-        });
-        const text = await resp.text();
-        forwardResult = { status: resp.status, body: text.slice(0, 500) };
-        console.log("Forwarded to partner-order-receiver:", resp.status, text.slice(0, 200));
+        // Retry network errors and 5xx a few times so a brief outage doesn't leave
+        // the lab without the order. The receiver is idempotent and never lets a
+        // replayed order undo the lab's decision.
+        const backoffMs = [0, 600, 1800];
+        for (let attempt = 0; attempt < backoffMs.length; attempt++) {
+          if (backoffMs[attempt]) await new Promise((r) => setTimeout(r, backoffMs[attempt]));
+          try {
+            const resp = await fetch(receiverUrl, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-webhook-secret": webhookSecret,
+              },
+              body: JSON.stringify(forwardPayload),
+            });
+            const text = await resp.text();
+            forwardResult = { status: resp.status, body: text.slice(0, 500) };
+            console.log(`Forwarded to partner-order-receiver (attempt ${attempt + 1}):`, resp.status, text.slice(0, 200));
+            if (resp.status < 500) break;
+          } catch (e) {
+            forwardResult = { error: String(e) };
+            console.error(`Forward to partner-order-receiver failed (attempt ${attempt + 1}):`, e);
+          }
+        }
       } catch (e) {
         console.error("Forward to partner-order-receiver failed:", e);
         forwardResult = { error: String(e) };
