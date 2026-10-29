@@ -137,6 +137,13 @@ const HomeScreen = () => {
     else setShowSearchResults(false);
   }, [navigate, searchInHistory]);
 
+  // Opening a result closes search and replaces its history step, so Back from
+  // the test page returns straight to Home instead of to the search screen.
+  const openTestFromSearch = useCallback((test: BridgeTest) => {
+    setShowSearchResults(false);
+    navigate(`/test/${test.id}`, { replace: searchInHistory, state: { bridgeTest: test } });
+  }, [navigate, searchInHistory]);
+
   // The history step was popped (Back) → leave search mode.
   useEffect(() => {
     if (!searchInHistory) {
@@ -254,12 +261,12 @@ const HomeScreen = () => {
                             role="button"
                             tabIndex={0}
                             onClick={() => {
-                              navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
+                              openTestFromSearch(test);
                             }}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
                                 e.preventDefault();
-                                navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
+                                openTestFromSearch(test);
                               }
                             }}
                             className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center cursor-pointer"
@@ -268,26 +275,6 @@ const HomeScreen = () => {
                               <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
                                 <HighlightText text={simplifyTestName(testName)} words={highlightWords} />
                               </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  if (!inCart) {
-                                    handleQuickAdd(e, { ...test, name: testName });
-                                  }
-                                }}
-                                disabled={inCart}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                                  inCart
-                                    ? "bg-success/10 text-success"
-                                    : "bg-primary text-white shadow-md shadow-primary/20 active:scale-90"
-                                }`}
-                              >
-                                {inCart ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                              </button>
                             </div>
                           </div>
                         );
