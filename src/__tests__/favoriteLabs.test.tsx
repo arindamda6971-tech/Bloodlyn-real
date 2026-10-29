@@ -5,6 +5,8 @@ import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarous
 
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: "user-1" } }) }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// The carousel also shows each lab's Open/Closed badge; its schedule is not under test here.
+vi.mock("@/hooks/useLabSlots", () => ({ useLabSlots: () => ({ data: undefined, isLoading: true }) }));
 
 // In-memory favorite_labs table behind a minimal Supabase query builder.
 const db = vi.hoisted(() => ({

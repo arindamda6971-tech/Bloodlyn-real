@@ -133,8 +133,15 @@ const HomeScreen = () => {
     return centersData.slice(0, 8).map(center => ({
       id: center.id,
       name: center.name,
-      rating: center.rating || 4.5,
-      tests: center.reviews_count || 100,
+      // Only real data: no default rating, review count or test count.
+      rating: center.rating ?? null,
+      reviews: center.reviews_count ?? 0,
+      testCount: Array.isArray(center.available_tests) ? center.available_tests.length : 0,
+      city: center.city ?? null,
+      isVerified: !!center.is_verified,
+      homeCollection: !!center.home_collection_available,
+      isActive: center.is_active ?? undefined,
+      vendorId: center.vendor_id ?? null,
       logo: center.logo_url || undefined,
     }));
   }, [centersData]);

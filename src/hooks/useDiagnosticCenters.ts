@@ -9,6 +9,12 @@ export interface DiagnosticCenter {
   reviews_count: number;
   logo_url?: string;
   service_pincodes?: string[];
+  city?: string | null;
+  vendor_id?: string | null;
+  available_tests?: unknown;
+  is_verified?: boolean | null;
+  is_active?: boolean | null;
+  home_collection_available?: boolean | null;
 }
 
 export function useDiagnosticCenters(userPincode?: string | null) {

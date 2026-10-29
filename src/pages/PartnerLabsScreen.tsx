@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Building2,
-  Star,
   MapPin,
   Clock,
   ChevronRight,
@@ -21,6 +19,7 @@ import { Bell, MapPinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
+import { LabAvatar, LabOpenBadge, LabRating } from "@/components/labs/lab-display";
 
 interface DiagnosticCenter {
   id: string;
@@ -44,7 +43,7 @@ interface DiagnosticCenter {
 }
 
 const PartnerLabsScreen = () => {
-  useSEO({ title: "Partner Diagnostic Centers | BloodLyn", description: "Discover NABL-certified partner diagnostic centers near you with verified ratings and pricing." });
+  useSEO({ title: "Partner Diagnostic Centers | BloodLyn", description: "Discover partner diagnostic centers near you, with home sample collection and real patient ratings." });
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [diagnosticCenters, setDiagnosticCenters] = useState<DiagnosticCenter[]>([]);
@@ -97,11 +96,7 @@ const PartnerLabsScreen = () => {
     return 0;
   };
 
-  // Format timing
-  const formatTiming = (opening: string | null, closing: string | null) => {
-    if (!opening || !closing) return "Open 24/7";
-    return `${opening} - ${closing}`;
-  };
+  const homeCollectionCount = diagnosticCenters.filter((c) => c.home_collection_available).length;
 
   return (
     <MobileLayout showNav={false}>
@@ -122,7 +117,7 @@ const PartnerLabsScreen = () => {
         {/* Stats */}
         <div className="flex items-center gap-4 p-3 rounded-xl bg-primary/5 border border-primary/10">
           <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-primary">{diagnosticCenters.length}+</p>
+            <p className="text-xl font-bold text-primary">{diagnosticCenters.length}</p>
             <p className="text-xs text-muted-foreground">Partner Labs</p>
           </div>
           <div className="w-px h-10 bg-border" />
@@ -132,8 +127,8 @@ const PartnerLabsScreen = () => {
           </div>
           <div className="w-px h-10 bg-border" />
           <div className="flex-1 text-center">
-            <p className="text-xl font-bold text-primary">24/7</p>
-            <p className="text-xs text-muted-foreground">Support</p>
+            <p className="text-xl font-bold text-primary">{homeCollectionCount}</p>
+            <p className="text-xs text-muted-foreground">Home Collection</p>
           </div>
         </div>
 
@@ -153,25 +148,9 @@ const PartnerLabsScreen = () => {
                 className={`soft-card p-4 cursor-pointer relative overflow-hidden ${center.is_active === false ? 'grayscale opacity-75' : ''}`}
                 onClick={() => navigate(`/lab/${center.id}`)}
               >
-                {/* Closed Banner */}
-                {center.is_active === false && (
-                  <div className="absolute top-2 right-2 z-10 bg-destructive px-2.5 py-1 rounded-md shadow-md">
-                    <p className="text-[10px] font-bold text-white">CLOSED</p>
-                  </div>
-                )}
                 <div className="flex gap-3">
                   {/* Lab Icon */}
-                  <motion.div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    {center.logo_url ? (
-                      <img loading="lazy" decoding="async" width={40} height={40}
-                        src={center.logo_url}
-                        alt={center.name}
-                        className="w-10 h-10 object-contain rounded-lg"
-                      />
-                    ) : (
-                      <Building2 className="w-7 h-7 text-primary" />
-                    )}
-                  </motion.div>
+                  <LabAvatar name={center.name} logoUrl={center.logo_url} />
 
                   {/* Lab Details */}
                   <div className="flex-1 min-w-0">
@@ -186,20 +165,12 @@ const PartnerLabsScreen = () => {
 
                     {/* Rating */}
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 text-warning fill-warning" />
-                        <span className="text-sm font-medium text-foreground">
-                          {center.rating || 4.5}
-                        </span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        ({(center.reviews_count || 0).toLocaleString()} reviews)
-                      </span>
+                      <LabRating rating={center.rating} reviews={center.reviews_count} />
                       {getTestCount(center) > 0 && (
                         <>
                           <span className="text-xs text-muted-foreground">•</span>
                           <span className="text-xs text-primary font-medium">
-                            {getTestCount(center)}+ tests
+                            {getTestCount(center)} {getTestCount(center) === 1 ? "test" : "tests"}
                           </span>
                         </>
                       )}
@@ -213,16 +184,15 @@ const PartnerLabsScreen = () => {
 
 
 
-                    {/* Accreditations */}
-                    <div className="flex items-center gap-1.5 mt-2">
+                    {/* Only claims the data backs: BloodLyn verification. Accreditations
+                        such as NABL need a verified field before they can be shown. */}
+                    <div className="flex items-center gap-1.5 mt-2 empty:hidden">
+                      <LabOpenBadge vendorId={center.vendor_id} isActive={center.is_active} />
                       {center.is_verified && (
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                           Verified
                         </Badge>
                       )}
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        NABL
-                      </Badge>
                     </div>
                   </div>
 

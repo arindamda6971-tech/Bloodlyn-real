@@ -1,16 +1,22 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Star, MapPin, BadgeCheck, Heart } from "lucide-react";
+import { Building2, MapPin, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
+import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
 
 interface DiagnosticCenter {
   id: string;
   name: string;
-  rating: number;
-  tests: number;
+  rating: number | null;
+  reviews: number;
+  testCount: number;
+  city: string | null;
+  isVerified: boolean;
+  homeCollection: boolean;
+  vendorId: string | null;
   logo?: string;
   isActive?: boolean;
 }
@@ -19,20 +25,6 @@ interface DiagnosticCentersCarouselProps {
   centers: DiagnosticCenter[];
 }
 
-const labMetaMap: Record<string, { distance: string; tagline: string; trustBadge: string }> = {
-  "Dr. Lal PathLabs": { distance: "1.2 km", tagline: "India's Most Trusted Lab", trustBadge: "NABL & CAP Certified" },
-  "Thyrocare": { distance: "2.5 km", tagline: "Quality at Affordable Prices", trustBadge: "ISO Certified" },
-  "Metropolis Healthcare": { distance: "0.8 km", tagline: "Pathology Experts Since 1980", trustBadge: "NABL & CAP Accredited" },
-  "SRL Diagnostics": { distance: "3.1 km", tagline: "Excellence in Diagnostics", trustBadge: "420+ Centers Nationwide" },
-  "Apollo Diagnostics": { distance: "1.8 km", tagline: "Healthcare You Can Trust", trustBadge: "JCI Accredited" },
-};
-
-const fallbackMeta = [
-  { distance: "2.0 km", tagline: "Trusted Health Partner", trustBadge: "NABL Certified" },
-  { distance: "1.5 km", tagline: "Accurate Results, Fast", trustBadge: "ISO Certified" },
-  { distance: "3.2 km", tagline: "Your Health, Our Priority", trustBadge: "Quality Assured" },
-];
-
 const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
   center: DiagnosticCenter;
   index: number;
@@ -40,7 +32,6 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
   onToggleFavorite: (labId: string) => void;
 }) => {
   const isClosed = center.isActive === false;
-  const meta = labMetaMap[center.name] || fallbackMeta[index % fallbackMeta.length];
 
   return (
     <PredictiveLink
@@ -97,20 +88,17 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
             <Heart className={`h-5 w-5 ${favorite ? "fill-destructive text-destructive" : "text-foreground"}`} />
           </Button>
           
-          {/* Top Left Pill */}
-          <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-            <BadgeCheck className="w-3.5 h-3.5 text-[#0d9488]" />
-            <span className="text-[10px] font-bold text-slate-700 tracking-wide">NABL • CAP Certified</span>
-          </div>
-
-
-
-          {/* Closed Indicator */}
-          {isClosed && (
-            <div className="absolute bottom-3 right-3 bg-destructive/90 text-destructive-foreground text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-widest shadow-lg z-10">
-              Closed
+          {/* Top Left Pill — only a claim the data backs (BloodLyn verification) */}
+          {center.isVerified && (
+            <div className="absolute top-3 left-3 bg-white/95 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+              <BadgeCheck className="w-3.5 h-3.5 text-[#0d9488]" />
+              <span className="text-[10px] font-bold text-slate-700 tracking-wide">BloodLyn Verified</span>
             </div>
           )}
+
+
+
+
         </div>
 
         {/* Bottom Info Section */}
@@ -118,21 +106,28 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
           {/* Lab Name */}
           <div className="flex items-center gap-1.5">
             <h4 className="font-black text-slate-900 text-[16px] leading-tight truncate">{center.name}</h4>
-            <div className="w-4 h-4 bg-[#0d9488] rounded-full flex items-center justify-center shrink-0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5 text-white">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
+            {center.isVerified && (
+              <div className="w-4 h-4 bg-[#0d9488] rounded-full flex items-center justify-center shrink-0" aria-label="Verified">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5 text-white">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+            )}
+            <span className="ml-auto shrink-0">
+              <LabOpenBadge vendorId={center.vendorId} isActive={center.isActive} />
+            </span>
           </div>
 
           {/* Rating and Distance */}
           <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
-            <Star className="w-3.5 h-3.5 text-[#d97706] fill-[#d97706]" />
-            <span className="text-[#d97706] font-bold">{center.rating}</span>
-            <span>(1.8k)</span>
-            <span className="px-0.5">•</span>
-            <MapPin className="w-3.5 h-3.5 text-slate-400" />
-            <span>{meta.distance}</span>
+            <LabRating rating={center.rating} reviews={center.reviews} />
+            {center.city && (
+              <>
+                <span className="px-0.5">•</span>
+                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                <span className="truncate">{center.city}</span>
+              </>
+            )}
           </div>
 
           <div className="w-full h-[1px] bg-slate-100 my-1" />
@@ -140,7 +135,11 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
           {/* Bottom Row */}
           <div className="flex items-center justify-between mt-1">
             <div className="flex flex-col">
-              <span className="text-[13px] font-black text-slate-900">120+ Tests</span>
+              <span className="text-[13px] font-black text-slate-900">
+                {center.testCount > 0
+                  ? `${center.testCount} ${center.testCount === 1 ? "Test" : "Tests"}`
+                  : center.homeCollection ? "Home Collection" : "View Tests"}
+              </span>
               <span className="text-[10px] text-slate-500 font-medium -mt-0.5">Available</span>
             </div>
             <div className="bg-slate-900 hover:bg-black text-white text-[12px] font-bold px-4 py-2 rounded-[10px] transition-colors shadow-sm">
