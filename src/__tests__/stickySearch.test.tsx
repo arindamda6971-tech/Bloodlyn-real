@@ -78,3 +78,13 @@ describe("StickySearch shadow threshold", () => {
     expect(removeSpy).not.toHaveBeenCalled();
   });
 });
+
+describe("StickySearch search mode", () => {
+  it("shows a back arrow instead of the search icon and calls onBack", async () => {
+    const { fireEvent, render: r, screen: s } = await import("@testing-library/react");
+    const onBack = vi.fn();
+    r(<StickySearch value="" onChange={() => {}} onBack={onBack} />);
+    fireEvent.click(s.getByRole("button", { name: "Close search" }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+});

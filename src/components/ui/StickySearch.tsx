@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface StickySearchProps {
@@ -14,6 +14,8 @@ interface StickySearchProps {
   onFocus?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   rightSlot?: ReactNode;
+  /** When set, a back arrow replaces the search icon (search mode). */
+  onBack?: () => void;
   /** Optional accent tint token (visual only). */
   accent?: string;
 }
@@ -39,6 +41,7 @@ const StickySearch = ({
   onFocus,
   onKeyDown,
   rightSlot,
+  onBack,
 }: StickySearchProps) => {
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +103,18 @@ const StickySearch = ({
 
       <div className={`px-4 ${header ? "pt-1" : "pt-2"} pb-2.5`}>
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground/60 pointer-events-none" />
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              aria-label="Close search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-foreground active:bg-muted/60"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+          ) : (
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground/60 pointer-events-none" />
+          )}
           <input
             type="text"
             value={value}

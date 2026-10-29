@@ -15,7 +15,10 @@ const CapacitorBackButton = () => {
         location.pathname === '/login' ||
         location.pathname === '/onboarding';
 
-      if (isMainPage) {
+      // Home's search screen adds a history step: Back closes it first.
+      const searchOpen = (location.state as { searchOpen?: boolean } | null)?.searchOpen === true;
+
+      if (isMainPage && !searchOpen) {
         App.exitApp();
       } else {
         // Use React Router history to go back deterministically

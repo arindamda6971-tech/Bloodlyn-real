@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import BannerGraphic from "@/components/BannerGraphic";
 import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import type { BridgeTest } from "@/hooks/useBridgeTests";
@@ -22,6 +22,7 @@ import {
   Award,
   Loader2,
   Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,8 @@ type PreviousOrder = {
   created_at: string;
 };
 
+const POPULAR_SEARCHES = ["Sugar", "Thyroid", "CBC", "Vitamin D", "Lipid profile", "Liver function"];
+
 const HomeScreen = () => {
   useSEO({ title: "BloodLyn — Book Health Tests at Home", description: "Book NABL-certified home health tests in 60 minutes." });
   const navigate = useNavigate();
@@ -115,14 +118,40 @@ const HomeScreen = () => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showCallSheet, setShowCallSheet] = useState(false);
 
-  // "Shop by health concern": run the Home search for that concern's tests and
-  // bring the search bar (with its results) into view.
-  const searchForConcern = useCallback((term: string) => {
-    setSearchQuery(term);
+  // Search mode, as in big apps: the page behind is covered and stops scrolling,
+  // and Back (the arrow or the phone's button) closes it. Opening adds a history
+  // step, so the phone's Back closes search instead of leaving Home.
+  const location = useLocation();
+  const searchInHistory = (location.state as { searchOpen?: boolean } | null)?.searchOpen === true;
+
+  const openSearch = useCallback(() => {
     setShowSearchResults(true);
+    if (!searchInHistory) {
+      navigate(location.pathname, { state: { ...((location.state as object | null) ?? {}), searchOpen: true } });
+    }
+  }, [navigate, location.pathname, location.state, searchInHistory]);
+
+  const closeSearch = useCallback(() => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    if (searchInHistory) navigate(-1);
+    else setShowSearchResults(false);
+  }, [navigate, searchInHistory]);
+
+  // The history step was popped (Back) → leave search mode.
+  useEffect(() => {
+    if (!searchInHistory) {
+      setShowSearchResults(false);
+      (document.activeElement as HTMLElement | null)?.blur();
+    }
+  }, [searchInHistory]);
+
+  // "Shop by health concern": run the search for that concern's tests.
+  const searchForConcern = useCallback((term: string) => {
     const scroller = document.querySelector<HTMLElement>(".home-stack [data-scroll-container]");
-    scroller?.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+    scroller?.scrollTo({ top: 0 });
+    setSearchQuery(term);
+    openSearch();
+  }, [openSearch]);
 
   const { pincode: userPincode } = useUserPincode();
   const { data: centersData, isLoading: centersLoading } = useDiagnosticCenters(userPincode);
@@ -186,6 +215,109 @@ const HomeScreen = () => {
     );
   };
 
+  // Results (or popular searches) shown in the full-screen search layer.
+  const searchPanel = (
+              !searchQuery.trim() ? (
+                <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Popular searches</p>
+                  <div className="flex flex-wrap gap-2">
+                    {POPULAR_SEARCHES.map((term) => (
+                      <button
+                        key={term}
+                        type="button"
+                        onClick={() => setSearchQuery(term)}
+                        className="px-3 py-1.5 rounded-full bg-muted/60 text-[12.5px] font-semibold text-foreground active:scale-95 transition-transform"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden">
+                  {searchHintText && searchResults.length > 0 && (
+                    <div className="px-4 py-2 flex items-center gap-1.5 bg-primary/5 border-b border-border/40 text-[11px] font-semibold text-primary">
+                      <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{searchHintText}</span>
+                    </div>
+                  )}
+                  {searchResults.length > 0 ? (
+                    <div className="flex flex-col">
+                      {searchResults.map((test: BridgeTest & { name?: string; discount_percent?: number }) => {
+                        const discount = test.discount_percent || 0;
+                        const finalPrice = Math.round(test.price * (1 - discount / 100));
+                        const testName = test.name || test.test_name || "Unknown Test";
+                        const inCart = isInCart(test.id, testName);
+                        return (
+                          <div
+                            key={test.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => {
+                              navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
+                              }
+                            }}
+                            className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center cursor-pointer"
+                          >
+                            <div className="flex-1 min-w-0 pr-3">
+                              <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
+                                <HighlightText text={simplifyTestName(testName)} words={highlightWords} />
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  if (!inCart) {
+                                    handleQuickAdd(e, { ...test, name: testName });
+                                  }
+                                }}
+                                disabled={inCart}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                                  inCart
+                                    ? "bg-success/10 text-success"
+                                    : "bg-primary text-white shadow-md shadow-primary/20 active:scale-90"
+                                }`}
+                              >
+                                {inCart ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : searchPending ? (
+                    <div className="px-4 py-6 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Searching tests…
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
+                        <Search className="w-6 h-6 text-muted-foreground/50" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">No tests found</p>
+                        <p className="text-xs font-medium text-muted-foreground mt-1">We couldn't find anything matching "{searchQuery}"</p>
+                      </div>
+                      <div className="flex gap-3 mt-2 w-full max-w-[200px]">
+                        <Button variant="outline" size="sm" className="flex-1 rounded-xl h-10 border-border/50 bg-background hover:bg-muted/30" onClick={() => { setSearchQuery(""); closeSearch(); }}>
+                          Clear Search
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+  );
+
   return (
     <MobileLayout>
       {StaticBackground}
@@ -199,98 +331,47 @@ const HomeScreen = () => {
           />
         </div>
 
-        {/* Sticky Search Input Bar - Pins at top-0 */}
+        {showSearchResults && createPortal(
+          <div className="fixed inset-0 z-[70] bg-background flex flex-col" style={{ paddingTop: "var(--sat)" }} role="dialog" aria-label="Search tests">
+            <div className="px-3 pt-2 pb-2 flex items-center gap-2 border-b border-border/50">
+              <button
+                type="button"
+                onClick={closeSearch}
+                aria-label="Close search"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-foreground active:bg-muted/60 shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="relative flex-1">
+                <input
+                  autoFocus
+                  type="text"
+                  enterKeyHint="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search health tests..."
+                  className="w-full h-11 rounded-xl bg-muted/50 pl-4 pr-10 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/60"
+                />
+                {searchQuery && (
+                  <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear" className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">{searchPanel}</div>
+          </div>,
+          document.body
+        )}
+
+        {/* Sticky Search Input Bar - Pins at top-0 (tapping it opens the search screen) */}
         <StickySearch
           className="-mt-2"
           value={searchQuery}
-          onChange={(v) => { setSearchQuery(v); setShowSearchResults(true); }}
-          onFocus={() => setShowSearchResults(true)}
+          onChange={(v) => { setSearchQuery(v); if (!showSearchResults) openSearch(); }}
+          onFocus={() => { if (!showSearchResults) openSearch(); }}
           placeholder="Search health tests..."
-          results={
-            showSearchResults && searchQuery.trim() ? (
-              <div className="bg-card shadow-2xl shadow-black/10 rounded-2xl overflow-hidden max-h-[60vh] overflow-y-auto">
-                {searchHintText && searchResults.length > 0 && (
-                  <div className="px-4 py-2 flex items-center gap-1.5 bg-primary/5 border-b border-border/40 text-[11px] font-semibold text-primary">
-                    <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{searchHintText}</span>
-                  </div>
-                )}
-                {searchResults.length > 0 ? (
-                  <div className="flex flex-col">
-                    {searchResults.map((test: BridgeTest & { name?: string; discount_percent?: number }) => {
-                      const discount = test.discount_percent || 0;
-                      const finalPrice = Math.round(test.price * (1 - discount / 100));
-                      const testName = test.name || test.test_name || "Unknown Test";
-                      const inCart = isInCart(test.id, testName);
-                      return (
-                        <div
-                          key={test.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              navigate(`/test/${test.id}`, { state: { bridgeTest: test } });
-                            }
-                          }}
-                          className="w-full text-left px-4 py-3 border-b border-border/40 last:border-0 hover:bg-muted/30 active:bg-muted/50 transition-colors flex justify-between items-center cursor-pointer"
-                        >
-                          <div className="flex-1 min-w-0 pr-3">
-                            <p className="text-[13px] font-semibold text-foreground leading-tight truncate">
-                              <HighlightText text={simplifyTestName(testName)} words={highlightWords} />
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                if (!inCart) {
-                                  handleQuickAdd(e, { ...test, name: testName });
-                                }
-                              }}
-                              disabled={inCart}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                                inCart
-                                  ? "bg-success/10 text-success"
-                                  : "bg-primary text-white shadow-md shadow-primary/20 active:scale-90"
-                              }`}
-                            >
-                              {inCart ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : searchPending ? (
-                  <div className="px-4 py-6 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Searching tests…
-                  </div>
-                ) : (
-                  <div className="p-8 text-center flex flex-col items-center justify-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-muted/30 flex items-center justify-center">
-                      <Search className="w-6 h-6 text-muted-foreground/50" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-foreground">No tests found</p>
-                      <p className="text-xs font-medium text-muted-foreground mt-1">We couldn't find anything matching "{searchQuery}"</p>
-                    </div>
-                    <div className="flex gap-3 mt-2 w-full max-w-[200px]">
-                      <Button variant="outline" size="sm" className="flex-1 rounded-xl h-10 border-border/50 bg-background hover:bg-muted/30" onClick={() => { setSearchQuery(""); setShowSearchResults(false); }}>
-                        Clear Search
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : null
-          }
+
         />
 
         <TakeChargeBanner />
@@ -330,7 +411,7 @@ const HomeScreen = () => {
             <AdvancedSkeleton type="lab-card" count={2} />
           </div>
         ) : diagnosticCenters.length > 0 && (
-          <div className="home-render-section mt-4" style={{ contain: "content" }}>
+          <div className="home-render-section mt-6" style={{ contain: "content" }}>
             <DiagnosticCentersCarousel centers={diagnosticCenters} />
           </div>
         )}

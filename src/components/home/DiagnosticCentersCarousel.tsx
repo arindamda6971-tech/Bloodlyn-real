@@ -184,7 +184,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   }, [centers, pinnedIds]);
 
   return (
-    <div className="relative py-6 my-4">
+    <div className="relative pt-1 pb-3">
       {/* Solid background — backdrop-blur is too expensive on Android WebView during transitions */}
       <div className="absolute inset-0 bg-white -z-10" />
       
