@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, Star, MapPin, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
@@ -157,17 +157,32 @@ LabCard.displayName = "LabCard";
 
 const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselProps) => {
   const navigate = useNavigate();
-  const { isFavorite, toggleFavorite, favoriteLabIds } = useFavoriteLabs();
+  const { isFavorite, toggleFavorite, favoriteLabIds, isReady } = useFavoriteLabs();
+
+  // Saved labs lead the carousel in the order they had when it first loaded.
+  // Re-sorting on every tap would move the hearted card out from under the
+  // finger and slide a different lab into its place.
+  const [pinnedIds, setPinnedIds] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (isReady && pinnedIds === null) setPinnedIds(favoriteLabIds);
+  }, [isReady, pinnedIds, favoriteLabIds]);
+
+  // A tap before the saved list loads fixes the order too, so that card stays put.
+  const handleToggleFavorite = useCallback((labId: string) => {
+    setPinnedIds((pinned) => pinned ?? favoriteLabIds);
+    toggleFavorite(labId);
+  }, [favoriteLabIds, toggleFavorite]);
 
   const sortedCenters = useMemo(() => {
+    const pinned = pinnedIds ?? [];
     return [...centers].sort((a, b) => {
-      const aFav = favoriteLabIds.includes(a.id);
-      const bFav = favoriteLabIds.includes(b.id);
+      const aFav = pinned.includes(a.id);
+      const bFav = pinned.includes(b.id);
       if (aFav && !bFav) return -1;
       if (!aFav && bFav) return 1;
       return 0;
     });
-  }, [centers, favoriteLabIds]);
+  }, [centers, pinnedIds]);
 
   return (
     <div className="relative py-6 my-4">
@@ -206,7 +221,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
             center={center}
             index={index}
             favorite={isFavorite(center.id)}
-            onToggleFavorite={toggleFavorite}
+            onToggleFavorite={handleToggleFavorite}
           />
         ))}
         {/* Spacer at the end for padding */}

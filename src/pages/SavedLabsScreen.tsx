@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Building2, Heart, MapPin, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -12,11 +12,13 @@ import { supabase } from "@/integrations/supabase/client";
 const SavedLabsScreen = () => {
   useSEO({ title: "Saved Labs | BloodLyn", description: "View and manage your saved BloodLyn partner labs." });
   const navigate = useNavigate();
-  const { favoriteLabIds, isLoading: favoritesLoading, toggleFavorite, isToggling } = useFavoriteLabs();
+  const { favoriteLabIds, isLoading: favoritesLoading, toggleFavorite } = useFavoriteLabs();
 
-  const { data: labs = [], isLoading: labsLoading } = useQuery({
+  const { data: labDetails = [], isLoading: labsLoading } = useQuery({
     queryKey: ["saved-lab-details", favoriteLabIds],
     enabled: favoriteLabIds.length > 0,
+    // Keep showing the list while it refetches after a removal, instead of a full-screen spinner.
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("diagnostic_centers")
@@ -28,6 +30,8 @@ const SavedLabsScreen = () => {
     },
   });
 
+  // A removed lab disappears at once (the saved list updates before the refetch).
+  const labs = favoriteLabIds.length ? labDetails.filter((lab) => favoriteLabIds.includes(lab.id)) : [];
   const loading = favoritesLoading || (favoriteLabIds.length > 0 && labsLoading);
 
   return (
@@ -73,7 +77,6 @@ const SavedLabsScreen = () => {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        disabled={isToggling}
                         className="-mr-2 -mt-2 h-10 w-10 shrink-0 rounded-full"
                         aria-label={`Remove ${lab.name} from saved labs`}
                         onClick={() => toggleFavorite(lab.id)}
