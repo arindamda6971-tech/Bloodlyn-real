@@ -359,9 +359,10 @@ const HomeScreen = () => {
                 )}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain px-3 py-3">{searchPanel}</div>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-3 pt-3 pb-28">{searchPanel}</div>
           </div>,
-          document.body
+          // Inside Home's own full-screen layer, so a page opened from a result slides in above it.
+          document.querySelector<HTMLElement>(".home-stack") ?? document.body
         )}
 
         {/* Sticky Search Input Bar - Pins at top-0 (tapping it opens the search screen) */}

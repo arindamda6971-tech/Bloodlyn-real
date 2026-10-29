@@ -150,7 +150,7 @@ const PhysioConsultScreen = () => {
   }
 
   return (
-    <MobileLayout showNav={true}>
+    <MobileLayout showNav={true} enablePullToRefresh={false}>
       <ScreenHeader title="Physiotherapy" />
 
       <div className="px-4 pb-32 pt-1">

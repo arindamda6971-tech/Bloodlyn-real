@@ -621,7 +621,7 @@ const ECGTestScreen = () => {
   }
 
   return (
-    <MobileLayout showNav={false}>
+    <MobileLayout showNav={false} enablePullToRefresh={false} className="pb-[calc(var(--sab)+24px)]">
       {step !== "SUCCESS" && (
         <div className="sticky top-0 z-50 bg-background/98 border-b border-border/40 pb-2">
           <div className="flex items-center gap-3 px-4 pt-4 pb-2">
