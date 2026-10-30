@@ -34,22 +34,15 @@ export const PackageCard = memo(({ pkg, onOpen, compact }: Props) => {
             <Icon className={`w-5 h-5 ${visual.accent}`} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {category && (
-                <span className={`text-[10px] font-black uppercase tracking-wider ${visual.accent}`}>{category}</span>
-              )}
-              {pkg.isPopular && (
-                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400 text-white">
-                  Popular
-                </span>
-              )}
-            </div>
-            <p className="mt-0.5 text-[15px] font-extrabold text-foreground leading-snug line-clamp-2 break-words">{pkg.name}</p>
+            {category && (
+              <span className={`block text-[10px] font-black uppercase tracking-wider ${pkg.isPopular ? "pr-16" : ""} ${visual.accent}`}>{category}</span>
+            )}
+            <p className={`mt-0.5 text-[15px] font-extrabold text-foreground leading-snug line-clamp-2 break-words ${!category && pkg.isPopular ? "pr-16" : ""}`}>{pkg.name}</p>
           </div>
         </div>
-        {pkg.discountPercent > 0 && (
-          <span className="absolute top-3 right-3 text-[10px] font-black px-2 py-1 rounded-full bg-emerald-600 text-white shadow-sm">
-            {pkg.discountPercent}% OFF
+        {pkg.isPopular && (
+          <span className="absolute top-3 right-3 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400 text-white">
+            Popular
           </span>
         )}
       </div>
@@ -83,7 +76,11 @@ export const PackageCard = memo(({ pkg, onOpen, compact }: Props) => {
               <span className="text-xs text-muted-foreground line-through">{formatRupees(pkg.originalPrice)}</span>
             )}
           </div>
-          {saved > 0 && <p className="mt-1 text-[11px] font-bold text-emerald-700">Save {formatRupees(saved)}</p>}
+          {(pkg.discountPercent > 0 || saved > 0) && (
+            <p className="mt-1 text-[11px] font-bold text-emerald-700">
+              {pkg.discountPercent > 0 ? `${pkg.discountPercent}% off` : `Save ${formatRupees(saved)}`}
+            </p>
+          )}
           {pkg.lab && (
             <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
               <Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
