@@ -24,6 +24,7 @@ import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarous
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import HealthConcernsGrid from "@/components/home/HealthConcernsGrid";
 import HowItWorks from "@/components/home/HowItWorks";
+import OurServices from "@/components/home/OurServices";
 import TakeChargeBanner from "@/components/home/TakeChargeBanner";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { useDiagnosticCenters } from "@/hooks/useDiagnosticCenters";
@@ -47,30 +48,7 @@ const getGreeting = () => {
   return "Good night";
 };
 
-// Service cards are full-bleed photos with a dark fade and white text, matching
-// the "Full Body Health Checkup" banner. Photos are requested at 480px (cards are
-// ~170px wide, so sharp at 2x+) to keep downloads small on mobile data.
-const servicePhoto = (base: string) => `${base}?auto=format&fit=crop&w=480&h=440&q=70`;
 
-const quickActions: {
-  label: string;
-  path: string;
-  badge: string;
-  price?: string;
-  cta?: string;
-  photo: string;
-}[] = [
-  { label: "Consult Doctor", path: "/doctor-consult", badge: "Live video", price: "From ₹299",
-    photo: servicePhoto("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d") },
-  { label: "ECG Test", path: "/ecg-test", badge: "At home", price: "From ₹499",
-    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1718349374495-b1d09644f973") },
-  { label: "BP Check", path: "/bp-check", badge: "Home visit", price: "From ₹199",
-    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1679502225906-85294c7ee8f2") },
-  { label: "Physiotherapy", path: "/physio-consult", badge: "Expert care", price: "From ₹599",
-    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1661779394380-e372d6a1f198") },
-  { label: "Upload Prescription", path: "/upload-prescription", badge: "We'll call you to book", cta: "Upload",
-    photo: servicePhoto("https://plus.unsplash.com/premium_photo-1673953510197-0950d951c6d9") },
-];
 
 
 const healthTips = [
@@ -210,74 +188,8 @@ const HomeScreen = () => {
           </div>
         )}
 
-        {/* Our services — full photo cards (same style as the Full Body banner);
-            Upload Prescription spans the full width */}
-        <section className="px-4 mt-8" style={{ contain: "content" }}>
-          <div className="mb-3">
-            <h2 className="text-[19px] font-extrabold text-foreground tracking-tight">Our services</h2>
-            <p className="text-[13px] text-muted-foreground mt-0.5">Care at home, booked in minutes</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {quickActions.map((action) => {
-              const wide = !!action.cta;
-              return (
-                <button
-                  type="button"
-                  key={action.label}
-                  onClick={() => navigate(action.path)}
-                  onPointerDown={() => {
-                    if (action.path === "/doctor-consult") import("../pages/DoctorConsultScreen");
-                    else if (action.path === "/ecg-test") import("../pages/ECGTestScreen");
-                    else if (action.path === "/bp-check") import("../pages/BPCheckScreen");
-                  }}
-                  className={`home-render-section relative overflow-hidden isolate text-left rounded-2xl bg-slate-800 shadow-card active:scale-[0.98] transition-transform duration-150 ${
-                    wide ? "col-span-2 h-[96px]" : "h-[168px]"
-                  }`}
-                >
-                  <OptimizedImage
-                    src={action.photo}
-                    alt=""
-                    containerClassName="absolute inset-0 w-full h-full -z-10"
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Fade for readable white text */}
-                  <span
-                    aria-hidden="true"
-                    className={`absolute inset-0 -z-10 ${
-                      wide
-                        ? "bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-slate-950/10"
-                        : "bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent"
-                    }`}
-                  />
-                  <span
-                    className={`absolute inset-0 flex p-3.5 ${
-                      wide ? "items-center justify-between gap-3" : "flex-col justify-end"
-                    }`}
-                  >
-                    <span className="min-w-0">
-                      <span className="inline-block text-[10px] font-bold text-white bg-white/15 ring-1 ring-white/25 rounded-full px-2 py-0.5 mb-1.5">
-                        {action.badge}
-                      </span>
-                      <span className="block text-[16px] font-bold text-white leading-tight">{action.label}</span>
-                      {action.price && (
-                        <span className="mt-1 flex items-center gap-0.5 text-[12.5px] font-semibold text-white/80">
-                          {action.price}
-                          <ChevronRight className="w-3.5 h-3.5" strokeWidth={2.5} />
-                        </span>
-                      )}
-                    </span>
-                    {action.cta && (
-                      <span className="flex items-center gap-0.5 text-[13px] font-bold text-foreground bg-white rounded-full pl-3.5 pr-2.5 py-2 shadow-md shrink-0">
-                        {action.cta}
-                        <ChevronRight className="w-4 h-4" strokeWidth={2.5} />
-                      </span>
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
+        {/* Our services — light tiles with soft-3D illustrations */}
+        <OurServices />
 
         <HealthConcernsGrid onSelect={searchForConcern} />
 
