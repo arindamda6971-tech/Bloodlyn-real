@@ -547,18 +547,20 @@ Deno.serve(async (req) => {
     }
 
     // ---------------- Server-side duplicate-order guard ----------------
-    // Even if the client retries (network glitch, double-click, StrictMode,
-    // a stray duplicate invocation), do not insert a second order row when
-    // an identical booking already exists within the last 60 seconds.
-    // This is independent of the idempotency key above and acts as a
-    // belt-and-braces safeguard against duplicates like the ones seen in prod.
-    try {
+    // For callers that send no Idempotency-Key: do not insert a second order
+    // when an identical booking (same tests, address, lab, slot and total)
+    // already exists from the last 60 seconds. Calls with a key are already
+    // protected by it, and each checkout uses a fresh key — so a customer who
+    // deliberately books again (another patient, or the same price with
+    // different tests) gets a real new order instead of the earlier one back.
+    if (!idempotencyKey) try {
       const since = new Date(Date.now() - 60_000).toISOString();
       let dedupQuery = adminClient
         .from("orders")
         .select("id, order_number")
         .eq("user_id", userId)
         .eq("total", serverTotal)
+        .eq("test_name", cartItems.map((item) => item.name).join(" | "))
         .gte("created_at", since)
         .order("created_at", { ascending: false })
         .limit(1);
@@ -566,6 +568,7 @@ Deno.serve(async (req) => {
       if (orderVendorId) dedupQuery = dedupQuery.eq("vendor_id", orderVendorId);
       if (scheduledDate) dedupQuery = dedupQuery.eq("scheduled_date", scheduledDate);
       if (scheduledTimeSlot) dedupQuery = dedupQuery.eq("scheduled_time_slot", scheduledTimeSlot);
+      dedupQuery = addressId ? dedupQuery.eq("address_id", addressId) : dedupQuery.is("address_id", null);
 
       const { data: existingOrder } = await dedupQuery.maybeSingle();
       if (existingOrder?.id) {

@@ -64,10 +64,44 @@ const blobToBase64 = (blob: Blob) =>
 
 export type DownloadResult = { ok: boolean; message: string };
 
+/** Folder inside the phone's Documents where reports are saved. */
+export const REPORTS_FOLDER = "BloodLyn Reports";
+
+/** Phone notification once a report is saved, like other apps' "Download complete". */
+const notifyDownloaded = async (filename: string) => {
+  try {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    let perms = await LocalNotifications.checkPermissions();
+    if (perms.display === "prompt" || perms.display === "prompt-with-rationale") {
+      perms = await LocalNotifications.requestPermissions();
+    }
+    if (perms.display !== "granted") return;
+    await LocalNotifications.schedule({
+      notifications: [
+        {
+          id: Math.floor(Math.random() * 1_000_000),
+          title: "Your report is downloaded",
+          body: `${filename} is saved in Documents › ${REPORTS_FOLDER}.`,
+          largeBody: `${filename} is saved in Documents › ${REPORTS_FOLDER}. Open it from your Files app.`,
+          summaryText: "BloodLyn",
+          smallIcon: "ic_stat_bloodlyn",
+          largeIcon: "splash_icon",
+          iconColor: "#4AB3F4",
+          extra: { route: "/reports" },
+        },
+      ],
+    });
+  } catch (e) {
+    // The in-app message still confirms the download.
+    console.warn("Download notification failed:", e);
+  }
+};
+
 /**
  * Download a lab report to the device.
  * - Uses the cached offline copy when present.
- * - On native, writes the file into the app's Documents folder.
+ * - On native, writes the file into Documents/BloodLyn Reports and shows a
+ *   "Your report is downloaded" phone notification.
  * - On web, saves the bytes via a blob download (never navigates to Storage).
  */
 export const downloadReport = async (
@@ -107,12 +141,13 @@ export const downloadReport = async (
       const { Filesystem, Directory } = await import("@capacitor/filesystem");
       const base64 = await blobToBase64(blob);
       await Filesystem.writeFile({
-        path: filename,
+        path: `${REPORTS_FOLDER}/${filename}`,
         data: base64,
         directory: Directory.Documents,
         recursive: true,
       });
-      return { ok: true, message: `Saved to your Documents folder as ${filename}` };
+      void notifyDownloaded(filename);
+      return { ok: true, message: `Report downloaded to Documents › ${REPORTS_FOLDER}` };
     } catch (e) {
       console.error("Native save failed:", e);
       // Last resort on device: hand the file to the system viewer.
