@@ -13,7 +13,7 @@ const STEPS = [
 ] as const;
 
 const HowItWorks = memo(() => (
-  <section className="home-render-section px-4 mt-8" style={{ contain: "content" }}>
+  <section className="home-render-section px-4 mt-5" style={{ contain: "content" }}>
     <h2 className="text-[19px] font-extrabold text-foreground tracking-tight mb-4">How it works</h2>
     <ol className="relative grid grid-cols-4 rounded-2xl bg-gradient-to-b from-sky-50 to-white ring-1 ring-sky-100 px-2 pt-5 pb-4">
       {/* Dotted connector running behind the icon circles */}
