@@ -4,6 +4,10 @@ import {
   categoriesWithPackages,
   fastingText,
   groupIncludedTests,
+  prettyGroupName,
+  formatRupees,
+  coversPreview,
+  savings,
   includedPreview,
   reportText,
   sortPackages,
@@ -23,13 +27,24 @@ const row = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("toHealthPackage", () => {
+  it("formats prices the Indian way and summarises what a package covers", () => {
+    expect(formatRupees(152000)).toBe("₹1,52,000");
+    expect(formatRupees(25)).toBe("₹25");
+    const p = toHealthPackage(row({ included_tests: [
+      { name: "SGPT", category: "liver-function" }, { name: "SGOT", category: "liver-function" },
+      { name: "TSH", category: "thyroid" }, { name: "CBC", category: "haematology" },
+    ] }));
+    expect(coversPreview(p)).toBe("Liver function, Haematology +1");
+  });
+
   it("reads the details labs set in the Partner portal", () => {
     const p = toHealthPackage(row({
       category: "full_body", gender: "female", age_group: "adult", fasting_hours: 10, report_hours: 24,
       sample_type: "blood_urine", included_tests: [{ name: "CBC", category: "Haematology" }, { name: "TSH", category: "Thyroid" }],
     }));
     expect(p.category).toBe("full_body");
-    expect(p.lab).toEqual({ id: "lab-1", name: "Das Diagnostics", logo: null, vendorId: "v-1" });
+    expect(p.lab).toMatchObject({ id: "lab-1", name: "Das Diagnostics", logo: null, vendorId: "v-1" });
+    expect(savings(p)).toBe(1000);
     expect(fastingText(p)).toBe("Fasting 10 h");
     expect(reportText(p)).toBe("Reports in 24 h");
     expect(audienceText(p)).toBe("Women · Adults (18+)");
@@ -69,5 +84,12 @@ describe("package lists", () => {
     expect(groupIncludedTests([
       { name: "SGPT", category: "Liver" }, { name: "SGOT", category: "Liver" }, { name: "TSH", category: "Thyroid" },
     ])).toEqual([{ group: "Liver", tests: ["SGOT", "SGPT"] }, { group: "Thyroid", tests: ["TSH"] }]);
+  });
+
+  it("shows readable group names instead of raw category codes", () => {
+    expect(prettyGroupName("molecular-diagnostics")).toBe("Molecular diagnostics");
+    expect(prettyGroupName("LIVER_FUNCTION")).toBe("Liver function");
+    expect(prettyGroupName("Thyroid Profile")).toBe("Thyroid Profile");
+    expect(prettyGroupName(null)).toBe("Other tests");
   });
 });

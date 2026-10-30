@@ -34,7 +34,7 @@ vi.mock("@/integrations/supabase/client", () => {
         select,
         upsert: async ({ lab_id }: { lab_id: string }) => {
           db.writes.push(`add:${lab_id}`);
-          await new Promise((r) => setTimeout(r, 20));
+          await new Promise((r) => setTimeout(r, 150)); // a real save takes a moment
           if (!db.saved.includes(lab_id)) db.saved.unshift(lab_id);
           return { error: null };
         },

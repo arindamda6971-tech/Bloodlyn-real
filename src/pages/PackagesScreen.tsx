@@ -37,6 +37,13 @@ const PackagesScreen = () => {
   });
 
   const chips = useMemo(() => categoriesWithPackages(packages), [packages]);
+  const counts = useMemo(() => {
+    const out: Record<string, number> = {};
+    packages.forEach((p) => { if (p.category) out[p.category] = (out[p.category] || 0) + 1; });
+    return out;
+  }, [packages]);
+  const labCount = useMemo(() => new Set(packages.map((p) => p.lab?.id)).size, [packages]);
+  const bestDiscount = useMemo(() => Math.max(0, ...packages.map((p) => p.discountPercent)), [packages]);
   const shown = useMemo(
     () => sortPackages(category ? packages.filter((p) => p.category === category) : packages, sort),
     [packages, category, sort],
@@ -48,15 +55,28 @@ const PackagesScreen = () => {
   return (
     <MobileLayout>
       <ScreenHeader title="Health Packages" />
-      <div className="pt-3 pb-6">
-        {chips.length > 1 && <PackageCategoryChips chips={chips} value={category} onChange={setCategory} />}
+      <div className="pb-6">
+        {packages.length > 0 && (
+          <div className="mx-4 mt-3 mb-4 rounded-3xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground p-5 relative overflow-hidden">
+            <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10" />
+            <div className="absolute right-6 -bottom-10 w-24 h-24 rounded-full bg-white/10" />
+            <p className="relative text-[11px] font-black uppercase tracking-widest text-primary-foreground/80">Health checkups</p>
+            <p className="relative mt-1 text-xl font-black leading-tight">
+              {packages.length} {packages.length === 1 ? "package" : "packages"} from {labCount} partner {labCount === 1 ? "lab" : "labs"}
+            </p>
+            <p className="relative mt-1 text-sm text-primary-foreground/85">
+              Sample collected at home{bestDiscount > 0 ? ` · up to ${bestDiscount}% off` : ""}
+            </p>
+          </div>
+        )}
+        {chips.length > 1 && <PackageCategoryChips chips={chips} value={category} onChange={setCategory} counts={counts} />}
 
         {packages.length > 0 && (
           <div className="px-4 pb-3 flex items-center justify-between">
             <p className="text-xs font-semibold text-muted-foreground">
-              {shown.length} {shown.length === 1 ? "package" : "packages"}
+              Showing {shown.length} {shown.length === 1 ? "package" : "packages"}
             </p>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+            <label className="flex items-center gap-1.5 text-xs font-bold text-foreground bg-white border border-border/60 rounded-full pl-3 pr-2 py-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden />
               <span className="sr-only">Sort by</span>
               <select
@@ -72,7 +92,7 @@ const PackagesScreen = () => {
 
         <div className="px-4 space-y-3">
           {isLoading ? (
-            [0, 1, 2].map((i) => <div key={i} className="h-[180px] rounded-3xl bg-muted/40 animate-pulse" />)
+            [0, 1, 2].map((i) => <div key={i} className="h-[230px] rounded-3xl bg-muted/40 animate-pulse" />)
           ) : shown.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
               <HeartPulse className="w-8 h-8 text-primary mx-auto" />

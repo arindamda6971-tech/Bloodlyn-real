@@ -47,7 +47,15 @@ export interface HealthPackage {
   reportHours: number | null;
   sampleType: string | null;
   includedTests: IncludedTest[];
-  lab: { id: string; name: string; logo: string | null; vendorId: string | null } | null;
+  lab: {
+    id: string;
+    name: string;
+    logo: string | null;
+    vendorId: string | null;
+    rating: number | null;
+    reviews: number | null;
+    isActive: boolean | null;
+  } | null;
 }
 
 const num = (v: unknown): number | null => {
@@ -82,13 +90,23 @@ export function toHealthPackage(row: any): HealthPackage {
     reportHours: (num(row?.report_hours) ?? 0) > 0 ? num(row.report_hours) : null,
     sampleType: typeof row?.sample_type === "string" ? row.sample_type : null,
     includedTests: included,
-    lab: lab?.id && lab?.name ? { id: lab.id, name: lab.name, logo: lab.logo_url ?? null, vendorId: lab.vendor_id ?? null } : null,
+    lab: lab?.id && lab?.name
+      ? {
+          id: lab.id,
+          name: lab.name,
+          logo: lab.logo_url ?? null,
+          vendorId: lab.vendor_id ?? null,
+          rating: num(lab.rating),
+          reviews: num(lab.reviews_count),
+          isActive: typeof lab.is_active === "boolean" ? lab.is_active : null,
+        }
+      : null,
   };
 }
 
 // "*" rather than a column list, so the query keeps working before the
 // detail columns exist in the database.
-const PACKAGE_SELECT = "*, diagnostic_centers!diagnostic_center_id ( id, name, logo_url, vendor_id )";
+const PACKAGE_SELECT = "*, diagnostic_centers!diagnostic_center_id ( * )";
 
 /** Active packages from labs that exist, popular first. */
 export async function fetchActivePackages(): Promise<HealthPackage[]> {
@@ -142,16 +160,37 @@ export function audienceText(p: HealthPackage): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
+/** "molecular-diagnostics" / "LIVER_FUNCTION" → "Molecular diagnostics" / "Liver function". */
+export function prettyGroupName(raw: string | null): string {
+  const words = (raw || "").replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!words) return "Other tests";
+  const lower = words === words.toUpperCase() && words.length > 4 ? words.toLowerCase() : words;
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
 /** Included tests grouped by their category, largest group first. */
 export function groupIncludedTests(tests: IncludedTest[]): { group: string; tests: string[] }[] {
   const map = new Map<string, string[]>();
   tests.forEach((t) => {
-    const key = t.category || "Other tests";
+    const key = prettyGroupName(t.category);
     map.set(key, [...(map.get(key) || []), t.name]);
   });
   return [...map.entries()]
     .map(([group, names]) => ({ group, tests: names.sort((a, b) => a.localeCompare(b)) }))
     .sort((a, b) => b.tests.length - a.tests.length || a.group.localeCompare(b.group));
+}
+
+const INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+/** ₹1,52,000 style prices. */
+export const formatRupees = (amount: number) => `₹${INR.format(Math.round(amount))}`;
+
+/** "Liver function, Thyroid +2": the areas a package covers, from its test groups. */
+export function coversPreview(p: HealthPackage, max = 2): string | null {
+  const groups = groupIncludedTests(p.includedTests).map((g) => g.group).filter((g) => g !== "Other tests");
+  if (groups.length === 0) return null;
+  const shown = groups.slice(0, max);
+  const more = groups.length - shown.length;
+  return more > 0 ? `${shown.join(", ")} +${more}` : shown.join(", ");
 }
 
 /** A short "CBC, Lipid, Thyroid +4" preview of what's inside. */
@@ -161,6 +200,9 @@ export function includedPreview(p: HealthPackage, max = 3): string | null {
   const more = p.includedTests.length - names.length;
   return more > 0 ? `${names.join(", ")} +${more}` : names.join(", ");
 }
+
+/** Amount saved against the lab's listed price, or 0. */
+export const savings = (p: HealthPackage) => (p.originalPrice ? Math.round(p.originalPrice - p.price) : 0);
 
 export type PackageSort = "popular" | "price_low" | "price_high" | "most_tests";
 
