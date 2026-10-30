@@ -1,232 +1,69 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Building2,
-  ShoppingCart,
-  Plus,
-  Check,
   AlertCircle,
-  HeartPulse,
-  Activity,
-  Shield,
-  Clock,
-  Home,
-  Star,
+  Building2,
+  Check,
+  ChevronDown,
   ChevronRight,
-  Zap,
-  TrendingDown,
-  MapPin,
+  Clock,
+  Droplet,
+  FlaskConical,
+  Home,
+  ShoppingCart,
+  Users,
+  Utensils,
 } from "lucide-react";
-import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  audienceText,
+  categoryLabel,
+  fastingText,
+  fetchPackage,
+  formatHours,
+  groupIncludedTests,
+  sampleText,
+  type IncludedTest,
+} from "@/lib/health-packages";
 
-interface PackageTest {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
+/** Tests from the app's own catalogue, for packages synced before labs sent their test list. */
+async function fetchCatalogueTests(packageId: string): Promise<IncludedTest[]> {
+  const { data } = await supabase
+    .from("package_tests")
+    .select("tests!test_id (name, test_category)")
+    .eq("package_id", packageId);
+  return ((data as any[]) || [])
+    .map((pt) => ({ name: pt.tests?.name, category: pt.tests?.test_category ?? null }))
+    .filter((t) => typeof t.name === "string" && t.name);
 }
-
-interface PackageData {
-  id: string;
-  name: string;
-  description: string | null;
-  tests_count: number;
-  price: number;
-  original_price: number | null;
-  discount_percent: number | null;
-  icon: string | null;
-  color: string | null;
-  lab_id: string | null;
-  lab_name: string | null;
-  lab_logo: string | null;
-  tests?: PackageTest[];
-}
-
-interface LabOption {
-  id: string;
-  name: string;
-  rating: number;
-  reviews: number;
-  priceMultiplier: number;
-  accredited: boolean;
-  homeCollection: boolean;
-  reportTime: string;
-}
-
-// Available labs for packages
-const labOptionsMap: Record<string, LabOption[]> = {
-  default: [
-    { 
-      id: "lal-pathlabs", 
-      name: "Dr. Lal PathLabs", 
-      rating: 4.8, 
-      reviews: 2500,
-      priceMultiplier: 1,
-      accredited: true,
-      homeCollection: true,
-      reportTime: "Same day"
-    },
-    { 
-      id: "metropolis", 
-      name: "Metropolis Healthcare", 
-      rating: 4.7, 
-      reviews: 1800,
-      priceMultiplier: 1.05,
-      accredited: true,
-      homeCollection: true,
-      reportTime: "Next day"
-    },
-    { 
-      id: "srl", 
-      name: "SRL Diagnostics", 
-      rating: 4.6, 
-      reviews: 1500,
-      priceMultiplier: 0.95,
-      accredited: true,
-      homeCollection: true,
-      reportTime: "Same day"
-    },
-    { 
-      id: "thyrocare", 
-      name: "Thyrocare", 
-      rating: 4.5, 
-      reviews: 3200,
-      priceMultiplier: 0.85,
-      accredited: true,
-      homeCollection: true,
-      reportTime: "Next day"
-    },
-    { 
-      id: "apollo", 
-      name: "Apollo Diagnostics", 
-      rating: 4.7, 
-      reviews: 2100,
-      priceMultiplier: 1.1,
-      accredited: true,
-      homeCollection: true,
-      reportTime: "Same day"
-    },
-  ],
-};
-
-const defaultIncludes = [
-  { icon: Home, text: "Home sample collection" },
-  { icon: Shield, text: "NABL certified labs" },
-  { icon: Clock, text: "Fast reports" },
-  { icon: HeartPulse, text: "Comprehensive tests" },
-];
 
 const PackageDetailScreen = () => {
   const navigate = useNavigate();
   const { packageId } = useParams<{ packageId: string }>();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, hasItem } = useCart();
-  
-  const [packageData, setPackageData] = useState<PackageData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedLabId, setSelectedLabId] = useState<string>("lal-pathlabs");
-  const [packageTests, setPackageTests] = useState<PackageTest[]>([]);
-  const [fetchingTests, setFetchingTests] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
 
-  // Fetch package data from Supabase
-  const fetchPackageData = useCallback(async () => {
-    if (!packageId) {
-      setError("Package ID not provided");
-      setLoading(false);
-      return;
-    }
+  const { data: pkg, isLoading, isError } = useQuery({
+    queryKey: ["health-package", packageId],
+    queryFn: () => fetchPackage(packageId!),
+    enabled: !!packageId,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: catalogueTests = [] } = useQuery({
+    queryKey: ["health-package-catalogue-tests", packageId],
+    queryFn: () => fetchCatalogueTests(packageId!),
+    enabled: !!pkg && pkg.includedTests.length === 0,
+    staleTime: 5 * 60 * 1000,
+  });
 
-    try {
-      setLoading(true);
-      setPackageData(null);
-      setError(null);
-      const { data, error: fetchError } = await supabase
-        .from("test_packages")
-        .select(`
-          id, name, description, tests_count, price, original_price, discount_percent, icon, color,
-          diagnostic_centers!diagnostic_center_id (id, name, logo_url)
-        `)
-        .eq("id", packageId)
-        .maybeSingle();
-
-      if (fetchError) {
-        console.error("Error fetching package:", fetchError);
-        setError("Failed to load package details");
-      } else if (!data) {
-        setError("Package not found");
-      } else {
-        setPackageData({
-          id: data.id,
-          name: data.name,
-          description: data.description,
-          tests_count: data.tests_count || 0,
-          price: data.price,
-          original_price: data.original_price ?? null,
-          discount_percent: data.discount_percent ?? null,
-          icon: data.icon ?? null,
-          color: data.color ?? null,
-          lab_id: data.diagnostic_centers?.id ?? null,
-          lab_name: data.diagnostic_centers?.name ?? null,
-          lab_logo: data.diagnostic_centers?.logo_url ?? null,
-        });
-      }
-    } catch (err) {
-      console.error("Error:", err);
-      setError("Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }, [packageId]);
-
-  // Fetch tests included in the package
-  const fetchPackageTests = useCallback(async () => {
-    if (!packageId) return;
-
-    try {
-      setFetchingTests(true);
-      setPackageTests([]);
-      const { data, error: fetchError } = await supabase
-        .from("package_tests")
-        .select(`
-          test_id,
-          tests!test_id (id, name, price, category: test_category)
-        `)
-        .eq("package_id", packageId);
-
-      if (fetchError) {
-        console.error("Error fetching package tests:", fetchError);
-      } else if (data && data.length > 0) {
-        const tests = data
-          .map((pt: any) => ({
-            id: pt.tests?.id,
-            name: pt.tests?.name,
-            price: pt.tests?.price,
-            category: pt.tests?.test_category || "General",
-          }))
-          .filter((t: any) => t.id && t.name);
-        setPackageTests(tests);
-      }
-    } catch (err) {
-      console.error("Error:", err);
-    } finally {
-      setFetchingTests(false);
-    }
-  }, [packageId]);
-
-  useEffect(() => {
-    fetchPackageData();
-    fetchPackageTests();
-  }, [fetchPackageData, fetchPackageTests]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <MobileLayout showNav={false}>
         <ScreenHeader title="Package Details" />
@@ -237,365 +74,209 @@ const PackageDetailScreen = () => {
     );
   }
 
-  if (error || !packageData) {
+  if (isError || !pkg || !pkg.lab) {
     return (
       <MobileLayout showNav={false}>
         <ScreenHeader title="Package Details" />
         <div className="flex flex-col items-center justify-center h-[60vh] px-4 text-center">
           <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
           <h2 className="text-lg font-semibold text-foreground mb-2">
-            {error || "Package not found"}
+            {isError ? "Couldn't load this package" : "Package not found"}
           </h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            The package you're looking for doesn't exist or has been removed.
-          </p>
-          <Button onClick={() => navigate("/packages")}>
-            Browse Packages
-          </Button>
+          <p className="text-sm text-muted-foreground mb-4">It may have been removed by the lab.</p>
+          <Button onClick={() => navigate("/packages")}>Browse packages</Button>
         </div>
       </MobileLayout>
     );
   }
 
-  const labOptions = packageData.lab_id 
-    ? [labOptionsMap.default[0]] // If specific lab, show that lab
-    : labOptionsMap.default;
-
-  const selectedLab = labOptions.find(lab => lab.id === selectedLabId) || labOptions[0];
-  const displayPrice = Math.round(packageData.price * selectedLab.priceMultiplier);
-  const discountPercent = packageData.discount_percent || 
-    (packageData.original_price 
-      ? Math.round((1 - displayPrice / packageData.original_price) * 100) 
-      : 0);
-
-  const isAlreadyInCart = packageData ? hasItem(packageData.id, packageData.name) : false;
+  const lab = pkg.lab;
+  const tests = pkg.includedTests.length > 0 ? pkg.includedTests : catalogueTests;
+  const groups = groupIncludedTests(tests);
+  const audience = audienceText(pkg);
+  const sample = sampleText(pkg);
+  const category = categoryLabel(pkg.category);
+  const inCart = hasItem(pkg.id, pkg.name);
 
   const handleAddToCart = () => {
-    if (!packageData) return;
-    const success = addToCart({
-      id: packageData.id,
-      name: packageData.name,
-      price: displayPrice,
-      labId: selectedLab.id,
-      labName: selectedLab.name,
+    const ok = addToCart({
+      id: pkg.id,
+      name: pkg.name,
+      price: pkg.price,
+      labId: lab.id,
+      labName: lab.name,
+      vendorId: lab.vendorId || undefined,
       kind: "package",
     });
-
-    if (success) {
-      toast.success(`${packageData.name} added to cart from ${selectedLab.name}`);
-    }
+    if (ok) navigate("/cart");
   };
 
-  const handleConfirmReplace = () => {
-    confirmReplace();
-    toast.success("Cart replaced with package");
-  };
+  const facts = [
+    { icon: FlaskConical, label: "Tests", value: `${pkg.testsCount}` },
+    { icon: Utensils, label: "Preparation", value: fastingText(pkg) },
+    ...(pkg.reportHours ? [{ icon: Clock, label: "Reports in", value: formatHours(pkg.reportHours) }] : []),
+    ...(sample ? [{ icon: Droplet, label: "Sample", value: sample }] : []),
+  ];
 
   return (
     <MobileLayout showNav={false}>
       <ScreenHeader title="Package Details" />
 
-      <div className="pb-32">
-        {/* Hero Section with Gradient Background */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-primary/10 via-accent/5 to-background pt-6 pb-8 px-4 relative overflow-hidden"
-        >
-          {/* Background decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-success/5 rounded-full -ml-12 -mb-12" />
-
-          <div className="relative z-10">
-            {/* Discount Badge */}
-            {discountPercent > 0 && (
-              <motion.div
-                initial={false}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0}}
-                className="inline-flex items-center gap-1.5 mb-4 px-3 py-1.5 bg-destructive/90 text-destructive-foreground rounded-full"
-              >
-                <TrendingDown className="w-4 h-4" />
-                <span className="font-bold text-sm">{discountPercent}% OFF</span>
-              </motion.div>
+      <div className="pb-36">
+        {/* Summary */}
+        <section className="px-4 pt-5 pb-6 bg-gradient-to-b from-primary/10 to-background">
+          <div className="flex flex-wrap gap-2 mb-3">
+            {category && (
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-primary/10 text-primary">{category}</span>
             )}
-
-            {/* Package Title & Tests Count */}
-            <h1 className="text-2xl font-bold text-foreground leading-tight mb-2">
-              {packageData.name}
-            </h1>
-            
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant="secondary" className="bg-primary/20 text-primary border-0">
-                <Zap className="w-3.5 h-3.5 mr-1" />
-                {packageData.tests_count} Tests Included
-              </Badge>
-            </div>
-
-            {/* Show lab info when package is tied to a specific diagnostic center */}
-            {packageData.lab_id && (
-              <div className="mt-3 flex items-center gap-3">
-                <div className="w-9 h-9 rounded-md bg-muted/50 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{packageData.lab_name || selectedLab.name}</p>
-                  <p className="text-xs text-muted-foreground">{selectedLab.rating} • {selectedLab.reviews.toLocaleString()} reviews</p>
-                </div>
-              </div>
+            {pkg.isPopular && (
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">Popular</span>
             )}
-
-            {packageData.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {packageData.description}
-              </p>
-            )}
-
-            {/* Price Section - Modern Design */}
-            <div className="mt-6 bg-white/50 dark:bg-secondary/20 rounded-2xl p-4 border border-border/40">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Total Price</p>
-              <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-bold text-primary">₹{displayPrice}</p>
-                {packageData.original_price && packageData.original_price > displayPrice && (
-                  <p className="text-sm text-muted-foreground line-through">₹{packageData.original_price}</p>
-                )}
-              </div>
-              {packageData.original_price && packageData.original_price > displayPrice && (
-                <p className="text-xs text-success font-semibold mt-2">
-                  Save ₹{packageData.original_price - displayPrice}
-                </p>
-              )}
-            </div>
           </div>
-        </motion.div>
+          <h1 className="text-2xl font-black text-foreground leading-tight">{pkg.name}</h1>
+          {pkg.description && <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{pkg.description}</p>}
 
-        <div className="px-4 space-y-6 py-6">
-          {/* What's Included - Modern Grid Layout */}
-          <motion.section
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0}}
-          >
-            <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-              <HeartPulse className="w-5 h-5 text-primary" />
-              What's Included
-            </h2>
-            <div className="grid grid-cols-2 gap-3">
-              {defaultIncludes.map((item, index) => (
-                <motion.div
-                  key={index}
-                  initial={false}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0}}
-                  className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3.5 border border-success/20 hover:border-success/40 transition-colors"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-success/20 flex items-center justify-center mb-2">
-                    <item.icon className="w-5 h-5 text-success" />
-                  </div>
-                  <p className="text-xs font-semibold text-foreground leading-snug">
-                    {item.text}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="text-3xl font-black text-foreground">₹{Math.round(pkg.price)}</span>
+            {pkg.originalPrice && (
+              <span className="text-base text-muted-foreground line-through">₹{Math.round(pkg.originalPrice)}</span>
+            )}
+            {pkg.discountPercent > 0 && (
+              <span className="text-sm font-black text-emerald-600">{pkg.discountPercent}% off</span>
+            )}
+          </div>
 
-          {/* Tests in Package - Enhanced List */}
-          {packageTests.length > 0 && (
-            <motion.section
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0}}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-primary" />
-                  Tests Included
-                </h2>
-                <Badge variant="outline" className="text-xs">
-                  {packageTests.length} items
-                </Badge>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {facts.map((f) => (
+              <div key={f.label} className="flex items-center gap-2.5 rounded-2xl bg-white border border-border/50 px-3 py-2.5">
+                <f.icon className="w-4 h-4 text-primary shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{f.label}</p>
+                  <p className="text-[13px] font-extrabold text-foreground truncate">{f.value}</p>
+                </div>
               </div>
-              <div className="max-h-80 overflow-y-auto rounded-xl border border-border/40 bg-muted/40 divide-y divide-border/40">
-                {packageTests.map((test, index) => (
-                  <motion.div
-                    key={test.id}
-                    initial={false}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0}}
-                    className="flex items-center gap-3 p-3 hover:bg-muted/80 transition-colors"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-success/20 flex items-center justify-center flex-shrink-0">
-                      <Check className="w-3 h-3 text-success" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {test.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {test.category}
-                      </p>
-                    </div>
-                    <p className="text-xs font-semibold text-primary flex-shrink-0">
-                      ₹{test.price}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.section>
-          )}
+            ))}
+          </div>
+        </section>
 
-          {/* Lab Selection - Modern Card Layout */}
-          {!packageData.lab_id && (
-            <motion.section
-              initial={false}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0}}
-            >
-              <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
-                Choose Your Lab
-              </h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Select a lab to book this package
-              </p>
-
-              <div className="space-y-3">
-                {labOptions.map((lab, index) => {
-                  const labPrice = Math.round(packageData.price * lab.priceMultiplier);
-                  const priceDiff = displayPrice - labPrice;
-
-                  return (
-                    <motion.button
-                      key={lab.id}
+        {/* What's included */}
+        <section className="px-4 mt-2">
+          <h2 className="text-lg font-extrabold text-foreground">What's included</h2>
+          {groups.length === 0 ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {pkg.testsCount} {pkg.testsCount === 1 ? "test" : "tests"}. The lab hasn't listed them yet.
+            </p>
+          ) : (
+            <div className="mt-3 rounded-2xl border border-border/60 divide-y divide-border/60 bg-white overflow-hidden">
+              {groups.map((g) => {
+                const open = openGroup === g.group || groups.length === 1;
+                return (
+                  <div key={g.group}>
+                    <button
                       type="button"
-                      initial={false}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0}}
-                      onClick={() => setSelectedLabId(lab.id)}
-                      className={`w-full text-left transition-all duration-200 ${
-                        selectedLabId === lab.id
-                          ? "bg-gradient-to-r from-primary/15 to-primary/5 border-primary/60 border-2 shadow-md"
-                          : "bg-white dark:bg-secondary/30 border border-border/40 hover:border-primary/30 hover:shadow-sm"
-                      } rounded-xl p-4`}
+                      onClick={() => setOpenGroup(open ? null : g.group)}
+                      aria-expanded={open}
+                      className="w-full flex items-center justify-between px-4 py-3.5 text-left"
                     >
-                      <div className="flex gap-3">
-                        {/* Logo/Avatar */}
-                        <div
-                          className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            selectedLabId === lab.id
-                              ? "bg-primary/20"
-                              : "bg-muted/50"
-                          }`}
-                        >
-                          <Building2
-                            className={`w-6 h-6 ${
-                              selectedLabId === lab.id ? "text-primary" : "text-muted-foreground"
-                            }`}
-                          />
-                        </div>
-
-                        {/* Lab Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h3 className="font-semibold text-foreground text-sm">
-                              {lab.name}
-                            </h3>
-                            {selectedLabId === lab.id && (
-                              <motion.div
-                                initial={false}
-                                animate={{ scale: 1 }}
-                                className="flex-shrink-0 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center"
-                              >
-                                <Check className="w-3 h-3" />
-                              </motion.div>
-                            )}
-                          </div>
-
-                          {/* Rating and Reviews */}
-                          <div className="flex items-center gap-2 flex-wrap mb-2">
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-                              <span className="text-xs font-semibold text-foreground">
-                                {lab.rating}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">
-                              {lab.reviews.toLocaleString()} reviews
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">•</span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {lab.reportTime}
-                            </span>
-                          </div>
-
-                          {/* Features */}
-                          {lab.homeCollection && (
-                            <div className="inline-flex items-center gap-1 px-2 py-1 bg-success/10 rounded-md">
-                              <Home className="w-3 h-3 text-success" />
-                              <span className="text-[9px] font-semibold text-success">
-                                Home Collection
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Price */}
-                        <div className="text-right flex-shrink-0">
-                          <p className="font-bold text-foreground">₹{labPrice}</p>
-                          {priceDiff > 0 && (
-                            <p className="text-[10px] text-success font-semibold">
-                              Save ₹{priceDiff}
-                            </p>
-                          )}
-                          {priceDiff < 0 && (
-                            <p className="text-[10px] text-muted-foreground">
-                              +₹{Math.abs(priceDiff)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.section>
+                      <span className="text-sm font-bold text-foreground">{g.group}</span>
+                      <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                        {g.tests.length} {g.tests.length === 1 ? "test" : "tests"}
+                        <ChevronDown className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                      </span>
+                    </button>
+                    {open && (
+                      <ul className="px-4 pb-3.5 space-y-2">
+                        {g.tests.map((name) => (
+                          <li key={name} className="flex items-start gap-2 text-[13px] text-foreground">
+                            <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                            {name}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </div>
+        </section>
 
-        {/* Pending Item Replace Dialog */}
+        {/* Before you book */}
+        <section className="px-4 mt-6">
+          <h2 className="text-lg font-extrabold text-foreground">Before you book</h2>
+          <ul className="mt-3 space-y-3">
+            {audience && (
+              <li className="flex items-start gap-3 text-sm">
+                <Users className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <span><span className="font-bold">Recommended for:</span> {audience}</span>
+              </li>
+            )}
+            <li className="flex items-start gap-3 text-sm">
+              <Utensils className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <span>
+                {pkg.fastingHours
+                  ? `Don't eat for ${pkg.fastingHours} hours before the sample. Water is fine.`
+                  : "No fasting needed. You can eat and drink as usual."}
+              </span>
+            </li>
+            <li className="flex items-start gap-3 text-sm">
+              <Home className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+              <span>A phlebotomist collects the sample at your address at the time you pick.</span>
+            </li>
+          </ul>
+        </section>
+
+        {/* Lab */}
+        <section className="px-4 mt-6">
+          <h2 className="text-lg font-extrabold text-foreground">Offered by</h2>
+          <button
+            type="button"
+            onClick={() => navigate(`/lab/${lab.id}`)}
+            className="mt-3 w-full flex items-center gap-3 rounded-2xl border border-border/60 bg-white p-3 text-left"
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0">
+              {lab.logo ? <img src={lab.logo} alt="" className="w-full h-full object-cover" /> : <Building2 className="w-6 h-6 text-primary" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-extrabold text-foreground truncate">{lab.name}</p>
+              <p className="text-xs text-muted-foreground">See the lab and its other tests</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </section>
+
         <AnimatePresence>
           {pendingItem && (
             <motion.div
-              initial={false}
+              initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 z-50 flex items-end"
             >
               <motion.div
-                initial={false}
+                initial={{ y: 100 }}
                 animate={{ y: 0 }}
                 exit={{ y: 100 }}
                 className="w-full bg-background rounded-t-3xl p-6 shadow-2xl"
+                style={{ paddingBottom: "max(var(--sab), 24px)" }}
               >
                 <div className="w-12 h-1 bg-muted rounded-full mx-auto mb-4" />
-                <h3 className="font-bold text-lg text-foreground mb-2">Replace Cart Items?</h3>
+                <h3 className="font-bold text-lg text-foreground mb-2">Replace your cart?</h3>
                 <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Your cart has items from another lab. Do you want to replace them with this package?
+                  Your cart has items from another lab. One booking can only be from one lab.
                 </p>
                 <div className="flex flex-col gap-2">
                   <Button
-                    variant="outline"
                     className="w-full"
-                    onClick={cancelReplace}
+                    onClick={() => {
+                      confirmReplace();
+                      navigate("/cart");
+                    }}
                   >
-                    Keep Both
+                    Replace with this package
                   </Button>
-                  <Button
-                    className="w-full bg-gradient-to-r from-primary to-primary/80"
-                    onClick={handleConfirmReplace}
-                  >
-                    Replace Cart
+                  <Button variant="outline" className="w-full" onClick={cancelReplace}>
+                    Keep my current cart
                   </Button>
                 </div>
               </motion.div>
@@ -604,28 +285,24 @@ const PackageDetailScreen = () => {
         </AnimatePresence>
       </div>
 
-      {/* Add to Cart Button - Fixed Bottom Bar */}
-      <motion.div
-        initial={false}
-        animate={{ y: 0 }}
-        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-background/95 backdrop-blur-md border-t border-border/40 p-4 z-40"
-        style={{
-          paddingBottom: "max(var(--sab), 16px)",
-        }}
+      {/* Book bar */}
+      <div
+        className="fixed bottom-0 left-0 right-0 w-full md:max-w-[430px] mx-auto bg-background/95 backdrop-blur-md border-t border-border/40 px-4 pt-3 z-40 flex items-center gap-3"
+        style={{ paddingBottom: "max(var(--sab), 12px)" }}
       >
-        <div className="w-full">
-          <Button
-            className="w-full flex items-center justify-center gap-3 h-14 rounded-full shadow-xl text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 transition-all px-5"
-            onClick={isAlreadyInCart ? () => navigate("/cart") : handleAddToCart}
-            variant={isAlreadyInCart ? "softSuccess" : "default"}
-          >
-            <div className="flex items-center gap-3">
-              {isAlreadyInCart ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
-              <span>{isAlreadyInCart ? "Package in Cart — View Cart" : "Add Package to Cart"}</span>
-            </div>
-          </Button>
+        <div className="min-w-0">
+          <p className="text-lg font-black text-foreground leading-none">₹{Math.round(pkg.price)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1 truncate">{pkg.testsCount} tests · {lab.name}</p>
         </div>
-      </motion.div>
+        <Button
+          className="ml-auto h-12 rounded-full px-6 text-base font-semibold gap-2"
+          onClick={inCart ? () => navigate("/cart") : handleAddToCart}
+          variant={inCart ? "softSuccess" : "default"}
+        >
+          {inCart ? <Check className="w-5 h-5" /> : <ShoppingCart className="w-5 h-5" />}
+          {inCart ? "View cart" : "Book now"}
+        </Button>
+      </div>
     </MobileLayout>
   );
 };

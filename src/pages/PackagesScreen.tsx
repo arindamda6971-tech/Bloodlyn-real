@@ -1,221 +1,88 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { motion } from "framer-motion";
-import { Building2, HeartPulse, ChevronRight, Package, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { HeartPulse, ArrowUpDown } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { PackageCard } from "@/components/packages/PackageCard";
+import { PackageCategoryChips } from "@/components/packages/PackageCategoryChips";
 import { useSEO } from "@/hooks/useSEO";
+import {
+  ACTIVE_PACKAGES_QUERY_KEY,
+  categoriesWithPackages,
+  fetchActivePackages,
+  sortPackages,
+  type HealthPackage,
+  type PackageSort,
+} from "@/lib/health-packages";
+
+const SORTS: { value: PackageSort; label: string }[] = [
+  { value: "popular", label: "Popular" },
+  { value: "price_low", label: "Price: low to high" },
+  { value: "price_high", label: "Price: high to low" },
+  { value: "most_tests", label: "Most tests" },
+];
 
 const PackagesScreen = () => {
-  useSEO({ title: "Health Packages | BloodLyn", description: "Curated full-body health checkup packages at the best prices, delivered at home." });
+  useSEO({ title: "Health Packages | BloodLyn", description: "Health checkup packages from partner labs, with home sample collection." });
   const navigate = useNavigate();
-  const [packages, setPackages] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [params, setParams] = useSearchParams();
+  const [sort, setSort] = useState<PackageSort>("popular");
+  const category = params.get("category");
 
-  const fetchPackages = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data } = await supabase
-        .from("test_packages")
-        .select(`
-          id, name, tests_count, price, original_price, discount_percent, icon, color,
-          diagnostic_centers!diagnostic_center_id (id, name, logo_url)
-        `)
-        .eq("is_active", true)
-        .order("is_popular", { ascending: false });
-      if (data) {
-        setPackages(data.map((pkg: any) => ({
-          id: pkg.id,
-          name: pkg.name,
-          tests_count: pkg.tests_count || 0,
-          price: pkg.price,
-          original_price: pkg.original_price || undefined,
-          discount_percent: pkg.discount_percent || undefined,
-          icon: pkg.icon || undefined,
-          color: pkg.color || undefined,
-          lab_id: pkg.diagnostic_centers?.id || undefined,
-          lab_name: pkg.diagnostic_centers?.name || undefined,
-          lab_logo: pkg.diagnostic_centers?.logo_url || undefined,
-        })));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: packages = [], isLoading } = useQuery({
+    queryKey: ACTIVE_PACKAGES_QUERY_KEY,
+    queryFn: fetchActivePackages,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetchPackages();
-  }, [fetchPackages]);
-
-  // Build unique labs map with counts and details
-  const labs = useMemo(() => {
-    const map = new Map<string, { 
-      id?: string; 
-      name?: string; 
-      logo?: string; 
-      count: number;
-      avgPrice: number;
-      maxDiscount: number;
-    }>();
-    packages.forEach((p) => {
-      const key = p.lab_id || p.lab_name || p.id;
-      if (!map.has(key)) {
-        map.set(key, { 
-          id: p.lab_id, 
-          name: p.lab_name || `Lab ${key}`, 
-          logo: p.lab_logo, 
-          count: 1,
-          avgPrice: p.price,
-          maxDiscount: p.discount_percent || 0,
-        });
-      } else {
-        const entry = map.get(key)!;
-        entry.count += 1;
-        entry.avgPrice = (entry.avgPrice + p.price) / 2;
-        entry.maxDiscount = Math.max(entry.maxDiscount, p.discount_percent || 0);
-        map.set(key, entry);
-      }
-    });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count);
-  }, [packages]);
+  const chips = useMemo(() => categoriesWithPackages(packages), [packages]);
+  const shown = useMemo(
+    () => sortPackages(category ? packages.filter((p) => p.category === category) : packages, sort),
+    [packages, category, sort],
+  );
+  const setCategory = (value: string | null) =>
+    setParams(value ? { category: value } : {}, { replace: true });
+  const open = useCallback((p: HealthPackage) => navigate(`/package/${p.id}`), [navigate]);
 
   return (
     <MobileLayout>
       <ScreenHeader title="Health Packages" />
+      <div className="pt-3 pb-6">
+        {chips.length > 1 && <PackageCategoryChips chips={chips} value={category} onChange={setCategory} />}
 
-      <div className="pb-6">
-        {/* Hero Section */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-primary/10 via-accent/5 to-background px-4 py-8 relative overflow-hidden"
-        >
-          {/* Background decorative elements */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-success/5 rounded-full -ml-12 -mb-12" />
-
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Package className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-xs font-bold text-primary uppercase tracking-wide">Featured Packages</span>
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2 leading-tight">
-              Explore Health Packages
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Choose from top-rated diagnostic labs and get comprehensive health checkups
+        {packages.length > 0 && (
+          <div className="px-4 pb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground">
+              {shown.length} {shown.length === 1 ? "package" : "packages"}
             </p>
+            <label className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden />
+              <span className="sr-only">Sort by</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as PackageSort)}
+                className="bg-transparent font-bold focus:outline-none"
+              >
+                {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              </select>
+            </label>
           </div>
-        </motion.div>
+        )}
 
-        <div className="px-4 py-6 space-y-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary border-t-transparent" />
+        <div className="px-4 space-y-3">
+          {isLoading ? (
+            [0, 1, 2].map((i) => <div key={i} className="h-[180px] rounded-3xl bg-muted/40 animate-pulse" />)
+          ) : shown.length === 0 ? (
+            <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
+              <HeartPulse className="w-8 h-8 text-primary mx-auto" />
+              <p className="mt-3 text-sm font-extrabold text-foreground">No packages here yet</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {category ? "Try another category." : "New packages from partner labs appear here as soon as they go live."}
+              </p>
             </div>
-          ) : labs.length === 0 ? (
-            <motion.div
-              initial={false}
-              animate={{ opacity: 1, scale: 1 }}
-              className="text-center py-12"
-            >
-              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-                <HeartPulse className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <p className="text-muted-foreground font-medium">No packages available</p>
-              <p className="text-xs text-muted-foreground mt-1">Check back soon for new packages</p>
-            </motion.div>
           ) : (
-            <>
-              {/* Quick Stats */}
-              <motion.div
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0}}
-                className="grid grid-cols-2 gap-3 mb-4"
-              >
-                <div className="bg-primary/10 rounded-xl p-3 text-center border border-primary/20">
-                  <p className="text-2xl font-bold text-primary">{labs.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Top Labs</p>
-                </div>
-                <div className="bg-success/10 rounded-xl p-3 text-center border border-success/20">
-                  <p className="text-2xl font-bold text-success">{packages.length}</p>
-                  <p className="text-xs text-muted-foreground font-medium">Packages</p>
-                </div>
-              </motion.div>
-
-              {/* Labs List */}
-              <div className="space-y-3">
-                {labs.map((lab, index) => (
-                  <motion.button
-                    key={lab.id || `${lab.name}-${index}`}
-                    type="button"
-                    onClick={() => {
-                      if (lab.id) navigate(`/lab/${lab.id}`);
-                      else navigate('/partner-labs');
-                    }}
-                    initial={false}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0}}
-                    className="w-full text-left group"
-                  >
-                    <div className="bg-white dark:bg-secondary/30 rounded-xl p-4 border border-border/40 hover:border-primary/40 hover:shadow-md transition-all duration-200 overflow-hidden relative"
-                    >
-                      {/* Background gradient on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-
-                      <div className="relative z-10 flex items-center gap-3">
-                        {/* Logo/Avatar */}
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 group-hover:from-primary/30 group-hover:to-primary/20 transition-colors">
-                          <Building2 className="w-7 h-7 text-primary" />
-                        </div>
-
-                        {/* Lab Info */}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
-                            {lab.name}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 rounded-full">
-                              <Package className="w-3 h-3 text-primary" />
-                              <span className="text-xs font-semibold text-primary">
-                                {lab.count} {lab.count === 1 ? 'package' : 'packages'}
-                              </span>
-                            </span>
-                            {lab.maxDiscount > 0 && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-destructive/10 rounded-full">
-                                <Sparkles className="w-3 h-3 text-destructive" />
-                                <span className="text-xs font-semibold text-destructive">
-                                  Up to {lab.maxDiscount}% off
-                                </span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Arrow */}
-                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors group-hover:translate-x-1 duration-200 flex-shrink-0" />
-                      </div>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-
-              {/* Footer Info */}
-              <motion.div
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0}}
-                className="mt-8 p-4 rounded-xl bg-accent/30 border border-accent/40"
-              >
-                <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                  All packages include home sample collection, NABL certified tests, and same-day or next-day reports.
-                </p>
-              </motion.div>
-            </>
+            shown.map((p) => <PackageCard key={p.id} pkg={p} onOpen={open} />)
           )}
         </div>
       </div>
