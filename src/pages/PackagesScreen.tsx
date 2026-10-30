@@ -1,16 +1,14 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { HeartPulse, ArrowUpDown } from "lucide-react";
+import { HeartPulse, ArrowUpDown, RefreshCw } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { PackageCard } from "@/components/packages/PackageCard";
 import { PackageCategoryChips } from "@/components/packages/PackageCategoryChips";
 import { useSEO } from "@/hooks/useSEO";
+import { useActivePackages } from "@/hooks/useActivePackages";
 import {
-  ACTIVE_PACKAGES_QUERY_KEY,
   categoriesWithPackages,
-  fetchActivePackages,
   sortPackages,
   type HealthPackage,
   type PackageSort,
@@ -30,11 +28,7 @@ const PackagesScreen = () => {
   const [sort, setSort] = useState<PackageSort>("popular");
   const category = params.get("category");
 
-  const { data: packages = [], isLoading } = useQuery({
-    queryKey: ACTIVE_PACKAGES_QUERY_KEY,
-    queryFn: fetchActivePackages,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: packages = [], isLoading, isError, isFetching, refetch } = useActivePackages();
 
   const chips = useMemo(() => categoriesWithPackages(packages), [packages]);
   const counts = useMemo(() => {
@@ -78,6 +72,20 @@ const PackagesScreen = () => {
         <div className="px-4 space-y-3">
           {isLoading ? (
             [0, 1, 2].map((i) => <div key={i} className="h-[230px] rounded-3xl bg-muted/40 animate-pulse" />)
+          ) : isError && packages.length === 0 ? (
+            <div className="rounded-3xl border border-border/60 bg-muted/20 p-6 text-center">
+              <p className="text-sm font-extrabold text-foreground">Couldn't load health packages</p>
+              <p className="mt-1 text-xs text-muted-foreground">Check your connection and try again.</p>
+              <button
+                type="button"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="mt-3 inline-flex items-center gap-1.5 text-primary text-xs font-black bg-primary/10 px-3 py-1.5 rounded-full disabled:opacity-60"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? "animate-spin" : ""}`} />
+                Try again
+              </button>
+            </div>
           ) : shown.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border/60 bg-muted/20 p-6 text-center">
               <HeartPulse className="w-8 h-8 text-primary mx-auto" />
