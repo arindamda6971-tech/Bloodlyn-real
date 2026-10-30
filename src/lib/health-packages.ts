@@ -184,15 +184,6 @@ const INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
 /** ₹1,52,000 style prices. */
 export const formatRupees = (amount: number) => `₹${INR.format(Math.round(amount))}`;
 
-/** "Liver function, Thyroid +2": the areas a package covers, from its test groups. */
-export function coversPreview(p: HealthPackage, max = 2): string | null {
-  const groups = groupIncludedTests(p.includedTests).map((g) => g.group).filter((g) => g !== "Other tests");
-  if (groups.length === 0) return null;
-  const shown = groups.slice(0, max);
-  const more = groups.length - shown.length;
-  return more > 0 ? `${shown.join(", ")} +${more}` : shown.join(", ");
-}
-
 /** A short "CBC, Lipid, Thyroid +4" preview of what's inside. */
 export function includedPreview(p: HealthPackage, max = 3): string | null {
   if (p.includedTests.length === 0) return null;

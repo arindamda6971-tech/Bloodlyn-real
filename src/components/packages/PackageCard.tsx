@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { ArrowRight, Building2, Clock, FlaskConical, Utensils } from "lucide-react";
 import type { HealthPackage } from "@/lib/health-packages";
-import { categoryLabel, coversPreview, formatHours, formatRupees, savings } from "@/lib/health-packages";
+import { categoryLabel, formatHours, formatRupees, savings } from "@/lib/health-packages";
 import { categoryVisual } from "./packageVisuals";
 
 interface Props {
@@ -11,11 +11,10 @@ interface Props {
   compact?: boolean;
 }
 
-/** A package as people shop for it: what it is and covers, how to prepare, the price, then the lab. */
+/** A package as people shop for it: what it is, how to prepare, the price, then the lab. The tests inside are on the detail page. */
 export const PackageCard = memo(({ pkg, onOpen, compact }: Props) => {
   const visual = categoryVisual(pkg.category);
   const Icon = visual.icon;
-  const covers = coversPreview(pkg);
   const saved = savings(pkg);
   const category = categoryLabel(pkg.category);
 
@@ -73,11 +72,6 @@ export const PackageCard = memo(({ pkg, onOpen, compact }: Props) => {
             </span>
           )}
         </div>
-        {covers && (
-          <p className="mt-2 text-[12px] text-muted-foreground line-clamp-1">
-            <span className="font-semibold text-foreground/70">Covers:</span> {covers}
-          </p>
-        )}
       </div>
 
       {/* Footer: price and lab */}

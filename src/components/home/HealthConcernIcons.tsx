@@ -13,7 +13,23 @@ export type ConcernIconName =
   | "vitamins"
   | "fever"
   | "bones"
-  | "full_body";
+  | "full_body"
+  // Test categories (Explore Tests)
+  | "blood"
+  | "test_tube"
+  | "microbe"
+  | "sample_cup"
+  | "pollen"
+  | "shield"
+  | "ribbon"
+  | "bandage"
+  | "petri"
+  | "bottle"
+  | "microscope"
+  | "magnifier"
+  | "flask"
+  | "dna"
+  | "stethoscope";
 
 interface Shared {
   /** Unique id prefix, so gradients of different icons on one page don't clash. */
@@ -186,6 +202,256 @@ const ICONS: Record<ConcernIconName, (props: Shared) => JSX.Element> = {
       <Sheen p={p} cx={36} cy={56} rx={3} ry={9} rotate={18} opacity={0.5} />
       <rect x="18" y="52" width="60" height="3.5" rx="1.75" fill="#22d3ee" opacity="0.9" />
       <rect x="18" y="49" width="60" height="9" rx="4.5" fill="#22d3ee" opacity="0.18" />
+    </Frame>
+  ),
+
+  // ── Test categories (Explore Tests) ──────────────────────────────────────
+
+  // A blood drop.
+  blood: ({ p }) => (
+    <Frame p={p}>
+      <defs><Grad id={`${p}-drop`} from="#ff7a8a" to="#c8102e" /></defs>
+      <path d="M48 8 C48 8 21 41 21 60 a27 27 0 0 0 54 0 C75 41 48 8 48 8 Z" fill={`url(#${p}-drop)`} />
+      <Sheen p={p} cx={36} cy={54} rx={5} ry={12} rotate={-18} />
+    </Frame>
+  ),
+
+  // A test tube with liquid.
+  test_tube: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-glass`} from="#ffffff" to="#d6dee8" x2={1} y2={0} />
+        <Grad id={`${p}-liq`} from="#5eead4" to="#0d9488" />
+      </defs>
+      <g transform="rotate(28 48 48)">
+        <rect x="37" y="10" width="22" height="72" rx="11" fill={`url(#${p}-glass)`} stroke="#94a3b8" strokeOpacity="0.5" />
+        <rect x="40" y="44" width="16" height="35" rx="8" fill={`url(#${p}-liq)`} />
+        <rect x="34" y="6" width="28" height="9" rx="3.5" fill="#cbd5e1" />
+        <rect x="40.5" y="16" width="3.5" height="56" rx="1.75" fill="#fff" opacity="0.9" />
+        <circle cx="50" cy="56" r="2.2" fill="#fff" opacity="0.7" />
+        <circle cx="46" cy="66" r="1.6" fill="#fff" opacity="0.6" />
+      </g>
+    </Frame>
+  ),
+
+  // A virus particle.
+  microbe: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <radialGradient id={`${p}-v`} cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#bbf7d0" /><stop offset="0.5" stopColor="#4ade80" /><stop offset="1" stopColor="#15803d" />
+        </radialGradient>
+      </defs>
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a) => (
+        <g key={a} transform={`rotate(${a} 48 46)`}>
+          <rect x="46" y="10" width="4" height="14" rx="2" fill="#16a34a" />
+          <circle cx="48" cy="11" r="4.5" fill="#86efac" stroke="#16a34a" strokeWidth="1.5" />
+        </g>
+      ))}
+      <circle cx="48" cy="46" r="23" fill={`url(#${p}-v)`} />
+      <circle cx="56" cy="52" r="4" fill="#15803d" opacity="0.35" />
+      <circle cx="42" cy="56" r="3" fill="#15803d" opacity="0.3" />
+      <circle cx="58" cy="38" r="2.5" fill="#15803d" opacity="0.3" />
+      <Sheen p={p} cx={40} cy={36} rx={6} ry={4} rotate={-30} />
+    </Frame>
+  ),
+
+  // A sample container (urine, stool, fluids).
+  sample_cup: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-cup`} from="#ffffff" to="#dbe3ec" x2={1} y2={0} />
+        <Grad id={`${p}-liq`} from="#fde68a" to="#f59e0b" />
+        <Grad id={`${p}-lid`} from="#7cb8ff" to="#1d4ed8" />
+      </defs>
+      <rect x="25" y="30" width="46" height="54" rx="9" fill={`url(#${p}-cup)`} stroke="#94a3b8" strokeOpacity="0.5" />
+      <rect x="28" y="56" width="40" height="25" rx="7" fill={`url(#${p}-liq)`} opacity="0.95" />
+      <rect x="33" y="40" width="30" height="12" rx="2.5" fill="#fff" stroke="#cbd5e1" />
+      <rect x="36" y="44" width="16" height="2" rx="1" fill="#94a3b8" />
+      <rect x="21" y="18" width="54" height="15" rx="6" fill={`url(#${p}-lid)`} />
+      <rect x="25" y="21" width="34" height="3.5" rx="1.75" fill="#fff" opacity="0.45" />
+      <rect x="29" y="36" width="3" height="42" rx="1.5" fill="#fff" opacity="0.8" />
+    </Frame>
+  ),
+
+  // A flower shedding pollen: allergies.
+  pollen: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-pet`} from="#fde68a" to="#f59e0b" />
+        <radialGradient id={`${p}-mid`} cx="0.4" cy="0.35" r="0.7"><stop offset="0" stopColor="#b45309" /><stop offset="1" stopColor="#713f12" /></radialGradient>
+      </defs>
+      <path d="M46 56 C44 70 40 78 36 86" fill="none" stroke="#16a34a" strokeWidth="4" strokeLinecap="round" />
+      <ellipse cx="34" cy="76" rx="9" ry="4.5" transform="rotate(-30 34 76)" fill="#22c55e" />
+      {[0, 60, 120, 180, 240, 300].map((a) => (
+        <ellipse key={a} cx="46" cy="24" rx="9" ry="14" transform={`rotate(${a} 46 40)`} fill={`url(#${p}-pet)`} />
+      ))}
+      <circle cx="46" cy="40" r="10" fill={`url(#${p}-mid)`} />
+      <Sheen p={p} cx={43} cy={36} rx={3} ry={2} />
+      {[[72, 22, 2.6], [78, 34, 2], [70, 44, 1.8], [80, 50, 2.3]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#f59e0b" opacity="0.85" />
+      ))}
+    </Frame>
+  ),
+
+  // A shield with a cross: immunity.
+  shield: ({ p }) => (
+    <Frame p={p}>
+      <defs><Grad id={`${p}-sh`} from="#7cb8ff" to="#1d4ed8" /></defs>
+      <path d="M48 8 L78 19 V43 C78 64 65 78 48 86 C31 78 18 64 18 43 V19 Z" fill={`url(#${p}-sh)`} />
+      <path d="M48 14 L72 23 V43 C72 60 62 72 48 79 Z" fill="#fff" opacity="0.12" />
+      <rect x="43" y="30" width="10" height="32" rx="3" fill="#fff" />
+      <rect x="32" y="41" width="32" height="10" rx="3" fill="#fff" />
+      <Sheen p={p} cx={30} cy={28} rx={4} ry={9} rotate={-10} opacity={0.6} />
+    </Frame>
+  ),
+
+  // An awareness ribbon: cancer screening.
+  ribbon: ({ p }) => (
+    <Frame p={p}>
+      <defs><Grad id={`${p}-rb`} from="#fbcfe8" to="#db2777" /></defs>
+      <path d="M48 16 C58 16 62 30 56 42 L36 84" fill="none" stroke={`url(#${p}-rb)`} strokeWidth="13" strokeLinecap="butt" />
+      <path d="M48 16 C38 16 34 30 40 42 L60 84" fill="none" stroke={`url(#${p}-rb)`} strokeWidth="13" strokeLinecap="butt" />
+      <path d="M44 20 C40 24 39 32 42 40" fill="none" stroke="#fff" strokeOpacity="0.6" strokeWidth="3" strokeLinecap="round" />
+    </Frame>
+  ),
+
+  // An adhesive bandage: blood clotting.
+  bandage: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-band`} from="#fcd9b6" to="#e0996b" />
+        <Grad id={`${p}-pad`} from="#fffaf3" to="#f1dfcb" />
+      </defs>
+      <g transform="rotate(-38 48 48)">
+        <rect x="10" y="34" width="76" height="28" rx="14" fill={`url(#${p}-band)`} />
+        <rect x="34" y="36" width="28" height="24" rx="5" fill={`url(#${p}-pad)`} />
+        {[18, 24, 70, 76].map((x) => [41, 48, 55].map((y) => <circle key={`${x}-${y}`} cx={x} cy={y} r="1.3" fill="#b9774f" opacity="0.5" />))}
+        <rect x="14" y="37" width="66" height="4" rx="2" fill="#fff" opacity="0.4" />
+      </g>
+    </Frame>
+  ),
+
+  // A petri dish with colonies: cultures.
+  petri: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-dish`} from="#ffffff" to="#cfd8e3" />
+        <Grad id={`${p}-agar`} from="#fde68a" to="#fbbf24" />
+      </defs>
+      <ellipse cx="48" cy="62" rx="38" ry="17" fill={`url(#${p}-dish)`} stroke="#94a3b8" strokeOpacity="0.5" />
+      <ellipse cx="48" cy="56" rx="38" ry="17" fill={`url(#${p}-dish)`} stroke="#94a3b8" strokeOpacity="0.5" />
+      <ellipse cx="48" cy="56" rx="32" ry="13" fill={`url(#${p}-agar)`} />
+      {[[36, 52, 3.5, "#fff"], [52, 50, 2.5, "#f472b6"], [60, 58, 3, "#fff"], [44, 61, 2.2, "#a78bfa"], [30, 59, 2, "#f472b6"]].map(([x, y, r, f]) => (
+        <circle key={`${x}-${y}`} cx={x as number} cy={y as number} r={r as number} fill={f as string} opacity="0.9" />
+      ))}
+      <path d="M16 50 C22 42 40 38 54 39" fill="none" stroke="#fff" strokeOpacity="0.8" strokeWidth="2.5" strokeLinecap="round" />
+    </Frame>
+  ),
+
+  // An amber medicine bottle: drug testing.
+  bottle: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-amb`} from="#fbbf24" to="#b45309" />
+        <Grad id={`${p}-cap`} from="#ffffff" to="#cbd5e1" />
+      </defs>
+      <rect x="29" y="28" width="38" height="58" rx="9" fill={`url(#${p}-amb)`} />
+      <rect x="37" y="20" width="22" height="10" rx="2" fill="#92400e" />
+      <rect x="33" y="8" width="30" height="15" rx="4" fill={`url(#${p}-cap)`} />
+      <rect x="29" y="46" width="38" height="22" fill="#fff" opacity="0.95" />
+      <rect x="35" y="52" width="20" height="3" rx="1.5" fill="#e11d48" />
+      <rect x="35" y="59" width="26" height="2.5" rx="1.25" fill="#cbd5e1" />
+      <rect x="32" y="32" width="4" height="12" rx="2" fill="#fff" opacity="0.5" />
+    </Frame>
+  ),
+
+  // A microscope: cell studies.
+  microscope: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-m`} from="#64748b" to="#1e293b" />
+        <Grad id={`${p}-w`} from="#ffffff" to="#cfd8e3" x2={1} y2={0} />
+        <Grad id={`${p}-k`} from="#60a5fa" to="#1d4ed8" />
+      </defs>
+      <rect x="18" y="76" width="60" height="11" rx="5.5" fill={`url(#${p}-m)`} />
+      <path d="M62 77 V56 C62 38 52 28 38 24" fill="none" stroke={`url(#${p}-m)`} strokeWidth="12" strokeLinecap="round" />
+      <rect x="20" y="56" width="42" height="6" rx="3" fill="#334155" />
+      <rect x="28" y="52" width="20" height="4" rx="1.5" fill="#bfdbfe" />
+      <g transform="rotate(-28 36 26)">
+        <rect x="28" y="0" width="16" height="44" rx="6" fill={`url(#${p}-w)`} />
+        <rect x="30" y="-6" width="12" height="9" rx="3" fill="#334155" />
+        <rect x="31" y="44" width="10" height="8" rx="2.5" fill="#475569" />
+      </g>
+      <circle cx="62" cy="61" r="6.5" fill={`url(#${p}-k)`} />
+    </Frame>
+  ),
+
+  // A magnifier over tissue: biopsy.
+  magnifier: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-rim`} from="#94a3b8" to="#334155" />
+        <Grad id={`${p}-h`} from="#475569" to="#0f172a" />
+        <radialGradient id={`${p}-lens`} cx="0.4" cy="0.35" r="0.7"><stop offset="0" stopColor="#f0f9ff" /><stop offset="1" stopColor="#bae6fd" /></radialGradient>
+      </defs>
+      <g transform="rotate(45 68 68)"><rect x="61" y="54" width="14" height="34" rx="7" fill={`url(#${p}-h)`} /></g>
+      <circle cx="42" cy="42" r="26" fill={`url(#${p}-lens)`} />
+      {[[34, 36, 6], [48, 34, 5], [44, 48, 6.5], [32, 50, 4.5], [55, 46, 4]].map(([x, y, r]) => (
+        <circle key={`${x}-${y}`} cx={x} cy={y} r={r} fill="#f9a8d4" stroke="#db2777" strokeOpacity="0.5" />
+      ))}
+      <circle cx="42" cy="42" r="26" fill="none" stroke={`url(#${p}-rim)`} strokeWidth="7" />
+      <Sheen p={p} cx={32} cy={30} rx={7} ry={4} rotate={-35} opacity={0.8} />
+    </Frame>
+  ),
+
+  // A flask: molecular / PCR tests.
+  flask: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-gl`} from="#ffffff" to="#dbe3ec" x2={1} y2={0} />
+        <Grad id={`${p}-liq`} from="#67e8f9" to="#0891b2" />
+      </defs>
+      <path d="M40 10 V36 L18 76 a7 7 0 0 0 6 10 H72 a7 7 0 0 0 6 -10 L56 36 V10 Z" fill={`url(#${p}-gl)`} stroke="#94a3b8" strokeOpacity="0.5" />
+      <path d="M29 58 H67 L76 76 a7 7 0 0 1 -6 9 H26 a7 7 0 0 1 -6 -9 Z" fill={`url(#${p}-liq)`} />
+      <rect x="36" y="6" width="24" height="8" rx="3" fill="#cbd5e1" />
+      <circle cx="40" cy="72" r="3" fill="#fff" opacity="0.7" />
+      <circle cx="52" cy="66" r="2" fill="#fff" opacity="0.6" />
+      <circle cx="58" cy="76" r="2.5" fill="#fff" opacity="0.6" />
+      <rect x="43" y="14" width="3" height="22" rx="1.5" fill="#fff" opacity="0.9" />
+    </Frame>
+  ),
+
+  // A DNA double helix: genetics.
+  dna: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-a`} from="#93c5fd" to="#2563eb" />
+        <Grad id={`${p}-b`} from="#f9a8d4" to="#db2777" />
+      </defs>
+      {[18, 30, 58, 70].map((y) => (
+        <rect key={y} x="38" y={y} width="20" height="3.5" rx="1.75" fill="#cbd5e1" />
+      ))}
+      <path d="M34 8 C62 20 62 32 34 44 C62 56 62 68 34 82" fill="none" stroke={`url(#${p}-b)`} strokeWidth="7" strokeLinecap="round" />
+      <path d="M62 8 C34 20 34 32 62 44 C34 56 34 68 62 82" fill="none" stroke={`url(#${p}-a)`} strokeWidth="7" strokeLinecap="round" />
+      <path d="M38 12 C48 16 52 20 54 24" fill="none" stroke="#fff" strokeOpacity="0.6" strokeWidth="2" strokeLinecap="round" />
+    </Frame>
+  ),
+
+  // A stethoscope: specialised tests.
+  stethoscope: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-st`} from="#f1f5f9" to="#94a3b8" />
+        <Grad id={`${p}-tube`} from="#475569" to="#0f172a" />
+      </defs>
+      <path d="M26 12 V34 C26 50 38 58 48 58 C58 58 70 50 70 34 V12" fill="none" stroke={`url(#${p}-tube)`} strokeWidth="5" strokeLinecap="round" />
+      <path d="M48 58 V66 C48 78 58 84 66 80" fill="none" stroke={`url(#${p}-tube)`} strokeWidth="5" strokeLinecap="round" />
+      <circle cx="26" cy="11" r="4" fill={`url(#${p}-st)`} />
+      <circle cx="70" cy="11" r="4" fill={`url(#${p}-st)`} />
+      <circle cx="72" cy="74" r="12" fill={`url(#${p}-st)`} />
+      <circle cx="72" cy="74" r="7" fill="#cbd5e1" stroke="#94a3b8" />
+      <Sheen p={p} cx={68} cy={69} rx={3.5} ry={2.5} />
     </Frame>
   ),
 };

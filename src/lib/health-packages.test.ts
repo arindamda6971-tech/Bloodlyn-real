@@ -6,7 +6,6 @@ import {
   groupIncludedTests,
   prettyGroupName,
   formatRupees,
-  coversPreview,
   savings,
   includedPreview,
   reportText,
@@ -27,14 +26,9 @@ const row = (over: Record<string, unknown> = {}) => ({
 });
 
 describe("toHealthPackage", () => {
-  it("formats prices the Indian way and summarises what a package covers", () => {
+  it("formats prices the Indian way", () => {
     expect(formatRupees(152000)).toBe("₹1,52,000");
     expect(formatRupees(25)).toBe("₹25");
-    const p = toHealthPackage(row({ included_tests: [
-      { name: "SGPT", category: "liver-function" }, { name: "SGOT", category: "liver-function" },
-      { name: "TSH", category: "thyroid" }, { name: "CBC", category: "haematology" },
-    ] }));
-    expect(coversPreview(p)).toBe("Liver function, Haematology +1");
   });
 
   it("reads the details labs set in the Partner portal", () => {

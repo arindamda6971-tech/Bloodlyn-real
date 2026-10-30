@@ -9,6 +9,7 @@ import { categoryTestsQueryOptions, useBridgeTests } from "@/hooks/useBridgeTest
 import { SearchScreen, useSearchMode } from "@/components/search/SearchScreen";
 import { useSEO } from "@/hooks/useSEO";
 import { Skeleton } from "@/components/ui/skeleton";
+import { HealthConcernIcon, type ConcernIconName } from "@/components/home/HealthConcernIcons";
 import { useEffect } from "react";
 
 const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
@@ -26,51 +27,51 @@ const useDelayedLoading = (isLoading: boolean, delayMs: number = 150) => {
   return showLoading;
 };
 
-// Category art: Microsoft Fluent Emoji 3D (MIT, see public/icons/3d/LICENSE-fluent-emoji.txt),
-// the same set as Home's "Shop by health concern", bundled as small WebP files.
+// Category art: the soft-3D SVG set shared with Home's "Shop by health concern"
+// (components/home/HealthConcernIcons.tsx): sharp at any size, no downloads.
 // `hint` says in plain words what's inside (patients don't know "Clinical
 // Chemistry"); `rank` puts everyday categories before specialist ones.
 interface CategoryArt {
-  icon: string;
+  icon: ConcernIconName;
   hint: string;
   tint: string;
   rank: number;
 }
 
 const CATEGORY_ART: Record<string, CategoryArt> = {
-  "clinical-chemistry": { icon: "test-tube", hint: "Sugar, kidney, cholesterol", tint: "bg-sky-50", rank: 1 },
-  "hematology": { icon: "drop-of-blood", hint: "CBC, platelets, anaemia", tint: "bg-rose-50", rank: 2 },
-  "hormones-endocrinology": { icon: "butterfly", hint: "Thyroid, fertility, insulin", tint: "bg-violet-50", rank: 3 },
-  "vitamins-nutrition": { icon: "carrot", hint: "Vitamins & minerals", tint: "bg-orange-50", rank: 4 },
-  "cardiac-markers": { icon: "anatomical-heart", hint: "Troponin, BNP, heart risk", tint: "bg-red-50", rank: 5 },
+  "clinical-chemistry": { icon: "test_tube", hint: "Sugar, kidney, cholesterol", tint: "bg-sky-50", rank: 1 },
+  "hematology": { icon: "blood", hint: "CBC, platelets, anaemia", tint: "bg-rose-50", rank: 2 },
+  "hormones-endocrinology": { icon: "thyroid", hint: "Thyroid, fertility, insulin", tint: "bg-violet-50", rank: 3 },
+  "vitamins-nutrition": { icon: "vitamins", hint: "Vitamins & minerals", tint: "bg-orange-50", rank: 4 },
+  "cardiac-markers": { icon: "heart", hint: "Troponin, BNP, heart risk", tint: "bg-red-50", rank: 5 },
   "infectious-disease": { icon: "microbe", hint: "Hepatitis, HIV, viruses", tint: "bg-lime-50", rank: 6 },
-  "urine-stool-body-fluids": { icon: "droplet", hint: "Urine, stool & fluids", tint: "bg-yellow-50", rank: 7 },
-  "allergy": { icon: "sneezing-face", hint: "Food, dust & pet allergies", tint: "bg-amber-50", rank: 8 },
+  "urine-stool-body-fluids": { icon: "sample_cup", hint: "Urine, stool & fluids", tint: "bg-yellow-50", rank: 7 },
+  "allergy": { icon: "pollen", hint: "Food, dust & pet allergies", tint: "bg-amber-50", rank: 8 },
   "serology-immunology": { icon: "shield", hint: "Antibodies & immunity", tint: "bg-emerald-50", rank: 9 },
-  "tumor-markers": { icon: "reminder-ribbon", hint: "Cancer screening", tint: "bg-pink-50", rank: 10 },
-  "coagulation": { icon: "adhesive-bandage", hint: "Blood clotting", tint: "bg-orange-50", rank: 11 },
-  "microbiology": { icon: "petri-dish", hint: "Cultures, TB, fungal", tint: "bg-teal-50", rank: 12 },
-  "toxicology-drug-testing": { icon: "pill", hint: "Alcohol & heavy metals", tint: "bg-fuchsia-50", rank: 13 },
+  "tumor-markers": { icon: "ribbon", hint: "Cancer screening", tint: "bg-pink-50", rank: 10 },
+  "coagulation": { icon: "bandage", hint: "Blood clotting", tint: "bg-orange-50", rank: 11 },
+  "microbiology": { icon: "petri", hint: "Cultures, TB, fungal", tint: "bg-teal-50", rank: 12 },
+  "toxicology-drug-testing": { icon: "bottle", hint: "Alcohol & heavy metals", tint: "bg-fuchsia-50", rank: 13 },
   "cytology": { icon: "microscope", hint: "Pap smear, FNAC", tint: "bg-indigo-50", rank: 14 },
-  "histopathology": { icon: "magnifying-glass", hint: "Biopsy & tissue", tint: "bg-stone-100", rank: 15 },
-  "molecular-diagnostics": { icon: "alembic", hint: "PCR & DNA tests", tint: "bg-cyan-50", rank: 16 },
+  "histopathology": { icon: "magnifier", hint: "Biopsy & tissue", tint: "bg-stone-100", rank: 15 },
+  "molecular-diagnostics": { icon: "flask", hint: "PCR & DNA tests", tint: "bg-cyan-50", rank: 16 },
   "genetics": { icon: "dna", hint: "Chromosomes & prenatal", tint: "bg-blue-50", rank: 17 },
   "specialized": { icon: "stethoscope", hint: "Advanced & rare tests", tint: "bg-slate-100", rank: 18 },
 };
 
 // Categories added later in the admin panel: pick art by keyword, else a neutral test tube.
-const ART_BY_KEYWORD: [RegExp, string][] = [
-  [/heart|cardi/, "anatomical-heart"], [/blood|hemat|haemat/, "drop-of-blood"], [/thyroid|hormon/, "butterfly"],
-  [/vitamin|nutri/, "carrot"], [/infect|virus|viral/, "microbe"], [/urine|stool|fluid/, "droplet"],
-  [/allerg/, "sneezing-face"], [/immun|serolog/, "shield"], [/cancer|tumou?r|onco/, "reminder-ribbon"],
-  [/bone|ortho/, "bone"], [/lung|respir/, "lungs"], [/gene|dna|molecul/, "dna"], [/fever/, "thermometer"],
+const ART_BY_KEYWORD: [RegExp, ConcernIconName][] = [
+  [/heart|cardi/, "heart"], [/blood|hemat|haemat/, "blood"], [/thyroid|hormon/, "thyroid"],
+  [/vitamin|nutri/, "vitamins"], [/infect|virus|viral/, "microbe"], [/urine|stool|fluid/, "sample_cup"],
+  [/allerg/, "pollen"], [/immun|serolog/, "shield"], [/cancer|tumou?r|onco/, "ribbon"],
+  [/bone|ortho/, "bones"], [/lung|respir/, "lungs"], [/gene|dna|molecul/, "dna"], [/fever/, "fever"],
 ];
 
 const getCategoryArt = (name: string, slug: string): CategoryArt => {
   const known = CATEGORY_ART[slug];
   if (known) return known;
   const key = `${name} ${slug}`.toLowerCase();
-  const icon = ART_BY_KEYWORD.find(([re]) => re.test(key))?.[1] ?? "test-tube";
+  const icon = ART_BY_KEYWORD.find(([re]) => re.test(key))?.[1] ?? "test_tube";
   return { icon, hint: "", tint: "bg-slate-50", rank: 100 };
 };
 
@@ -88,16 +89,7 @@ const CategoryTile = memo(({ category, onClick, onPointerDown }: { category: Cat
     style={{ contain: "content" }}
   >
     <span className={`w-14 h-14 rounded-full ${category.tint} ring-1 ring-black/[0.04] flex items-center justify-center shrink-0`}>
-      <img
-        src={`/icons/3d/${category.icon}.webp`}
-        alt=""
-        width={36}
-        height={36}
-        loading="lazy"
-        decoding="async"
-        draggable={false}
-        className="w-9 h-9 object-contain"
-      />
+      <HealthConcernIcon name={category.icon} className="w-10 h-10" />
     </span>
     <span className="mt-2 text-[12.5px] font-bold text-foreground leading-tight line-clamp-2">{category.name}</span>
     {category.hint && (

@@ -50,14 +50,14 @@ const LabCard = memo(({ center, index, cover, favorite, onToggleFavorite }: {
       className="flex-shrink-0 w-[78vw] sm:w-[280px] max-w-[290px] snap-start"
     >
       <div
-        className={`relative rounded-[24px] overflow-hidden bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
+        className={`relative rounded-[24px] overflow-hidden bg-white border border-slate-200/90 shadow-[0_10px_22px_-12px_rgba(15,23,42,0.30)] flex flex-col active:scale-[0.97] transition-all duration-200 ${isClosed ? 'grayscale opacity-80' : ''}`}
         style={{
           touchAction: 'pan-x pan-y',
           contain: 'paint' // Native-level rendering isolation
         }}
       >
         {/* Banner: generated per lab (colour and illustration from its name, initials, name, city) */}
-        <div className="relative h-[150px] w-full overflow-hidden">
+        <div className="relative h-[150px] w-full overflow-hidden border-b border-slate-200/70">
           <LabCover name={center.name} city={center.city} logoUrl={center.logo} palette={cover.palette} art={cover.art} className="absolute inset-0" />
 
           <Button
@@ -180,7 +180,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
 
       {/* Horizontal Scroll List (Native feel) */}
       <div
-        className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-4 sm:px-6 gap-3 sm:gap-4"
+        className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-4 sm:px-6 pt-1 pb-4 gap-3 sm:gap-4"
         style={{
           WebkitOverflowScrolling: 'touch',
           scrollPaddingLeft: '1rem',
