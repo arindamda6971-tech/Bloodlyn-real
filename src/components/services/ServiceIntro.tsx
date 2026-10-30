@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { ArrowLeft, Stethoscope, Video, Languages, Activity, Calendar, FileText, HeartPulse, Home, FileHeart, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -134,29 +133,21 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
 
         <div className="flex-1 p-6 pb-12 flex flex-col items-center">
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <div
             className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${data.gradient} flex items-center justify-center shadow-xl mb-6 mt-4 relative`}
           >
             <div className={`absolute inset-0 rounded-3xl ${data.glow} blur-xl`} />
             <Icon className="w-10 h-10 text-white relative z-10" />
-          </motion.div>
+          </div>
 
-          <motion.h2 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0}}
+          <h2
             className="text-2xl font-black tracking-tight text-center mb-6"
           >
             {data.title}
-          </motion.h2>
+          </h2>
 
           {(serviceType === "doctor" || serviceType === "physio") && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0}}
+            <div
               className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm"
             >
               <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -166,18 +157,15 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
                   {serviceType === "doctor" ? "Doctor consultancy" : "Physiotherapist"} services are currently not available in your area. We will notify you once we expand to your location.
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
 
           <div className="w-full space-y-6 flex-1">
             {data.steps.map((step, index) => {
               const StepIcon = step.icon;
               return (
-                <motion.div
+                <div
                   key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0}}
                   className="flex gap-4 relative"
                 >
                   {/* Vertical Line Connector */}
@@ -198,15 +186,12 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
                       {step.description}
                     </p>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
           </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0}}
+          <div
             className="w-full mt-10 mb-6"
           >
             <Button
@@ -217,7 +202,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
             >
               {(serviceType === "doctor" || serviceType === "physio") ? "Currently Unavailable" : "Proceed to Booking"}
             </Button>
-          </motion.div>
+          </div>
 
         </div>
       </div>

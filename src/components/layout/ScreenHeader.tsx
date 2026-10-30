@@ -1,6 +1,5 @@
 import { ArrowLeft, MoreVertical } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 
 interface ScreenHeaderProps {
   title: string;
@@ -33,14 +32,11 @@ const ScreenHeader = ({
   };
 
   return (
-    <motion.header
-      initial={{ y: -10, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+    <header
       className={`sticky top-0 z-40 px-3 sm:px-4 h-14 flex items-center transition-colors duration-200 ${
         transparent
           ? "bg-transparent"
-          : "bg-background/95 backdrop-blur-md border-b border-border/40"
+          : "bg-background border-b border-border/40"
       }`}
     >
       <div className="flex items-center justify-between w-full">
@@ -67,7 +63,7 @@ const ScreenHeader = ({
           )}
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 };
 
