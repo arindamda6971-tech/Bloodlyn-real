@@ -1,11 +1,12 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, MapPin, BadgeCheck, Heart } from "lucide-react";
+import { Building2, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
 import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
+import { LabCover, labCoverVariants, type LabArt } from "@/components/labs/LabCover";
 
 interface DiagnosticCenter {
   id: string;
@@ -25,9 +26,10 @@ interface DiagnosticCentersCarouselProps {
   centers: DiagnosticCenter[];
 }
 
-const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
+const LabCard = memo(({ center, index, cover, favorite, onToggleFavorite }: {
   center: DiagnosticCenter;
   index: number;
+  cover: { palette: number; art: LabArt };
   favorite: boolean;
   onToggleFavorite: (labId: string) => void;
 }) => {
@@ -54,17 +56,9 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
           contain: 'paint' // Native-level rendering isolation
         }}
       >
-        {/* Top Image Section */}
-        <div className="relative h-[170px] w-full bg-muted overflow-hidden rounded-b-2xl">
-          <img 
-            src="/lab-bannernew.webp" 
-            alt="Lab Background" 
-            className="w-full h-full object-cover transform scale-[1.02]"
-            loading={index < 2 ? "eager" : "lazy"}
-            decoding="async"
-            fetchPriority={index < 2 ? "high" : "low"}
-          />
-          <div className="absolute inset-0 bg-black/5" />
+        {/* Banner: generated per lab (colour and illustration from its name, initials, name, city) */}
+        <div className="relative h-[150px] w-full overflow-hidden">
+          <LabCover name={center.name} city={center.city} logoUrl={center.logo} palette={cover.palette} art={cover.art} className="absolute inset-0" />
 
           <Button
             type="button"
@@ -103,31 +97,10 @@ const LabCard = memo(({ center, index, favorite, onToggleFavorite }: {
 
         {/* Bottom Info Section */}
         <div className="p-4 flex flex-col gap-2 bg-white">
-          {/* Lab Name */}
-          <div className="flex items-center gap-1.5">
-            <h4 className="font-black text-slate-900 text-[16px] leading-tight truncate">{center.name}</h4>
-            {center.isVerified && (
-              <div className="w-4 h-4 bg-[#0d9488] rounded-full flex items-center justify-center shrink-0" aria-label="Verified">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5 text-white">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </div>
-            )}
-            <span className="ml-auto shrink-0">
-              <LabOpenBadge vendorId={center.vendorId} isActive={center.isActive} />
-            </span>
-          </div>
-
-          {/* Rating and Distance */}
-          <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+          {/* Rating (or NEW) and Open/Closed; name and city are on the banner */}
+          <div className="flex items-center gap-2 text-[12px] font-medium text-slate-500">
             <LabRating rating={center.rating} reviews={center.reviews} />
-            {center.city && (
-              <>
-                <span className="px-0.5">•</span>
-                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                <span className="truncate">{center.city}</span>
-              </>
-            )}
+            <LabOpenBadge vendorId={center.vendorId} isActive={center.isActive} />
           </div>
 
           <div className="w-full h-[1px] bg-slate-100 my-1" />
@@ -182,6 +155,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
       return 0;
     });
   }, [centers, pinnedIds]);
+  const covers = useMemo(() => labCoverVariants(sortedCenters.map((c) => c.name)), [sortedCenters]);
 
   return (
     <div className="relative pt-1 pb-3">
@@ -219,6 +193,7 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
             key={center.id}
             center={center}
             index={index}
+            cover={covers[index]}
             favorite={isFavorite(center.id)}
             onToggleFavorite={handleToggleFavorite}
           />
