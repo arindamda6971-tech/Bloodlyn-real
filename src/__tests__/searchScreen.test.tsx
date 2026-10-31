@@ -54,7 +54,7 @@ describe("shared full-screen search (Home and Explore Tests)", () => {
     fireEvent.click(screen.getByText("open search"));
     fireEvent.change(screen.getByPlaceholderText("Search health tests..."), { target: { value: "sugar" } });
 
-    const result = screen.getByRole("button", { name: /Glucose Fasting/ });
+    const result = screen.getByRole("button", { name: /Fasting Blood Sugar/ });
     expect(screen.queryByRole("button", { name: /add/i })).not.toBeInTheDocument();
     await act(async () => fireEvent.click(result));
     expect(screen.getByText("Test detail page")).toBeInTheDocument();

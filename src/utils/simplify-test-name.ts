@@ -25,6 +25,8 @@
  *       → "3-Methyl Histidine - Quantitative — EDTA Plasma"
  */
 
+import { PATIENT_TEST_NAMES } from "@/data/patientTestNames";
+
 // Specimen lookup: maps full "in ..." phrase → short display label
 const SPECIMEN_MAP: { suffix: string; label: string }[] = [
   { suffix: "in Serum or Plasma from Fetus", label: "Fetal Serum" },
@@ -83,6 +85,8 @@ interface TestNameParts {
   specimen: string;
   /** "Fasting", "Random" and the like. */
   qualifier: string;
+  /** A reviewed plain name, which needs no sample or qualifier beside it. */
+  plain: boolean;
 }
 
 // In-memory cache to eliminate repeated regex and string operations on 60/120fps scroll ticks
@@ -93,6 +97,7 @@ function parseTestName(rawName: string): TestNameParts {
   if (cached) return cached;
 
   let name = rawName.trim();
+  const plainName = PATIENT_TEST_NAMES[name.replace(/\s+/g, " ")];
 
   // 1. Strip "Deprecated " prefix
   if (name.startsWith("Deprecated ")) {
@@ -156,8 +161,10 @@ function parseTestName(rawName: string): TestNameParts {
 
   // 9. If the simplified name is too short or empty, fall back to original
   const parts = name.length < 3
-    ? { title: rawName.trim(), specimen: "", qualifier: "" }
-    : { title: name, specimen: specimenLabel, qualifier };
+    ? { title: rawName.trim(), specimen: "", qualifier: "", plain: false }
+    : plainName
+      ? { title: plainName, specimen: specimenLabel, qualifier: "", plain: true }
+      : { title: name, specimen: specimenLabel, qualifier, plain: false };
   partsCache.set(rawName, parts);
   return parts;
 }
@@ -165,7 +172,8 @@ function parseTestName(rawName: string): TestNameParts {
 /** One line, for lists of test names: "Glucose — Serum/Plasma, Fasting". */
 export function simplifyTestName(rawName: string): string {
   if (!rawName) return rawName;
-  const { title, specimen, qualifier } = parseTestName(rawName);
+  const { title, specimen, qualifier, plain } = parseTestName(rawName);
+  if (plain) return title;
   const tags = [specimen, qualifier].filter(Boolean);
   return tags.length > 0 ? `${title} — ${tags.join(", ")}` : title;
 }

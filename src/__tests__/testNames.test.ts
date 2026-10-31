@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { clinicalNameAddsDetail, simplifyTestName, testNameParts, testSample } from "@/utils/simplify-test-name";
+import { PATIENT_TEST_NAMES } from "@/data/patientTestNames";
 import { formatTestsLabel } from "@/lib/format-tests";
 import { commonTestsFirst } from "@/lib/test-order";
 
@@ -24,11 +25,10 @@ describe("patient-facing test names", () => {
       title: "3-Methyl Histidine - Quantitative",
       specimen: "EDTA Plasma",
     });
-    expect(testNameParts("SGPT (ALT), Serum")).toEqual({ title: "SGPT (ALT)", specimen: "Serum" });
   });
 
   it("leaves names that are already plain alone", () => {
-    for (const name of ["2D Echocardiogram", "4H syndrome gene panel", "1p/19q Co-Deletion"]) {
+    for (const name of ["4H syndrome gene panel", "1p/19q Co-Deletion"]) {
       expect(testNameParts(name)).toEqual({ title: name, specimen: "" });
     }
   });
@@ -52,9 +52,8 @@ describe("patient-facing test names", () => {
   });
 
   it("only offers the clinical name when it says something more", () => {
-    expect(clinicalNameAddsDetail("Lipid Profile - 2 (Mini : Non - Fasting), Serum")).toBe(false);
     expect(clinicalNameAddsDetail("3-Methyl Histidine - Quantitative, EDTA Plasma**")).toBe(false);
-    expect(clinicalNameAddsDetail("2D Echocardiogram")).toBe(false);
+    expect(clinicalNameAddsDetail("4H syndrome gene panel")).toBe(false);
     expect(clinicalNameAddsDetail("Glucose [Mass/volume] in Serum or Plasma --fasting")).toBe(true);
     expect(clinicalNameAddsDetail("Hemoglobin A1c/Hemoglobin.total [Molar ratio] in Blood by IFCC protocol")).toBe(true);
   });
@@ -66,6 +65,28 @@ describe("patient-facing test names", () => {
   it("uses the same names in order lists", () => {
     expect(formatTestsLabel(["Carboxyhemoglobin [Mass/volume] in Blood", "CBC"])).toBe("Carboxyhemoglobin — Blood + 1 more");
     expect(formatTestsLabel([], "Lab Test")).toBe("Lab Test");
+  });
+});
+
+describe("easy names for common tests", () => {
+  it("shows the plain name and keeps the sample apart", () => {
+    expect(testNameParts("Glucose Fasting, Fluoride Plasma").title).toBe("Fasting Blood Sugar");
+    expect(simplifyTestName("Glucose Fasting, Fluoride Plasma")).toBe("Fasting Blood Sugar");
+    expect(testNameParts("SGPT (ALT), Serum")).toEqual({ title: "SGPT (ALT) Liver Test", specimen: "Serum" });
+  });
+
+  it("matches a catalogue name that holds a line break", () => {
+    expect(simplifyTestName("TSH (Thyroid Stimulating Hormone)\n- Ultrasensitive, Serum")).toBe("TSH (Thyroid Test)");
+  });
+
+  it("offers the clinical name under an easy name", () => {
+    expect(clinicalNameAddsDetail("Glucose Fasting, Fluoride Plasma")).toBe(true);
+  });
+
+  it("gives every test its own name, so the cart can't merge two", () => {
+    const names = Object.values(PATIENT_TEST_NAMES).map((name) => name.toLowerCase());
+    expect(names).toHaveLength(145);
+    expect(new Set(names).size).toBe(145);
   });
 });
 

@@ -19,6 +19,10 @@ describe("searching the catalogue on the device", () => {
     expect(searchCatalogue(tests, "5763")[0].test_name).toBe("Zinc, Serum");
   });
 
+  it("finds a common test by its easy name", () => {
+    expect(searchCatalogue(tests, "fasting blood sugar")[0].test_name).toBe("Glucose Fasting, Fluoride Plasma");
+  });
+
   it("stays inside a category", () => {
     expect(searchCatalogue(tests, "e", "diabetes").map((t) => t.test_name)).toEqual(["HbA1c, EDTA Blood"]);
   });

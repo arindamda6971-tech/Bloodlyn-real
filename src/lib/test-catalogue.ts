@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { BridgeTest } from "@/hooks/useBridgeTests";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 /**
  * The whole catalogue on the device, so search doesn't wait on a server for each
@@ -81,7 +82,11 @@ export function searchCatalogue(tests: CatalogueTest[], term: string, category?:
   const matches: CatalogueTest[] = [];
   for (const test of tests) {
     if (category && test.category !== category) continue;
-    if (test.test_name.toLowerCase().includes(needle) || test.loinc_code?.toLowerCase().includes(needle)) {
+    if (
+      test.test_name.toLowerCase().includes(needle) ||
+      test.loinc_code?.toLowerCase().includes(needle) ||
+      simplifyTestName(test.test_name).toLowerCase().includes(needle)
+    ) {
       matches.push(test);
       if (matches.length === PER_TERM_LIMIT) break;
     }
