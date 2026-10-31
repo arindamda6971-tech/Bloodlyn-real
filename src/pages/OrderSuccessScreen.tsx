@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle, Home, Package, Sparkles, Calendar, User, Phone, Beaker, Receipt, CreditCard, Building2, FileText, Check, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface BookingState {
   cartItems: Array<{
@@ -325,7 +326,7 @@ const OrderSuccessScreen = () => {
                 <div className="bg-slate-50/70 rounded-[14px] p-3 border border-slate-100 flex flex-col gap-2 ml-12">
                   {bookingState.cartItems.map((item) => (
                     <div key={item.id} className="flex justify-between items-start">
-                      <p className="text-[13px] font-semibold text-slate-700 leading-tight pr-4">{item.name}</p>
+                      <p className="text-[13px] font-semibold text-slate-700 leading-tight pr-4">{simplifyTestName(item.name)}</p>
                       <p className="text-[13px] font-bold text-slate-900 shrink-0">₹{(item.price * (item.quantity || 1)).toLocaleString()}</p>
                     </div>
                   ))}

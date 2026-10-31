@@ -20,6 +20,9 @@
  *
  *   "Carboxyhemoglobin [Moles/volume] in Serum"
  *       → "Carboxyhemoglobin — Serum"
+ *
+ *   "3-Methyl Histidine - Quantitative, EDTA Plasma**"
+ *       → "3-Methyl Histidine - Quantitative — EDTA Plasma"
  */
 
 // Specimen lookup: maps full "in ..." phrase → short display label
@@ -64,15 +67,30 @@ const METHOD_SUFFIXES = [
 ];
 
 // Measurement unit brackets like [Mass/volume], [Moles/time], [Presence], etc.
-const BRACKET_REGEX = /\s*\[[^\]]*\]\s*/g;
+// A lab's own words in brackets, like [Complete Blood Count], are left alone.
+const BRACKET_REGEX = /\s*\[[^\]]*(?:\/|#|presence|ratio|fraction|titer|mass|moles|units|entitic|interpretation)[^\]]*\]\s*/gi;
+
+// Lab catalogue names: "SGPT (ALT), Serum"
+const COMMA_SPECIMEN_REGEX = /,\s*((?:EDTA |Fluoride |Citrate |Heparin )?(?:Whole Blood|Blood|Serum|Plasma|Urine|Stool|Tissue|Saliva|Sputum))$/i;
+
+// Lab catalogue markers: trailing asterisks and order codes like "(E9X9V)*"
+const CATALOGUE_MARKS_REGEX = /(?:\s*\((?=[A-Z0-9]*\d)[A-Z0-9]{4,6}\))?[\s*]*\*+\s*$/;
+
+interface TestNameParts {
+  /** What the test is, to show as its name. */
+  title: string;
+  /** The sample it's run on, when the name says. */
+  specimen: string;
+  /** "Fasting", "Random" and the like. */
+  qualifier: string;
+}
 
 // In-memory cache to eliminate repeated regex and string operations on 60/120fps scroll ticks
-const simplifyCache = new Map<string, string>();
+const partsCache = new Map<string, TestNameParts>();
 
-export function simplifyTestName(rawName: string): string {
-  if (!rawName) return rawName;
-  const cached = simplifyCache.get(rawName);
-  if (cached !== undefined) return cached;
+function parseTestName(rawName: string): TestNameParts {
+  const cached = partsCache.get(rawName);
+  if (cached) return cached;
 
   let name = rawName.trim();
 
@@ -80,6 +98,8 @@ export function simplifyTestName(rawName: string): string {
   if (name.startsWith("Deprecated ")) {
     name = name.slice("Deprecated ".length);
   }
+
+  name = name.replace(CATALOGUE_MARKS_REGEX, "").replace(/\*+/g, "").trim();
 
   // 2. Extract fasting/random qualifiers from "--fasting", "--random", etc.
   let qualifier = "";
@@ -102,6 +122,13 @@ export function simplifyTestName(rawName: string): string {
       break;
     }
   }
+  if (!specimenLabel) {
+    const commaSpecimen = name.match(COMMA_SPECIMEN_REGEX);
+    if (commaSpecimen) {
+      specimenLabel = commaSpecimen[1];
+      name = name.slice(0, commaSpecimen.index);
+    }
+  }
 
   // 5. Remove method suffixes ("by IFCC protocol", "by LC/MS/MS", etc.)
   for (const method of METHOD_SUFFIXES) {
@@ -112,16 +139,10 @@ export function simplifyTestName(rawName: string): string {
     }
   }
 
-  // 6. If name has a "/" separator (e.g. "Hemoglobin A1c/Hemoglobin.total"),
-  //    take the first part (the common name), unless the "/" is part of a
-  //    known compound name like "T3/T4" or ratio
-  if (name.includes("/")) {
-    const parts = name.split("/");
-    const firstPart = parts[0].trim();
-    // Only simplify if the first part is reasonably long (not just "T3")
-    if (firstPart.length >= 6) {
-      name = firstPart;
-    }
+  // 6. "Hemoglobin A1c/Hemoglobin.total" is one test, so take the common name.
+  //    Other "/" names are different tests: "Albumin/Globulin" isn't "Albumin".
+  if (/\/[^/]*\.total\b/i.test(name)) {
+    name = name.split("/")[0].trim();
   }
 
   // 7. Remove "during Reporting Period", "summary panel", "summary report Document"
@@ -133,17 +154,36 @@ export function simplifyTestName(rawName: string): string {
   // 8. Clean up multiple spaces, trailing punctuation, trim
   name = name.replace(/\s{2,}/g, " ").replace(/[\s,;.]+$/, "").trim();
 
-  // 9. Build the final display name with specimen and qualifier tags
-  const tags: string[] = [];
-  if (specimenLabel) tags.push(specimenLabel);
-  if (qualifier) tags.push(qualifier);
+  // 9. If the simplified name is too short or empty, fall back to original
+  const parts = name.length < 3
+    ? { title: rawName.trim(), specimen: "", qualifier: "" }
+    : { title: name, specimen: specimenLabel, qualifier };
+  partsCache.set(rawName, parts);
+  return parts;
+}
 
-  if (tags.length > 0) {
-    name = `${name} — ${tags.join(", ")}`;
-  }
+/** One line, for lists of test names: "Glucose — Serum/Plasma, Fasting". */
+export function simplifyTestName(rawName: string): string {
+  if (!rawName) return rawName;
+  const { title, specimen, qualifier } = parseTestName(rawName);
+  const tags = [specimen, qualifier].filter(Boolean);
+  return tags.length > 0 ? `${title} — ${tags.join(", ")}` : title;
+}
 
-  // 10. If the simplified name is too short or empty, fall back to original
-  const result = name.length < 3 ? rawName.trim() : name;
-  simplifyCache.set(rawName, result);
-  return result;
+/**
+ * The sample to show on a card. The name can narrow the lab's "Blood" down to
+ * "Serum", but the lab decides what's collected, so a different sample stands.
+ */
+export function testSample(rawName: string, labSample?: string | null): string | undefined {
+  const { specimen } = testNameParts(rawName);
+  const isBloodSample = /blood|serum|plasma/i;
+  if (!labSample?.trim()) return specimen || undefined;
+  return specimen && isBloodSample.test(labSample) && isBloodSample.test(specimen) ? specimen : labSample;
+}
+
+/** Name and sample apart, for a card that shows the sample among the test's details. */
+export function testNameParts(rawName: string): { title: string; specimen: string } {
+  if (!rawName) return { title: rawName, specimen: "" };
+  const { title, specimen, qualifier } = parseTestName(rawName);
+  return { title: qualifier ? `${title} (${qualifier})` : title, specimen };
 }

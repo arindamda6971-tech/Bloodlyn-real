@@ -10,6 +10,7 @@ import {
 import { PrescriptionUpload, type PrescriptionUploadHandle } from "@/components/booking/PrescriptionUpload";
 import { useLiveTestRules } from "@/hooks/useLiveTestRules";
 import { TestFacts } from "@/components/tests/TestFacts";
+import { testNameParts, testSample } from "@/utils/simplify-test-name";
 import { liveRuleFor } from "@/lib/prescription-requirement";
 
 import { Button } from "@/components/ui/button";
@@ -758,12 +759,13 @@ const CartScreen = () => {
                   >
                     <div className="flex-1 min-w-0">
                       
-                      <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
+                      <h3 className="font-extrabold text-foreground text-sm leading-snug">{testNameParts(item.name).title}</h3>
                       <TestFacts
                         withInstructions
                         className="mt-1.5"
                         test={{
                           ...item,
+                          sampleType: testSample(item.name, item.sampleType),
                           reportTime: liveRuleFor(liveRules, item.name)?.reportTime,
                           prescriptionRequired: prescriptionTests.includes(item.name),
                         }}

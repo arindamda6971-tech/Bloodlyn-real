@@ -18,6 +18,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -219,7 +220,7 @@ const TestSelectionScreen = () => {
               {test.discount_percent && test.discount_percent > 0 && (
                 <Badge variant="softSuccess" className="mb-2">{test.discount_percent}% OFF</Badge>
               )}
-              <h1 className="text-lg font-bold text-foreground">{test.name}</h1>
+              <h1 className="text-lg font-bold text-foreground">{simplifyTestName(test.name)}</h1>
               {test.sample_type && (
                 <p className="text-sm text-muted-foreground mt-1">Sample: {test.sample_type}</p>
               )}

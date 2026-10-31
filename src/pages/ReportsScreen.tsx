@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface ReportOrder {
   id: string;
@@ -294,7 +295,7 @@ const ReportsScreen = () => {
                               <span className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                                 <span className="text-[9px] font-bold text-primary">{idx + 1}</span>
                               </span>
-                              <p className="text-xs font-medium text-foreground">{name}</p>
+                              <p className="text-xs font-medium text-foreground">{simplifyTestName(name)}</p>
                             </div>
                           ))}
                         </div>

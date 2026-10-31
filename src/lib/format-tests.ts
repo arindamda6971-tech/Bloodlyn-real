@@ -1,3 +1,5 @@
+import { simplifyTestName } from "@/utils/simplify-test-name";
+
 /**
  * Industry-standard "first test + N other(s)" label.
  *
@@ -16,10 +18,11 @@ export function formatTestsLabel(input: string | string[] | null | undefined, fa
   const names = Array.isArray(input) ? input.map(n => String(n).trim()).filter(Boolean) : splitTestNames(input);
 
   if (names.length === 0) return fallback;
-  if (names.length === 1) return names[0];
+  const first = simplifyTestName(names[0]);
+  if (names.length === 1) return first;
   
   const othersCount = names.length - 1;
-  return `${names[0]} + ${othersCount} more`;
+  return `${first} + ${othersCount} more`;
 }
 
 /**

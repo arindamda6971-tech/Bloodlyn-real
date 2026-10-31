@@ -33,6 +33,7 @@ import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 const workflowSteps = [
   { key: "accepted", label: "Order Accepted", icon: CheckCircle },
@@ -269,7 +270,7 @@ const TrackingScreen = () => {
                   <span className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <span className="text-[10px] font-black text-primary">{i + 1}</span>
                   </span>
-                  <p className="text-sm font-semibold text-foreground leading-snug">{name}</p>
+                  <p className="text-sm font-semibold text-foreground leading-snug">{simplifyTestName(name)}</p>
                 </div>
               ))
             ) : (

@@ -54,6 +54,8 @@ import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useLabSlots } from "@/hooks/useLabSlots";
 import { normalizeAvailabilityType } from "@/lib/test-availability";
 import { TestFacts } from "@/components/tests/TestFacts";
+import { commonTestsFirst } from "@/lib/test-order";
+import { testNameParts, testSample } from "@/utils/simplify-test-name";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -680,7 +682,7 @@ const LabDetailScreen = () => {
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
   const generalTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "GENERAL").length;
   const specializedTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "SPECIALIZED").length;
-  const filteredTests = labTests.filter((test) => {
+  const matchingTests = labTests.filter((test) => {
     if (!test || !test.name) return false;
     const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
     const isPackage = test.category === "Health Packages";
@@ -691,6 +693,7 @@ const LabDetailScreen = () => {
     const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
     return matchesSearch && matchesTab && matchesCategory;
   });
+  const filteredTests = activeTab === "packages" ? matchingTests : commonTestsFirst(matchingTests);
 
   const availableCategories = useMemo(() => {
     const isPackage = activeTab === "packages";
@@ -1038,6 +1041,7 @@ const LabDetailScreen = () => {
             {filteredTests.map((rawTest, index) => {
               const test = rawTest as DynamicTest;
               const isAdded = hasItem(test.id, test.name);
+              const { title } = testNameParts(test.name);
               return (
                 <motion.div
                   key={test.id}
@@ -1065,14 +1069,14 @@ const LabDetailScreen = () => {
                       className="flex-1 min-w-0 text-left"
                     >
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-extrabold text-foreground text-sm tracking-tight">{test.name}</h3>
+                        <h3 className="font-extrabold text-foreground text-sm tracking-tight">{title}</h3>
                         {test.popular && (
                           <Badge variant="soft" className="text-[9px] bg-amber-500/10 text-amber-600 font-bold px-2 py-0.5">
                             Popular
                           </Badge>
                         )}
                       </div>
-                      <TestFacts test={test} className="mt-1.5" />
+                      <TestFacts test={{ ...test, sampleType: testSample(test.name, test.sampleType) }} className="mt-1.5" />
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
                         <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                           <span>{test.testsCount} tests included</span>
@@ -1085,7 +1089,7 @@ const LabDetailScreen = () => {
                           className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium"
                         >
                           {test.description ||
-                            `${test.name} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}
+                            `${title} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}
                         </motion.p>
                       )}
                       <div className="flex items-baseline gap-2 mt-3.5 flex-wrap">

@@ -17,6 +17,7 @@ import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateDeliveryFee } from "@/lib/delivery-fee";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface PaymentState {
   cartItems: Array<{
@@ -586,7 +587,7 @@ const PaymentScreen = () => {
                   <div key={item.id} className="flex justify-between items-center gap-3 text-sm">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="text-foreground font-semibold truncate">{item.name}</span>
+                      <span className="text-foreground font-semibold truncate">{simplifyTestName(item.name)}</span>
                     </div>
                     <span className="text-foreground font-bold tabular-nums shrink-0">₹ {item.price * item.quantity}</span>
                   </div>
