@@ -128,6 +128,13 @@ const TestDetailScreen = () => {
       return;
     }
 
+    // If state already has the correct test, we're done. This comes first: setting
+    // the test again below would rerun this effect forever and freeze the app.
+    if (test && (test.id === id || test.name.toLowerCase() === id.toLowerCase())) {
+      setLoading(false);
+      return;
+    }
+
     // If location state provides the new test, use it
     if (bridgeTest && (bridgeTest.id === id || (bridgeTest as any).slug === id || (bridgeTest.test_name || bridgeTest.name)?.toLowerCase() === id.toLowerCase())) {
       setTest({
@@ -146,12 +153,6 @@ const TestDetailScreen = () => {
         fastingInstruction: bridgeTest.fastingInstruction,
         reportType: bridgeTest.reportType,
       });
-      setLoading(false);
-      return;
-    }
-
-    // If state already has the correct test, we're done
-    if (test && (test.id === id || test.name.toLowerCase() === id.toLowerCase())) {
       setLoading(false);
       return;
     }

@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTIVE_PACKAGES_QUERY_KEY, fetchActivePackages } from "@/lib/health-packages";
 import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
+import { CATALOGUE_MAX_AGE_MS, CATALOGUE_QUERY_KEY, fetchCatalogue } from "@/lib/test-catalogue";
 
 /**
  * Aggressive background warm-up of the data every screen needs first.
@@ -55,6 +56,12 @@ const DataWarmup = () => {
             if (!data?.success) throw new Error("Bridge API returned unsuccessful response");
             return data;
           },
+        }),
+        queryClient.prefetchQuery({
+          queryKey: CATALOGUE_QUERY_KEY,
+          staleTime: CATALOGUE_MAX_AGE_MS,
+          gcTime: CATALOGUE_MAX_AGE_MS,
+          queryFn: fetchCatalogue,
         }),
         queryClient.prefetchQuery({
           queryKey: ACTIVE_PACKAGES_QUERY_KEY,
