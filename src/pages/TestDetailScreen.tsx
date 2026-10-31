@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { useBridgeTests } from "@/hooks/useBridgeTests";
-import { simplifyTestName } from "@/utils/simplify-test-name";
+import { clinicalNameAddsDetail, testNameParts, testSample } from "@/utils/simplify-test-name";
 
 interface UnifiedTest {
   id: string;
@@ -437,9 +437,9 @@ const TestDetailScreen = () => {
           <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase mb-1">
             {test.category || "Diagnostic Test"}
           </p>
-          <motion.h2 className="text-xl font-extrabold leading-tight text-secondary">{simplifyTestName(test.name)}</motion.h2>
-          {simplifyTestName(test.name) !== test.name && (
-            <p className="text-[11px] text-muted-foreground mt-1 leading-snug">{test.name}</p>
+          <motion.h2 className="text-xl font-extrabold leading-tight text-secondary">{testNameParts(test.name).title}</motion.h2>
+          {clinicalNameAddsDetail(test.name) && (
+            <p className="text-[11px] text-muted-foreground mt-1 leading-snug"><span className="font-semibold">Clinical name:</span> {test.name}</p>
           )}
           <div className="flex items-center gap-2 mt-2">
             <span 
@@ -566,7 +566,7 @@ const TestDetailScreen = () => {
               <li className="flex gap-2"><span className="text-primary">—</span> {test.preparationInstruction || (test.preparationRequired ? "Follow the preparation instructions provided by the lab." : "No special preparation required.")}</li>
             )}
             {test.fastingRequired && <li className="flex gap-2"><span className="text-primary">—</span> {test.fastingInstruction || "Fasting is required before sample collection."}</li>}
-            {test.sampleType && <li className="flex gap-2"><span className="text-primary">—</span> Sample required: {test.sampleType}</li>}
+            {testSample(test.name, test.sampleType) && <li className="flex gap-2"><span className="text-primary">—</span> Sample required: {testSample(test.name, test.sampleType)}</li>}
           </ul>
         </motion.section>
 

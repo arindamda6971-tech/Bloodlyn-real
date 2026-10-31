@@ -170,6 +170,13 @@ export function simplifyTestName(rawName: string): string {
   return tags.length > 0 ? `${title} — ${tags.join(", ")}` : title;
 }
 
+const lettersOnly = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** False when the clinical name differs only in punctuation, so showing it would repeat the name. */
+export function clinicalNameAddsDetail(rawName: string): boolean {
+  return lettersOnly(simplifyTestName(rawName)) !== lettersOnly(rawName);
+}
+
 /**
  * The sample to show on a card. The name can narrow the lab's "Blood" down to
  * "Serum", but the lab decides what's collected, so a different sample stands.

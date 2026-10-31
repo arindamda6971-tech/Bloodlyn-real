@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { simplifyTestName, testNameParts, testSample } from "@/utils/simplify-test-name";
+import { clinicalNameAddsDetail, simplifyTestName, testNameParts, testSample } from "@/utils/simplify-test-name";
 import { formatTestsLabel } from "@/lib/format-tests";
 import { commonTestsFirst } from "@/lib/test-order";
 
@@ -49,6 +49,14 @@ describe("patient-facing test names", () => {
     expect(testSample(name, null)).toBe("Serum/Plasma");
     expect(testSample("(ALDH3A2) Gene Panel by NGS, EDTA Blood**", "Sputum")).toBe("Sputum");
     expect(testSample("2D Echocardiogram", null)).toBeUndefined();
+  });
+
+  it("only offers the clinical name when it says something more", () => {
+    expect(clinicalNameAddsDetail("Lipid Profile - 2 (Mini : Non - Fasting), Serum")).toBe(false);
+    expect(clinicalNameAddsDetail("3-Methyl Histidine - Quantitative, EDTA Plasma**")).toBe(false);
+    expect(clinicalNameAddsDetail("2D Echocardiogram")).toBe(false);
+    expect(clinicalNameAddsDetail("Glucose [Mass/volume] in Serum or Plasma --fasting")).toBe(true);
+    expect(clinicalNameAddsDetail("Hemoglobin A1c/Hemoglobin.total [Molar ratio] in Blood by IFCC protocol")).toBe(true);
   });
 
   it("keeps a lab's own words in brackets", () => {
