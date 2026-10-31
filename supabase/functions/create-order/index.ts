@@ -497,6 +497,7 @@ Deno.serve(async (req) => {
         console.warn("Rejected malformed prescription URL:", String(e));
       }
     }
+    const hasAttachedPrescription = !!prescriptionUrl;
 
     // Fallback: most recent AI-analysed prescription for this user
     if (!prescriptionUrl) {
@@ -543,6 +544,37 @@ Deno.serve(async (req) => {
       
       if (centerData?.vendor_id) {
         orderVendorId = centerData.vendor_id;
+      }
+    }
+
+    // A lab can require a prescription for a test. The app asks for it first;
+    // this is the rule itself, so a stale or modified client can't skip it. Only
+    // one attached to this order counts, not an older one from the user's history.
+    if (orderVendorId && !hasAttachedPrescription) {
+      const { data: rxProducts, error: rxError } = await adminClient
+        .from("products")
+        .select("name, product_name")
+        .eq("vendor_id", orderVendorId)
+        .eq("availability", true)
+        .eq("prescription_required", true);
+      if (rxError) {
+        console.warn("Prescription rule check failed:", rxError.message);
+      } else if (rxProducts && rxProducts.length > 0) {
+        const normalizeName = (name?: string | null) => (name ?? "").trim().toLowerCase();
+        const flagged = new Set(rxProducts.flatMap((p) => [normalizeName(p.name), normalizeName(p.product_name)]));
+        const needsPrescription = cartItems
+          .filter((item) => flagged.has(normalizeName(item.name)))
+          .map((item) => item.name);
+        if (needsPrescription.length > 0) {
+          return new Response(
+            JSON.stringify({
+              error: `A prescription is required for ${needsPrescription.join(", ")}`,
+              code: "prescription_required",
+              tests: needsPrescription,
+            }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
       }
     }
 

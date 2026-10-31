@@ -289,8 +289,8 @@ const dbIdToLocalId: Record<string, string> = {
 
 type TabKey = "general" | "specialized" | "packages";
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "general", label: "General Tests" },
-  { key: "specialized", label: "Specialized Tests" },
+  { key: "general", label: "Every Day" },
+  { key: "specialized", label: "Selected Days" },
   { key: "packages", label: "Health Packages" },
 ];
 
@@ -336,6 +336,7 @@ interface DynamicTest {
   fastingRequired?: boolean;
   fastingInstruction?: string;
   reportType?: string;
+  prescriptionRequired?: boolean;
 }
 
 // ─── Active Offers Component ───
@@ -497,6 +498,7 @@ const LabDetailScreen = () => {
                 fastingRequired: p.fasting_required || false,
                 fastingInstruction: p.fasting_instruction || undefined,
                 reportType: p.report_type || undefined,
+                prescriptionRequired: p.prescription_required === true,
               }));
             }
           }
@@ -1066,9 +1068,9 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
-                        {test.category !== "Health Packages" && (
-                          <Badge variant="outline" className="text-[9px] px-2 py-0.5">
-                            {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" ? "Specialized" : "General"}
+                        {test.prescriptionRequired && (
+                          <Badge variant="outline" className="text-[9px] px-2 py-0.5 border-destructive/40 text-destructive">
+                            Prescription required
                           </Badge>
                         )}
                       </div>

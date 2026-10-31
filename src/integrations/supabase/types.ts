@@ -733,6 +733,7 @@ export type Database = {
           name: string | null
           preparation_instruction: string | null
           preparation_required: boolean | null
+          prescription_required: boolean
           price: number
           product_name: string
           report_type: string | null
@@ -754,6 +755,7 @@ export type Database = {
           name?: string | null
           preparation_instruction?: string | null
           preparation_required?: boolean | null
+          prescription_required?: boolean
           price?: number
           product_name: string
           report_type?: string | null
@@ -775,6 +777,7 @@ export type Database = {
           name?: string | null
           preparation_instruction?: string | null
           preparation_required?: boolean | null
+          prescription_required?: boolean
           price?: number
           product_name?: string
           report_type?: string | null

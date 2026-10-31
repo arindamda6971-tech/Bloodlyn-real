@@ -271,6 +271,7 @@ const TestDetailScreen = () => {
                 name: pName,
                 price: Number(p.price) || 0,
                 availabilityType: p.availability_type,
+                prescriptionRequired: p.prescription_required === true,
                 availableDays: p.available_days,
                 sampleType: p.sample_type,
                 preparationRequired: p.preparation_required,
@@ -658,6 +659,9 @@ const TestDetailScreen = () => {
                               <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                               <span className="text-xs font-medium text-muted-foreground">{lab.rating}</span>
                             </div>
+                          )}
+                          {lab.productMetadata?.prescriptionRequired && (
+                            <p className="mt-0.5 text-[11px] font-semibold text-destructive">Prescription required</p>
                           )}
                         </div>
                       </div>

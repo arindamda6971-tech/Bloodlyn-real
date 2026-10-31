@@ -4,13 +4,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText, Pencil, Loader2 } from "lucide-react";
 import {
   getStoredPrescription,
-  setStoredPrescription,
   clearStoredPrescription,
-  uploadPrescription,
-  validatePrescriptionFile,
-  deletePrescription,
   type StoredPrescription,
 } from "@/lib/order-prescription";
+import { PrescriptionUpload, type PrescriptionUploadHandle } from "@/components/booking/PrescriptionUpload";
+import { useLiveTestRules } from "@/hooks/useLiveTestRules";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -127,43 +125,11 @@ const CartScreen = () => {
     state: "",
   });
 
-  // Prescription attachment (optional) — travels to the lab with the order
-  const prescriptionInputRef = useRef<HTMLInputElement>(null);
+  // Prescription for this booking, which travels to the lab with the order.
+  // Optional unless the lab requires one for a test in the cart.
+  const prescriptionUploadRef = useRef<PrescriptionUploadHandle>(null);
   const [prescription, setPrescription] = useState<StoredPrescription | null>(() => getStoredPrescription());
-  const [prescriptionUploading, setPrescriptionUploading] = useState(false);
-
-  const handlePrescriptionChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    if (!supabaseUserId) {
-      toast.error("Please login to attach a prescription");
-      return;
-    }
-    const validationError = validatePrescriptionFile(file);
-    if (validationError) {
-      toast.error(validationError);
-      return;
-    }
-    setPrescriptionUploading(true);
-    try {
-      const uploaded = await uploadPrescription(file, supabaseUserId);
-      setPrescription(uploaded);
-      setStoredPrescription(uploaded);
-      toast.success("Prescription attached");
-    } catch (err: any) {
-      console.error("Prescription upload failed:", err);
-      toast.error(err?.message || "Could not upload the prescription. Please try again.");
-    } finally {
-      setPrescriptionUploading(false);
-    }
-  };
-
-  const handleRemovePrescription = () => {
-    if (prescription?.path) deletePrescription(prescription.path);
-    setPrescription(null);
-    clearStoredPrescription();
-  };
+  const { prescriptionTests } = useLiveTestRules();
 
 
 
@@ -379,6 +345,12 @@ const CartScreen = () => {
     if (!isPatientInfoValid) {
       setShowValidation(true);
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (prescriptionTests.length > 0 && !prescription) {
+      toast.error("A prescription is required", { description: `The lab needs one for ${prescriptionTests.join(", ")}.` });
+      prescriptionUploadRef.current?.pick();
       return;
     }
 
@@ -785,6 +757,9 @@ const CartScreen = () => {
                     <div className="flex-1 min-w-0">
                       
                       <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
+                      {prescriptionTests.includes(item.name) && (
+                        <p className="mt-1 text-[11px] font-bold text-destructive">Prescription required</p>
+                      )}
                       {(item.preparationInstruction || item.fastingInstruction || item.sampleType || item.reportType) && (
                         <div className="mt-2 space-y-1 text-[11px] leading-snug text-muted-foreground">
                           {item.preparationInstruction && <p><span className="font-bold text-foreground">Preparation:</span> {item.preparationInstruction}</p>}
@@ -818,55 +793,14 @@ const CartScreen = () => {
           </button>
 
           {/* Upload Prescription Tile */}
-          <input
-            ref={prescriptionInputRef}
-            type="file"
-            accept="image/*,application/pdf,.pdf"
-            className="hidden"
-            onChange={handlePrescriptionChange}
+          <PrescriptionUpload
+            ref={prescriptionUploadRef}
+            className="mt-4"
+            value={prescription}
+            onChange={setPrescription}
+            userId={supabaseUserId}
+            requiredFor={prescriptionTests}
           />
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            onClick={() => { if (!prescription && !prescriptionUploading) prescriptionInputRef.current?.click(); }}
-            className="mt-4 bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
-          >
-            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              {prescriptionUploading ? (
-                <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-              ) : prescription ? (
-                <FileText className="w-5 h-5 text-primary" />
-              ) : (
-                <UploadCloud className="w-5 h-5 text-primary" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {prescription ? "Attached" : "Optional"}
-              </p>
-              <h3 className="text-sm font-extrabold text-foreground truncate">
-                {prescriptionUploading ? "Uploading…" : prescription ? prescription.name : "Upload Prescription"}
-              </h3>
-              {prescription && (
-                <p className="text-[11px] font-semibold text-muted-foreground">
-                  {(prescription.size / 1024 / 1024).toFixed(2)} MB · shared with the lab
-                </p>
-              )}
-            </div>
-            {prescription ? (
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); handleRemovePrescription(); }}
-                className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 active:scale-90 transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-primary/5 text-primary flex items-center justify-center">
-                <Plus className="w-4 h-4" />
-              </div>
-            )}
-          </motion.div>
 
         </div>
 

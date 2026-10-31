@@ -288,7 +288,7 @@ const ECGDoctorsScreen = () => {
               <AlertDialogTitle className="text-lg font-bold">Replace Cart Item?</AlertDialogTitle>
               <AlertDialogDescription className="text-xs leading-relaxed">
                 You already have <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span> in your cart.
-                You can only book one specialized appointment/test at a time. Do you want to replace it with this booking?
+                You can only book one appointment or test at a time. Do you want to replace it with this booking?
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex-row gap-3">

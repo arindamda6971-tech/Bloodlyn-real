@@ -9,6 +9,7 @@ import CartScreen from '@/pages/CartScreen';
 vi.mock('@/contexts/CartContext', () => ({
   useCart: () => ({
     items: [{ id: 'test-1', name: 'CBC', price: 300, quantity: 1 }],
+    refreshItemRules: () => {},
     subtotal: 300,
     currentLabId: 'lab-1',
     isLoading: false,

@@ -18,6 +18,10 @@ import {
   type FixedCollectionSlot,
 } from "@/lib/lab-slots";
 import { useLabSlots } from "@/hooks/useLabSlots";
+import { useAuth } from "@/hooks/useAuth";
+import { PrescriptionUpload } from "@/components/booking/PrescriptionUpload";
+import { getStoredPrescription } from "@/lib/order-prescription";
+import { useLiveTestRules } from "@/hooks/useLiveTestRules";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatAvailableDays, getCommonSpecializedDays } from "@/lib/test-availability";
 
@@ -109,6 +113,11 @@ const LabSelectionScreen = () => {
 
   // Real schedule straight from the Partner dashboard (lab_time_slots).
   const isGenericService = selectedLabVendorId === "generic-service";
+
+  // Each lab sets its own test days and prescription rule, so these follow the chosen lab.
+  const { supabaseUserId } = useAuth();
+  const [prescription, setPrescription] = useState(() => getStoredPrescription());
+  const { prescriptionTests } = useLiveTestRules(selectedLabVendorId, !!selectedLabVendorId && !isGenericService);
   const {
     data: labSlots,
     isLoading: slotsQueryLoading,
@@ -166,7 +175,7 @@ const LabSelectionScreen = () => {
 
         // Also fetch products for all vendor_ids to cross-match
         const vendorIds = pincodeFiltered.filter(d => d.vendor_id).map(d => d.vendor_id!);
-        const vendorProducts: Record<string, {name: string, price: number, availabilityType?: string, availableDays?: string[], sampleType?: string, preparationRequired?: boolean, preparationInstruction?: string, fastingRequired?: boolean, fastingInstruction?: string, reportType?: string}[]> = {};
+        const vendorProducts: Record<string, {name: string, price: number, availabilityType?: string, availableDays?: string[], sampleType?: string, preparationRequired?: boolean, preparationInstruction?: string, fastingRequired?: boolean, fastingInstruction?: string, reportType?: string, prescriptionRequired?: boolean}[]> = {};
         if (vendorIds.length > 0) {
           const { data: products } = await supabase
             .from("products")
@@ -187,6 +196,7 @@ const LabSelectionScreen = () => {
                 fastingRequired: p.fasting_required ?? undefined,
                 fastingInstruction: p.fasting_instruction || undefined,
                 reportType: p.report_type || undefined,
+                prescriptionRequired: p.prescription_required === true,
               });
             });
           }
@@ -207,6 +217,7 @@ const LabSelectionScreen = () => {
                 fastingRequired: vp.fastingRequired,
                 fastingInstruction: vp.fastingInstruction,
                 reportType: vp.reportType,
+                prescriptionRequired: vp.prescriptionRequired,
               }))
             : [];
           
@@ -298,6 +309,10 @@ const LabSelectionScreen = () => {
       toast.error("Please select a lab"); return;
     }
     if (selectedTime === null) { toast.error("Please select a time slot"); return; }
+    if (prescriptionTests.length > 0 && !prescription) {
+      toast.error("A prescription is required", { description: `This lab needs one for ${prescriptionTests.join(", ")}.` });
+      return;
+    }
 
     const labId = selectedLabId || currentLabId || "";
     const labName = selectedLabName || currentLabName || "";
@@ -399,6 +414,9 @@ const LabSelectionScreen = () => {
                           <Star className="w-3 h-3 text-warning fill-warning" />
                           <span>{lab.rating || 4.5}</span>
                         </div>
+                        {lab.available_tests.some((t: any) => t.prescriptionRequired && items.some((item) => item.name.trim().toLowerCase() === String(t.test_name || "").trim().toLowerCase())) && (
+                          <p className="mt-0.5 text-[11px] font-semibold text-destructive">Prescription required</p>
+                        )}
                       </div>
                       {labPrice > 0 && (
                         <div className="text-right flex-shrink-0">
@@ -596,6 +614,16 @@ const LabSelectionScreen = () => {
           )}
 
         </motion.div>
+        {prescriptionTests.length > 0 && (
+          <PrescriptionUpload
+            className="mt-4"
+            value={prescription}
+            onChange={setPrescription}
+            userId={supabaseUserId}
+            requiredFor={prescriptionTests}
+          />
+        )}
+
         {/* Confirm Button (Moved Inline) */}
         <motion.div 
           initial={false} 

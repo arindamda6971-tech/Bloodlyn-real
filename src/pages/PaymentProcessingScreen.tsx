@@ -294,10 +294,17 @@ const PaymentProcessingScreen = () => {
       let unavailableCode: string | null = null;
       let unavailableDoctorId: string | null = null;
       try {
-        const resp: Response | undefined = error?.context?.response;
+        const resp: Response | undefined = error?.context?.response ?? error?.context;
         if (resp && typeof resp.clone === "function") {
           const body = await resp.clone().json().catch(() => null);
           const code = String(body?.code ?? "").toLowerCase();
+          if (code === "prescription_required") {
+            toast.error("A prescription is required", {
+              description: body?.error || "Please attach it in your cart to continue.",
+            });
+            navigate("/cart", { replace: true });
+            return;
+          }
           if (code === "vendor_not_approved" || code === "doctor_unavailable") {
             unavailableCode = code;
             unavailableDoctorId = body?.doctor_id ?? null;

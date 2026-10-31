@@ -1,3 +1,4 @@
+import { applyLiveRules, type LiveTestRules } from "@/lib/prescription-requirement";
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -95,6 +96,8 @@ interface CartContextType {
   updateQuantity: (id: string, delta: number) => void;
   updateFamilyMember: (id: string, familyMemberId: string | undefined) => void;
   updateLabForItems: (labId: string, labName: string, itemPrices?: Record<string, number>) => void;
+  /** Brings the days saved on cart items in line with the lab's current rules. */
+  refreshItemRules: (rules: LiveTestRules) => void;
   clearCart: () => void;
   replaceCart: (newItems: Omit<CartItem, "quantity">[]) => void;
   itemCount: number;
@@ -364,7 +367,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       const incomingType = item.kind === "package" ? "PACKAGE" : normalizeAvailabilityType(item.availabilityType);
 
       if (incomingType === "SPECIALIZED" && normalizeAvailableDays(item.availableDays).length === 0) {
-        toast.error("This specialized test has no valid booking days. Please contact the lab.");
+        toast.error("This test has no booking days set. Please contact the lab.");
         return false;
       }
 
@@ -382,7 +385,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (incomingType === "SPECIALIZED") {
         const commonDays = getCommonSpecializedDays([...existingMedical, item]);
         if (commonDays?.length === 0) {
-          toast.error("These specialized tests do not have a common available day. Please book them separately.");
+          toast.error("These tests aren't available on a common day. Please book them separately.");
           return false;
         }
       }
@@ -474,6 +477,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [syncCartToSupabase]);
 
+  const refreshItemRules = useCallback((rules: LiveTestRules) => {
+    setItems((prev) => {
+      const updated = applyLiveRules(prev, rules);
+      if (updated === prev) return prev;
+      setLocalCart(updated);
+      syncCartToSupabase(updated);
+      return updated;
+    });
+  }, [syncCartToSupabase]);
+
   const updateLabForItems = useCallback((labId: string, labName: string, itemPrices?: Record<string, number>) => {
     setItems((prev) => {
       const updated = prev.map((item) => {
@@ -544,6 +557,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       updateQuantity,
       updateFamilyMember,
       updateLabForItems,
+      refreshItemRules,
       clearCart,
       replaceCart,
       itemCount,
@@ -569,7 +583,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Cannot add test</AlertDialogTitle>
             <AlertDialogDescription>
-              General test, specialized test, and health packages cannot be added together. You have to place separate orders.
+              Tests done every day, tests done on selected days, and health packages can't be booked together. Please place separate orders.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-col items-stretch gap-2 mt-4 sm:space-x-0">
@@ -615,6 +629,7 @@ export const useCart = () => {
       updateQuantity: () => {},
       updateFamilyMember: () => {},
       updateLabForItems: () => {},
+      refreshItemRules: () => {},
       clearCart: () => {},
       replaceCart: () => {},
       itemCount: 0,
