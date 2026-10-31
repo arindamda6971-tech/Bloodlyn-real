@@ -1,3 +1,4 @@
+import { reportTimeLabel, reportTypeLabel } from "@/lib/test-details";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -486,10 +487,20 @@ const TestDetailScreen = () => {
         <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">About the test</h3>
           <div className="flex flex-wrap gap-2 mb-4">
-             <Chip icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />} label={test.fastingRequired ? (test.fastingInstruction || `Fast ${test.fastingHours || 8}h`) : "No fasting required"} />
+             {test.fastingRequired !== undefined && (
+               <Chip
+                 icon={<Utensils className="w-3.5 h-3.5 text-rose-500" />}
+                 label={test.fastingRequired ? (test.fastingHours ? `Fast ${test.fastingHours}h` : "Fasting needed") : "No fasting required"}
+               />
+             )}
             <Chip icon={<Users className="w-3.5 h-3.5 text-violet-500" />} label="Unisex" />
             <Chip icon={<Activity className="w-3.5 h-3.5 text-emerald-500" />} label="All Age Groups" />
-             <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={test.reportType || `Report in ${test.reportTime || "24h"}`} />
+             {reportTimeLabel(test.reportTime) && (
+               <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={reportTimeLabel(test.reportTime)!} />
+             )}
+             {reportTypeLabel(test.reportType) && (
+               <Chip icon={<Clock className="w-3.5 h-3.5 text-sky-500" />} label={reportTypeLabel(test.reportType)!} />
+             )}
           </div>
           {aiDescLoading && !aboutText ? (
             <div className="space-y-2">
@@ -551,7 +562,9 @@ const TestDetailScreen = () => {
         <motion.section initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}}>
           <h3 className="text-[22px] font-bold text-secondary mb-3">How to prepare for the Lab test ?</h3>
           <ul className="space-y-2 text-[15px] text-muted-foreground">
-            <li className="flex gap-2"><span className="text-primary">—</span> {test.preparationInstruction || (test.preparationRequired ? "Follow the preparation instructions provided by the lab." : "No special preparation required.")}</li>
+            {test.preparationRequired !== undefined && (
+              <li className="flex gap-2"><span className="text-primary">—</span> {test.preparationInstruction || (test.preparationRequired ? "Follow the preparation instructions provided by the lab." : "No special preparation required.")}</li>
+            )}
             {test.fastingRequired && <li className="flex gap-2"><span className="text-primary">—</span> {test.fastingInstruction || "Fasting is required before sample collection."}</li>}
             {test.sampleType && <li className="flex gap-2"><span className="text-primary">—</span> Sample required: {test.sampleType}</li>}
           </ul>

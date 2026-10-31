@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/compress-image";
 
 /**
  * Order prescription attachments.
@@ -13,7 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const PRESCRIPTION_BUCKET = "order-prescriptions";
 const STORAGE_KEY = "bloodlyn-order-prescription";
 const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365;
+/** What's stored at most. Photos are shrunk first, so a large photo can still be picked. */
 export const MAX_PRESCRIPTION_BYTES = 10 * 1024 * 1024;
+const MAX_PICKED_PHOTO_BYTES = 40 * 1024 * 1024;
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
+const FILE_TOO_LARGE = "File is too large. Please try a clearer, smaller photo.";
 
 export interface StoredPrescription {
   url: string;
@@ -53,17 +58,20 @@ export const validatePrescriptionFile = (file: File): string | null => {
   if (!ALLOWED.test(file.type) && !looksPdf) {
     return "Only JPG, PNG or PDF files are supported.";
   }
-  if (file.size > MAX_PRESCRIPTION_BYTES) {
-    return "File is too large. Maximum size is 10MB.";
-  }
+  const isPdf = looksPdf || /pdf/i.test(file.type);
+  if (isPdf && file.size > MAX_PDF_BYTES) return "PDF is too large. Maximum size is 5MB, or upload a photo instead.";
+  if (file.size > MAX_PICKED_PHOTO_BYTES) return FILE_TOO_LARGE;
   return null;
 };
 
 /** Uploads the file and returns a shareable (signed) URL for the lab portal. */
 export const uploadPrescription = async (
-  file: File,
+  picked: File,
   userId: string,
 ): Promise<StoredPrescription> => {
+  const file = await compressImage(picked);
+  if (file.size > MAX_PRESCRIPTION_BYTES) throw new Error(FILE_TOO_LARGE);
+
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80);
   const path = `${userId}/${Date.now()}-${safeName}`;
 

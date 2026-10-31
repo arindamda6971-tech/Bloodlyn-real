@@ -52,7 +52,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useLabSlots } from "@/hooks/useLabSlots";
-import { formatAvailableDays, normalizeAvailabilityType } from "@/lib/test-availability";
+import { normalizeAvailabilityType } from "@/lib/test-availability";
+import { TestFacts } from "@/components/tests/TestFacts";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -336,6 +337,7 @@ interface DynamicTest {
   fastingRequired?: boolean;
   fastingInstruction?: string;
   reportType?: string;
+  reportTime?: string;
   prescriptionRequired?: boolean;
 }
 
@@ -498,6 +500,7 @@ const LabDetailScreen = () => {
                 fastingRequired: p.fasting_required || false,
                 fastingInstruction: p.fasting_instruction || undefined,
                 reportType: p.report_type || undefined,
+                reportTime: (p as { report_time?: string | null }).report_time || undefined,
                 prescriptionRequired: p.prescription_required === true,
               }));
             }
@@ -1068,22 +1071,8 @@ const LabDetailScreen = () => {
                             Popular
                           </Badge>
                         )}
-                        {test.prescriptionRequired && (
-                          <Badge variant="outline" className="text-[9px] px-2 py-0.5 border-destructive/40 text-destructive">
-                            Prescription required
-                          </Badge>
-                        )}
                       </div>
-                      {normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED" && (
-                        <p className="mt-1.5 text-[11px] font-semibold text-primary">
-                          Available: {formatAvailableDays(test.availableDays) || "Schedule unavailable"}
-                        </p>
-                      )}
-                      {(test.sampleType || test.reportType) && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {[test.sampleType && `Sample: ${test.sampleType}`, test.reportType && `Report: ${test.reportType}`].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
+                      <TestFacts test={test} className="mt-1.5" />
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
                         <p className="text-xs font-semibold text-muted-foreground mt-0.5">
                           <span>{test.testsCount} tests included</span>

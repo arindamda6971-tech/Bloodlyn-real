@@ -23,5 +23,5 @@ export function useLiveTestRules(vendorId?: string | null, enabled = true) {
   }, [rules, refreshItemRules]);
 
   const prescriptionTests = useMemo(() => prescriptionTestsFrom(items, rules), [items, rules]);
-  return { prescriptionTests };
+  return { prescriptionTests, rules };
 }

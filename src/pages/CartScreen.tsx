@@ -9,6 +9,8 @@ import {
 } from "@/lib/order-prescription";
 import { PrescriptionUpload, type PrescriptionUploadHandle } from "@/components/booking/PrescriptionUpload";
 import { useLiveTestRules } from "@/hooks/useLiveTestRules";
+import { TestFacts } from "@/components/tests/TestFacts";
+import { liveRuleFor } from "@/lib/prescription-requirement";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -129,7 +131,7 @@ const CartScreen = () => {
   // Optional unless the lab requires one for a test in the cart.
   const prescriptionUploadRef = useRef<PrescriptionUploadHandle>(null);
   const [prescription, setPrescription] = useState<StoredPrescription | null>(() => getStoredPrescription());
-  const { prescriptionTests } = useLiveTestRules();
+  const { prescriptionTests, rules: liveRules } = useLiveTestRules();
 
 
 
@@ -757,17 +759,15 @@ const CartScreen = () => {
                     <div className="flex-1 min-w-0">
                       
                       <h3 className="font-extrabold text-foreground text-sm leading-snug">{item.name}</h3>
-                      {prescriptionTests.includes(item.name) && (
-                        <p className="mt-1 text-[11px] font-bold text-destructive">Prescription required</p>
-                      )}
-                      {(item.preparationInstruction || item.fastingInstruction || item.sampleType || item.reportType) && (
-                        <div className="mt-2 space-y-1 text-[11px] leading-snug text-muted-foreground">
-                          {item.preparationInstruction && <p><span className="font-bold text-foreground">Preparation:</span> {item.preparationInstruction}</p>}
-                          {item.fastingRequired && <p><span className="font-bold text-foreground">Fasting:</span> {item.fastingInstruction || "Required"}</p>}
-                          {item.sampleType && <p><span className="font-bold text-foreground">Sample:</span> {item.sampleType}</p>}
-                          {item.reportType && <p><span className="font-bold text-foreground">Report:</span> {item.reportType}</p>}
-                        </div>
-                      )}
+                      <TestFacts
+                        withInstructions
+                        className="mt-1.5"
+                        test={{
+                          ...item,
+                          reportTime: liveRuleFor(liveRules, item.name)?.reportTime,
+                          prescriptionRequired: prescriptionTests.includes(item.name),
+                        }}
+                      />
                       {item.price > 0 && !!item.labId && (
                         <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
                       )}
