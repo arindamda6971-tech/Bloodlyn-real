@@ -20,15 +20,17 @@ input[type="number"] {
 @layer base {
   :root {
     /* Safe area tokens.
-       Android WebView reports env(safe-area-inset-*) as 0px (so the env()
-       fallback never kicks in) while MainActivity injects the real inset via
-       --safe-area-inset-*. max() picks whichever is actually non-zero. */
+       Older Android WebViews report env(safe-area-inset-*) as 0px. Capacitor
+       fills --safe-area-inset-* on Android 15+, and MainActivity fills
+       --native-inset-* on every version. max() picks whichever is non-zero. */
     --safe-area-inset-top: 0px;
     --safe-area-inset-bottom: 0px;
     --safe-area-inset-left: 0px;
     --safe-area-inset-right: 0px;
-    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
-    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+    --native-inset-top: 0px;
+    --native-inset-bottom: 0px;
+    --sat: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px), var(--native-inset-top, 0px));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px), var(--native-inset-bottom, 0px));
 
     /* Native-feel safe area tweaks */
     --status-bar-height: 24px;

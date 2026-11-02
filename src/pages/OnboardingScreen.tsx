@@ -15,7 +15,7 @@ const OnboardingScreen = () => {
 
   return (
     <div className="h-[100dvh] w-full md:max-w-[430px] mx-auto bg-white flex flex-col overflow-y-auto" style={{ WebkitOverflowScrolling: "touch" }}>
-      <div className="flex-1 flex flex-col items-center px-7 pt-[calc(var(--sat,0px)+28px)] pb-8 min-h-full">
+      <div className="flex-1 flex flex-col items-center px-7 pt-[calc(var(--sat,0px)+28px)] pb-[calc(var(--sab,0px)+32px)] min-h-full">
 
         {/* ── LOGO ── */}
         <img

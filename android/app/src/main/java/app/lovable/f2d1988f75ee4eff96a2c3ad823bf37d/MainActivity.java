@@ -5,8 +5,13 @@ import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.WebViewListener;
+import java.util.Locale;
 
 public class MainActivity extends BridgeActivity {
 
@@ -17,11 +22,37 @@ public class MainActivity extends BridgeActivity {
         R.drawable.splash
     };
 
+    // Height of the status bar and the bottom navigation/gesture bar, in CSS pixels.
+    private int insetTopDp = 0;
+    private int insetBottomDp = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Enable edge-to-edge rendering so the WebView extends behind system bars
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+
+        // The page draws behind both system bars on every Android version, but
+        // Capacitor only reports their size to it on Android 15+, and older
+        // WebViews report env(safe-area-inset-*) as 0. Without this, buttons at
+        // the bottom sit under the back/home/recents keys on older phones.
+        ViewCompat.setOnApplyWindowInsetsListener(getWindow().getDecorView(), (view, insets) -> {
+            Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
+            float density = getResources().getDisplayMetrics().density;
+            insetTopDp = Math.round(bars.top / density);
+            // With the keyboard up, the keyboard covers the bar, so nothing needs lifting.
+            insetBottomDp = insets.isVisible(WindowInsetsCompat.Type.ime()) ? 0 : Math.round(bars.bottom / density);
+            pushInsetsToPage();
+            return ViewCompat.onApplyWindowInsets(view, insets);
+        });
+        if (getBridge() != null) {
+            getBridge().addWebViewListener(new WebViewListener() {
+                @Override
+                public void onPageLoaded(WebView webView) {
+                    pushInsetsToPage();
+                }
+            });
+        }
 
         // Guarantee Hardware Acceleration on the Window
         getWindow().setFlags(
@@ -50,5 +81,18 @@ public class MainActivity extends BridgeActivity {
             // itself is moved on-screen, and otherwise rasters every tile of the page,
             // eating GPU memory the in-page slide transitions need.
         }
+    }
+
+    /** Hands the bar sizes to the page as --native-inset-top / --native-inset-bottom. */
+    private void pushInsetsToPage() {
+        if (getBridge() == null || getBridge().getWebView() == null) return;
+        WebView webView = getBridge().getWebView();
+        String script = String.format(
+            Locale.US,
+            "try{var s=document.documentElement.style;s.setProperty('--native-inset-top','%dpx');s.setProperty('--native-inset-bottom','%dpx');}catch(e){}",
+            insetTopDp,
+            insetBottomDp
+        );
+        webView.post(() -> webView.evaluateJavascript(script, null));
     }
 }

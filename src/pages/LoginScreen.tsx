@@ -196,7 +196,7 @@ const LoginScreen = () => {
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 flex justify-center"
             >
-              <div className="bg-white rounded-t-[1.5rem] w-full md:max-w-[430px] px-6 pt-5 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.15)]">
+              <div className="bg-white rounded-t-[1.5rem] w-full md:max-w-[430px] px-6 pt-5 pb-[calc(var(--sab,0px)+32px)] shadow-[0_-10px_40px_rgba(0,0,0,0.15)]">
                 {/* Handle bar */}
                 <div className="flex justify-center mb-4">
                   <div className="w-10 h-1 rounded-full bg-gray-300" />
