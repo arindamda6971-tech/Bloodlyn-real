@@ -44,12 +44,14 @@ const SlotChip = ({
   isSelected,
   onSelect,
   remaining,
+  capacity,
 }: {
   slot: FixedCollectionSlot;
   isAvailable: boolean;
   isSelected: boolean;
   onSelect: () => void;
   remaining?: number | null;
+  capacity?: number | null;
 }) => (
   <button
     onClick={() => {
@@ -83,7 +85,7 @@ const SlotChip = ({
     </span>
     {remaining !== undefined && remaining !== null && (
       <span className={`block text-[10px] mt-1 font-semibold ${remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
-        {remaining === 0 ? "Full" : `${remaining} ${remaining === 1 ? "place" : "places"} left`}
+        {capacity === 0 ? "Not offered" : remaining === 0 ? "Full" : `${remaining} ${remaining === 1 ? "place" : "places"} left`}
       </span>
     )}
 
@@ -152,6 +154,7 @@ const SlotSection = ({
               isSelected={isSelected}
               onSelect={() => onSelectSlot(slot.display)}
               remaining={remaining}
+              capacity={slotAvailability?.[slot.id]?.capacity}
             />
           );
         })}

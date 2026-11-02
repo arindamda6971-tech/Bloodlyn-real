@@ -548,7 +548,7 @@ const LabSelectionScreen = () => {
                             </span>
                             {selectedSlotCapacity[slot.id]?.remaining != null && (
                               <span className={`block text-[10px] mt-1 font-semibold ${selectedSlotCapacity[slot.id].remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                                {selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
+                                {selectedSlotCapacity[slot.id].capacity === 0 ? "Not offered" : selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
                               </span>
                             )}
 
@@ -593,7 +593,7 @@ const LabSelectionScreen = () => {
                             </span>
                             {selectedSlotCapacity[slot.id]?.remaining != null && (
                               <span className={`block text-[10px] mt-1 font-semibold ${selectedSlotCapacity[slot.id].remaining === 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                                {selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
+                                {selectedSlotCapacity[slot.id].capacity === 0 ? "Not offered" : selectedSlotCapacity[slot.id].remaining === 0 ? "Full" : `${selectedSlotCapacity[slot.id].remaining} ${selectedSlotCapacity[slot.id].remaining === 1 ? "place" : "places"} left`}
                               </span>
                             )}
 

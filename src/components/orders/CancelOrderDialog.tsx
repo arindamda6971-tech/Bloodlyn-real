@@ -116,6 +116,12 @@ const CancelOrderDialog = ({
   }, [dates, scheduleKnown, openByOffset]);
 
   const nextDateKey = format(nextAvailableDate, "yyyy-MM-dd");
+  // 0 means the lab doesn't collect in that slot, which isn't the same as full.
+  const capacityForSlot = (value: string) => {
+    const normalized = FIXED_COLLECTION_SLOTS.find((candidate) => candidate.display === value);
+    return normalized ? availabilityByDate[nextDateKey]?.[normalized.id]?.capacity : null;
+  };
+
   const remainingForSlot = (value: string) => {
     const normalized = FIXED_COLLECTION_SLOTS.find((candidate) => candidate.display === value);
     return normalized ? availabilityByDate[nextDateKey]?.[normalized.id]?.remaining : null;
@@ -263,7 +269,7 @@ const CancelOrderDialog = ({
                       }`}
                     >
                       {s}
-                      {remaining != null && <span className="block mt-0.5 text-[9px]">{full ? "Full" : `${remaining} left`}</span>}
+                      {remaining != null && <span className="block mt-0.5 text-[9px]">{capacityForSlot(s) === 0 ? "Not offered" : full ? "Full" : `${remaining} left`}</span>}
                     </button>
                   )})}
                 </div>
@@ -320,7 +326,7 @@ const CancelOrderDialog = ({
                       }`}
                     >
                       {s}
-                      {remaining != null && <span className="block mt-0.5 text-[9px]">{full ? "Full" : `${remaining} left`}</span>}
+                      {remaining != null && <span className="block mt-0.5 text-[9px]">{capacityForSlot(s) === 0 ? "Not offered" : full ? "Full" : `${remaining} left`}</span>}
                     </button>
                   )})}
                 </div>
