@@ -5,6 +5,7 @@ import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw, AlertTrian
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
+import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
@@ -123,7 +124,10 @@ const DoctorConsultScreen = () => {
   }, [state]);
 
   // Fetch doctors from doctor-directory edge function + Supabase profiles + fallback list
+  // Start loading once the screen has slid in, so replies don't re-render it mid-slide.
+  const afterSlide = useAfterTransition();
   useEffect(() => {
+    if (!afterSlide) return;
     let cancelled = false;
     const defaultList: Doctor[] = [
       { id: "doc-1", name: "Dr. Priya Sharma", specialty: "General Physician", qualification: "MBBS, MD (General Medicine)", experience: 12, rating: 4.9, reviews: 1240, available: true, nextSlot: "Available today", videoCallFee: 299, audioCallFee: 199, physicalCallFee: 499, hospitalName: "Apollo Health Clinic", clinicAddress: "12/A Park Street, Kolkata - 700016", pincode: "700016", service_pincodes: ["700016", "700001", "700019", "700020", "110001"], gender: "Female", languages: ["English", "Hindi", "Bengali"] },
@@ -218,7 +222,7 @@ const DoctorConsultScreen = () => {
 
     fetchDoctors();
     return () => { cancelled = true; };
-  }, []);
+  }, [afterSlide]);
 
   const updateState = (updates: Partial<ConsultationFlowState>) => {
     setState(prev => ({ ...prev, ...updates }));

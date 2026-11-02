@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
+import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
@@ -259,7 +260,10 @@ const ECGTestScreen = () => {
     name: "", age: "", gender: "", mobile: "",
   });
 
+  // Start loading once the screen has slid in, so replies don't re-render it mid-slide.
+  const afterSlide = useAfterTransition();
   useEffect(() => {
+    if (!afterSlide) return;
     if (!user) {
       setBootLoading(false);
       setStep("ADDRESS");
@@ -339,7 +343,7 @@ const ECGTestScreen = () => {
       setBootLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, afterSlide]);
 
   // Fetch labs offering ECG services whenever we enter the LAB step + subscribe to realtime updates
   useEffect(() => {

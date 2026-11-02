@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
+import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { useAuth } from "@/hooks/useAuth";
 import { labServesPincode } from "@/hooks/useUserPincode";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
@@ -269,7 +270,10 @@ const BPCheckScreen = () => {
   };
 
   // Boot: load default address + profile, auto-skip to LAB when we have an address
+  // Start loading once the screen has slid in, so replies don't re-render it mid-slide.
+  const afterSlide = useAfterTransition();
   useEffect(() => {
+    if (!afterSlide) return;
     if (!user) { setBootLoading(false); return; }
     let cancelled = false;
     (async () => {
@@ -359,7 +363,7 @@ const BPCheckScreen = () => {
       setBootLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, afterSlide]);
 
   // Fetch labs whenever we enter the LAB step + subscribe to realtime updates
   useEffect(() => {

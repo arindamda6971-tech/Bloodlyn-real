@@ -169,7 +169,7 @@ const PhysioConsultScreen = () => {
             className="flex-1 flex flex-col items-center justify-center py-20 px-6 text-center"
           >
             <div className="relative mb-8 group">
-              <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors duration-500" />
+              <div className="absolute -inset-3 rounded-full bg-[radial-gradient(circle,hsl(var(--primary)/0.28),transparent_70%)]" />
               <div className="relative w-28 h-28 rounded-[2.5rem] bg-card border border-border/50 shadow-2xl flex items-center justify-center rotate-3 hover:-rotate-3 transition-transform duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-[2.5rem]" />
                 <MapPinOff className="w-12 h-12 text-primary" strokeWidth={1.5} />
@@ -196,8 +196,8 @@ const PhysioConsultScreen = () => {
           transition={{ duration: 0.4 }}
           className="mt-4 p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white shadow-[0_10px_30px_-10px_rgba(30,27,75,0.5)] relative overflow-hidden border border-white/10"
         >
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.22),transparent_70%)] pointer-events-none" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 rounded-full bg-[radial-gradient(circle,rgba(168,85,247,0.22),transparent_70%)] pointer-events-none" />
           
           <div className="relative z-10">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[11px] font-bold tracking-wide uppercase mb-3 text-blue-200">
