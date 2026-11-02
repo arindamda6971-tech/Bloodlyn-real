@@ -113,29 +113,29 @@ const BookingsScreen = () => {
       case "completed":
       case "report_ready":
       case "report_delivered":
-        return { label: "Ready", color: "bg-success text-success-foreground", pulse: false };
+        return { label: "Report ready", tone: "bg-success/15 text-success" };
       case "in_progress":
       case "sample_collected":
-        return { label: "Sample Collected", color: "bg-primary text-primary-foreground", pulse: true };
+        return { label: "Sample collected", tone: "bg-primary/10 text-primary" };
       case "assigned":
       case "partner_assigned":
       case "out_for_collection":
       case "processing":
-        return { label: "Partner Assigned", color: "bg-secondary text-secondary-foreground", pulse: true };
+        return { label: "Partner assigned", tone: "bg-primary/10 text-primary" };
       case "lab_processing":
-        return { label: "Lab Processing", color: "bg-secondary text-secondary-foreground", pulse: true };
+        return { label: "Lab processing", tone: "bg-primary/10 text-primary" };
       case "accepted":
-        return { label: "Accepted", color: "bg-primary/80 text-primary-foreground", pulse: false };
+        return { label: "Accepted", tone: "bg-primary/10 text-primary" };
       case "confirmed":
-        return { label: "Confirmed", color: "bg-primary text-primary-foreground", pulse: false };
+        return { label: "Confirmed", tone: "bg-primary/10 text-primary" };
       case "collection_pending":
-        return { label: "Collection Pending", color: "bg-warning text-warning-foreground", pulse: true };
+        return { label: "Collection pending", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400" };
       case "pending":
-        return { label: "Pending", color: "bg-warning text-warning-foreground", pulse: true };
+        return { label: "Pending", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400" };
       case "cancelled":
-        return { label: "Cancelled", color: "bg-destructive text-destructive-foreground", pulse: false };
+        return { label: "Cancelled", tone: "bg-destructive/10 text-destructive" };
       default:
-        return { label: status ? status.replace(/_/g, ' ') : "Order Placed", color: "bg-muted text-muted-foreground", pulse: false };
+        return { label: status ? status.replace(/_/g, ' ') : "Order placed", tone: "bg-muted text-muted-foreground" };
     }
   };
 
@@ -186,6 +186,8 @@ const BookingsScreen = () => {
       patientName = "Self";
     }
 
+    const isDone = ["completed", "report_ready", "report_delivered"].includes(order.status || "");
+
     return (
       // CSS-only entrance (compositor driven). The previous spring + `layout`
       // animation re-measured every card on each render, which is the main
@@ -193,113 +195,89 @@ const BookingsScreen = () => {
       <div
         key={order.id}
         style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
-        className="relative group animate-fade-in press-row"
+        className="animate-fade-in press-row"
         onClick={() => handleOrderClick(order)}
       >
-        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-[2rem] blur opacity-0 group-active:opacity-100 transition duration-500" />
-
-        <div className={`relative border rounded-[2rem] p-5 shadow-sm active:scale-[0.98] transition-all duration-200 overflow-hidden ${
-          isVitals 
-            ? "bg-gradient-to-br from-blue-500/[0.08] via-indigo-500/[0.04] to-card border-blue-500/40 shadow-blue-500/5" 
-            : "bg-card border-border/50"
+        <div className={`border rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-transform duration-150 ${
+          isVitals ? "bg-blue-500/[0.04] border-blue-500/30" : "bg-card border-border/60"
         }`}>
-          {/* Top Row: Icon & Status */}
-          <div className="flex items-center justify-between mb-4 gap-2">
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border shrink-0 ${
-                isVitals 
-                  ? "bg-gradient-to-tr from-blue-600 to-indigo-600 border-blue-500/30 text-white shadow-lg shadow-blue-500/20" 
-                  : "bg-primary/5 border-primary/10 text-primary"
-              }`}>
-                {isVitals ? <Heart className="w-5 h-5 fill-white/20 animate-pulse" /> : <BookingIcon className="w-5 h-5" />}
-              </div>
-              <div className="flex-1 min-w-0 pr-1">
-                {isVitals && (
-                  <Badge className="bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 text-[9px] font-black uppercase px-2 py-0.5 mb-1 inline-flex items-center gap-1">
-                    {isEcg ? "🫀 At-Home ECG" : "🫀 Home BP Check"}
-                  </Badge>
-                )}
-                <h3 className="font-bold text-foreground text-[15px] leading-tight truncate">
-                  {formatTestsLabel(order.test_name, bookingType)}
-                </h3>
-                <div className="flex items-center gap-1.5 mt-1">
-                    <User className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-                    <p className="text-[10px] font-bold text-muted-foreground/80 tracking-wide uppercase truncate">
-                      Patient: {patientName}
-                    </p>
-                </div>
-              </div>
+          {/* Top: what was booked, for whom, and where it stands */}
+          <div className="flex items-start gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+              isVitals ? "bg-blue-600 text-white" : "bg-primary/10 text-primary"
+            }`}>
+              {isVitals ? <Heart className="w-5 h-5" /> : <BookingIcon className="w-5 h-5" />}
             </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <Badge variant="secondary" className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-lg tracking-wide shadow-sm whitespace-nowrap ${statusInfo.color}`}>
-                <span className="flex items-center gap-1.5">
-                  {statusInfo.pulse && (
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
-                    </span>
-                  )}
-                  {statusInfo.label}
-                </span>
-              </Badge>
-            </div>
-          </div>
-
-          {/* Middle Section: Lab & Schedule */}
-          <div className="grid grid-cols-2 gap-4 py-4 border-y border-border/40">
-            <div className="space-y-1">
-              <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Diagnostic Center</p>
-              <p className="text-xs font-bold text-foreground/80 truncate">
-                {order.lab_name || "BloodLyn Direct"}
+            <div className="flex-1 min-w-0">
+              {isVitals && (
+                <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-0.5">
+                  {isEcg ? "At-home ECG" : "Home BP check"}
+                </p>
+              )}
+              <h3 className="font-bold text-foreground text-[15px] leading-snug line-clamp-2">
+                {formatTestsLabel(order.test_name, bookingType)}
+              </h3>
+              <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate">
+                <User className="w-3 h-3 shrink-0" /> {patientName}
               </p>
             </div>
-            <div className="space-y-1 text-right">
-              <p className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Scheduled For</p>
-              <div className="flex flex-col items-end">
-                <p className="text-xs font-bold text-foreground/80">
-                  {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM, yyyy") : "ASAP"}
-                </p>
-                <p className="text-[10px] text-muted-foreground font-medium italic">
-                  {order.scheduled_time_slot || "60 min express"}
-                </p>
-              </div>
+            <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap ${statusInfo.tone}`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {statusInfo.label}
+            </span>
+          </div>
+
+          {/* Lab & schedule */}
+          <div className="mt-3 rounded-xl bg-muted/50 px-3 py-2.5 grid grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-muted-foreground">Lab</p>
+              <p className="text-xs font-bold text-foreground truncate">{order.lab_name || "BloodLyn Direct"}</p>
+            </div>
+            <div className="min-w-0 text-right">
+              <p className="text-[10px] font-semibold text-muted-foreground">Scheduled</p>
+              <p className="text-xs font-bold text-foreground">
+                {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM yyyy") : "ASAP"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">{order.scheduled_time_slot || "60 min express"}</p>
             </div>
           </div>
 
-          {/* Visual Timeline */}
+          {/* Progress */}
           {showTimeline && (
-            <div className="mt-5 mb-8">
+            <div className="mt-4 mb-9">
               <OrderStatusTimeline status={order.status} isBp={isVitals} />
             </div>
           )}
 
-          {/* Bottom Row: Total & Action */}
-          <div className="flex items-center justify-between mt-5 pt-1">
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest">Total Amount</span>
-              <span className="text-lg font-black text-foreground">₹{order.total}</span>
+          {/* Bottom: total & action */}
+          <div className="flex items-center justify-between mt-3">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground">Total</p>
+              <p className="text-base font-black text-foreground tabular-nums">₹{order.total}</p>
             </div>
 
             <div className="flex items-center gap-2">
               {order.order_number?.startsWith("DOC") && !["completed", "cancelled"].includes(order.status || "") && (
-                <button 
+                <button
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(`/call/${order.id}?mode=video`);
                   }}
-                  className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-2xl text-xs font-black transition-colors hover:bg-blue-600 shadow-lg shadow-blue-500/20"
+                  className="flex items-center gap-1.5 bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-600"
                 >
                   <Video className="w-3.5 h-3.5" />
-                  JOIN NOW
+                  Join now
                 </button>
               )}
-              <button className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-colors ${
-                isVitals
-                  ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white"
-                  : "bg-primary/10 text-primary hover:bg-primary hover:text-white"
+              <button className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
+                isDone && !isVitals
+                  ? "bg-primary text-primary-foreground"
+                  : isVitals
+                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    : "bg-primary/10 text-primary"
               }`}>
-                {order.status === "completed" ? (isVitals ? "VIEW STATUS" : "VIEW REPORT") : "TRACK STATUS"}
-                <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+                {order.status === "completed" ? (isVitals ? "View status" : "View report") : "Track order"}
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
               </button>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText, Pencil, Loader2 } from "lucide-react";
+import { Trash2, ShoppingCart, Check, UserPlus, Plus, MapPin, ChevronRight, User as UserIcon, Info, Activity, Lock, UploadCloud, FileText, Pencil, Loader2, FlaskConical, Building2, Home as HomeIcon } from "lucide-react";
 import {
   getStoredPrescription,
   clearStoredPrescription,
@@ -448,74 +447,291 @@ const CartScreen = () => {
   const initials = (name?: string | null) =>
     String(name ?? "").trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "U";
 
+  const isServiceItem = (item: (typeof items)[number]) =>
+    item.name.includes(" with ") || item.id.startsWith("doc-") || item.id.startsWith("physio-");
+  const serviceItems = items.filter(isServiceItem);
+  const testItems = items.filter((item) => !isServiceItem(item));
+  const cartTotal = hasVendorLab ? subtotal : items.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0);
+  // The patient form stays open until every field is filled; after that a one-line summary is enough.
+  const patientDetailsValid =
+    patientName.trim().length > 0 &&
+    /^\d{1,3}$/.test(patientAge) &&
+    Number(patientAge) > 0 &&
+    Number(patientAge) <= 120 &&
+    patientGender.trim().length > 0 &&
+    /^\d{10}$/.test(patientPhone);
+  const showPatientForm = isMemberDetailsExpanded || !patientDetailsValid;
+  const pickMember = (id: string | "self") => {
+    if (selectedMemberId === id) setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
+    else { setSelectedMemberId(id); setIsMemberDetailsExpanded(false); }
+  };
+  const fieldClass = (invalid: boolean) =>
+    `h-11 rounded-xl bg-background text-sm font-semibold ${showValidation && invalid ? "border-destructive ring-1 ring-destructive" : ""}`;
+  const addressIcon = (type?: string | null) => (type === "Office" ? Building2 : type === "Other" ? MapPin : HomeIcon);
+
   return (
     <MobileLayout showNav={false}>
       <ScreenHeader title="Cart" />
       <BookingStepper currentStep={1} />
 
-      <div className="px-4 pb-6 space-y-3.5">
+      <div className="px-4 pb-4 space-y-3">
         {/* Fasting Alert */}
         {requiresFasting && (
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 flex gap-3 shadow-sm"
-          >
-            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
-              <span className="text-amber-600 dark:text-amber-400 text-lg">⚠️</span>
-            </div>
+          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-3.5 flex gap-3">
+            <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div>
-              <h4 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Fasting Required</h4>
-              <p className="text-[11px] font-semibold text-amber-700/80 dark:text-amber-400/80 mt-0.5 leading-snug">
-                One or more tests require 10-12 hours of fasting. Drink only water before sample collection.
+              <h4 className="text-sm font-bold text-amber-800 dark:text-amber-300">Fasting required</h4>
+              <p className="text-xs text-amber-700/90 dark:text-amber-400/80 mt-0.5 leading-snug">
+                One or more tests need 10-12 hours of fasting. Drink only water before sample collection.
               </p>
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* Collection point */}
-        {currentLabName && (
-          <motion.div
-            initial={false}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 flex items-center gap-3"
-          >
-            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <MapPin className="w-5 h-5 text-primary" />
+        {/* Tests, grouped under the lab that will collect them */}
+        {testItems.length > 0 && (
+          <section className="bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border/60">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <FlaskConical className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-foreground truncate">{currentLabName || "Tests & packages"}</h3>
+                <p className="text-[11px] text-muted-foreground">Sample collected from your address</p>
+              </div>
+              <span className="text-[11px] font-bold text-muted-foreground shrink-0">
+                {testItems.length} {testItems.length === 1 ? "test" : "tests"}
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Collection Point</p>
-              <h3 className="text-sm font-extrabold text-foreground truncate">{currentLabName}</h3>
-            </div>
-            
-          </motion.div>
+
+            <ul className="divide-y divide-border/60">
+              {testItems.map((item) => (
+                <li key={item.id} className="px-4 py-3.5 flex items-start gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-foreground text-sm leading-snug">{testNameParts(item.name).title}</h4>
+                    <TestFacts
+                      withInstructions
+                      className="mt-1"
+                      test={{
+                        ...item,
+                        sampleType: testSample(item.name, item.sampleType),
+                        reportTime: liveRuleFor(liveRules, item.name)?.reportTime,
+                        prescriptionRequired: prescriptionTests.includes(item.name),
+                      }}
+                    />
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    {item.price > 0 && !!item.labId && (
+                      <span className="text-sm font-black text-foreground tabular-nums">₹{item.price}</span>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${testNameParts(item.name).title}`}
+                      onClick={() => removeFromCart(item.id)}
+                      className="w-8 h-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center active:scale-90 transition"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              onClick={() => navigate("/categories")}
+              className="w-full border-t border-border/60 py-3 text-primary text-xs font-bold flex items-center justify-center gap-1.5 active:bg-primary/5"
+            >
+              <Plus className="w-4 h-4" />
+              {hasService ? "Add more services or tests" : "Add more tests"}
+            </button>
+          </section>
         )}
 
+        {/* Consultations */}
+        {serviceItems.length > 0 && (
+          <section className="bg-card rounded-2xl border border-border/70 shadow-sm overflow-hidden">
+            <h3 className="px-4 pt-3.5 pb-2 text-sm font-bold text-foreground">Consultations</h3>
+            <ul className="divide-y divide-border/60">
+              {serviceItems.map((item) => {
+                let doctorName = "";
+                let serviceTitle = item.name;
+                if (item.name.includes(" with Dr. ")) {
+                  const parts = item.name.split(" with Dr. ");
+                  serviceTitle = parts[0].trim();
+                  doctorName = "Dr. " + parts[1].trim();
+                } else if (item.name.includes(" with ")) {
+                  const parts = item.name.split(" with ");
+                  serviceTitle = parts[0].trim();
+                  doctorName = parts[1].trim();
+                }
+                return (
+                  <li key={item.id} className="px-4 py-3.5 flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-foreground text-sm leading-snug">{serviceTitle}</h4>
+                      {doctorName && <p className="text-xs font-semibold text-primary mt-0.5">{doctorName}</p>}
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {item.price > 0 && !!item.labId && (
+                        <span className="text-sm font-black text-foreground tabular-nums">₹{item.price}</span>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${serviceTitle}`}
+                        onClick={() => removeFromCart(item.id)}
+                        className="w-8 h-8 rounded-lg text-muted-foreground hover:text-rose-600 hover:bg-rose-500/10 flex items-center justify-center active:scale-90 transition"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {testItems.length === 0 && (
+              <button
+                type="button"
+                onClick={() => navigate("/categories")}
+                className="w-full border-t border-border/60 py-3 text-primary text-xs font-bold flex items-center justify-center gap-1.5 active:bg-primary/5"
+              >
+                <Plus className="w-4 h-4" /> Add more services or tests
+              </button>
+            )}
+          </section>
+        )}
 
+        {/* Patient */}
+        <section className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
+          <h3 className="text-sm font-bold text-foreground">Who is this for?</h3>
 
-{/* Collection Address */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 relative z-10">
-          <div className="flex items-center justify-between mb-3 gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <MapPin className="w-4 h-4" />
+          <div className="flex gap-2 mt-3 overflow-x-auto hide-scrollbar -mx-1 px-1 pb-0.5">
+            {[{ id: "self" as string, label: "You" }, ...familyMembers.map((m) => ({ id: m.id, label: m.fullName }))].map((member) => {
+              const active = selectedMemberId === member.id;
+              return (
+                <button
+                  key={member.id}
+                  type="button"
+                  onClick={() => pickMember(member.id)}
+                  className={`shrink-0 rounded-full pl-1 pr-3.5 py-1 text-xs font-bold border flex items-center gap-2 transition-colors ${
+                    active ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border/70"
+                  }`}
+                >
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${active ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"}`}>
+                    {member.id === "self" ? <UserIcon className="w-3.5 h-3.5" /> : initials(member.label)}
+                  </span>
+                  <span className="max-w-[110px] truncate">{member.label}</span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })}
+              className="shrink-0 rounded-full px-3.5 py-1 text-xs font-bold border border-dashed border-primary/50 text-primary flex items-center gap-1.5"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> Add
+            </button>
+          </div>
+
+          {showPatientForm ? (
+            <div className="space-y-3 mt-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="patient_name" className="text-xs font-semibold text-muted-foreground">Full name</Label>
+                <Input
+                  id="patient_name"
+                  placeholder="Enter full name"
+                  value={patientName}
+                  onChange={(e) => setPatientName(e.target.value)}
+                  className={fieldClass(!patientName.trim())}
+                />
               </div>
-              <div className="min-w-0">
-                <h3 className="font-extrabold text-foreground text-sm tracking-tight">Collection Address</h3>
-                
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="patient_age" className="text-xs font-semibold text-muted-foreground">Age</Label>
+                  <Input
+                    id="patient_age"
+                    placeholder="Years"
+                    value={patientAge}
+                    onChange={(e) => setPatientAge(sanitizeAge(e.target.value))}
+                    className={fieldClass(!/^\d{1,3}$/.test(patientAge) || Number(patientAge) <= 0)}
+                    maxLength={3}
+                    inputMode="numeric"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="patient_gender" className="text-xs font-semibold text-muted-foreground">Gender</Label>
+                  <Select value={patientGender} onValueChange={setPatientGender}>
+                    <SelectTrigger id="patient_gender" className={fieldClass(!patientGender)}>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
+                      <SelectItem value="Other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="patient_phone" className="text-xs font-semibold text-muted-foreground">Phone number</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">+91</span>
+                  <Input
+                    id="patient_phone"
+                    placeholder="10-digit number"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(sanitizePhone(e.target.value))}
+                    className={`${fieldClass(!/^\d{10}$/.test(patientPhone))} pl-12`}
+                    maxLength={10}
+                    inputMode="numeric"
+                  />
+                </div>
+                {patientPhone.length > 0 && !/^\d{10}$/.test(patientPhone) && (
+                  <p className="text-[11px] font-semibold text-destructive">Must be exactly 10 digits</p>
+                )}
+              </div>
+              {patientDetailsValid && isMemberDetailsExpanded && (
+                <Button type="button" variant="outline" className="w-full h-10 rounded-xl" onClick={() => setIsMemberDetailsExpanded(false)}>
+                  <Check className="w-4 h-4 mr-1.5" /> Done
+                </Button>
+              )}
             </div>
-            
+          ) : (
+            <div className="mt-3 rounded-xl bg-muted/50 p-3 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black shrink-0">
+                {initials(patientName)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground truncate">{patientName}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {patientAge} yrs · {patientGender} · +91 {patientPhone}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Edit patient details"
+                onClick={() => setIsMemberDetailsExpanded(true)}
+                className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0 active:bg-primary/10"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* Collection Address */}
+        <section className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-bold text-foreground">Collection address</h3>
+            {servicePincode && (
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-muted-foreground"><Lock className="h-3 w-3" /> PIN {servicePincode}</span>
+            )}
           </div>
 
           {addressLoading ? (
-            <Skeleton className="h-16 w-full rounded-2xl" />
+            <Skeleton className="h-16 w-full rounded-xl mt-3" />
           ) : addressFormOpen ? (
-            <div className="space-y-3 rounded-2xl border border-primary/30 bg-primary/5 p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-extrabold text-foreground">{editingAddressId ? "Edit collection address" : "Enter collection address"}</p>
-                <div className="flex items-center gap-1 text-[11px] font-bold text-primary"><Lock className="h-3 w-3" /> PIN {servicePincode || "—"}</div>
-              </div>
+            <div className="space-y-3 rounded-xl border border-primary/30 bg-primary/5 p-3.5 mt-3">
+              <p className="text-xs font-bold text-foreground">{editingAddressId ? "Edit collection address" : "Enter collection address"}</p>
               <Select value={addressForm.type} onValueChange={(type) => setAddressForm((current) => ({ ...current, type }))}>
                 <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="Home">Home</SelectItem><SelectItem value="Office">Office</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
@@ -541,300 +757,67 @@ const CartScreen = () => {
                 savedAddresses.find((a) => a.is_default) ??
                 savedAddresses[0];
               if (!addr) return null;
+              const AddressIcon = addressIcon(addr.type);
               return (
-                <div className="rounded-2xl border border-primary/40 bg-primary/5 p-3.5">
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                      <MapPin className="w-4 h-4" />
+                <>
+                  <div className="mt-3 rounded-xl bg-muted/50 p-3 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <AddressIcon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-foreground">{addr.type || "Home"}</span>
+                        <span className="text-sm font-bold text-foreground">{addr.type || "Home"}</span>
                         {addr.is_default && (
-                          <Badge variant="soft" className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0">Default</Badge>
+                          <Badge variant="soft" className="text-[10px] bg-primary/15 text-primary font-bold px-1.5 py-0">Default</Badge>
                         )}
                       </div>
-                      <p className="text-xs font-medium text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{formatAddress(addr)}</p>
                     </div>
-                    <button type="button" aria-label="Edit collection address" onClick={() => openEditAddressForm(addr)} className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0"><Pencil className="w-4 h-4" /></button>
+                    <button type="button" aria-label="Edit collection address" onClick={() => openEditAddressForm(addr)} className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0 active:bg-primary/10"><Pencil className="w-4 h-4" /></button>
                   </div>
-                  {savedAddresses.length > 1 && <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border/60">{savedAddresses.map((address) => <Button key={address.id} type="button" size="sm" variant={address.id === addr.id ? "default" : "outline"} onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }}>{address.type || "Address"}</Button>)}</div>}
-                  <Button type="button" variant="ghost" size="sm" className="w-full mt-2 text-primary" onClick={openNewAddressForm}><Plus className="w-3.5 h-3.5 mr-1" /> Add another address for this PIN</Button>
-                </div>
+                  {savedAddresses.length > 1 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {savedAddresses.map((address) => (
+                        <Button key={address.id} type="button" size="sm" className="rounded-full h-8" variant={address.id === addr.id ? "default" : "outline"} onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedAddressId(address.id); }}>{address.type || "Address"}</Button>
+                      ))}
+                    </div>
+                  )}
+                  <button type="button" onClick={openNewAddressForm} className="mt-2 text-xs font-bold text-primary flex items-center gap-1 py-1.5"><Plus className="w-3.5 h-3.5" /> Add another address for this PIN</button>
+                </>
               );
             })()
           )}
-        </motion.div>
+        </section>
 
+        {/* Upload Prescription Tile */}
+        <PrescriptionUpload
+          ref={prescriptionUploadRef}
+          value={prescription}
+          onChange={setPrescription}
+          userId={supabaseUserId}
+          requiredFor={prescriptionTests}
+        />
+      </div>
 
-        
-        {/* Booking for — member selector + patient details */}
-        <motion.div
-          initial={false}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0}}
-          className="bg-card rounded-2xl border border-border/70 shadow-sm p-4"
-        >
-          <div className="flex items-center justify-between mb-3.5">
-            <h3 className="text-sm font-extrabold text-foreground">Select family member</h3>
+      {/* Checkout bar, always in reach */}
+      <div className="sticky bottom-0 bg-card border-t border-border/60 px-4 pt-3 safe-area-bottom z-40">
+        <div className="flex items-center gap-4 pb-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold text-muted-foreground">
+              Total · {items.length} {items.length === 1 ? "item" : "items"}
+            </p>
+            <p className="text-xl font-black text-foreground tabular-nums leading-tight">₹{cartTotal}</p>
           </div>
-
-          {/* Member pills (compact) */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (selectedMemberId === "self") setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
-                else { setSelectedMemberId("self"); setIsMemberDetailsExpanded(true); }
-              }}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
-                selectedMemberId === "self"
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "bg-background text-muted-foreground border-border/70 hover:border-primary/50"
-              }`}
-            >
-              You
-            </button>
-            {familyMembers.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => {
-                  if (selectedMemberId === m.id) setIsMemberDetailsExpanded(!isMemberDetailsExpanded);
-                  else { setSelectedMemberId(m.id); setIsMemberDetailsExpanded(true); }
-                }}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border ${
-                  selectedMemberId === m.id
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-background text-muted-foreground border-border/70 hover:border-primary/50"
-                }`}
-              >
-                {m.fullName}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => navigate("/add-family-member", { state: { returnTo: "/cart" } })}
-              className="rounded-full px-3.5 py-1.5 text-xs font-bold border border-dashed border-primary/50 text-primary flex items-center gap-1.5 hover:bg-primary/5 transition-all"
-            >
-              <UserPlus className="w-3 h-3" /> Add new
-            </button>
-          </div>
-
-          {/* Patient details */}
-          <div className="space-y-4 pt-1">
-            <div className="space-y-1">
-              <Label htmlFor="patient_name" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Full Name *</Label>
-              <Input
-                id="patient_name"
-                placeholder="Enter full name"
-                value={patientName}
-                onChange={(e) => setPatientName(e.target.value)}
-                className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus-visible:ring-0 focus-visible:border-primary transition-colors ${showValidation && !patientName.trim() ? "!border-destructive" : ""}`}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-5">
-              <div className="space-y-1">
-                <Label htmlFor="patient_age" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Age *</Label>
-                <Input
-                  id="patient_age"
-                  placeholder="Age"
-                  value={patientAge}
-                  onChange={(e) => setPatientAge(sanitizeAge(e.target.value))}
-                  className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus-visible:ring-0 focus-visible:border-primary transition-colors ${showValidation && (!/^\d{1,3}$/.test(patientAge) || Number(patientAge) <= 0) ? "!border-destructive" : ""}`}
-                  maxLength={3}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="patient_gender" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Gender *</Label>
-                <Select value={patientGender} onValueChange={setPatientGender}>
-                  <SelectTrigger className={`bg-transparent border-0 border-b-2 border-border/60 rounded-none h-9 px-1 text-sm font-semibold shadow-none focus:ring-0 focus:border-primary transition-colors ${showValidation && !patientGender ? "!border-destructive" : ""}`}>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label htmlFor="patient_phone" className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider pl-1">Patient Phone *</Label>
-              <div className={`flex items-center gap-2 border-b-2 border-border/60 focus-within:border-primary transition-colors ${showValidation && !/^\d{10}$/.test(patientPhone) ? "!border-destructive" : ""}`}>
-                <span className="text-xs font-extrabold text-muted-foreground pl-1">+91</span>
-                <Input
-                  id="patient_phone"
-                  placeholder="10-digit number"
-                  value={patientPhone}
-                  onChange={(e) => setPatientPhone(sanitizePhone(e.target.value))}
-                  className="bg-transparent border-0 rounded-none h-9 px-1 flex-1 text-sm font-semibold shadow-none focus-visible:ring-0"
-                  maxLength={10}
-                  inputMode="numeric"
-                />
-              </div>
-              {patientPhone.length > 0 && !/^\d{10}$/.test(patientPhone) && (
-                <p className="text-[10px] font-bold text-destructive pl-1">Must be exactly 10 digits</p>
-              )}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Selected tests */}
-        <div className="pt-1">
-          
-
-          <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            
-            {/* Consultations Group */}
-            {items.some(i => i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-")) && (
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Consultations</h3>
-                {items.filter(i => i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-")).map((item, index) => {
-                  let doctorName = "";
-                  let serviceTitle = item.name;
-                  if (item.name.includes(" with Dr. ")) {
-                    const parts = item.name.split(" with Dr. ");
-                    serviceTitle = parts[0].trim();
-                    doctorName = "Dr. " + parts[1].trim();
-                  } else if (item.name.includes(" with ")) {
-                    const parts = item.name.split(" with ");
-                    serviceTitle = parts[0].trim();
-                    doctorName = parts[1].trim();
-                  }
-
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={false}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0}}
-                      className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all"
-                    >
-                      {doctorName && (
-                        <div className="bg-primary/5 px-4 py-2 border-b border-border/40 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">👨‍⚕️</span>
-                            <span className="text-xs font-bold text-primary tracking-tight">{doctorName}</span>
-                          </div>
-                          <Badge variant="soft" className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5">
-                            Assigned Specialist
-                          </Badge>
-                        </div>
-                      )}
-
-                      <div className="p-4 flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-extrabold text-foreground text-sm leading-snug">{serviceTitle}</h3>
-                          {item.price > 0 && !!item.labId && (
-                            <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Lab Tests Group */}
-            {items.some(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))) && (
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-1">Tests & Packages ({items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).length})</h3>
-                {items.filter(i => !(i.name.includes(" with ") || i.id.startsWith("doc-") || i.id.startsWith("physio-"))).map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={false}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0}}
-                    className="bg-card rounded-2xl border border-border/70 overflow-hidden shadow-sm hover:shadow-md transition-all p-4 flex items-start justify-between gap-3"
-                  >
-                    <div className="flex-1 min-w-0">
-                      
-                      <h3 className="font-extrabold text-foreground text-sm leading-snug">{testNameParts(item.name).title}</h3>
-                      <TestFacts
-                        withInstructions
-                        className="mt-1.5"
-                        test={{
-                          ...item,
-                          sampleType: testSample(item.name, item.sampleType),
-                          reportTime: liveRuleFor(liveRules, item.name)?.reportTime,
-                          prescriptionRequired: prescriptionTests.includes(item.name),
-                        }}
-                      />
-                      {item.price > 0 && !!item.labId && (
-                        <p className="text-base font-black text-foreground mt-1.5 tabular-nums">₹{item.price}</p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0 hover:bg-rose-500/20 active:scale-90 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-
-          <button
-            onClick={() => navigate("/categories")}
-            className="w-full mt-3 py-3.5 rounded-2xl border-2 border-dashed border-primary/30 hover:border-primary/50 bg-primary/5 text-primary text-xs font-extrabold flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all"
+          <Button
+            size="lg"
+            className="flex-1 h-12 rounded-xl font-bold text-base shadow-md shadow-primary/20"
+            onClick={handleCheckout}
+            disabled={isCheckingOut || addressLoading || (items.length > 0 && items.some(i => i.labId) && !currentLabId)}
           >
-            <Plus className="w-4 h-4" />
-            {hasService ? "Add more services or tests" : "Add more tests"}
-          </button>
-
-          {/* Upload Prescription Tile */}
-          <PrescriptionUpload
-            ref={prescriptionUploadRef}
-            className="mt-4"
-            value={prescription}
-            onChange={setPrescription}
-            userId={supabaseUserId}
-            requiredFor={prescriptionTests}
-          />
-
+            Checkout
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </Button>
         </div>
-
-        {/* Checkout Bar (Moved Inline) */}
-        <motion.div 
-          initial={false} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ delay: 0}}
-          className="mt-6 bg-card rounded-2xl border border-border/70 p-4 shadow-sm mb-4"
-        >
-          <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-extrabold uppercase tracking-widest text-muted-foreground mb-0.5">Total Amount</p>
-              <h2 className="text-2xl font-black text-foreground tabular-nums leading-none">
-                ₹{hasVendorLab ? subtotal : items.reduce((acc, curr) => acc + curr.price * (curr.quantity || 1), 0)}
-              </h2>
-            </div>
-            
-            <Button
-              size="lg"
-              className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground font-extrabold text-base shadow-md shadow-primary/20"
-              onClick={handleCheckout}
-              disabled={isCheckingOut || addressLoading || (items.length > 0 && items.some(i => i.labId) && !currentLabId)}
-            >
-              <span className="flex items-center gap-2">
-                Checkout
-                <ChevronRight className="w-4 h-4" />
-              </span>
-            </Button>
-          </div>
-        </motion.div>
-
       </div>
     </MobileLayout>
   );
