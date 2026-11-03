@@ -118,54 +118,6 @@ interface EcgLab {
   is_active: boolean;
 }
 
-const DEFAULT_ECG_LABS: EcgLab[] = [
-  {
-    id: "ecg-default-1",
-    name: "BloodLyn Central Diagnostic Lab",
-    rating: 4.9,
-    reviews_count: 1240,
-    logo_url: null,
-    home_ecg_price: 499,
-    ecg_price: 499,
-    offers_home_ecg: true,
-    ecg_available: true,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-  {
-    id: "ecg-default-2",
-    name: "BloodLyn Certified Cardiac Hub",
-    rating: 4.8,
-    reviews_count: 890,
-    logo_url: null,
-    home_ecg_price: 599,
-    ecg_price: 599,
-    offers_home_ecg: true,
-    ecg_available: true,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-  {
-    id: "ecg-default-3",
-    name: "Apollo Diagnostics Partner Lab",
-    rating: 4.7,
-    reviews_count: 650,
-    logo_url: null,
-    home_ecg_price: 699,
-    ecg_price: 699,
-    offers_home_ecg: true,
-    ecg_available: true,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-];
-
 const dayOffsetForDate = (date: string): number =>
   date === "Tomorrow" ? 1 : date === "Today" ? 0 : 2;
 
@@ -437,7 +389,7 @@ const ECGTestScreen = () => {
   };
 
   const progressToPayment = () => {
-    if (patient.name && patient.age && patient.gender && patient.mobile.length === 10) {
+    if (patient.name && Number(patient.age) >= 1 && patient.gender && patient.mobile.length === 10) {
       setStep("PAYMENT");
     } else {
       toast.error("Please fill in all required patient details correctly");
@@ -986,7 +938,7 @@ const ECGTestScreen = () => {
               <div className="mt-8">
                 <button
                   onClick={progressToPayment}
-                  disabled={!patient.name || !patient.age || !patient.gender || patient.mobile.length !== 10}
+                  disabled={!patient.name || !(Number(patient.age) >= 1) || !patient.gender || patient.mobile.length !== 10}
                   className="w-full bg-rose-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-rose-600/20 disabled:opacity-50"
                 >
                   Proceed to Check Out

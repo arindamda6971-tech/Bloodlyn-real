@@ -23,6 +23,9 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const cached = userId ? roleCache.get(userId) : undefined;
   const [roleChecked, setRoleChecked] = useState(cached?.checked ?? false);
   const [isAuthorized, setIsAuthorized] = useState(cached?.authorized ?? true);
+  // The role check kept failing while online. Not cached, so "Try again" re-checks.
+  const [checkFailed, setCheckFailed] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +69,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
           }
           // Update cache + state
           roleCache.set(userId, { authorized: isAuth, checked: true });
+          setCheckFailed(false);
           setIsAuthorized(isAuth);
           setRoleChecked(true);
           return;
@@ -79,8 +83,14 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
       if (cancelled) return;
       const offline = typeof navigator !== "undefined" && navigator.onLine === false;
-      roleCache.set(userId, { authorized: offline, checked: true });
+      // A known answer from earlier this session still stands.
+      if (cached?.checked) return;
+      // Still fail closed, but as a retry screen: caching the failure used to leave
+      // a customer on "Unauthorized" for the whole session after one bad network moment.
+      // Offline stays permissive for the session, as before.
+      if (offline) roleCache.set(userId, { authorized: true, checked: true });
       setIsAuthorized(offline);
+      setCheckFailed(!offline);
       setRoleChecked(true);
     };
 
@@ -92,7 +102,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, retryCount]);
 
   if (loading || (user && !roleChecked)) {
     return <RouteFallback />;
@@ -104,6 +114,28 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   if (!user) {
     if (currentPath === "/login") return null;
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  if (checkFailed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <div className="w-full max-w-sm text-center space-y-3">
+          <h1 className="text-lg font-semibold text-foreground">Couldn't check your account</h1>
+          <p className="text-sm text-muted-foreground">Check your internet connection and try again.</p>
+          <button
+            type="button"
+            onClick={() => {
+              setCheckFailed(false);
+              setRoleChecked(false);
+              setRetryCount((n) => n + 1);
+            }}
+            className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthorized) {

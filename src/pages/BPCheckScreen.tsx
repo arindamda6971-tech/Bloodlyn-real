@@ -114,45 +114,6 @@ interface BpLab {
   is_active: boolean;
 }
 
-const DEFAULT_BP_LABS: BpLab[] = [
-  {
-    id: "bp-default-1",
-    name: "BloodLyn Home Healthcare Center",
-    rating: 4.9,
-    reviews_count: 1420,
-    logo_url: null,
-    home_bp_price: 199,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-  {
-    id: "bp-default-2",
-    name: "BloodLyn Vital Check Hub",
-    rating: 4.8,
-    reviews_count: 980,
-    logo_url: null,
-    home_bp_price: 249,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-  {
-    id: "bp-default-3",
-    name: "Thyrocare Partner Care Center",
-    rating: 4.7,
-    reviews_count: 730,
-    logo_url: null,
-    home_bp_price: 299,
-    vendor_id: null,
-    service_pincodes: [],
-    pincode: null,
-    is_active: true,
-  },
-];
-
 const dayOffsetForDate = (date: string): number =>
   date === "Tomorrow" ? 1 : date === "Today" ? 0 : 2;
 
@@ -454,7 +415,7 @@ const BPCheckScreen = () => {
   };
 
   const progressToPayment = () => {
-    if (patient.name && patient.age && patient.gender && patient.mobile.length === 10) {
+    if (patient.name && Number(patient.age) >= 1 && patient.gender && patient.mobile.length === 10) {
       setStep("PAYMENT");
     } else {
       toast.error("Please fill in all required patient details correctly");
@@ -984,7 +945,7 @@ const BPCheckScreen = () => {
               <div className="mt-8">
                 <button
                   onClick={progressToPayment}
-                  disabled={!patient.name || !patient.age || !patient.gender || patient.mobile.length !== 10}
+                  disabled={!patient.name || !(Number(patient.age) >= 1) || !patient.gender || patient.mobile.length !== 10}
                   className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm active:scale-[0.98] transition-transform shadow-lg shadow-blue-600/20 disabled:opacity-50"
                 >
                   Proceed to Check Out
