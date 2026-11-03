@@ -515,19 +515,6 @@ const LabDetailScreen = () => {
   const packageCount = labTests.filter((t) => t.category === "Health Packages").length;
   const generalTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "GENERAL").length;
   const specializedTestsCount = labTests.filter((t) => t.category !== "Health Packages" && normalizeAvailabilityType(t.availabilityType) === "SPECIALIZED").length;
-  const matchingTests = labTests.filter((test) => {
-    if (!test || !test.name) return false;
-    const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
-    const isPackage = test.category === "Health Packages";
-    const availabilityType = normalizeAvailabilityType(test.availabilityType);
-    const matchesTab = activeTab === "packages"
-      ? isPackage
-      : !isPackage && availabilityType === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
-    const matchesCategory = selectedCategory ? test.category === selectedCategory : true;
-    return matchesSearch && matchesTab && matchesCategory;
-  });
-  const filteredTests = activeTab === "packages" ? matchingTests : commonTestsFirst(matchingTests);
-
   const availableCategories = useMemo(() => {
     const isPackage = activeTab === "packages";
     const baseTests = labTests.filter(t => {
@@ -539,6 +526,22 @@ const LabDetailScreen = () => {
     });
     return Array.from(new Set(baseTests.map(t => t.category).filter(Boolean)));
   }, [labTests, activeTab]);
+
+  // A category this tab doesn't have would empty the list, and the picker that
+  // could clear it is hidden for small labs, so it counts only when it exists here.
+  const activeCategory = selectedCategory && availableCategories.includes(selectedCategory) ? selectedCategory : null;
+  const matchingTests = labTests.filter((test) => {
+    if (!test || !test.name) return false;
+    const matchesSearch = test.name.toLowerCase().includes((searchQuery || "").toLowerCase());
+    const isPackage = test.category === "Health Packages";
+    const availabilityType = normalizeAvailabilityType(test.availabilityType);
+    const matchesTab = activeTab === "packages"
+      ? isPackage
+      : !isPackage && availabilityType === (activeTab === "specialized" ? "SPECIALIZED" : "GENERAL");
+    const matchesCategory = activeCategory ? test.category === activeCategory : true;
+    return matchesSearch && matchesTab && matchesCategory;
+  });
+  const filteredTests = activeTab === "packages" ? matchingTests : commonTestsFirst(matchingTests);
 
   const tabCounts: Record<TabKey, number> = { general: generalTestsCount, specialized: specializedTestsCount, packages: packageCount };
   // Only tabs with something in them; a lab with one kind of test needs no tabs at all.
@@ -691,8 +694,9 @@ const LabDetailScreen = () => {
             <button
               type="button"
               onClick={() => {
-                setActiveTab("general");
-                setSelectedCategory("Blood Tests");
+                // Every test the lab offers: labs name their categories freely, so no category filter.
+                setActiveTab(tabCounts.general > 0 || tabCounts.specialized === 0 ? "general" : "specialized");
+                setSelectedCategory(null);
                 setSearchQuery("");
                 setTimeout(() => {
                   const el = document.getElementById("tests-section");
@@ -888,7 +892,7 @@ const LabDetailScreen = () => {
             {availableCategories.length > 1 && tabCounts[activeTab] > 8 && (
               <select
                 className="text-xs font-bold text-foreground bg-white border-2 border-border/80 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[150px] truncate shadow-sm cursor-pointer"
-                value={selectedCategory || ""}
+                value={activeCategory || ""}
                 onChange={(e) => setSelectedCategory(e.target.value || null)}
               >
                 <option value="">All Categories</option>
