@@ -140,7 +140,7 @@ const PaymentProcessingScreen = () => {
     const lower = String(msg).toLowerCase();
     if (lower.includes("cart is empty") || lower.includes("no items")) return "Your cart is empty.";
     if (lower.includes("invalid vendor")) return "Selected lab is unavailable. Please choose another lab.";
-    if (lower.includes("out of range") || lower.includes("selected area") || lower.includes("does not service")) {
+    if (lower.includes("out of range") || lower.includes("selected area") || lower.includes("does not service") || lower.includes("does not collect")) {
       return "This lab does not service your selected area.";
     }
     if (lower.includes("unauthorized") || lower.includes("401") || lower.includes("session")) {
@@ -221,7 +221,12 @@ const PaymentProcessingScreen = () => {
         await new Promise((r) => setTimeout(r, 700 * (attempt + 1)));
       }
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        // A 400 carries the reason in its body; surface the out-of-area one.
+        const body = await fnError?.context?.json?.().catch(() => null);
+        if (body?.code === "lab_not_serviceable") throw new Error(body.error);
+        throw fnError;
+      }
       if (fnData?.error) throw new Error(fnData.error);
 
       // Stage 2 → "Confirming booking"

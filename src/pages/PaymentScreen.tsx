@@ -324,6 +324,8 @@ const PaymentScreen = () => {
     const labId = rawLabId && UUID_RE.test(rawLabId) ? rawLabId : null;
     const labName = paymentState?.selectedLabName || cartItems[0]?.labName || null;
     const isServiceOnlyOrder = cartItems.every(isServiceItem);
+    // A home ECG is a lab visit too, so the lab must cover the collection address.
+    const isHomeEcgOnlyOrder = cartItems.every((item) => String(item.id ?? "").toLowerCase().startsWith("ecg-"));
 
     try {
       setIsSubmittingOrder(true);
@@ -340,7 +342,7 @@ const PaymentScreen = () => {
         state?: string | null;
         pincode?: string | null;
       } | null = null;
-      if (labId && !isServiceOnlyOrder) {
+      if (labId && (!isServiceOnlyOrder || isHomeEcgOnlyOrder)) {
         const [{ data: lab, error: labError }, { data: address, error: addressError }] = await Promise.all([
 
           supabase

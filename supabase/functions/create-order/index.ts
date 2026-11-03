@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
+import { labServesPincode } from "../_shared/service-area.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -181,10 +182,37 @@ Deno.serve(async (req) => {
 
     // Fetch address for payload
     let formattedAddress = null;
+    let addressPincode: string | null = null;
     if (addressId) {
       const { data: addressRow } = await adminClient.from("addresses").select("*").eq("id", addressId).maybeSingle();
       if (addressRow) {
         formattedAddress = [addressRow.address_line1, addressRow.address_line2, addressRow.city, addressRow.state, addressRow.pincode].filter(Boolean).join(", ");
+        const pin = String(addressRow.pincode ?? "").trim();
+        addressPincode = /^\d{6}$/.test(pin) ? pin : null;
+      }
+    }
+
+    // Like a restaurant's delivery area: the lab must collect at this address's
+    // PIN. The app checks first; this stops an old or modified app from booking
+    // outside the area. Doctor and physio visits have no lab and skip it.
+    const areaLabId = labId || cartItems.find((item) => item.labId)?.labId || null;
+    const isLabVisit = cartItems.some((item) => !item.id.startsWith("doc-") && !item.id.startsWith("physio-"));
+    if (areaLabId && addressPincode && isLabVisit) {
+      const { data: areaLab, error: areaError } = await adminClient
+        .from("diagnostic_centers")
+        .select("pincode, service_pincodes")
+        .eq("id", areaLabId)
+        .maybeSingle();
+      if (areaError) {
+        console.warn("Service area lookup failed, allowing order:", areaError.message);
+      } else if (areaLab && !labServesPincode(areaLab, addressPincode)) {
+        return new Response(
+          JSON.stringify({
+            error: `This lab does not collect samples at PIN ${addressPincode}. Please choose another lab.`,
+            code: "lab_not_serviceable",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
     }
 

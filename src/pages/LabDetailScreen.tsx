@@ -60,6 +60,7 @@ import { testNameParts, testSample } from "@/utils/simplify-test-name";
 import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
 import { LabCover, type LabArt } from "@/components/labs/LabCover";
 import { offeredCollectionSlots, tidyLabAddress } from "@/lib/lab-hours";
+import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -151,6 +152,8 @@ interface DiagnosticCenter {
   pricing: Record<string, number> | null;
   is_active: boolean | null;
   closed_days?: string[] | null;
+  pincode?: string | null;
+  service_pincodes?: string[] | null;
 }
 
 interface DynamicTest {
@@ -303,7 +306,7 @@ const LabDetailScreen = () => {
       try {
         const { data, error } = await supabase
           .from('diagnostic_centers')
-          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available, home_bp_price, ecg_price')
+          .select('id, name, address, city, rating, reviews_count, opening_time, closing_time, home_collection_available, logo_url, phone, vendor_id, available_tests, pricing, is_active, offers_home_bp, offers_home_ecg, ecg_available, home_bp_price, ecg_price, pincode, service_pincodes')
           .eq('id', labId)
           .maybeSingle();
 
@@ -501,6 +504,11 @@ const LabDetailScreen = () => {
   // Empty stand-in so the hooks below always run; the "not available" screen shows instead.
   const lab = rawLab ?? { name: "", tests: [] as NonNullable<typeof rawLab>["tests"], isActive: false };
   const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
+  // Like a restaurant that doesn't deliver to you: the page still opens (saved
+  // labs, shared links), but nothing can be booked from outside its area.
+  const { pincode: userPincode } = useUserPincode();
+  const isOutOfArea = !!labFromDb && !!userPincode && !labServesPincode(labFromDb, userPincode);
+  const cannotBook = isClosed || isOutOfArea;
 
   const labTests = lab.tests || [];
   const minTestPrice = labTests.length > 0 ? Math.min(...labTests.map(t => t.price).filter(p => p > 0)) : 0;
@@ -724,7 +732,8 @@ const LabDetailScreen = () => {
                     },
                   });
                 }}
-                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95"
+                disabled={isOutOfArea}
+                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#e0f2fe]">
                   <Activity className="h-4 w-4 text-[#0284c7]" />
@@ -753,7 +762,8 @@ const LabDetailScreen = () => {
                     },
                   });
                 }}
-                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95"
+                disabled={isOutOfArea}
+                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#dcfce7]">
                   <HeartPulse className="h-4 w-4 text-[#16a34a]" />
@@ -777,6 +787,21 @@ const LabDetailScreen = () => {
               <p className="font-bold text-destructive text-sm">CLOSED</p>
               <p className="text-xs text-muted-foreground">This diagnostic center is currently not accepting bookings.</p>
             </div>
+          </div>
+        )}
+
+        {!isClosed && isOutOfArea && (
+          <div className="mx-4 mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+            <div className="flex items-start gap-3">
+              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-foreground">No home collection at PIN {userPincode}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">This lab doesn't send collectors to your area yet. Pick a lab that does.</p>
+              </div>
+            </div>
+            <Button size="sm" className="mt-3 w-full" onClick={() => navigate("/partner-labs")}>
+              See labs near you
+            </Button>
           </div>
         )}
 
@@ -942,8 +967,8 @@ const LabDetailScreen = () => {
                           handleAddTest(test.id, test.name);
                         }
                       }}
-                      disabled={isClosed}
-                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 duration-100 ease-out press ${
+                      disabled={cannotBook}
+                      className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 duration-100 ease-out press disabled:opacity-40 disabled:active:scale-100 ${
                         isAdded
                           ? "bg-success text-white shadow-md"
                           : "bg-[#38bdf8] text-white shadow-md"
