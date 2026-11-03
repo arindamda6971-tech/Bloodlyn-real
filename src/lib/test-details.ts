@@ -29,13 +29,26 @@ export function shortAvailableDays(days?: string[] | null): string {
     .join(", ");
 }
 
-/** Labs store NABL or NORMAL; patients shouldn't see those codes. */
+/**
+ * Labs store NABL or NORMAL; patients shouldn't see those codes. A NABL report is
+ * worth saying; "Lab report" told patients nothing, so a normal one says nothing.
+ */
 export function reportTypeLabel(reportType?: string | null): string | null {
   const type = reportType?.trim();
   if (!type) return null;
   if (type.toUpperCase() === "NABL") return "NABL report";
-  if (type.toUpperCase() === "NORMAL") return "Lab report";
+  if (type.toUpperCase() === "NORMAL") return null;
   return type;
+}
+
+/**
+ * The sample, only when the patient has something to know: a home visit takes
+ * blood anyway, and tube names like "EDTA Blood" mean nothing to patients.
+ */
+export function patientSampleLabel(sampleType?: string | null): string | null {
+  const sample = sampleType?.trim();
+  if (!sample || /blood|serum|plasma|edta|fluoride|citrate/i.test(sample)) return null;
+  return /sample/i.test(sample) ? sample : `${sample} sample`;
 }
 
 /** Labs store hours as a number ("24") or days as text ("3 days"). */
@@ -60,12 +73,12 @@ export function testRequirements(test: TestDetails, showsInstructions = false): 
   ].filter((item): item is string => !!item);
 }
 
-/** Useful to know: test days (only if limited), sample, report type and when it's ready. */
+/** Useful to know: test days (only if limited), a non-blood sample, a NABL report and when it's ready. */
 export function testInfo(test: TestDetails): string[] {
   const limited = normalizeAvailabilityType(test.availabilityType) === "SPECIALIZED";
   return [
     limited ? shortAvailableDays(test.availableDays) || "Schedule unavailable" : null,
-    test.sampleType?.trim() || null,
+    patientSampleLabel(test.sampleType),
     reportTypeLabel(test.reportType),
     reportTimeLabel(test.reportTime),
   ].filter((item): item is string => !!item);

@@ -159,12 +159,12 @@ describe("test facts", () => {
 
   it("keeps what the patient must do apart from what's useful to know", () => {
     expect(testRequirements(full)).toEqual(["Prescription required", "Fasting needed", "Preparation needed"]);
-    expect(testInfo(full)).toEqual(["Fri, Sat", "Blood", "NABL report"]);
+    expect(testInfo(full)).toEqual(["Fri, Sat", "NABL report"]);
   });
 
   it("never shows the stored report codes", () => {
     expect(reportTypeLabel("NABL")).toBe("NABL report");
-    expect(reportTypeLabel("NORMAL")).toBe("Lab report");
+    expect(reportTypeLabel("NORMAL")).toBeNull();
     expect(reportTypeLabel("")).toBeNull();
   });
 
@@ -173,11 +173,17 @@ describe("test facts", () => {
     expect(reportTimeLabel("1")).toBe("Report in 1 hour");
     expect(reportTimeLabel("3 days")).toBe("Report in 3 days");
     expect(reportTimeLabel("")).toBeNull();
-    expect(testInfo({ reportType: "NORMAL", reportTime: "3 days" })).toEqual(["Lab report", "Report in 3 days"]);
+    expect(testInfo({ reportType: "NORMAL", reportTime: "3 days" })).toEqual(["Report in 3 days"]);
+  });
+
+  it("leaves out blood tube names nobody understands", () => {
+    expect(testInfo({ sampleType: "EDTA Blood", reportType: "NORMAL", reportTime: "12" })).toEqual(["Report in 12 hours"]);
+    expect(testInfo({ sampleType: "Serum" })).toEqual([]);
+    expect(testInfo({ sampleType: "Stool sample" })).toEqual(["Stool sample"]);
   });
 
   it("doesn't mention days for a test run every day", () => {
-    expect(testInfo({ availabilityType: "GENERAL", sampleType: "Urine" })).toEqual(["Urine"]);
+    expect(testInfo({ availabilityType: "GENERAL", sampleType: "Urine" })).toEqual(["Urine sample"]);
   });
 
   it("uses lines of text, with no tags to overlap", () => {

@@ -30,6 +30,7 @@ import {
   Truck,
   Percent,
   Gift,
+  ArrowRight,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,9 @@ import { normalizeAvailabilityType } from "@/lib/test-availability";
 import { TestFacts } from "@/components/tests/TestFacts";
 import { commonTestsFirst } from "@/lib/test-order";
 import { testNameParts, testSample } from "@/utils/simplify-test-name";
+import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
+import { LabCover } from "@/components/labs/LabCover";
+import { offeredCollectionSlots, tidyLabAddress } from "@/lib/lab-hours";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -120,9 +124,9 @@ const fallbackThemes = [
 
 type TabKey = "general" | "specialized" | "packages";
 const TABS: { key: TabKey; label: string }[] = [
-  { key: "general", label: "Every Day" },
-  { key: "specialized", label: "Selected Days" },
-  { key: "packages", label: "Health Packages" },
+  { key: "general", label: "Tests" },
+  { key: "specialized", label: "Some days only" },
+  { key: "packages", label: "Packages" },
 ];
 
 interface DiagnosticCenter {
@@ -259,11 +263,10 @@ const globalLabCache = new Map<string, { labFromDb: any; dynamicTests: DynamicTe
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
   const navigate = useNavigate();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem } = useCart();
+  const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem, subtotal: cartSubtotal } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
-  const [expandedTest, setExpandedTest] = useState<string | null>(null);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
   
   const cached = labId ? globalLabCache.get(labId) : null;
@@ -527,6 +530,23 @@ const LabDetailScreen = () => {
     return Array.from(new Set(baseTests.map(t => t.category).filter(Boolean)));
   }, [labTests, activeTab]);
 
+  const tabCounts: Record<TabKey, number> = { general: generalTestsCount, specialized: specializedTestsCount, packages: packageCount };
+  // Only tabs with something in them; a lab with one kind of test needs no tabs at all.
+  const visibleTabs = TABS.filter((tab) => tabCounts[tab.key] > 0);
+  useEffect(() => {
+    const counts: Record<TabKey, number> = { general: generalTestsCount, specialized: specializedTestsCount, packages: packageCount };
+    if (counts[activeTab] > 0) return;
+    const firstWithTests = TABS.find((tab) => counts[tab.key] > 0);
+    if (firstWithTests) setActiveTab(firstWithTests.key);
+  }, [activeTab, generalTestsCount, specializedTestsCount, packageCount]);
+
+  const city = labFromDb?.city?.trim() ?? "";
+  const street = labFromDb?.address?.trim() ?? "";
+  const labAddress = tidyLabAddress(street, city);
+  const offersBp = !!labFromDb?.offers_home_bp;
+  const offersEcg = !!(labFromDb?.offers_home_ecg || labFromDb?.ecg_available);
+  const serviceCount = 1 + (offersBp ? 1 : 0) + (offersEcg ? 1 : 0);
+
   const handleAddTest = (testId: string, testName: string) => {
     const test = lab.tests.find((t) => t.id === testId);
     if (test) {
@@ -571,14 +591,14 @@ const LabDetailScreen = () => {
     return (
       <MobileLayout showNav={false}>
         <div className="pb-32 bg-slate-50 min-h-screen">
-          <div className="relative h-72 w-full rounded-b-[2.5rem] bg-slate-200 animate-pulse overflow-hidden shadow-sm">
+          <div className="relative h-52 w-full rounded-b-[2rem] bg-slate-200 animate-pulse overflow-hidden shadow-sm">
             <div className="absolute -top-3 left-4 z-10 pt-safe">
               <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm">
                 <ChevronRight className="w-5 h-5 rotate-180 text-slate-400" />
               </button>
             </div>
           </div>
-          <div className="px-5 -mt-20 relative z-20">
+          <div className="px-5 -mt-6 relative z-20">
             <div className="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100/50 mb-6 flex flex-col items-center animate-pulse">
               <div className="w-20 h-20 bg-slate-200 rounded-2xl mb-4" />
               <div className="h-6 bg-slate-200 rounded-md w-3/4 mb-2" />
@@ -613,18 +633,17 @@ const LabDetailScreen = () => {
   return (
     <MobileLayout showNav={false}>
       <div className="pb-32 bg-slate-50 min-h-screen">
-        {/* Header with image */}
-        <div className="relative h-72 w-full rounded-b-[2.5rem] overflow-hidden shadow-sm">
-          <img loading="lazy" decoding="async" src="/lab-banner.webp" alt="Lab" className="absolute inset-0 w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-          
-          <div className="absolute -top-3 left-4 right-4 flex items-center justify-between z-10 pt-safe">
-            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
+        {/* Banner: this lab's Home card cover, full width from the top of the screen
+            (under the status bar too), with back, search and cart on it. */}
+        <div className="relative overflow-hidden rounded-b-[2rem] shadow-sm">
+          <LabCover name={labName} city={labAddress} logoUrl={logoUrl} className="absolute inset-0" infoPosition="bottom-5" />
+          <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-safe">
+            <button onClick={() => navigate(-1)} aria-label="Back" className="mt-1 w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
-            
-            <div className="flex-1 mx-3">
-              <div className="relative flex items-center w-full h-10 rounded-full bg-white border border-transparent shadow-sm overflow-hidden">
+
+            <div className="mt-1 flex-1">
+              <div className="relative flex items-center w-full h-10 rounded-full bg-white shadow-sm overflow-hidden">
                 <Search className="w-4 h-4 text-muted-foreground ml-3" />
                 <input
                   type="text"
@@ -639,134 +658,111 @@ const LabDetailScreen = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate("/cart")} className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm relative flex-shrink-0">
+            <button onClick={() => navigate("/cart")} aria-label="Cart" className="mt-1 relative w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ShoppingCart className="w-5 h-5" />
               {items.length > 0 && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
               )}
             </button>
           </div>
-
-          <div className="absolute bottom-8 left-6 right-6 flex items-center gap-3">
-             <motion.div className="flex items-center justify-center shrink-0">
-               {logoUrl ? (
-                 <img loading="lazy" decoding="async" width={32} height={32} src={logoUrl} alt="Logo" className="w-8 h-8 rounded-xl bg-white p-1 object-contain shadow-sm" />
-               ) : (
-                 <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm">
-                   <Building2 className="w-5 h-5 text-primary" />
-                 </div>
-               )}
-             </motion.div>
-            <motion.h1 className="text-[22px] font-black text-white leading-tight drop-shadow-lg">{labName}</motion.h1>
-          </div>
+          {/* Room for the lab's logo and name, which the cover draws near its bottom. */}
+          <div className="h-[150px]" aria-hidden="true" />
         </div>
 
-        {/* Services Cards */}
-        <div className="px-5 -mt-6 relative z-20">
-          <div className="grid grid-cols-3 gap-3">
-             <button onClick={() => { 
-               setActiveTab("general"); 
-               setSelectedCategory("Blood Tests");
-               setSearchQuery("");
-               setTimeout(() => {
-                 const el = document.getElementById("tests-section");
-                 if (el) {
-                   const y = el.getBoundingClientRect().top + window.scrollY - 100;
-                   window.scrollTo({ top: y, behavior: 'smooth' });
-                 }
-               }, 100);
-             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
-               <div className="w-10 h-10 rounded-xl bg-[#fee2e2] flex items-center justify-center mb-2">
-                 <Beaker className="w-5 h-5 text-[#ef4444]" />
-               </div>
-               <p className="text-[13px] font-black text-foreground">Blood Tests</p>
-               {minTestPrice > 0 ? (
-                 <div className="flex items-center gap-1 mt-0.5 justify-center">
-                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
-                   <p className="text-[11px] font-bold text-foreground">₹{minTestPrice} onwards</p>
-                 </div>
-               ) : (
-                 <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Explore</p>
-               )}
-             </button>
-             
-             <button onClick={() => {
-               if (labFromDb && !labFromDb.offers_home_bp) {
-                 setServiceError({
-                   title: "Service Unavailable",
-                   message: `${labName} currently does not provide BP Check services. Please choose another lab for this service.`
-                 });
-                 return;
-               }
-               navigate("/bp-check", {
-                 state: {
-                    preselectedLab: {
-                      id: labFromDb?.id || labId,
-                      name: labName,
-                      logo_url: logoUrl,
-                      vendor_id: labFromDb?.vendor_id ?? null,
-                      home_bp_price: labFromDb?.home_bp_price || 199,
-                    }
-
-                 }
-               });
-             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
-               <div className="flex flex-col items-center justify-center">
-                 <div className="w-10 h-10 rounded-xl bg-[#e0f2fe] flex items-center justify-center mb-2">
-                   <Activity className="w-5 h-5 text-[#0284c7]" />
-                 </div>
-                 <p className="text-[13px] font-black text-foreground">BP Check</p>
-               </div>
-               {labFromDb && !labFromDb.offers_home_bp ? (
-                 <p className="text-[10px] font-bold text-rose-500 mt-0.5">Not Available</p>
-               ) : (
-                 <div className="flex items-center gap-1 mt-0.5 justify-center">
-                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
-                   <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.home_bp_price || 199}</p>
-                 </div>
-               )}
-             </button>
-             
-             <button onClick={() => {
-               const ecgAvailable = labFromDb ? (labFromDb.offers_home_ecg || labFromDb.ecg_available) : true;
-               if (labFromDb && !ecgAvailable) {
-                 setServiceError({
-                   title: "Service Unavailable",
-                   message: `${labName} currently does not provide ECG services. Please choose another lab for this service.`
-                 });
-                 return;
-               }
-               navigate("/ecg-test", {
-                 state: {
-                    preselectedLab: {
-                      id: labFromDb?.id || labId,
-                      name: labName,
-                      logo_url: logoUrl,
-                      vendor_id: labFromDb?.vendor_id ?? null,
-                      home_ecg_price: labFromDb?.ecg_price || 599,
-                      ecg_available: true,
-                    }
-
-                 }
-               });
-             }} className="bg-white rounded-2xl p-3 shadow-xl shadow-black/5 flex flex-col items-center justify-center border border-border/50 text-center transition-transform active:scale-95">
-               <div className="flex flex-col items-center justify-center">
-                 <div className="w-10 h-10 rounded-xl bg-[#dcfce7] flex items-center justify-center mb-2">
-                   <HeartPulse className="w-5 h-5 text-[#16a34a]" />
-                 </div>
-                 <p className="text-[13px] font-black text-foreground">ECG</p>
-               </div>
-               {labFromDb && !(labFromDb.offers_home_ecg || labFromDb.ecg_available) ? (
-                 <p className="text-[10px] font-bold text-rose-500 mt-0.5">Not Available</p>
-               ) : (
-                 <div className="flex items-center gap-1 mt-0.5 justify-center">
-                   <Tag className="w-3 h-3 text-amber-500 fill-amber-500" />
-                   <p className="text-[11px] font-bold text-foreground">₹{labFromDb?.ecg_price || 599}</p>
-                 </div>
-               )}
-             </button>
-          </div>
+        <div className="px-4 mt-3 flex items-center gap-2 flex-wrap">
+          <LabRating rating={labFromDb?.rating} reviews={labFromDb?.reviews_count} />
+          <LabOpenBadge vendorId={labFromDb?.vendor_id} isActive={labFromDb?.is_active} />
         </div>
+
+        {/* Services: one slim row, only when the lab offers more than blood tests */}
+        {serviceCount > 1 && (
+          <div className={`mt-4 grid gap-2 px-4 ${serviceCount === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("general");
+                setSelectedCategory("Blood Tests");
+                setSearchQuery("");
+                setTimeout(() => {
+                  const el = document.getElementById("tests-section");
+                  if (el) {
+                    const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                    window.scrollTo({ top: y, behavior: 'smooth' });
+                  }
+                }, 100);
+              }}
+              className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#fee2e2]">
+                <Beaker className="h-4 w-4 text-[#ef4444]" />
+              </span>
+              <span className="min-w-0">
+                {/* Three across leaves little room on a phone, so the words get shorter. */}
+                <span className="block truncate text-[12px] font-bold text-foreground">{serviceCount === 3 ? "Tests" : "Blood tests"}</span>
+                <span className="block truncate text-[11.5px] font-semibold text-muted-foreground">
+                  {minTestPrice > 0 ? (serviceCount === 3 ? `₹${minTestPrice}+` : `from ₹${minTestPrice}`) : "See all"}
+                </span>
+              </span>
+            </button>
+
+            {offersBp && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/bp-check", {
+                    state: {
+                      preselectedLab: {
+                        id: labFromDb?.id || labId,
+                        name: labName,
+                        logo_url: logoUrl,
+                        vendor_id: labFromDb?.vendor_id ?? null,
+                        home_bp_price: labFromDb?.home_bp_price || 199,
+                      },
+                    },
+                  });
+                }}
+                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#e0f2fe]">
+                  <Activity className="h-4 w-4 text-[#0284c7]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[12px] font-bold text-foreground">{serviceCount === 3 ? "BP" : "BP check"}</span>
+                  <span className="block truncate text-[11.5px] font-semibold text-muted-foreground">₹{labFromDb?.home_bp_price || 199}</span>
+                </span>
+              </button>
+            )}
+
+            {offersEcg && (
+              <button
+                type="button"
+                onClick={() => {
+                  navigate("/ecg-test", {
+                    state: {
+                      preselectedLab: {
+                        id: labFromDb?.id || labId,
+                        name: labName,
+                        logo_url: logoUrl,
+                        vendor_id: labFromDb?.vendor_id ?? null,
+                        home_ecg_price: labFromDb?.ecg_price || 599,
+                        ecg_available: true,
+                      },
+                    },
+                  });
+                }}
+                className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95"
+              >
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#dcfce7]">
+                  <HeartPulse className="h-4 w-4 text-[#16a34a]" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-[12px] font-bold text-foreground">ECG</span>
+                  <span className="block truncate text-[11.5px] font-semibold text-muted-foreground">₹{labFromDb?.ecg_price || 599}</span>
+                </span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* CLOSED Banner */}
         {isClosed && (
@@ -787,16 +783,15 @@ const LabDetailScreen = () => {
         <ActiveOffers centerId={labFromDb?.vendor_id ?? undefined} />
 
         {/* Schedule Section */}
-        <div className="px-5 mb-4">
+        <div className="px-4 mb-4">
           <h2 className="text-[17px] font-black text-foreground tracking-tight mb-3">Schedules</h2>
-          <div className="flex items-center justify-between gap-1 overflow-x-auto pb-2 scrollbar-none">
+          <div className="grid grid-cols-7 gap-1.5">
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day, dayIndex) => {
               const partnerDay = partnerSlots?.byDay?.[dayIndex];
-              const isClosedDay = partnerSlots?.hasSchedule
-                ? !partnerDay?.is_open || (partnerDay?.slots?.length ?? 0) === 0
-                : ((lab as any).closedDays || ["Sun"]).includes(day);
+              // Same rule as booking: open, with at least one slot not switched off (capacity 0).
+              const isClosedDay = partnerSlots?.hasSchedule ? offeredCollectionSlots(partnerDay).length === 0 : true;
               return (
-                <div key={day} className={`flex flex-col items-center justify-center py-2.5 px-3 rounded-2xl flex-1 border ${isClosedDay ? 'bg-muted/30 border-border/40 opacity-70' : 'bg-white border-border shadow-sm'}`}>
+                <div key={day} className={`flex min-w-0 flex-col items-center justify-center py-2.5 rounded-2xl border ${isClosedDay ? 'bg-muted/30 border-border/40 opacity-70' : 'bg-white border-border shadow-sm'}`}>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{day}</span>
                   <span className={`text-[11px] font-black mt-1 ${isClosedDay ? 'text-destructive' : 'text-foreground'}`}>
                     {isClosedDay ? 'OFF' : 'Open'}
@@ -811,12 +806,13 @@ const LabDetailScreen = () => {
             <h2 className="text-[17px] font-black text-foreground tracking-tight">Tests & Packages</h2>
         </div>
 
-        {/* Tab filters - Scrolls away and hides behind sticky search bar */}
+        {/* Tab filters - only when the lab has more than one kind of test */}
+        {visibleTabs.length > 1 && (
         <div className="px-5 pt-3 pb-1">
-          <div className="relative grid grid-cols-3 gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm">
-            {TABS.map((tab) => {
+          <div className={`relative grid gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm ${visibleTabs.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+            {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.key;
-              const count = tab.key === "packages" ? packageCount : tab.key === "specialized" ? specializedTestsCount : generalTestsCount;
+              const count = tabCounts[tab.key];
               return (
                 <button
                   key={tab.key}
@@ -848,6 +844,7 @@ const LabDetailScreen = () => {
             })}
           </div>
         </div>
+        )}
 
         <div className="px-5 py-2 space-y-4">
           {/* Tests Count and Filter */}
@@ -860,7 +857,7 @@ const LabDetailScreen = () => {
             <p className="text-xs font-extrabold text-muted-foreground tracking-tight">
               {filteredTests.length} {activeTab === "packages" ? "packages" : "tests"} available
             </p>
-            {availableCategories.length > 1 && (
+            {availableCategories.length > 1 && tabCounts[activeTab] > 8 && (
               <select
                 className="text-xs font-bold text-foreground bg-white border-2 border-border/80 rounded-xl px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20 max-w-[150px] truncate shadow-sm cursor-pointer"
                 value={selectedCategory || ""}
@@ -881,14 +878,8 @@ const LabDetailScreen = () => {
               const isAdded = hasItem(test.id, test.name);
               const { title } = testNameParts(test.name);
               return (
-                <motion.div
-                  key={test.id}
-                  initial={false}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0}}
-                  className="bg-card rounded-3xl border border-border/60 p-4 shadow-2xs hover:shadow-xs transition-all"
-                >
-                  <div className="flex justify-between items-start gap-3">
+                <div key={test.id} className="bg-card rounded-2xl border border-border/60 px-4 py-3 shadow-2xs">
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -906,46 +897,32 @@ const LabDetailScreen = () => {
                       }}
                       className="flex-1 min-w-0 text-left"
                     >
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="font-extrabold text-foreground text-sm tracking-tight">{title}</h3>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <h3 className="font-extrabold text-foreground text-sm tracking-tight leading-snug">{title}</h3>
                         {test.popular && (
                           <Badge variant="soft" className="text-[9px] bg-amber-500/10 text-amber-600 font-bold px-2 py-0.5">
                             Popular
                           </Badge>
                         )}
                       </div>
-                      <TestFacts test={{ ...test, sampleType: testSample(test.name, test.sampleType) }} className="mt-1.5" />
+                      <TestFacts test={{ ...test, sampleType: testSample(test.name, test.sampleType) }} className="mt-1" />
                       {typeof test.testsCount === "number" && test.testsCount > 0 && (
-                        <p className="text-xs font-semibold text-muted-foreground mt-0.5">
-                          <span>{test.testsCount} tests included</span>
+                        <p className="text-[11px] font-semibold text-muted-foreground mt-0.5">{test.testsCount} tests included</p>
+                      )}
+                    </button>
+                    <div className="shrink-0 text-right">
+                      <p className="text-[15px] font-black text-foreground tabular-nums leading-none">₹{test.price}</p>
+                      {test.originalPrice && (
+                        <p className="mt-1 text-[11px] font-semibold text-muted-foreground line-through tabular-nums leading-none">₹{test.originalPrice}</p>
+                      )}
+                      {(test.discountPercent || test.originalPrice) && (
+                        <p className="mt-1 text-[10px] font-bold text-emerald-600 leading-none">
+                          {test.discountPercent
+                            ? `${test.discountPercent}% OFF`
+                            : `${Math.round(((test.originalPrice! - test.price) / test.originalPrice!) * 100)}% OFF`}
                         </p>
                       )}
-                      {expandedTest === test.id && (
-                        <motion.p
-                          initial={false}
-                          animate={{ opacity: 1, height: "auto" }}
-                          className="text-xs text-muted-foreground mt-2 leading-relaxed font-medium"
-                        >
-                          {test.description ||
-                            `${title} is a diagnostic test offered by ${lab.name}. Tap "Add" to include it in your cart.`}
-                        </motion.p>
-                      )}
-                      <div className="flex items-baseline gap-2 mt-3.5 flex-wrap">
-                        <span className="text-base font-black text-foreground tabular-nums">₹{test.price}</span>
-                        {test.originalPrice && (
-                          <span className="text-xs font-semibold text-muted-foreground line-through tabular-nums">
-                            ₹{test.originalPrice}
-                          </span>
-                        )}
-                        {(test.discountPercent || test.originalPrice) && (
-                          <Badge variant="soft" className="text-[10px] bg-emerald-500/10 text-emerald-600 font-bold px-2 py-0.5">
-                            {test.discountPercent
-                              ? `${test.discountPercent}% OFF`
-                              : `${Math.round(((test.originalPrice! - test.price) / test.originalPrice!) * 100)}% OFF`}
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
+                    </div>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -967,7 +944,7 @@ const LabDetailScreen = () => {
                       {isAdded ? <Check className="w-5 h-5 stroke-[2.5]" /> : <Plus className="w-5 h-5" />}
                     </button>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
 
@@ -996,7 +973,26 @@ const LabDetailScreen = () => {
         </div>
       </div>
 
-
+      {/* The next step, once something is in the cart */}
+      {items.length > 0 && (
+        <div className="sticky bottom-0 z-40 px-4 pt-2 safe-area-bottom bg-gradient-to-t from-slate-50 via-slate-50/95 to-transparent">
+          <button
+            type="button"
+            onClick={() => navigate("/cart")}
+            className="mb-3 w-full flex items-center justify-between gap-3 rounded-2xl bg-[#0f172a] px-4 py-3 text-white shadow-lg active:scale-[0.98] transition-transform"
+          >
+            <span className="text-left">
+              <span className="block text-[11px] font-semibold text-white/70">
+                {items.length} {items.length === 1 ? "test" : "tests"} added
+              </span>
+              <span className="block text-base font-black tabular-nums leading-tight">₹{cartSubtotal}</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-sm font-bold">
+              View cart <ArrowRight className="w-4 h-4" />
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Lab Conflict Alert Dialog */}
       <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>

@@ -123,9 +123,11 @@ interface Props {
   art?: LabArt;
   /** Size and position; include "relative" or "absolute" (default "relative"). */
   className?: string;
+  /** Where the logo and name sit; centred by default. A taller cover with buttons on top puts them lower. */
+  infoPosition?: string;
 }
 
-export const LabCover = memo(({ name, city, logoUrl, palette, art = "microscope", className = "relative" }: Props) => {
+export const LabCover = memo(({ name, city, logoUrl, palette, art = "microscope", className = "relative", infoPosition = "top-1/2 -translate-y-1/2" }: Props) => {
   const p = `lc${useId().replace(/:/g, "")}`;
   const c = PALETTES[(palette ?? labPaletteIndex(name)) % PALETTES.length];
   return (
@@ -134,7 +136,7 @@ export const LabCover = memo(({ name, city, logoUrl, palette, art = "microscope"
       style={{ backgroundImage: `${hexPattern(c.accentDark)}, linear-gradient(135deg, ${c.from}, ${c.to} 70%)`, backgroundSize: "28px 48px, auto" }}
     >
       {art === "microscope" ? <Microscope p={p} c={c} /> : <TestTubes p={p} c={c} />}
-      <div className="absolute left-4 right-[76px] top-1/2 -translate-y-1/2 flex items-center gap-3">
+      <div className={`absolute left-4 right-[76px] ${infoPosition} flex items-center gap-3`}>
         <div className="w-12 h-12 rounded-xl bg-white shadow-[0_6px_16px_-6px_rgba(15,23,42,0.3)] flex items-center justify-center overflow-hidden shrink-0">
           {logoUrl ? (
             <img src={logoUrl} alt="" className="w-10 h-10 object-contain" loading="lazy" decoding="async" />
