@@ -88,7 +88,7 @@ const ProfileScreen = () => {
           k.startsWith("sb-") || 
           k.startsWith("location_checked_") || 
           k.startsWith("bloodlyn_service_pincode_") ||
-          k === "BloodLyn_cart_items" ||
+          k.startsWith("BloodLyn_cart_items") ||
           k === "bloodlyn-query-cache" ||
           k === "family_members_fallback" ||
           k === "addresses_fallback" ||

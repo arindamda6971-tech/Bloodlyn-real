@@ -166,8 +166,30 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   const scrollerRef = useRef<HTMLDivElement>(null);
   const atStartRef = useRef(true);
   const orderKey = sortedCenters.map((c) => c.id).join(",");
+  const firstOrderRef = useRef(true);
   useLayoutEffect(() => {
-    if (atStartRef.current && scrollerRef.current) scrollerRef.current.scrollLeft = 0;
+    // The first paint is already at the start; only a later reorder needs this.
+    if (firstOrderRef.current) {
+      firstOrderRef.current = false;
+      return;
+    }
+    const scroller = scrollerRef.current;
+    if (!atStartRef.current || !scroller) return;
+    // Phone WebViews re-apply snapping after layout and pull back to the old card,
+    // so snapping is off while the row goes back to its start, then on again.
+    scroller.style.scrollSnapType = "none";
+    scroller.scrollLeft = 0;
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => {
+        scroller.style.scrollSnapType = "";
+      });
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+      scroller.style.scrollSnapType = "";
+    };
   }, [orderKey]);
 
   return (

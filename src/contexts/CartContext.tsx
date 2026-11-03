@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getCommonSpecializedDays, normalizeAvailabilityType, normalizeAvailableDays } from "@/lib/test-availability";
 import { simplifyTestName } from "@/utils/simplify-test-name";
+import { LEGACY_CART_KEY, cartStorageKey, isFreshCartItem, labIdsToCheck, splitByOpenLab } from "@/lib/cart-cleanup";
 
 interface CartItem {
   id: string;
@@ -37,6 +38,8 @@ interface CartItem {
   fastingRequired?: boolean;
   fastingInstruction?: string;
   reportType?: string;
+  /** When the patient added it; kept through every save so the 24-hour clean-up works. */
+  addedAt?: string;
 }
 
 export const isSameCartItem = (
@@ -112,17 +115,19 @@ interface CartContextType {
   hasItem: (testId: string, testName?: string) => boolean;
 }
 
-const LOCAL_STORAGE_KEY = "BloodLyn_cart_items";
+// The signed-in account's device copy of the cart. Each account has its own, so
+// one account's items can never be uploaded into another's.
+let activeCartKey = cartStorageKey(null);
 
 const getLocalCart = (): CartItem[] => {
   try {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const saved = localStorage.getItem(activeCartKey);
     if (!saved) return [];
     const parsed: CartItem[] = JSON.parse(saved);
     if (!Array.isArray(parsed)) return [];
     const unique: CartItem[] = [];
     for (const item of parsed) {
-      if (!unique.some((u) => isSameCartItem(u, item))) {
+      if (isFreshCartItem(item.addedAt) && !unique.some((u) => isSameCartItem(u, item))) {
         unique.push(item);
       }
     }
@@ -134,18 +139,23 @@ const getLocalCart = (): CartItem[] => {
 
 const setLocalCart = (cartItems: CartItem[]) => {
   try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cartItems));
+    localStorage.setItem(activeCartKey, JSON.stringify(cartItems));
   } catch {
     // Ignore storage write failures
   }
 };
+
+const newCartItem = (item: Omit<CartItem, "quantity">): CartItem => ({ ...item, quantity: 1, addedAt: new Date().toISOString() });
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { impactMedium, notificationSuccess, impactLight } = useHaptics();
-  const [items, setItems] = useState<CartItem[]>(getLocalCart);
+  const [items, setItems] = useState<CartItem[]>(() => {
+    activeCartKey = cartStorageKey(user?.id);
+    return getLocalCart();
+  });
   const [pendingItem, setPendingItem] = useState<PendingItem | null>(null);
   const [showAvailabilityError, setShowAvailabilityError] = useState(false);
   const [blockedItem, setBlockedItem] = useState<Omit<CartItem, "quantity"> | null>(null);
@@ -156,6 +166,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   // Load cart from Supabase or fallback to localStorage
   const loadCartFromSupabase = useCallback(async () => {
+    activeCartKey = cartStorageKey(user?.id);
+    try {
+      // The old device copy was shared by every account here, so it can't be trusted for anyone.
+      localStorage.removeItem(LEGACY_CART_KEY);
+    } catch {
+      // Storage can be unavailable
+    }
     if (!user) {
       // For non-logged-in users, keep existing localStorage items
       const local = getLocalCart();
@@ -212,12 +229,33 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             fastingRequired: item.fasting_required || undefined,
             fastingInstruction: item.fasting_instruction || undefined,
             reportType: item.report_type || undefined,
+            addedAt: item.created_at || undefined,
           }));
 
-        const cartItems: CartItem[] = [];
+        let cartItems: CartItem[] = [];
         for (const item of rawCartItems) {
           if (!cartItems.some((existing) => isSameCartItem(existing, item))) {
             cartItems.push(item);
+          }
+        }
+
+        // A lab that was removed or stopped taking bookings can't do these tests any more.
+        const labIds = labIdsToCheck(cartItems);
+        if (labIds.length > 0) {
+          const { data: labs, error: labsError } = await supabase
+            .from("diagnostic_centers")
+            .select("id, is_active")
+            .in("id", labIds);
+          if (!labsError && labs) {
+            const { kept, removed } = splitByOpenLab(cartItems, labs);
+            if (removed.length > 0) {
+              cartItems = kept;
+              syncItemsToSupabase(kept, user.id).catch(console.error);
+              const labName = removed[0].labName || "That lab";
+              toast(`Removed ${removed.length === 1 ? removed[0].name : `${removed.length} tests`} from your cart`, {
+                description: `${labName} isn't taking bookings any more.`,
+              });
+            }
           }
         }
 
@@ -271,6 +309,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         fasting_required: item.fastingRequired ?? null,
         fasting_instruction: item.fastingInstruction || null,
         report_type: item.reportType || null,
+        // Every save re-inserts the rows; keeping the added time is what lets old items expire.
+        ...(item.addedAt ? { created_at: item.addedAt } : {}),
       } as any));
 
       let { error } = await supabase
@@ -413,7 +453,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems((prev) => {
       // Defensive guard inside setter as well (handles race conditions)
       if (prev.some((i) => isSameCartItem(i, item))) return prev;
-      const updated = [...prev, { ...item, quantity: 1 }];
+      const updated = [...prev, newCartItem(item)];
       setLocalCart(updated);
       syncCartToSupabase(updated);
       impactMedium();
@@ -428,7 +468,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const confirmReplace = useCallback((callback?: () => void) => {
     if (pendingItem) {
-      const newItems = [{ ...pendingItem.item, quantity: 1 }];
+      const newItems = [newCartItem(pendingItem.item)];
       setItems(newItems);
       setLocalCart(newItems);
       syncCartToSupabase(newItems);
@@ -512,7 +552,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   }, [syncCartToSupabase]);
 
   const replaceCart = useCallback((newItems: Omit<CartItem, "quantity">[]) => {
-    const updated = newItems.map((item) => ({ ...item, quantity: 1 }));
+    const updated = newItems.map((item) => newCartItem(item));
     setItems(updated);
     setLocalCart(updated);
     // wait for next tick to bypass any isSyncing locks from previous clearCart if any
@@ -590,7 +630,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             <AlertDialogAction
               onClick={() => {
                 if (blockedItem) {
-                  const newItems = [{ ...blockedItem, quantity: 1 }];
+                  const newItems = [newCartItem(blockedItem)];
                   setItems(newItems);
                   setLocalCart(newItems);
                   syncCartToSupabase(newItems);

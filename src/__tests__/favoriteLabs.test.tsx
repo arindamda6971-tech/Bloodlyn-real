@@ -155,6 +155,20 @@ describe("Partner labs heart (favorite labs)", () => {
     expect(scroller.scrollLeft).toBe(0);
   });
 
+  // Phone WebViews re-apply snapping a frame later and pull back to the old card,
+  // so snapping is off while the row goes back to its start.
+  it("turns snapping off while saved labs move to the front, then back on at the start", async () => {
+    db.saved = ["lab-c"];
+    db.listDelay = 50;
+    const { container } = renderCarousel();
+    const scroller = container.querySelector(".snap-x") as HTMLDivElement;
+
+    await waitFor(() => expect(labOrder()).toEqual(["City Lab", "Nibu Labs", "Das Diagnostics"]));
+    expect(scroller.style.scrollSnapType).toBe("none");
+    await waitFor(() => expect(scroller.style.scrollSnapType).toBe(""));
+    expect(scroller.scrollLeft).toBe(0);
+  });
+
   it("leaves the list where the user swiped it", async () => {
     db.saved = ["lab-c"];
     db.listDelay = 50;
