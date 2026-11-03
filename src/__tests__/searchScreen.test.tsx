@@ -6,6 +6,7 @@ import { SearchScreen, useSearchMode } from "@/components/search/SearchScreen";
 
 const TEST = { id: "t1", test_name: "Glucose Fasting, Fluoride Plasma", category: "x", price: 0, collection_fee: 0, prerequisites: "", report_delivery_time: "", status: "active" };
 vi.mock("@/hooks/useSmartTestSearch", () => ({
+  useSearchDelay: () => 0,
   useSmartTestSearch: (q: string) => ({ results: q ? [TEST] : [], understanding: { raw: q, text: q, core: q, tokens: [q], typedTokens: [q], concepts: [], serverTerms: [] }, isSearching: false, isError: false }),
 }));
 vi.mock("@/hooks/useDebounce", () => ({ useDebounce: (v: unknown) => v }));

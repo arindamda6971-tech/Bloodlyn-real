@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Search, Sparkles, X } from "lucide-react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
+import { useSearchDelay, useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import type { BridgeTest } from "@/hooks/useBridgeTests";
 import { highlightTerms, searchHint } from "@/utils/search-intelligence";
 import { simplifyTestName } from "@/utils/simplify-test-name";
@@ -91,7 +91,7 @@ export const SearchScreen = ({ open, query, onQueryChange, onClose, onOpenTest, 
     setContainer(anchorRef.current?.closest<HTMLElement>("[data-tab-layer]") ?? document.body);
   }, []);
 
-  const debouncedQuery = useDebounce(query, 300);
+  const debouncedQuery = useDebounce(query, useSearchDelay());
   const { results, understanding, isSearching } = useSmartTestSearch(debouncedQuery, { limit: 30, enabled: open });
   const hint = searchHint(understanding);
   const highlightWords = useMemo(() => highlightTerms(understanding), [understanding]);

@@ -6,7 +6,7 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import BannerGraphic from "@/components/BannerGraphic";
 import { Button } from "@/components/ui/button";
 import { useCategoryTests, type BridgeTest } from "@/hooks/useBridgeTests";
-import { useSmartTestSearch } from "@/hooks/useSmartTestSearch";
+import { useSearchDelay, useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
@@ -56,7 +56,7 @@ const CategoryTestsScreen = () => {
   const categorySlug = searchParams.get("slug") || "";
   const categoryName = searchParams.get("name") || "Tests";
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const debouncedSearchQuery = useDebounce(searchQuery, useSearchDelay());
 
   // Browsing: the category loads 50 tests at a time as the user scrolls, so it
   // opens quickly and still reaches every test (the bridge sends ≤500 per call).

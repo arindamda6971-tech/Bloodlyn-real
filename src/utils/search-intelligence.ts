@@ -19,7 +19,8 @@ export function normalizeText(s: string): string {
   return (s || "")
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/haem/g, "hem")
+    // "heam" is the common misspelling of "haem" ("heamoglobin").
+    .replace(/h(?:ae|ea)m/g, "hem")
     .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .replace(/\b([a-z]) (\d{1,2})\b/g, "$1$2")
     .replace(/\s+/g, " ")
@@ -89,10 +90,16 @@ const VOCABULARY: string[] = (() => {
 })();
 const VOCABULARY_SET = new Set(VOCABULARY);
 
-function correctWord(word: string): string {
-  if (word.length < 4 || !isLatin(word) || VOCABULARY_SET.has(word) || FILLER.has(word)) return word;
+/**
+ * A typo fixed towards a known word. `prefix` marks a half-typed word whose
+ * beginning was misspelled ("himo" → "hemo", the start of "hemoglobin"): the
+ * prefix rules then complete it, so it is safe to fix even while still typing.
+ */
+function correctWord(word: string, stillTyping = false): { word: string; prefix: boolean } {
+  const same = { word, prefix: false };
+  if (word.length < 4 || !isLatin(word) || VOCABULARY_SET.has(word) || FILLER.has(word)) return same;
   // A half-typed word ("thyro") is completed by the prefix rules, not "corrected".
-  if (VOCABULARY.some((v) => v.startsWith(word))) return word;
+  if (VOCABULARY.some((v) => v.startsWith(word))) return same;
   const max = allowedTypos(word.length);
   let best = word;
   let bestDist = max + 1;
@@ -106,7 +113,29 @@ function correctWord(word: string): string {
       bestDist = penalised;
     }
   }
-  return bestDist <= max ? best : word;
+  // A short word still being typed may be the start of a longer one, so its
+  // beginnings are weighed too; a whole word wins a tie ("stol" → "stool").
+  const weighBeginnings = stillTyping && word.length < 5;
+  if (bestDist <= max && !weighBeginnings) return { word: best, prefix: false };
+
+  // Try the beginnings of longer words: same length first, then one letter
+  // shorter or longer ("lipd" → "lipi", "hmoglo" → "hemoglo").
+  let bestPrefix = word;
+  let prefixDist = max + 1;
+  for (const len of [word.length, word.length - 1, word.length + 1]) {
+    if (len < 3) continue;
+    for (const v of VOCABULARY) {
+      if (v.length <= len) continue;
+      const start = v.slice(0, len);
+      const dist = editDistance(word, start, max) + (start[0] === word[0] ? 0 : 1);
+      if (dist < prefixDist) {
+        bestPrefix = start;
+        prefixDist = dist;
+      }
+    }
+  }
+  if (bestDist <= max && bestDist <= prefixDist) return { word: best, prefix: false };
+  return prefixDist <= max ? { word: bestPrefix, prefix: true } : same;
 }
 
 // ── Query understanding ─────────────────────────────────────────────────────
@@ -130,6 +159,8 @@ export interface QueryUnderstanding {
   typedTokens: string[];
   /** Set when a typo was fixed, e.g. "thyorid" → "thyroid". */
   correctedFrom?: string;
+  /** The only fixes were misspelled beginnings of words ("himo" → "hemo…"), still being completed. */
+  prefixFixOnly?: boolean;
   concepts: ConceptMatch[];
   /** Catalogue searches to run on the server, most important first. */
   serverTerms: string[];
@@ -159,10 +190,13 @@ export function understandQuery(query: string): QueryUnderstanding {
   const raw = (query || "").trim();
   const normalized = normalizeText(raw);
   const words = normalized ? normalized.split(" ") : [];
+  let onlyPrefixFixes = true;
   const corrected = words.map((w, i) => {
     // Leave the word still being typed alone unless it is clearly a typo of a whole word.
-    const fixed = correctWord(w);
-    return i === words.length - 1 && fixed !== w && w.length < 5 ? w : fixed;
+    const fixed = correctWord(w, i === words.length - 1);
+    if (fixed.word === w) return w;
+    if (!fixed.prefix) onlyPrefixFixes = false;
+    return fixed.word;
   });
   const text = corrected.join(" ");
   const tokens = corrected.filter((w) => !FILLER.has(w));
@@ -208,6 +242,7 @@ export function understandQuery(query: string): QueryUnderstanding {
     tokens,
     typedTokens: words.filter((w) => !FILLER.has(w)),
     correctedFrom: text !== normalized ? normalized : undefined,
+    prefixFixOnly: text !== normalized && onlyPrefixFixes ? true : undefined,
     concepts: top,
     serverTerms: serverTerms.slice(0, MAX_SERVER_TERMS),
   };
@@ -337,8 +372,9 @@ export function highlightTerms(u: QueryUnderstanding): string[] {
 
 /** One-line explanation for the results, e.g. 'Showing results for "thyroid"'. */
 export function searchHint(u: QueryUnderstanding): string | null {
-  if (u.correctedFrom) return `Showing results for "${u.core || u.text}"`;
   const top = u.concepts[0];
+  // A fixed half-typed word reads oddly on its own ("hemo"), so name the concept when there is one.
+  if (u.correctedFrom && !(u.prefixFixOnly && top)) return `Showing results for "${u.core || u.text}${u.prefixFixOnly ? "…" : ""}"`;
   if (top) return `Best matches for ${top.concept.label}`;
   return null;
 }

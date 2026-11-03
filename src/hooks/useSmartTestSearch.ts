@@ -7,6 +7,22 @@ import { rankTests, understandQuery, type QueryUnderstanding } from "@/utils/sea
 // Enough to reach the common test inside broad server matches ("glucose" has ~30).
 const PER_TERM_LIMIT = 40;
 
+/**
+ * How long to wait after a keystroke before searching. Searching the catalogue
+ * on the phone takes a few milliseconds, so it only waits for a short pause in
+ * typing; asking the server costs a call per term, so that waits longer.
+ */
+export function useSearchDelay(): number {
+  const { data } = useQuery({
+    queryKey: CATALOGUE_QUERY_KEY,
+    queryFn: fetchCatalogue,
+    staleTime: CATALOGUE_MAX_AGE_MS,
+    gcTime: CATALOGUE_MAX_AGE_MS,
+    enabled: false,
+  });
+  return data?.length ? 120 : 300;
+}
+
 interface SmartTestSearch {
   results: BridgeTest[];
   understanding: QueryUnderstanding;

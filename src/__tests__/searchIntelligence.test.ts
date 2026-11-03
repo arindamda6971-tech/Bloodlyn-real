@@ -114,6 +114,20 @@ describe("search intelligence — understanding what the user means", () => {
     expect(top("glucos", 1)).toEqual(["Glucose Fasting, Fluoride Plasma"]);
   });
 
+  it("fixes a misspelled start of a word while it is still being typed", () => {
+    // "himo"/"heamo" are how people start typing haemoglobin.
+    expect(understandQuery("himo").text).toBe("hemo");
+    expect(understandQuery("heamo").text).toBe("hemo");
+    expect(understandQuery("heamoglobin").text).toBe("hemoglobin");
+    expect(understandQuery("lipd").concepts[0]?.concept.id).toBe("lipid");
+    expect(top("lipd", 2)).toEqual(expect.arrayContaining(["Lipid Profile - 2 (Mini : Fasting), Serum"]));
+    // On a tie the whole word wins over the start of a longer one.
+    expect(understandQuery("stol").text).toBe("stool");
+    // Real half-typed words and nonsense are left alone.
+    expect(understandQuery("thyr").correctedFrom).toBeUndefined();
+    expect(understandQuery("xyzqw").correctedFrom).toBeUndefined();
+  });
+
   it("maps symptoms and everyday words", () => {
     expect(top("fever", 1)).toEqual(["Fever Profile - Mini"]);
     expect(top("bukhar", 1)).toEqual(["Fever Profile - Mini"]);
