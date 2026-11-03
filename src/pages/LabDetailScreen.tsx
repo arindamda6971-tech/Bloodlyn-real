@@ -886,6 +886,12 @@ const LabDetailScreen = () => {
                     <button
                       type="button"
                       onClick={() => {
+                        // A package opens the same Package Details page as Home's
+                        // Health Packages section (it reads the package by this id).
+                        if (test.category === "Health Packages") {
+                          navigate(`/package/${test.id}`);
+                          return;
+                        }
                         navigate(`/test/${test.id}`, {
                           state: {
                             bridgeTest: test,
