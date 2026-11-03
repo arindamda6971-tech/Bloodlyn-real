@@ -11,7 +11,6 @@ export const BOTTOM_NAV_PATHS = [
   "/packages",
   // Not /physio-consult: its "How It Works" intro hides the bar, and a shared
   // bar would cover the intro's button. That screen draws its own bar instead.
-  "/ecg-doctors",
   "/terms",
   "/privacy",
   "/data-attribution",

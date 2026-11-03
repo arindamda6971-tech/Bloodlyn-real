@@ -16,10 +16,15 @@ import { Calendar as CalendarUI } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { sanitizePhone } from "@/utils/inputSanitizers";
+import { goBackOr } from "@/lib/go-back";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const EditProfileScreen = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  // The sign-in email can't change here; a profile copy that differed would only mislead.
+  const loginEmail = user?.email || "";
   const [loading, setLoading] = useState(false);
   const [supabaseUserId, setSupabaseUserId] = useState<string | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -83,6 +88,20 @@ const EditProfileScreen = () => {
       toast.error("Unable to save. Please try logging in again.");
       return;
     }
+    const fullName = profile.full_name.trim();
+    const email = loginEmail || profile.email.trim();
+    if (!fullName) {
+      toast.error("Please enter your name");
+      return;
+    }
+    if (profile.phone && !/^\d{10}$/.test(profile.phone)) {
+      toast.error("Phone number must be 10 digits");
+      return;
+    }
+    if (email && !EMAIL_RE.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     
     setLoading(true);
     try {
@@ -91,13 +110,15 @@ const EditProfileScreen = () => {
         .upsert({
           id: supabaseUserId,
           ...profile,
+          full_name: fullName,
+          email,
           updated_at: new Date().toISOString(),
         });
 
       if (error) throw error;
       
       toast.success("Profile updated successfully");
-      navigate("/profile");
+      goBackOr(navigate, "/profile");
     } catch (error) {
       console.error("Profile save error:", error);
       toast.error("Failed to update profile");
@@ -122,6 +143,7 @@ const EditProfileScreen = () => {
               <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
                 value={profile.full_name}
+                maxLength={80}
                 onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
                 placeholder="Enter full name"
                 className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -151,12 +173,17 @@ const EditProfileScreen = () => {
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <Input
                 type="email"
-                value={profile.email}
+                value={loginEmail || profile.email}
+                readOnly={!!loginEmail}
+                maxLength={120}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                 placeholder="name@example.com"
                 className="pl-12 bg-background/50 border-border/40 rounded-2xl py-6 font-semibold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               />
             </div>
+            {loginEmail && (
+              <p className="text-[11px] text-muted-foreground ml-1">This is the email you sign in with, so it can't be changed here.</p>
+            )}
           </div>
 
           <div className="h-px w-full bg-border/40 my-4" />
@@ -193,6 +220,7 @@ const EditProfileScreen = () => {
                     captionLayout="dropdown-buttons"
                     fromYear={1900}
                     toYear={new Date().getFullYear()}
+                    disabled={{ after: new Date() }}
                   />
                 </PopoverContent>
               </Popover>

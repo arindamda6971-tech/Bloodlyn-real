@@ -68,7 +68,8 @@ const NotificationsScreen = () => {
     if (n.type === "order" && n.data?.orderId) {
       navigate(`/tracking/${n.data.orderId}`);
     } else if (n.type === "report" && n.data?.reportId) {
-      navigate("/report-detail", { state: { reportId: n.data.reportId } });
+      // Reports open from the Reports list, which shows the lab's real file.
+      navigate("/reports");
     } else {
       toggleExpand(n.id);
     }

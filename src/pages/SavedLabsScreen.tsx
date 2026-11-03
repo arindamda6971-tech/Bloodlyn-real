@@ -1,5 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Building2, Heart, MapPin, Star } from "lucide-react";
+import { Building2, Heart, MapPin } from "lucide-react";
+import { LabRating } from "@/components/labs/lab-display";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -85,9 +86,7 @@ const SavedLabsScreen = () => {
                       </Button>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                      <Star className="h-3.5 w-3.5 fill-warning text-warning" />
-                      <span className="font-bold text-foreground">{lab.rating ?? 4.5}</span>
-                      <span>({(lab.reviews_count ?? 0).toLocaleString()} reviews)</span>
+                      <LabRating rating={lab.rating} reviews={lab.reviews_count} />
                     </div>
                     <div className="mt-1.5 flex items-start gap-1 text-xs text-muted-foreground">
                       <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />

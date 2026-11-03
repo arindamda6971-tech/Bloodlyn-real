@@ -212,6 +212,12 @@ const SavedAddressesScreen = () => {
       return;
     }
 
+    // The cart only offers addresses with a full 6-digit PIN, so don't save one it would hide.
+    if (!/^\d{6}$/.test(formData.pincode.trim())) {
+      toast.error("Pincode must be 6 digits");
+      return;
+    }
+
     isSavingRef.current = true;
     setSaving(true);
 
@@ -355,7 +361,7 @@ const SavedAddressesScreen = () => {
               <Label htmlFor="address_line1">Address Line 1 *</Label>
               <Input
                 id="address_line1"
-                value={formData.address_line1}
+                maxLength={150} value={formData.address_line1}
                 onChange={(e) => setFormData(prev => ({ ...prev, address_line1: e.target.value }))}
                 placeholder="House/Flat No., Building, Street"
                 className="bg-muted border-0"
@@ -366,7 +372,7 @@ const SavedAddressesScreen = () => {
               <Label htmlFor="address_line2">Address Line 2</Label>
               <Input
                 id="address_line2"
-                value={formData.address_line2}
+                maxLength={150} value={formData.address_line2}
                 onChange={(e) => setFormData(prev => ({ ...prev, address_line2: e.target.value }))}
                 placeholder="Landmark, Area (Optional)"
                 className="bg-muted border-0"
@@ -378,7 +384,7 @@ const SavedAddressesScreen = () => {
                 <Label htmlFor="city">City *</Label>
                 <Input
                   id="city"
-                  value={formData.city}
+                  maxLength={60} value={formData.city}
                   onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                   placeholder="City"
                   className="bg-muted border-0"
@@ -388,7 +394,7 @@ const SavedAddressesScreen = () => {
                 <Label htmlFor="state">State *</Label>
                 <Input
                   id="state"
-                  value={formData.state}
+                  maxLength={60} value={formData.state}
                   onChange={(e) => setFormData(prev => ({ ...prev, state: e.target.value }))}
                   placeholder="State"
                   className="bg-muted border-0"

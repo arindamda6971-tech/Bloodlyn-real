@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { clearStoredPrescription, getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
+import { markCheckoutPlaced } from "@/lib/checkout-key";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -19,6 +20,8 @@ interface ProcessingState {
   successState: Record<string, any>;
   /** Resolved vendor ID */
   resolvedVendorId: string | null;
+  /** One key per payment page visit, so going Back and paying again returns the same order */
+  idempotencyKey?: string;
 
   /** Cart items for bookkeeping */
   cartItems: Array<Record<string, any>>;
@@ -194,9 +197,10 @@ const PaymentProcessingScreen = () => {
 
       // Idempotency key
       const idempotencyKey =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
+        processingState.idempotencyKey ??
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
       // Call the edge function with retry
       let fnData: any = null;
@@ -273,6 +277,8 @@ const PaymentProcessingScreen = () => {
       // Stage 3 → "Order placed!"
       setCurrentStage(3);
       await new Promise((r) => setTimeout(r, 900));
+
+      markCheckoutPlaced(idempotencyKey, fnData?.orderId || null);
 
       // Navigate to success
       navigate("/order-success", {

@@ -21,7 +21,6 @@ const RoutePrefetcher = () => {
       import("../pages/CategoryTestsScreen");
       import("../pages/TestDetailScreen");
       import("../pages/LabSelectionScreen");
-      import("../pages/ECGDoctorsScreen");
     };
 
     const prefetchRemaining = () => {
@@ -31,10 +30,8 @@ const RoutePrefetcher = () => {
       import("../pages/OnboardingScreen");
       import("../pages/LoginScreen");
       import("../pages/InstallScreen");
-      import("../pages/TestSelectionScreen");
       import("../pages/PaymentScreen");
       import("../pages/PaymentProcessingScreen");
-      import("../pages/ReportDetailScreen");
       import("../pages/EditProfileScreen");
       import("../pages/NotificationsScreen");
       import("../pages/SubscriptionScreen");

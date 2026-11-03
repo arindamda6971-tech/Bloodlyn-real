@@ -385,7 +385,7 @@ const SupportScreen = () => {
         <div>
           <label className="block text-xs font-bold text-slate-900 mb-2 uppercase tracking-wider">Problem Description</label>
           <textarea
-            value={description}
+            maxLength={2000} value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Tell us what happened..."
             className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent min-h-[150px] resize-none"

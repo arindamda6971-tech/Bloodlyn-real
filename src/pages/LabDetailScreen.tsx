@@ -118,178 +118,6 @@ const fallbackThemes = [
   { gradient: "from-[#be185d] via-[#ec4899] to-[#f472b6]", tagline: "Precision Healthcare" },
 ];
 
-// Lab data with test catalogs
-export const labsData: Record<string, {
-  name: string;
-  rating: number;
-  reviews: number;
-  location: string;
-  timing: string;
-  homeCollection: boolean;
-  accredited: string[];
-  tests: { id: string; name: string; price: number; originalPrice?: number; category: string; popular?: boolean }[];
-}> = {
-  "lal-pathlabs": {
-    name: "Dr. Lal PathLabs",
-    rating: 4.8,
-    reviews: 12500,
-    location: "Pan India - 280+ Centers",
-    timing: "6:00 AM - 9:00 PM",
-    homeCollection: true,
-    accredited: ["NABL", "CAP"],
-    tests: [
-      { id: "lpl1", name: "Complete Blood Count (CBC)", price: 340, originalPrice: 450, category: "Blood Tests", popular: true },
-      { id: "lpl2", name: "Lipid Profile", price: 520, originalPrice: 650, category: "Heart Health", popular: true },
-      { id: "lpl3", name: "Liver Function Test (LFT)", price: 680, originalPrice: 850, category: "Liver Health" },
-      { id: "lpl4", name: "Kidney Function Test (KFT)", price: 620, originalPrice: 780, category: "Kidney Health" },
-      { id: "lpl5", name: "Thyroid Profile (T3, T4, TSH)", price: 540, originalPrice: 700, category: "Thyroid", popular: true },
-      { id: "lpl6", name: "HbA1c (Glycated Hemoglobin)", price: 450, originalPrice: 580, category: "Diabetes" },
-      { id: "lpl7", name: "Vitamin D (25-OH)", price: 1200, originalPrice: 1500, category: "Vitamins", popular: true },
-      { id: "lpl8", name: "Vitamin B12", price: 780, originalPrice: 950, category: "Vitamins" },
-      { id: "lpl9", name: "Iron Studies", price: 850, originalPrice: 1050, category: "Blood Tests" },
-      { id: "lpl10", name: "Urine Routine & Microscopy", price: 180, originalPrice: 250, category: "Urine Tests" },
-      { id: "lpl11", name: "Blood Sugar Fasting", price: 80, originalPrice: 120, category: "Diabetes" },
-      { id: "lpl12", name: "Blood Sugar PP", price: 80, originalPrice: 120, category: "Diabetes" },
-      { id: "lpl13", name: "Creatinine, Serum", price: 220, originalPrice: 300, category: "Kidney Health" },
-      { id: "lpl14", name: "Uric Acid, Serum", price: 200, originalPrice: 280, category: "Joint Health" },
-      { id: "lpl15", name: "ESR (Erythrocyte Sedimentation Rate)", price: 120, originalPrice: 180, category: "Blood Tests" },
-      { id: "lpl16", name: "Hemoglobin", price: 90, originalPrice: 140, category: "Blood Tests" },
-      { id: "lpl17", name: "Aarogyam Basic", price: 999, originalPrice: 2100, category: "Health Packages", popular: true },
-      { id: "lpl18", name: "Aarogyam 1.3", price: 1799, originalPrice: 4000, category: "Health Packages" },
-      { id: "lpl19", name: "Aarogyam Full Body Checkup", price: 2999, originalPrice: 6500, category: "Health Packages", popular: true },
-      { id: "lpl20", name: "Swasthfit Basic", price: 599, originalPrice: 1200, category: "Health Packages" },
-      { id: "lpl21", name: "Blood Pressure (BP) Check", price: 50, originalPrice: 100, category: "Heart Health" },
-      { id: "lpl22", name: "Electrocardiogram (ECG)", price: 300, originalPrice: 450, category: "Heart Health" },
-    ],
-  },
-  "metropolis": {
-    name: "Metropolis Healthcare",
-    rating: 4.7,
-    reviews: 9800,
-    location: "Pan India - 200+ Centers",
-    timing: "7:00 AM - 9:00 PM",
-    homeCollection: true,
-    accredited: ["NABL", "CAP", "ISO"],
-    tests: [
-      { id: "met1", name: "Complete Blood Count", price: 380, originalPrice: 500, category: "Blood Tests", popular: true },
-      { id: "met2", name: "Lipid Profile", price: 580, originalPrice: 750, category: "Heart Health" },
-      { id: "met3", name: "Liver Function Test", price: 720, originalPrice: 900, category: "Liver Health" },
-      { id: "met4", name: "Kidney Function Test", price: 680, originalPrice: 850, category: "Kidney Health" },
-      { id: "met5", name: "Thyroid Profile Total", price: 600, originalPrice: 800, category: "Thyroid", popular: true },
-      { id: "met6", name: "HbA1c", price: 500, originalPrice: 650, category: "Diabetes" },
-      { id: "met7", name: "Vitamin D Total", price: 1350, originalPrice: 1700, category: "Vitamins", popular: true },
-      { id: "met8", name: "Vitamin B12", price: 850, originalPrice: 1100, category: "Vitamins" },
-      { id: "met9", name: "Ferritin", price: 650, originalPrice: 850, category: "Blood Tests" },
-      { id: "met10", name: "CRP (C-Reactive Protein)", price: 450, originalPrice: 600, category: "Inflammation" },
-      { id: "met11", name: "Glucose Fasting", price: 100, originalPrice: 150, category: "Diabetes" },
-      { id: "met12", name: "Glucose PP", price: 100, originalPrice: 150, category: "Diabetes" },
-      { id: "met13", name: "Uric Acid", price: 240, originalPrice: 320, category: "Joint Health" },
-      { id: "met14", name: "Calcium, Total", price: 280, originalPrice: 380, category: "Bone Health" },
-      { id: "met15", name: "Full Body Checkup Basic", price: 1499, originalPrice: 3000, category: "Health Packages", popular: true },
-      { id: "met16", name: "Full Body Checkup Advanced", price: 2999, originalPrice: 5500, category: "Health Packages" },
-      { id: "met17", name: "Heart Health Package", price: 1999, originalPrice: 4000, category: "Health Packages" },
-      { id: "met18", name: "Diabetes Care Package", price: 1299, originalPrice: 2800, category: "Health Packages" },
-    ],
-  },
-  "srl": {
-    name: "SRL Diagnostics",
-    rating: 4.6,
-    reviews: 8500,
-    location: "Pan India - 420+ Centers",
-    timing: "6:30 AM - 9:00 PM",
-    homeCollection: true,
-    accredited: ["NABL", "CAP"],
-    tests: [
-      { id: "srl1", name: "Complete Hemogram", price: 350, originalPrice: 480, category: "Blood Tests", popular: true },
-      { id: "srl2", name: "Lipid Profile Standard", price: 550, originalPrice: 720, category: "Heart Health" },
-      { id: "srl3", name: "LFT (Liver Function)", price: 700, originalPrice: 900, category: "Liver Health" },
-      { id: "srl4", name: "RFT (Renal Function)", price: 650, originalPrice: 820, category: "Kidney Health" },
-      { id: "srl5", name: "Thyroid Function Test", price: 580, originalPrice: 750, category: "Thyroid", popular: true },
-      { id: "srl6", name: "Glycated Hemoglobin", price: 480, originalPrice: 620, category: "Diabetes" },
-      { id: "srl7", name: "25-OH Vitamin D", price: 1250, originalPrice: 1600, category: "Vitamins", popular: true },
-      { id: "srl8", name: "Vitamin B12 Assay", price: 800, originalPrice: 1000, category: "Vitamins" },
-      { id: "srl9", name: "Serum Iron", price: 350, originalPrice: 480, category: "Blood Tests" },
-      { id: "srl10", name: "Homocysteine", price: 950, originalPrice: 1200, category: "Heart Health" },
-      { id: "srl11", name: "Fasting Blood Sugar", price: 90, originalPrice: 140, category: "Diabetes" },
-      { id: "srl12", name: "Creatinine", price: 200, originalPrice: 280, category: "Kidney Health" },
-      { id: "srl13", name: "Uric Acid Blood", price: 220, originalPrice: 300, category: "Joint Health" },
-      { id: "srl14", name: "ProHealth Basic", price: 1199, originalPrice: 2500, category: "Health Packages", popular: true },
-      { id: "srl15", name: "ProHealth Essential", price: 2199, originalPrice: 4500, category: "Health Packages" },
-      { id: "srl16", name: "ProHealth Comprehensive", price: 3499, originalPrice: 7000, category: "Health Packages" },
-      { id: "srl17", name: "Senior Citizen Package", price: 2799, originalPrice: 5500, category: "Health Packages" },
-    ],
-  },
-  "thyrocare": {
-    name: "Thyrocare",
-    rating: 4.5,
-    reviews: 15000,
-    location: "Pan India - 1200+ Centers",
-    timing: "6:00 AM - 9:00 PM",
-    homeCollection: true,
-    accredited: ["NABL", "ISO"],
-    tests: [
-      { id: "thy1", name: "Aarogyam 1.1", price: 549, originalPrice: 1100, category: "Health Packages", popular: true },
-      { id: "thy2", name: "Aarogyam 1.3", price: 799, originalPrice: 1600, category: "Health Packages", popular: true },
-      { id: "thy3", name: "Aarogyam 1.8", price: 1199, originalPrice: 2400, category: "Health Packages" },
-      { id: "thy4", name: "Aarogyam C", price: 1999, originalPrice: 4000, category: "Health Packages", popular: true },
-      { id: "thy5", name: "Complete Blood Count", price: 280, originalPrice: 400, category: "Blood Tests" },
-      { id: "thy6", name: "Thyroid Profile Total", price: 399, originalPrice: 600, category: "Thyroid", popular: true },
-      { id: "thy7", name: "Lipid Profile", price: 399, originalPrice: 550, category: "Heart Health" },
-      { id: "thy8", name: "Liver Function Test", price: 549, originalPrice: 750, category: "Liver Health" },
-      { id: "thy9", name: "Kidney Function Test", price: 499, originalPrice: 700, category: "Kidney Health" },
-      { id: "thy10", name: "Vitamin D 25-Hydroxy", price: 899, originalPrice: 1200, category: "Vitamins" },
-      { id: "thy11", name: "Vitamin B12", price: 599, originalPrice: 850, category: "Vitamins" },
-      { id: "thy12", name: "HbA1c", price: 349, originalPrice: 500, category: "Diabetes" },
-      { id: "thy13", name: "Iron Deficiency Profile", price: 649, originalPrice: 900, category: "Blood Tests" },
-      { id: "thy14", name: "Diabetes Screening", price: 299, originalPrice: 450, category: "Diabetes" },
-      { id: "thy15", name: "Full Body Checkup", price: 999, originalPrice: 2000, category: "Health Packages" },
-    ],
-  },
-  "apollo": {
-    name: "Apollo Diagnostics",
-    rating: 4.7,
-    reviews: 7200,
-    location: "Pan India - 150+ Centers",
-    timing: "7:00 AM - 8:00 PM",
-    homeCollection: true,
-    accredited: ["NABL", "JCI"],
-    tests: [
-      { id: "apo1", name: "Complete Blood Picture", price: 400, originalPrice: 550, category: "Blood Tests", popular: true },
-      { id: "apo2", name: "Lipid Profile", price: 600, originalPrice: 800, category: "Heart Health" },
-      { id: "apo3", name: "Liver Function Tests", price: 750, originalPrice: 950, category: "Liver Health" },
-      { id: "apo4", name: "Renal Function Tests", price: 700, originalPrice: 900, category: "Kidney Health" },
-      { id: "apo5", name: "Thyroid Profile", price: 650, originalPrice: 850, category: "Thyroid", popular: true },
-      { id: "apo6", name: "HbA1c Test", price: 550, originalPrice: 700, category: "Diabetes" },
-      { id: "apo7", name: "Vitamin D3", price: 1400, originalPrice: 1800, category: "Vitamins", popular: true },
-      { id: "apo8", name: "Vitamin B12", price: 900, originalPrice: 1150, category: "Vitamins" },
-      { id: "apo9", name: "Ferritin Test", price: 700, originalPrice: 900, category: "Blood Tests" },
-      { id: "apo10", name: "Apollo Basic Health Check", price: 1599, originalPrice: 3200, category: "Health Packages", popular: true },
-      { id: "apo11", name: "Apollo Comprehensive Health Check", price: 3499, originalPrice: 7000, category: "Health Packages" },
-      { id: "apo12", name: "Apollo Heart Care Package", price: 2299, originalPrice: 4500, category: "Health Packages" },
-      { id: "apo13", name: "Apollo Women's Health Package", price: 2799, originalPrice: 5500, category: "Health Packages" },
-      { id: "apo14", name: "Apollo Senior Citizen Package", price: 3199, originalPrice: 6500, category: "Health Packages" },
-    ],
-  },
-};
-
-// Map database IDs & slug variations to local data keys
-const dbIdToLocalId: Record<string, string> = {
-  "1": "lal-pathlabs",
-  "2": "thyrocare",
-  "3": "metropolis",
-  "4": "srl",
-  "5": "apollo",
-  "dr-lal-pathlabs": "lal-pathlabs",
-  "lal-pathlabs": "lal-pathlabs",
-  "thyrocare": "thyrocare",
-  "metropolis-healthcare": "metropolis",
-  "metropolis": "metropolis",
-  "srl-diagnostics": "srl",
-  "srl": "srl",
-  "apollo-diagnostics": "apollo",
-  "apollo": "apollo",
-};
-
 type TabKey = "general" | "specialized" | "packages";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "general", label: "Every Day" },
@@ -638,11 +466,6 @@ const LabDetailScreen = () => {
   // Get lab data - prefer database, fallback to hardcoded
   const getLabData = () => {
     if (labFromDb) {
-      const localKey = Object.entries(dbIdToLocalId).find(([dbKey]) => 
-        labFromDb.name.toLowerCase().includes(dbKey.split('-')[0])
-      )?.[1];
-      
-      const localData = localKey ? labsData[localKey] : null;
       const baseTests = dynamicTests;
       const nonPackageBase = baseTests.filter((t) => t.category !== "Health Packages");
       const fetchedTests = [...nonPackageBase, ...packages];
@@ -650,12 +473,11 @@ const LabDetailScreen = () => {
       
       return {
         name: labFromDb.name,
-        rating: labFromDb.rating || 4.5,
-        reviews: labFromDb.reviews_count || 1000,
+        rating: labFromDb.rating ?? null,
+        reviews: labFromDb.reviews_count ?? 0,
         location: labFromDb.address ? `${labFromDb.address}, ${labFromDb.city || ''}` : "Pan India",
         timing: `${labFromDb.opening_time || '7:00 AM'} - ${labFromDb.closing_time || '9:00 PM'}`,
         homeCollection: labFromDb.home_collection_available ?? true,
-        accredited: ["NABL"],
         tests: testsToUse,
         phone: labFromDb.phone,
         logoUrl: labFromDb.logo_url,
@@ -665,16 +487,14 @@ const LabDetailScreen = () => {
       };
     }
     
-    // Fallback to hardcoded data
-    const localId = labId ? (dbIdToLocalId[labId] || labId) : "lal-pathlabs";
-    const fallback = labsData[localId] || labsData["lal-pathlabs"] || Object.values(labsData)[0];
-    return { ...fallback, tests: [] }; // Prevent hardcoded tests
+    return null;
   };
 
 
 
   const rawLab = getLabData();
-  const lab = rawLab || { ...labsData["lal-pathlabs"], tests: [] };
+  // Empty stand-in so the hooks below always run; the "not available" screen shows instead.
+  const lab = rawLab ?? { name: "", tests: [] as NonNullable<typeof rawLab>["tests"], isActive: false };
   const isClosed = !!(lab && 'isActive' in lab && !(lab as any).isActive);
 
   const labTests = lab.tests || [];
@@ -746,8 +566,6 @@ const LabDetailScreen = () => {
   const bannerGradient = brandData?.bannerGradient || fallbackTheme.gradient;
   const tagline = brandData?.tagline || fallbackTheme.tagline;
   const logoUrl = brandData?.logo || (labFromDb?.logo_url) || null;
-  const accreditedText = Array.isArray(lab.accredited) ? lab.accredited.join(" & ") : "NABL";
-  const reviewsCountText = typeof lab.reviews === "number" ? lab.reviews.toLocaleString() : "1,000";
 
   if (isLoading) {
     return (
@@ -767,6 +585,26 @@ const LabDetailScreen = () => {
               <div className="h-4 bg-slate-200 rounded-md w-1/2" />
             </div>
           </div>
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  if (!rawLab) {
+    return (
+      <MobileLayout showNav={false}>
+        <ScreenHeader title="Lab" />
+        <div className="px-6 pt-16 text-center space-y-3">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center">
+            <Building2 className="w-7 h-7 text-slate-400" />
+          </div>
+          <h1 className="text-lg font-bold text-foreground">This lab isn't available</h1>
+          <p className="text-sm text-muted-foreground">
+            It may have stopped taking bookings, or this link is old. Pick another lab near you.
+          </p>
+          <Button className="w-full" onClick={() => navigate("/partner-labs", { replace: true })}>
+            See labs near you
+          </Button>
         </div>
       </MobileLayout>
     );
@@ -863,7 +701,7 @@ const LabDetailScreen = () => {
                navigate("/bp-check", {
                  state: {
                     preselectedLab: {
-                      id: labFromDb?.id || "lal-pathlabs",
+                      id: labFromDb?.id || labId,
                       name: labName,
                       logo_url: logoUrl,
                       vendor_id: labFromDb?.vendor_id ?? null,
@@ -901,7 +739,7 @@ const LabDetailScreen = () => {
                navigate("/ecg-test", {
                  state: {
                     preselectedLab: {
-                      id: labFromDb?.id || "lal-pathlabs",
+                      id: labFromDb?.id || labId,
                       name: labName,
                       logo_url: logoUrl,
                       vendor_id: labFromDb?.vendor_id ?? null,
@@ -1058,7 +896,7 @@ const LabDetailScreen = () => {
                           state: {
                             bridgeTest: test,
                             preselectedLab: {
-                              id: labId || "lal-pathlabs",
+                              id: labId,
                               name: lab.name,
                               vendor_id: (lab as any).vendorId || labFromDb?.vendor_id,
                               productPrice: test.price

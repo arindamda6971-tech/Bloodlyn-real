@@ -639,7 +639,7 @@ const CartScreen = () => {
                 <Input
                   id="patient_name"
                   placeholder="Enter full name"
-                  value={patientName}
+                  maxLength={80} value={patientName}
                   onChange={(e) => setPatientName(e.target.value)}
                   className={fieldClass(!patientName.trim())}
                 />
@@ -736,11 +736,11 @@ const CartScreen = () => {
                 <SelectTrigger className="h-10 bg-background"><SelectValue /></SelectTrigger>
                 <SelectContent><SelectItem value="Home">Home</SelectItem><SelectItem value="Office">Office</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
               </Select>
-              <Input value={addressForm.address_line1} onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))} placeholder="House/Flat No., Building, Street *" className="bg-background" />
-              <Input value={addressForm.address_line2} onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))} placeholder="Landmark, Area (optional)" className="bg-background" />
+              <Input maxLength={150} value={addressForm.address_line1} onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))} placeholder="House/Flat No., Building, Street *" className="bg-background" />
+              <Input maxLength={150} value={addressForm.address_line2} onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))} placeholder="Landmark, Area (optional)" className="bg-background" />
               <div className="grid grid-cols-2 gap-2">
-                <Input value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} placeholder="City *" className="bg-background" />
-                <Input value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} placeholder="State *" className="bg-background" />
+                <Input maxLength={60} value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} placeholder="City *" className="bg-background" />
+                <Input maxLength={60} value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} placeholder="State *" className="bg-background" />
               </div>
               <div className="flex gap-2">
                 {savedAddresses.length > 0 && <Button type="button" variant="outline" className="flex-1" disabled={addressSaving} onClick={() => setAddressFormOpen(false)}>Cancel</Button>}

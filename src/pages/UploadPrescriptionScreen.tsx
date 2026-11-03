@@ -215,7 +215,7 @@ const UploadPrescriptionScreen = () => {
                     id="name"
                     type="text"
                     placeholder="Enter full name"
-                    value={name}
+                    maxLength={80} value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full h-14 bg-muted/50 border border-border/50 rounded-2xl px-4 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-muted-foreground/60"
                   />

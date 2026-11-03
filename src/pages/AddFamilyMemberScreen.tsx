@@ -16,6 +16,7 @@ import { RELATIONSHIPS, type FamilyMember, useFamilyMembers } from "@/hooks/useF
 import { toast } from "sonner";
 import { triggerHaptic } from "@/utils/haptics";
 import { sanitizeAge, sanitizePhone } from "@/utils/inputSanitizers";
+import { goBackOr } from "@/lib/go-back";
 
 interface LocationState {
   editMember?: FamilyMember | null;
@@ -27,7 +28,7 @@ const AddFamilyMemberScreen = () => {
   const location = useLocation();
   const state = location.state as LocationState | null;
   const editMember = state?.editMember || null;
-  const returnTo = state?.returnTo || "/family";
+  const returnTo = state?.returnTo || "/family-members";
 
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState("");
@@ -80,7 +81,7 @@ const AddFamilyMemberScreen = () => {
           await addMember(memberData);
         }
         await triggerHaptic('success');
-        navigate(returnTo);
+        goBackOr(navigate, returnTo);
       } finally {
         isSubmittingRef.current = false;
       }
@@ -99,7 +100,7 @@ const AddFamilyMemberScreen = () => {
             <Label>Full Name *</Label>
             <Input
               placeholder="Enter full name"
-              value={fullName}
+              maxLength={80} value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="bg-muted border-0 rounded-xl"
             />
@@ -166,7 +167,7 @@ const AddFamilyMemberScreen = () => {
               <Label>Specify Relationship *</Label>
               <Input
                 placeholder="Enter relationship"
-                value={customRelationship}
+                maxLength={40} value={customRelationship}
                 onChange={(e) => setCustomRelationship(e.target.value)}
                 className="bg-muted border-0 rounded-xl"
               />

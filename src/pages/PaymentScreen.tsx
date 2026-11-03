@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, CreditCard, ChevronRight, HeartPulse, Activity, Star, CheckCircle2, Building2 } from "lucide-react";
@@ -18,6 +18,7 @@ import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateDeliveryFee } from "@/lib/delivery-fee";
 import { simplifyTestName } from "@/utils/simplify-test-name";
+import { checkoutKeyFor, isCheckoutPlaced } from "@/lib/checkout-key";
 
 interface PaymentState {
   cartItems: Array<{
@@ -53,6 +54,13 @@ const PaymentScreen = () => {
   const location = useLocation();
   const { subtotal: cartSubtotal, items: cartItemsState } = useCart();
   const paymentState = location.state as PaymentState | undefined;
+  // Same key when Back returns here after booking, so this order can't be placed twice.
+  const checkoutKey = useMemo(() => checkoutKeyFor(location.key), [location.key]);
+  useEffect(() => {
+    if (!isCheckoutPlaced(checkoutKey)) return;
+    toast.info("This booking is already placed.");
+    navigate("/bookings", { replace: true });
+  }, [checkoutKey, navigate]);
   const { pincode: userPincode } = useUserPincode();
 
   const stateSubtotal = paymentState?.subtotal || cartSubtotal;
@@ -506,6 +514,7 @@ const PaymentScreen = () => {
               : undefined,
           },
           resolvedVendorId,
+          idempotencyKey: checkoutKey,
 
           cartItems,
           paymentState,

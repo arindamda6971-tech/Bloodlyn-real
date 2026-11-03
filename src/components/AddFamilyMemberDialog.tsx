@@ -128,7 +128,7 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
             <Label>Full Name *</Label>
             <Input
               placeholder="Enter full name"
-              value={fullName}
+              maxLength={80} value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="bg-muted border-0 rounded-xl"
             />
@@ -198,7 +198,7 @@ const AddFamilyMemberDialog = ({ open, onOpenChange, onAdd, editMember, onEdit, 
               <Label>Specify Relationship *</Label>
               <Input
                 placeholder="Enter relationship"
-                value={customRelationship}
+                maxLength={40} value={customRelationship}
                 onChange={(e) => setCustomRelationship(e.target.value)}
                 className="bg-muted border-0 rounded-xl"
               />

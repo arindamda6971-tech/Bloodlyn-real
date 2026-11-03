@@ -73,9 +73,7 @@ import SplashScreen from "./pages/SplashScreen";
 import OnboardingScreen from "./pages/OnboardingScreen";
 import LoginScreen from "./pages/LoginScreen";
 import InstallScreen from "./pages/InstallScreen";
-import TestSelectionScreen from "./pages/TestSelectionScreen";
 import PaymentProcessingScreen from "./pages/PaymentProcessingScreen";
-import ReportDetailScreen from "./pages/ReportDetailScreen";
 import EditProfileScreen from "./pages/EditProfileScreen";
 import NotificationsScreen from "./pages/NotificationsScreen";
 import SubscriptionScreen from "./pages/SubscriptionScreen";
@@ -96,7 +94,6 @@ import AddFamilyMemberScreen from "./pages/AddFamilyMemberScreen";
 import TermsScreen from "./pages/TermsScreen";
 import PrivacyPolicyScreen from "./pages/PrivacyPolicyScreen";
 import DataAttributionScreen from "./pages/DataAttributionScreen";
-import ECGDoctorsScreen from "./pages/ECGDoctorsScreen";
 import NotFound from "./pages/NotFound";
 import UnauthorizedScreen from "./pages/UnauthorizedScreen";
 import UploadPrescriptionScreen from "./pages/UploadPrescriptionScreen";
@@ -333,8 +330,6 @@ export const AnimatedRoutes = () => {
                 <Route path="/payment-processing" element={<ProtectedRoute><PaymentProcessingScreen /></ProtectedRoute>} />
                 <Route path="/bookings" element={null} />
                 <Route path="/reports" element={null} />
-                <Route path="/report-detail" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
-                <Route path="/ai-report" element={<ProtectedRoute><ReportDetailScreen /></ProtectedRoute>} />
                 <Route path="/profile" element={null} />
                 <Route path="/edit-profile" element={<ProtectedRoute><EditProfileScreen /></ProtectedRoute>} />
                 <Route path="/saved-addresses" element={<ProtectedRoute><SavedAddressesScreen /></ProtectedRoute>} />
@@ -359,8 +354,6 @@ export const AnimatedRoutes = () => {
                 <Route path="/ecg-test" element={<ProtectedRoute><ECGTestScreen /></ProtectedRoute>} />
                 <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
                 <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
-                <Route path="/ecg-doctors" element={<ProtectedRoute><ECGDoctorsScreen /></ProtectedRoute>} />
-                <Route path="/test-selection" element={<ProtectedRoute><TestSelectionScreen /></ProtectedRoute>} />
                 <Route path="/consultation-call" element={<ProtectedRoute><ConsultationCallScreen /></ProtectedRoute>} />
                 <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
                 <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />

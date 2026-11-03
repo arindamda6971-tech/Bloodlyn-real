@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { hapticSelection } from "@/utils/haptics";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Building2, Star, Clock, AlertCircle, Loader2, Check } from "lucide-react";
+import { Building2, Clock, AlertCircle, Loader2, Check } from "lucide-react";
+import { LabRating } from "@/components/labs/lab-display";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
@@ -411,8 +412,7 @@ const LabSelectionScreen = () => {
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-foreground text-sm truncate">{lab.name}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                          <Star className="w-3 h-3 text-warning fill-warning" />
-                          <span>{lab.rating || 4.5}</span>
+                          <LabRating rating={lab.rating} reviews={lab.reviews_count} />
                         </div>
                         {lab.available_tests.some((t: any) => t.prescriptionRequired && items.some((item) => item.name.trim().toLowerCase() === String(t.test_name || "").trim().toLowerCase())) && (
                           <p className="mt-0.5 text-[11px] font-semibold text-destructive">Prescription required</p>

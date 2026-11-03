@@ -917,7 +917,7 @@ const BPCheckScreen = () => {
               <div className="space-y-5">
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Full Name</label>
-                  <Input placeholder="Enter patient's name" value={patient.name} onChange={(e) => setPatient({ ...patient, name: e.target.value })} className="h-14 bg-card rounded-2xl" />
+                  <Input placeholder="Enter patient's name" maxLength={80} value={patient.name} onChange={(e) => setPatient({ ...patient, name: e.target.value })} className="h-14 bg-card rounded-2xl" />
                 </div>
                 <div className="flex gap-4">
                   <div className="flex-1">
@@ -939,7 +939,7 @@ const BPCheckScreen = () => {
                 </div>
                 <div>
                   <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 block px-1">Optional Notes</label>
-                  <Textarea placeholder="e.g., High BP history, feels dizzy" value={patient.notes} onChange={(e) => setPatient({ ...patient, notes: e.target.value })} className="min-h-[100px] bg-card rounded-2xl resize-none" />
+                  <Textarea placeholder="e.g., High BP history, feels dizzy" maxLength={500} value={patient.notes} onChange={(e) => setPatient({ ...patient, notes: e.target.value })} className="min-h-[100px] bg-card rounded-2xl resize-none" />
                 </div>
               </div>
               <div className="mt-8">
