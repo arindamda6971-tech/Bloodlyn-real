@@ -1,15 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import { Download, FileText, Loader2, Calendar, Activity, User, Hash, Clock, ChevronDown, FlaskConical, Building2, CreditCard, IndianRupee } from "lucide-react";
+import { Download, FileText, Loader2, Calendar, ChevronDown, Building2, CreditCard, Hash, User, FlaskConical } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { downloadReport } from "@/lib/download-report";
-
+import { groupByMonth, hasReport, inRange, periodRange, reportDate, type ReportPeriod } from "@/lib/report-list";
 
 import MobileLayout from "@/components/layout/MobileLayout";
-import ScreenHeader from "@/components/layout/ScreenHeader";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSEO } from "@/hooks/useSEO";
@@ -35,12 +33,33 @@ interface ReportOrder {
   family_members?: { full_name: string } | null;
 }
 
+const PERIODS: { key: ReportPeriod; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "3m", label: "3 months" },
+  { key: "6m", label: "6 months" },
+  { key: "custom", label: "Custom" },
+];
+
+const shortDate = (date: Date | null) =>
+  date ? date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : null;
+
+/** Today as "YYYY-MM-DD" in the phone's time zone, the latest day a date box offers. */
+const todayInput = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
 const ReportsScreen = () => {
-  useSEO({ title: "Health Reports | BloodLyn", description: "Access your lab reports with AI-powered insights, trend analysis and easy sharing." });
+  useSEO({ title: "My Reports | BloodLyn", description: "Your lab test reports in one place, ready to download." });
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [period, setPeriod] = useState<ReportPeriod>("all");
+  const [custom, setCustom] = useState({ from: "", to: "" });
+  const [patient, setPatient] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
   const queryClient = useQueryClient();
   const { data: orders = [], isLoading: loading } = useQuery({
     queryKey: ["reports", user?.id],
@@ -51,18 +70,19 @@ const ReportsScreen = () => {
         .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id, special_instructions")
         .eq("user_id", user.id)
         .in("status", ["report_ready", "report_delivered", "completed"])
+        .not("report_url", "is", null)
         .order("updated_at", { ascending: false });
 
       if (error) {
         console.error("Reports fetch error:", error);
         return [];
       }
-      
+
       const { data: familyMembers } = await supabase
         .from("family_members")
         .select("id, full_name")
         .eq("user_id", user.id);
-        
+
       const membersMap = new Map((familyMembers || []).map(m => [m.id, m.full_name]));
 
       const parsePatientName = (instructions?: string | null): string | null => {
@@ -95,273 +115,314 @@ const ReportsScreen = () => {
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
 
-  const filteredOrders = orders.filter((order) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      order.test_name?.toLowerCase().includes(q) ||
-      order.lab_name?.toLowerCase().includes(q) ||
-      order.family_members?.full_name?.toLowerCase().includes(q) ||
-      order.family_members?.full_name?.toLowerCase().includes(q) ||
-      order.order_number?.toLowerCase().includes(q)
-    );
-  });
+  const selfName = (user?.user_metadata?.full_name as string | undefined)?.trim() || "You";
+  const patientOf = (order: ReportOrder) => order.family_members?.full_name?.trim() || selfName;
+
+  // Only reports the lab has sent; orders still being tested are on My Bookings.
+  const reports = useMemo(() => orders.filter(hasReport), [orders]);
+  const patients = useMemo(() => [...new Set(reports.map(patientOf))], [reports, selfName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // A patient chip from an earlier list (e.g. after a refresh) that no longer has reports.
+  const activePatient = patient && patients.includes(patient) ? patient : null;
+
+  const forPatient = useMemo(
+    () => (activePatient ? reports.filter((o) => patientOf(o) === activePatient) : reports),
+    [reports, activePatient, selfName] // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const groups = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const range = periodRange(period, custom);
+    const shown = forPatient.filter((order) => {
+      if (!inRange(order, range)) return false;
+      if (!q) return true;
+      return (
+        order.test_name?.toLowerCase().includes(q) ||
+        order.lab_name?.toLowerCase().includes(q) ||
+        patientOf(order).toLowerCase().includes(q) ||
+        order.order_number?.toLowerCase().includes(q)
+      );
+    });
+    return groupByMonth(shown);
+  }, [forPatient, period, custom, searchQuery, selfName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDownload = async (order: ReportOrder) => {
-    if (!order.report_url) return;
-    const base = `report-${order.order_number || order.id.slice(0, 8)}`;
-    const result = await downloadReport(order.report_url, base, order.id);
-    if (result.ok) toast.success(result.message);
-    else toast.error(result.message);
+    if (!order.report_url || downloadingId) return;
+    setDownloadingId(order.id);
+    try {
+      const base = `report-${order.order_number || order.id.slice(0, 8)}`;
+      const result = await downloadReport(order.report_url, base, order.id);
+      if (result.ok) toast.success(result.message);
+      else toast.error(result.message);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
+  const emptyTitle = searchQuery.trim()
+    ? "No matching reports"
+    : reports.length === 0
+      ? "No reports yet"
+      : "No reports in these dates";
+  const emptyText = searchQuery.trim()
+    ? `Nothing matches "${searchQuery.trim()}". Try a test, lab or patient name.`
+    : reports.length === 0
+      ? "Book a test and your report will appear here as soon as the lab sends it."
+      : "Try a longer period to see your older reports.";
 
   return (
     <MobileLayout>
       {/* Page Header - Scrolls away naturally like Home screen */}
       <div className="px-5 pt-3 pb-1">
-        <PremiumPageHeader
-          title="My Reports"
-          subtitle="AI insights · secure & shareable"
-          icon={FileText}
-          badgeText="Reports"
-        />
+        <PremiumPageHeader title="My Reports" subtitle="Your lab reports in one place" icon={FileText} />
       </div>
 
       {/* Sticky Search Input Bar - Pins at top-0 */}
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
-        placeholder="Search reports by test, lab, patient..."
+        placeholder="Search by test, lab or patient"
         accent="from-violet-500 via-fuchsia-500 to-primary"
       />
 
-      <div className="px-4 pb-6 mt-2">
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="loading" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl border border-border/50 bg-card p-4 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-3">
-                      <Skeleton className="w-10 h-10 rounded-xl" />
-                      <div className="space-y-2">
-                        <Skeleton className="w-32 h-4" />
-                        <Skeleton className="w-24 h-3" />
-                      </div>
-                    </div>
-                    <Skeleton className="w-16 h-6 rounded-full" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
-                    <Skeleton className="w-24 h-3" />
-                    <Skeleton className="w-20 h-3" />
+      <div className="px-4 pb-8 mt-3">
+        {loading ? (
+          <div className="space-y-3">
+            <Skeleton className="h-11 w-full rounded-full" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="rounded-[22px] border border-slate-200/80 bg-white p-4 space-y-3">
+                <div className="flex gap-3">
+                  <Skeleton className="w-11 h-11 rounded-2xl" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="w-3/4 h-4" />
+                    <Skeleton className="w-1/2 h-3" />
                   </div>
                 </div>
-              ))}
-            </motion.div>
-          ) : filteredOrders.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={false}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="flex flex-col items-center justify-center py-20 gap-4"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <FileText className="w-8 h-8 text-primary" />
+                <Skeleton className="w-full h-9 rounded-xl" />
+                <Skeleton className="w-full h-10 rounded-full" />
               </div>
-              <div className="text-center">
-                <h3 className="font-semibold text-foreground">{orders.length === 0 ? "No Reports Yet" : "No Reports Found"}</h3>
-                <p className="text-sm text-muted-foreground mt-1 max-w-[260px]">
-                  {orders.length === 0 ? "Your test reports will appear here once they are ready." : `No reports found matching "${searchQuery}".`}
-                </p>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key="data" initial={false} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4 list-virtual-lg">
-              {filteredOrders.map((order, i) => {
-              const names = splitTestNames(order.test_name);
-              const label = formatTestsLabel(names, "Health Test");
-              
-              return (
-              <motion.div
-                key={order.id}
-                initial={false}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0}}
-                className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)]"
-              >
-
-                <div className="flex items-start justify-between relative z-10 w-full">
-                  <div className="flex items-start gap-4 flex-1 min-w-0 pr-2">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center flex-shrink-0 border border-primary/10">
-                      <FileText className="w-6 h-6 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <h3 className="font-semibold text-foreground text-base leading-tight line-clamp-2 break-words">
-                        {label}
-                      </h3>
-                    
-                    <div className="flex flex-col gap-1.5 mt-2">
-                      {/* Patient Name & Lab */}
-                      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <User className="w-3.5 h-3.5 shrink-0" />
-                          <span className="font-medium text-foreground truncate max-w-[90px] sm:max-w-[130px]">
-                            {order.family_members?.full_name || user?.user_metadata?.full_name || "Patient"}
-                          </span>
-                        </div>
-                        {order.lab_name && (
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <div className="w-1 h-1 rounded-full bg-border shrink-0"></div>
-                            <span className="truncate max-w-[90px] sm:max-w-[130px]">By <span className="font-medium text-foreground">{order.lab_name}</span></span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Order Details */}
-                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <div className="flex items-center gap-1.5 bg-muted/50 px-2 py-1 rounded-md text-[11px] font-medium text-muted-foreground">
-                          <Calendar className="w-3 h-3" />
-                          <span>
-                            {order.scheduled_date 
-                              ? new Date(order.scheduled_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                              : new Date(order.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  </div>
-                  
-                  <button 
-                    onClick={() => setExpandedId(expandedId === order.id ? null : order.id)}
-                    className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform ml-2"
-                  >
-                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${expandedId === order.id ? "rotate-180" : ""}`} />
-                  </button>
+            ))}
+          </div>
+        ) : (
+          <>
+            {reports.length > 0 && (
+              <div className="space-y-2.5 mb-4">
+                {/* Date period: all four fit on a 360px phone */}
+                <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Report dates">
+                  {PERIODS.map((p) => {
+                    const active = period === p.key;
+                    return (
+                      <button
+                        key={p.key}
+                        type="button"
+                        onClick={() => setPeriod(p.key)}
+                        aria-pressed={active}
+                        className={`flex min-w-0 items-center justify-center gap-1 rounded-full border px-1 py-2 text-[12.5px] font-semibold transition-colors ${
+                          active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600"
+                        }`}
+                      >
+                        <span className="truncate">{p.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-                
-                <div className="mt-4 pt-4 border-t border-border/50 flex justify-between items-center relative z-10">
-                   <div className="text-xs font-medium text-muted-foreground">
-                      {order.report_url ? (
-                        <span className="text-success flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success"></span>
-                          Ready to view
+
+                {period === "custom" && (
+                  <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200/80 bg-white p-3">
+                    {(["from", "to"] as const).map((side) => (
+                      <label key={side} className="min-w-0">
+                        <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                          {side === "from" ? "From" : "To"}
                         </span>
-                      ) : (
-                        <span className="text-warning flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
-                          Processing report...
-                        </span>
-                      )}
-                   </div>
-                   <Button
-                    size="sm"
-                    className={`gap-2 rounded-full px-5 h-9 font-semibold transition-all ${
-                      order.report_url 
-                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5" 
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                    onClick={() => handleDownload(order)}
-                    disabled={!order.report_url}
-                  >
-                    <Download className="w-4 h-4" />
-                    {order.report_url ? "Download" : "Pending"}
+                        <input
+                          type="date"
+                          value={custom[side]}
+                          max={todayInput()}
+                          min={side === "to" ? custom.from || undefined : undefined}
+                          onChange={(e) => setCustom((c) => ({ ...c, [side]: e.target.value }))}
+                          className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-[13px] font-medium text-slate-800 outline-none focus:border-slate-400"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* Patients, only when the reports are for more than one person */}
+                {patients.length > 1 && (
+                  <div className="-mx-4 flex gap-2 overflow-x-auto px-4 hide-scrollbar">
+                    {[null, ...patients].map((name) => {
+                      const active = activePatient === name;
+                      return (
+                        <button
+                          key={name ?? "everyone"}
+                          type="button"
+                          onClick={() => setPatient(name)}
+                          aria-pressed={active}
+                          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${
+                            active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          {name ? <User className="h-3 w-3" /> : null}
+                          <span className="max-w-[120px] truncate">{name ?? "Everyone"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {groups.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white px-6 py-14 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-[20px] bg-primary/10">
+                  <FileText className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-[16px] font-bold text-slate-900">{emptyTitle}</h3>
+                <p className="mt-1.5 max-w-[270px] text-[13px] leading-relaxed text-slate-500">{emptyText}</p>
+                {reports.length === 0 && !searchQuery.trim() && (
+                  <Button onClick={() => navigate("/categories")} className="mt-5 h-10 rounded-full bg-slate-900 px-6 text-[13px] font-bold text-white hover:bg-black">
+                    Book a test
                   </Button>
-                </div>
-                
-                <AnimatePresence>
-                  {expandedId === order.id && (
-                    <motion.div
-                      initial={false}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 pt-4 border-t border-border/50">
-                        <div className="flex items-center gap-2 mb-3">
-                          <FlaskConical className="w-4 h-4 text-primary" />
-                          <h4 className="font-bold text-foreground text-sm">Test Summary</h4>
-                          <Badge variant="secondary" className="ml-auto text-[10px] bg-primary/10 text-primary uppercase font-bold tracking-wider">
-                            {names.length} {names.length === 1 ? "Test" : "Tests"}
-                          </Badge>
-                        </div>
+                )}
+                {reports.length > 0 && period !== "all" && (
+                  <Button onClick={() => setPeriod("all")} variant="outline" className="mt-5 h-10 rounded-full px-6 text-[13px] font-bold">
+                    Show all time
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-5 list-virtual-lg">
+                {groups.map((group) => (
+                  <section key={group.label}>
+                    <h2 className="mb-2 px-1 text-[12px] font-bold uppercase tracking-[0.08em] text-slate-400">{group.label}</h2>
+                    <div className="space-y-3">
+                      {group.orders.map((order) => {
+                        const names = splitTestNames(order.test_name);
+                        const label = formatTestsLabel(names, "Health Test");
+                        const expanded = expandedId === order.id;
+                        const downloading = downloadingId === order.id;
+                        const date = shortDate(reportDate(order));
+                        const testDay = order.scheduled_date ? shortDate(new Date(order.scheduled_date)) : null;
+                        const total = Number(order.total || 0);
 
-                        <div className="space-y-1.5 mb-4">
-                          {names.map((name, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <span className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-[9px] font-bold text-primary">{idx + 1}</span>
-                              </span>
-                              <p className="text-xs font-medium text-foreground">{simplifyTestName(name)}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div className="space-y-0.5 border-t border-border/40 pt-2">
-                          <div className="flex items-center justify-between py-1.5">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <User className="w-3.5 h-3.5" />
-                              <span className="text-xs">Patient</span>
-                            </div>
-                            <span className="text-xs font-semibold text-foreground uppercase text-right">
-                              {order.family_members?.full_name || user?.user_metadata?.full_name || "Self"}
-                            </span>
-                          </div>
-
-                          {order.lab_name && (
-                            <div className="flex items-center justify-between py-1.5">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <Building2 className="w-3.5 h-3.5" />
-                                <span className="text-xs">Lab</span>
+                        return (
+                          <article
+                            key={order.id}
+                            className="rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-[0_6px_18px_-12px_rgba(15,23,42,0.22)]"
+                          >
+                            <div className="flex gap-3">
+                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                <FileText className="h-5 w-5" />
                               </div>
-                              <span className="text-xs font-semibold text-foreground text-right">{order.lab_name}</span>
-                            </div>
-                          )}
-
-                          <div className="flex items-center justify-between py-1.5">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Calendar className="w-3.5 h-3.5" />
-                              <span className="text-xs">Date</span>
-                            </div>
-                            <span className="text-xs font-semibold text-foreground text-right">
-                              {order.scheduled_date ? new Date(order.scheduled_date).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" }) : "ASAP"}
-                              {order.scheduled_time_slot ? ` • ${order.scheduled_time_slot}` : ""}
-                            </span>
-                          </div>
-
-                          {order.payment_method && (
-                            <div className="flex items-center justify-between py-1.5">
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                <CreditCard className="w-3.5 h-3.5" />
-                                <span className="text-xs">Payment</span>
+                              <div className="min-w-0 flex-1">
+                                <h3 className="line-clamp-2 break-words text-[15px] font-bold leading-snug text-slate-900">{label}</h3>
+                                <p className="mt-1 truncate text-[12px] text-slate-500">
+                                  <span className="font-semibold text-slate-700">{patientOf(order)}</span>
+                                  {order.lab_name && <> · {order.lab_name}</>}
+                                </p>
                               </div>
-                              <span className="text-xs font-semibold text-foreground capitalize text-right">
-                                {order.payment_method.replace(/_/g, ' ')}
-                              </span>
                             </div>
-                          )}
-                        </div>
 
-                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-border/40">
-                          <div className="flex items-center gap-1.5 text-muted-foreground">
-                            <IndianRupee className="w-4 h-4" />
-                            <span className="text-xs font-medium">Total Amount</span>
-                          </div>
-                          <span className="text-base font-black text-foreground">₹{order.total || 0}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-          </motion.div>
-          )}
-        </AnimatePresence>
+                            <div className="mt-3 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-[12px] text-slate-600">
+                              <Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                              <span className="min-w-0 flex-1 truncate">
+                                Report on {date && <span className="font-semibold text-slate-800">{date}</span>}
+                              </span>
+                              {names.length > 1 && (
+                                <span className="shrink-0 font-semibold text-slate-500">{names.length} tests</span>
+                              )}
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between gap-2">
+                              <Button
+                                onClick={() => handleDownload(order)}
+                                disabled={downloading}
+                                className="h-9 gap-1.5 rounded-full bg-slate-900 px-4 text-[12.5px] font-semibold text-white shadow-none hover:bg-black"
+                              >
+                                {downloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                                {downloading ? "Saving..." : "Download"}
+                              </Button>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedId(expanded ? null : order.id)}
+                                aria-expanded={expanded}
+                                className="flex h-9 shrink-0 items-center gap-1 rounded-full px-2 text-[12.5px] font-semibold text-slate-500 active:scale-95 transition-transform"
+                              >
+                                Details
+                                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`} />
+                              </button>
+                            </div>
+
+                            {expanded && (
+                              <div className="mt-4 border-t border-slate-100 pt-4">
+                                <div className="mb-2 flex items-center gap-2">
+                                  <FlaskConical className="h-4 w-4 text-primary" />
+                                  <h4 className="text-[13px] font-bold text-slate-900">
+                                    {names.length} {names.length === 1 ? "test" : "tests"}
+                                  </h4>
+                                </div>
+                                <ol className="mb-3 divide-y divide-slate-100 rounded-2xl bg-slate-50 px-3">
+                                  {names.map((name, idx) => (
+                                    <li key={idx} className="flex items-start gap-2.5 py-2">
+                                      <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="min-w-0 break-words text-[12.5px] font-medium leading-snug text-slate-800">
+                                        {simplifyTestName(name)}
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ol>
+
+                                <dl className="divide-y divide-slate-100 rounded-2xl border border-slate-100 px-3 text-[12px]">
+                                  {order.order_number && (
+                                    <div className="flex items-center justify-between gap-3 py-2">
+                                      <dt className="flex items-center gap-2 text-slate-500"><Hash className="h-3.5 w-3.5" /> Order</dt>
+                                      <dd className="truncate font-mono font-semibold text-slate-800">{order.order_number}</dd>
+                                    </div>
+                                  )}
+                                  {order.lab_name && (
+                                    <div className="flex items-center justify-between gap-3 py-2">
+                                      <dt className="flex items-center gap-2 text-slate-500"><Building2 className="h-3.5 w-3.5" /> Lab</dt>
+                                      <dd className="truncate text-right font-semibold text-slate-800">{order.lab_name}</dd>
+                                    </div>
+                                  )}
+                                  {testDay && (
+                                    <div className="flex items-center justify-between gap-3 py-2">
+                                      <dt className="flex items-center gap-2 text-slate-500"><Calendar className="h-3.5 w-3.5" /> Test day</dt>
+                                      <dd className="truncate text-right font-semibold text-slate-800">
+                                        {testDay}
+                                        {order.scheduled_time_slot ? ` · ${order.scheduled_time_slot}` : ""}
+                                      </dd>
+                                    </div>
+                                  )}
+                                  {order.payment_method && (
+                                    <div className="flex items-center justify-between gap-3 py-2">
+                                      <dt className="flex items-center gap-2 text-slate-500"><CreditCard className="h-3.5 w-3.5" /> Payment</dt>
+                                      <dd className="truncate text-right font-semibold capitalize text-slate-800">
+                                        {order.payment_method.replace(/_/g, " ").replace(/\bupi\b/gi, "UPI")}
+                                      </dd>
+                                    </div>
+                                  )}
+                                  {total > 0 && (
+                                    <div className="flex items-center justify-between gap-3 py-2">
+                                      <dt className="text-slate-500">Total</dt>
+                                      <dd className="text-[14px] font-black tabular-nums text-slate-900">₹{total.toLocaleString("en-IN")}</dd>
+                                    </div>
+                                  )}
+                                </dl>
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </MobileLayout>
   );

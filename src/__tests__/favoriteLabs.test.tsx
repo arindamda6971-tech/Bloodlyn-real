@@ -1,5 +1,5 @@
 import type React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { render, screen, fireEvent, waitFor } from "@/test-utils";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
@@ -14,6 +14,7 @@ const db = vi.hoisted(() => ({
   saved: [] as string[],
   writes: [] as string[],
   listDelay: 0,
+  inFlight: 0,
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -34,8 +35,10 @@ vi.mock("@/integrations/supabase/client", () => {
         select,
         upsert: async ({ lab_id }: { lab_id: string }) => {
           db.writes.push(`add:${lab_id}`);
+          db.inFlight++;
           await new Promise((r) => setTimeout(r, 150)); // a real save takes a moment
           if (!db.saved.includes(lab_id)) db.saved.unshift(lab_id);
+          db.inFlight--;
           return { error: null };
         },
         delete: () => {
@@ -77,6 +80,11 @@ describe("Partner labs heart (favorite labs)", () => {
     db.saved = [];
     db.writes = [];
     db.listDelay = 0;
+  });
+
+  // A save still running when a test ends would land in the next test's list.
+  afterEach(async () => {
+    await waitFor(() => expect(db.inFlight).toBe(0));
   });
 
   it("saves the tapped lab and keeps the card where it is", async () => {
@@ -132,6 +140,31 @@ describe("Partner labs heart (favorite labs)", () => {
     db.saved = ["lab-c"];
     renderCarousel();
     await waitFor(() => expect(labOrder()).toEqual(["City Lab", "Nibu Labs", "Das Diagnostics"]));
+  });
+
+  // The browser's scroll-snap keeps the card it had snapped when saved labs move to
+  // the front, which would push the saved lab off the left edge.
+  it("stays at the start when saved labs load and move to the front", async () => {
+    db.saved = ["lab-c"];
+    db.listDelay = 50;
+    const { container } = renderCarousel();
+    const scroller = container.querySelector(".snap-x") as HTMLDivElement;
+    scroller.scrollLeft = 292; // what the snap does once the order changes
+
+    await waitFor(() => expect(labOrder()).toEqual(["City Lab", "Nibu Labs", "Das Diagnostics"]));
+    expect(scroller.scrollLeft).toBe(0);
+  });
+
+  it("leaves the list where the user swiped it", async () => {
+    db.saved = ["lab-c"];
+    db.listDelay = 50;
+    const { container } = renderCarousel();
+    const scroller = container.querySelector(".snap-x") as HTMLDivElement;
+    scroller.scrollLeft = 292;
+    fireEvent.scroll(scroller);
+
+    await waitFor(() => expect(labOrder()).toEqual(["City Lab", "Nibu Labs", "Das Diagnostics"]));
+    expect(scroller.scrollLeft).toBe(292);
   });
 
   it("tapping the heart does not open the lab page", async () => {

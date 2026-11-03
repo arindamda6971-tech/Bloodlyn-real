@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building2, BadgeCheck, Heart } from "lucide-react";
 import { PredictiveLink } from "@/components/ui/PredictiveLink";
@@ -159,6 +159,17 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
   }, [centers, pinnedIds]);
   const covers = useMemo(() => labCoverVariants(sortedCenters.map((c) => c.name)), [sortedCenters]);
 
+  // Saved labs usually load just after the carousel first paints, and moving one
+  // to the front makes the browser's scroll-snap keep the card that was snapped
+  // before, pushing the saved lab off the left edge. If the list was still at its
+  // start, keep it there so the saved lab is the first card on screen.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const atStartRef = useRef(true);
+  const orderKey = sortedCenters.map((c) => c.id).join(",");
+  useLayoutEffect(() => {
+    if (atStartRef.current && scrollerRef.current) scrollerRef.current.scrollLeft = 0;
+  }, [orderKey]);
+
   return (
     <div className="relative pt-1 pb-3">
       {/* Solid background — backdrop-blur is too expensive on Android WebView during transitions */}
@@ -182,6 +193,10 @@ const DiagnosticCentersCarousel = memo(({ centers }: DiagnosticCentersCarouselPr
 
       {/* Horizontal Scroll List (Native feel) */}
       <div
+        ref={scrollerRef}
+        onScroll={(event) => {
+          atStartRef.current = event.currentTarget.scrollLeft < 8;
+        }}
         className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar px-4 sm:px-6 pt-1 pb-4 gap-3 sm:gap-4"
         style={{
           WebkitOverflowScrolling: 'touch',
