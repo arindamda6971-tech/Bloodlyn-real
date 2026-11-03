@@ -38,6 +38,8 @@ const LabCard = memo(({ center, index, cover, favorite, onToggleFavorite }: {
   return (
     <PredictiveLink
       to={`/lab/${center.id}`}
+      // The lab page draws the same cover, so the colour and picture don't change on the way in.
+      state={{ cover }}
       prefetchKey={["lab-details", center.id]}
       prefetchFn={async () => {
         const { data } = await supabase

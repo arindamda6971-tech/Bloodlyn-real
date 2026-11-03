@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import LabBanner from "@/components/labs/LabBanner";
 import {
@@ -58,7 +58,7 @@ import { TestFacts } from "@/components/tests/TestFacts";
 import { commonTestsFirst } from "@/lib/test-order";
 import { testNameParts, testSample } from "@/utils/simplify-test-name";
 import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
-import { LabCover } from "@/components/labs/LabCover";
+import { LabCover, type LabArt } from "@/components/labs/LabCover";
 import { offeredCollectionSlots, tidyLabAddress } from "@/lib/lab-hours";
 
 // Lab brand data for visual identity
@@ -125,7 +125,7 @@ const fallbackThemes = [
 type TabKey = "general" | "specialized" | "packages";
 const TABS: { key: TabKey; label: string }[] = [
   { key: "general", label: "Tests" },
-  { key: "specialized", label: "Some days only" },
+  { key: "specialized", label: "Some days" },
   { key: "packages", label: "Packages" },
 ];
 
@@ -262,6 +262,8 @@ const globalLabCache = new Map<string, { labFromDb: any; dynamicTests: DynamicTe
 
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
+  // The cover Home showed for this lab (it varies a colour to differ from its neighbours).
+  const homeCover = (useLocation().state as { cover?: { palette: number; art: LabArt } } | null)?.cover;
   const navigate = useNavigate();
   const { addToCart, pendingItem, confirmReplace, cancelReplace, items, hasItem, subtotal: cartSubtotal } = useCart();
   const [searchQuery, setSearchQuery] = useState("");
@@ -636,13 +638,14 @@ const LabDetailScreen = () => {
         {/* Banner: this lab's Home card cover, full width from the top of the screen
             (under the status bar too), with back, search and cart on it. */}
         <div className="relative overflow-hidden rounded-b-[2rem] shadow-sm">
-          <LabCover name={labName} city={labAddress} logoUrl={logoUrl} className="absolute inset-0" infoPosition="bottom-5" />
-          <div className="relative z-10 flex items-center justify-between gap-3 px-4 pt-safe">
-            <button onClick={() => navigate(-1)} aria-label="Back" className="mt-1 w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
+          <LabCover name={labName} city={labAddress} logoUrl={logoUrl} palette={homeCover?.palette} art={homeCover?.art} className="absolute inset-0" infoPosition="bottom-5" />
+          {/* Just below the status bar: its real height plus a little, not the 40px floor .pt-safe uses. */}
+          <div className="relative z-10 flex items-center justify-between gap-3 px-4" style={{ paddingTop: "max(calc(var(--sat, 0px) + 6px), 24px)" }}>
+            <button onClick={() => navigate(-1)} aria-label="Back" className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
 
-            <div className="mt-1 flex-1">
+            <div className="flex-1">
               <div className="relative flex items-center w-full h-10 rounded-full bg-white shadow-sm overflow-hidden">
                 <Search className="w-4 h-4 text-muted-foreground ml-3" />
                 <input
@@ -658,7 +661,7 @@ const LabDetailScreen = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate("/cart")} aria-label="Cart" className="mt-1 relative w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
+            <button onClick={() => navigate("/cart")} aria-label="Cart" className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ShoppingCart className="w-5 h-5" />
               {items.length > 0 && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
@@ -809,7 +812,7 @@ const LabDetailScreen = () => {
         {/* Tab filters - only when the lab has more than one kind of test */}
         {visibleTabs.length > 1 && (
         <div className="px-5 pt-3 pb-1">
-          <div className={`relative grid gap-1.5 p-1.5 rounded-2xl bg-white border border-border/60 shadow-sm ${visibleTabs.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className={`relative grid gap-1 p-1.5 rounded-full bg-white border border-border/60 shadow-sm ${visibleTabs.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
             {visibleTabs.map((tab) => {
               const isActive = activeTab === tab.key;
               const count = tabCounts[tab.key];
@@ -820,20 +823,20 @@ const LabDetailScreen = () => {
                     setActiveTab(tab.key);
                     setSelectedCategory(null);
                   }}
-                   className="relative z-10 flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-xl text-[11px] font-extrabold transition-all"
+                   className="relative z-10 flex min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 rounded-full text-[13px] font-bold transition-all"
                 >
                   {isActive && (
                     <motion.div
                       layoutId="lab-tab-pill"
-                      className="absolute inset-0 bg-[#0f172a] rounded-xl shadow-xs"
+                      className="absolute inset-0 bg-[#0f172a] rounded-full shadow-xs"
                       transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     />
                   )}
-                  <span className={`relative tracking-tight ${isActive ? "text-white" : "text-muted-foreground"}`}>
+                  <span className={`relative truncate tracking-tight ${isActive ? "text-white" : "text-muted-foreground"}`}>
                     {tab.label}
                   </span>
                   <span
-                    className={`relative text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    className={`relative shrink-0 min-w-[18px] text-center text-[10px] font-black px-1.5 py-px rounded-full ${
                       isActive ? "bg-white/20 text-white" : "bg-muted text-foreground"
                     }`}
                   >
@@ -979,16 +982,23 @@ const LabDetailScreen = () => {
           <button
             type="button"
             onClick={() => navigate("/cart")}
-            className="mb-3 w-full flex items-center justify-between gap-3 rounded-2xl bg-[#0f172a] px-4 py-3 text-white shadow-lg active:scale-[0.98] transition-transform"
+            aria-label={`View cart: ${items.length} ${items.length === 1 ? "test" : "tests"}, ₹${cartSubtotal}`}
+            className="mb-3 w-full flex items-center gap-3 rounded-full bg-[#0f172a] py-2 pl-2 pr-2 text-white shadow-[0_10px_30px_-10px_rgba(15,23,42,0.6)] active:scale-[0.98] transition-transform animate-in fade-in slide-in-from-bottom-4 duration-300"
           >
-            <span className="text-left">
-              <span className="block text-[11px] font-semibold text-white/70">
-                {items.length} {items.length === 1 ? "test" : "tests"} added
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#38bdf8] px-1 text-[10px] font-black text-[#0f172a] ring-2 ring-[#0f172a]">
+                {items.length}
               </span>
-              <span className="block text-base font-black tabular-nums leading-tight">₹{cartSubtotal}</span>
             </span>
-            <span className="flex items-center gap-1.5 text-sm font-bold">
-              View cart <ArrowRight className="w-4 h-4" />
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block text-[17px] font-black tabular-nums leading-tight">₹{cartSubtotal}</span>
+              <span className="block truncate text-[11px] font-semibold text-white/60">
+                {items.length} {items.length === 1 ? "test" : "tests"} · {lab.name}
+              </span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-4 py-2.5 text-[13px] font-bold text-[#0f172a]">
+              View cart <ArrowRight className="h-4 w-4" />
             </span>
           </button>
         </div>

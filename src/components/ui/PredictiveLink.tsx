@@ -9,6 +9,8 @@ interface PredictiveLinkProps {
   className?: string;
   prefetchKey?: any[];
   prefetchFn?: () => Promise<any>;
+  /** Passed to the next page as router state. */
+  state?: unknown;
 }
 
 /**
@@ -20,7 +22,8 @@ export const PredictiveLink = ({
   children,
   className,
   prefetchKey,
-  prefetchFn
+  prefetchFn,
+  state,
 }: PredictiveLinkProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -44,7 +47,7 @@ export const PredictiveLink = ({
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     impactMedium(); // Stronger feedback on actual click/navigate
-    navigate(to);
+    navigate(to, state === undefined ? undefined : { state });
   };
 
   return (
