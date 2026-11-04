@@ -20,6 +20,11 @@ describe("orderStatusNotification", () => {
     }
   });
 
+  it("tells the patient why the lab cancelled, but not about their own cancel", () => {
+    expect(orderStatusNotification({ status: "cancelled", cancellation_reason: "No collector free that day" })?.message).toContain("No collector free that day");
+    expect(orderStatusNotification({ status: "cancelled", cancellation_reason: "Cancelled by patient: My plans changed" })).toBeNull();
+  });
+
   it("stays quiet for statuses customers don't need", () => {
     expect(orderStatusNotification({ status: "pending" })).toBeNull();
     expect(orderStatusNotification({ status: "something_new" })).toBeNull();

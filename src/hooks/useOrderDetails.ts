@@ -21,6 +21,10 @@ export interface OrderData {
   report_url: string | null;
   delivery_partner_name: string | null;
   delivery_partner_phone: string | null;
+  vendor_id?: string | null;
+  phlebotomist_id?: string | null;
+  is_escalated?: boolean | null;
+  reschedule_count?: number | null;
   patient_name?: string | null;
   family_members?: {
     full_name: string;

@@ -44,7 +44,7 @@ export function useLabOpenDays(
     };
   }, [labId, vendorIdFromLab]);
 
-  const { data: labSlots, isLoading } = useLabSlots(resolvedVendorId);
+  const { data: labSlots, isLoading, isError } = useLabSlots(resolvedVendorId, dayCount);
 
   const dates = getLabSlotDates(dayCount);
   const scheduleKnown = !!resolvedVendorId && !isLoading;
@@ -60,6 +60,8 @@ export function useLabOpenDays(
     vendorId: resolvedVendorId,
     isLoading: !!resolvedVendorId && isLoading,
     scheduleKnown,
+    /** The lab's schedule couldn't be read, so nothing it offers is known. */
+    scheduleFailed: !!resolvedVendorId && isError,
     availabilityByDate: labSlots?.availabilityByDate ?? {},
   };
 }

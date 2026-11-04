@@ -84,7 +84,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">9. Cancellation & Refunds</h3>
-              <p>Cancellations and refunds are governed by our Refund Policy and Order Terms. Fees may apply for late cancellations.</p>
+              <p>You can cancel or reschedule a booking free of charge until the lab assigns a collection partner. The full rules are in our Order Terms and Refund & Cancellation Policy.</p>
             </section>
 
             <section>
@@ -152,7 +152,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
         title: "Order Terms & Conditions",
         subtitle: "Rules related to placing and managing orders",
         icon: FileText,
-        lastUpdated: "April 2026",
+        lastUpdated: "November 2026",
         content: (
           <div className="space-y-6 text-sm text-slate-600">
             <section>
@@ -182,17 +182,17 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">6. Rescheduling</h3>
-              <p>Orders can be rescheduled up to 2 hours before the collection slot through the "My Bookings" section without any penalty.</p>
+              <p>Until the lab assigns a collection partner, you can move your booking, free of charge, to the next day after it. If the lab is closed or fully booked that day, it moves to the next day the lab is open with free times. You choose the time. Open the booking and tap "Cancel or reschedule". Once a collection partner is assigned, contact support to change the booking.</p>
             </section>
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">7. Cancellation</h3>
-              <p>Orders cancelled prior to the phlebotomist being dispatched are eligible for a full refund. Cancellations made after the phlebotomist has reached the location may incur a visit charge.</p>
+              <p>Until the lab assigns a collection partner, you can cancel your booking in the app, free of charge. Once a collection partner is assigned, contact support to cancel.</p>
             </section>
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">8. Failed Collection</h3>
-              <p>If sample collection fails due to patient unavailability, improper preparation, or unreachable address, a re-visit fee may apply.</p>
+              <p>If sample collection fails because the patient was unavailable or not prepared, or the address could not be reached, the booking may be closed and you can book again.</p>
             </section>
 
             <section>
@@ -212,7 +212,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">12. Refund Rules</h3>
-              <p>Refunds for cancelled or unfulfilled orders are processed back to the original payment method or the BloodLyn Wallet within 3-5 business days.</p>
+              <p>Payment is taken after your sample is collected, so cancelling or rescheduling before collection costs nothing. If you paid online for an order that is later cancelled, the amount is refunded to your original payment method.</p>
             </section>
 
             <section>
@@ -369,8 +369,31 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
         title: "Refund & Cancellation Policy",
         subtitle: "Cancellation, refund and wallet refund rules",
         icon: RefreshCw,
-        lastUpdated: "April 2026",
-        content: dummyContent
+        lastUpdated: "November 2026",
+        content: (
+          <div className="space-y-6 text-sm text-slate-600">
+            <section>
+              <h3 className="text-base font-bold text-slate-900 mb-2">1. Free changes until a collection partner is assigned</h3>
+              <p>Until the lab assigns a collection partner to your booking, you can cancel it free of charge, or move it to the next day the lab is open with free times after your booked day. Open the booking and tap "Cancel or reschedule".</p>
+            </section>
+            <section>
+              <h3 className="text-base font-bold text-slate-900 mb-2">2. After a collection partner is assigned</h3>
+              <p>The collector is on their way to you, so the booking can no longer be changed in the app. Contact support if you need to cancel or move it.</p>
+            </section>
+            <section>
+              <h3 className="text-base font-bold text-slate-900 mb-2">3. If the lab cancels</h3>
+              <p>If the lab cancels your booking, you are told why in the app and can book again with any lab that serves your area.</p>
+            </section>
+            <section>
+              <h3 className="text-base font-bold text-slate-900 mb-2">4. Missed collection</h3>
+              <p>If the collector does not come in your booked slot, report it from the booking once the slot has ended. The booking is cancelled and the lab is held to account.</p>
+            </section>
+            <section>
+              <h3 className="text-base font-bold text-slate-900 mb-2">5. Refunds</h3>
+              <p>Payment is taken after your sample is collected, so a cancelled booking costs nothing. If you paid online for an order that is later cancelled, the amount is refunded to your original payment method.</p>
+            </section>
+          </div>
+        )
       },
       {
         id: "cashback-policy",

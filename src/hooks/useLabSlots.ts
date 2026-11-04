@@ -27,14 +27,15 @@ export interface LabSlotsResult {
  * Partner project via the `lab-slots` edge function. No fabricated fallback slots:
  * if the Partner dashboard has no schedule for a day, that day is closed.
  */
-export function useLabSlots(labUserId: string | null | undefined) {
+export function useLabSlots(labUserId: string | null | undefined, days = 3) {
   return useQuery<LabSlotsResult>({
-    queryKey: ["lab-slots", labUserId],
+    queryKey: ["lab-slots", labUserId, days],
     enabled: !!labUserId,
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // Free places are counted for `days` days from today (booking 3, rescheduling 8).
       const { data, error } = await supabase.functions.invoke("lab-slots", {
-        body: { lab_user_id: labUserId },
+        body: { lab_user_id: labUserId, days },
       });
       if (error) throw error;
 

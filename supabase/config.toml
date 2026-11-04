@@ -55,3 +55,7 @@ verify_jwt = false
 [functions.report-no-show]
 verify_jwt = false
 # Separate no-show endpoint validates the caller with Supabase Auth.
+
+[functions.cancel-order]
+verify_jwt = false
+# Validates the caller with Supabase Auth; the stage rule lives in cancel_order_by_customer.

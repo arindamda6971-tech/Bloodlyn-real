@@ -1,77 +1,97 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, CalendarClock, CreditCard, X, ChevronRight, Loader2, CheckCircle2 } from "lucide-react";
+import { CalendarClock, ChevronRight, Loader2, XCircle } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
-import { FIXED_COLLECTION_SLOTS } from "@/lib/lab-slots";
-import { format, addDays } from "date-fns";
-type Reason = "preparation" | "reschedule";
+import { FIXED_COLLECTION_SLOTS, findFixedSlot, isFixedSlotBookable } from "@/lib/lab-slots";
+import { CANCEL_REASONS, rescheduleSlotState } from "@/lib/booking-changes";
+import { COLLECTION_SLOTS } from "../../../supabase/functions/_shared/slot-capacity";
+import { nextRescheduleDate, type LabDays } from "../../../supabase/functions/_shared/booking-window";
 
 interface CancelOrderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderId: string;
-  orderTotal: number;
-  userId: string;
-  /** raw order status — used to disable "I don't want it right now" once a partner is assigned */
-  orderStatus: string | null;
-  /** time slots from lab/order workflow; falls back to standard slots */
-  availableTimeSlots?: string[];
+  /** The lab's account id on the order; gives the lab's open days and free places. */
+  vendorId?: string | null;
+  labId?: string | null;
+  /** The booking as it stands, so the same slot isn't offered again. */
+  currentDate?: string | null;
+  currentSlot?: string | null;
   /** notify parent so it can refresh order */
   onSuccess: (mode: "rescheduled" | "cancelled") => void;
-  labId?: string | null;
 }
 
-const DEFAULT_SLOTS = FIXED_COLLECTION_SLOTS.map((s) => s.display);
+// Today plus the next 7 days, the window the server accepts.
+const DAY_COUNT = 8;
 
-const REASONS: { key: Reason; title: string; subtitle: string; icon: any; tone: string }[] = [
-  {
-    key: "preparation",
-    title: "Forgot to maintain preparation",
-    subtitle: "Reschedule to a date when you can prepare properly",
-    icon: AlertTriangle,
-    tone: "text-amber-600 bg-amber-50 dark:bg-amber-950/40",
-  },
-  {
-    key: "reschedule",
-    title: "Extend order to another date",
-    subtitle: "Pick a new date and time slot that works for you",
-    icon: CalendarClock,
-    tone: "text-primary bg-primary/10",
-  },
-];
+/** The server's own message for a failed call, e.g. "A collection partner is already assigned…". */
+async function functionError(error: unknown, data: unknown): Promise<string> {
+  const fromData = (data as { error?: string } | null)?.error;
+  if (fromData) return fromData;
+  const response = (error as { context?: Response } | null)?.context;
+  if (response && typeof response.json === "function") {
+    const body = await response.json().catch(() => null);
+    if (body?.error) return String(body.error);
+  }
+  return "Please try again.";
+}
 
 const CancelOrderDialog = ({
   open,
   onOpenChange,
   orderId,
-  orderTotal,
-  userId,
-  orderStatus,
-  availableTimeSlots,
-  onSuccess,
+  vendorId,
   labId,
+  currentDate,
+  currentSlot,
+  onSuccess,
 }: CancelOrderDialogProps) => {
-  const [step, setStep] = useState<"choose" | "reschedule" | "refund-confirm" | "preparation-confirm">("choose");
-  const [reason, setReason] = useState<Reason | null>(null);
-  const [date, setDate] = useState<Date | undefined>(addDays(new Date(), 1));
-  const [slot, setSlot] = useState<string | null>(null);
+  const [step, setStep] = useState<"choose" | "reschedule" | "cancel">("choose");
+  const [slotId, setSlotId] = useState<string | null>(null);
+  const [reason, setReason] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { dates, openByOffset, scheduleKnown, availabilityByDate } = useLabOpenDays(labId, null, 7);
+  const { dates, openByOffset, availabilityByDate, isLoading: scheduleLoading, scheduleKnown, scheduleFailed } =
+    useLabOpenDays(labId, vendorId, DAY_COUNT);
+  const currentSlotId = findFixedSlot(currentSlot)?.id ?? null;
+  // Only the lab's own saved schedule is offered; nothing is assumed while it loads.
+  const scheduleReady = scheduleKnown && !scheduleFailed;
 
+  const slotState = (index: number, slot: (typeof FIXED_COLLECTION_SLOTS)[number]) => {
+    const fullDate = dates[index]?.fullDate;
+    return rescheduleSlotState({
+      started: !isFixedSlotBookable(slot, index),
+      isCurrentBooking: fullDate === currentDate && slot.id === currentSlotId,
+      availability: fullDate ? availabilityByDate[fullDate]?.[slot.id] : undefined,
+    });
+  };
 
-  const slots = availableTimeSlots && availableTimeSlots.length > 0 ? availableTimeSlots : DEFAULT_SLOTS;
+  // A booking moves only to the next day after it that the lab is open and has a
+  // free time; the server checks the same rule with the same function.
+  const labDays = useMemo<LabDays>(() => {
+    const days: LabDays = {};
+    if (!scheduleReady) return days;
+    dates.forEach((d, index) => {
+      if (openByOffset[index] !== true) return;
+      days[d.fullDate] = COLLECTION_SLOTS.map((s) => {
+        const availability = availabilityByDate[d.fullDate]?.[s.id];
+        return { normalized: s.normalized, remaining: availability?.capacity ? availability.remaining ?? 0 : 0 };
+      });
+    });
+    return days;
+  }, [dates, openByOffset, availabilityByDate, scheduleReady]);
+  const targetDate = scheduleReady ? nextRescheduleDate(currentDate, labDays) : null;
+  const dateIndex = targetDate ? dates.findIndex((d) => d.fullDate === targetDate) : -1;
+  const targetDay = dateIndex >= 0 ? dates[dateIndex] : null;
 
   const reset = () => {
     setStep("choose");
+    setSlotId(null);
     setReason(null);
-    setSlot(null);
-    setDate(addDays(new Date(), 1));
     setSubmitting(false);
   };
 
@@ -81,316 +101,209 @@ const CancelOrderDialog = ({
     setTimeout(reset, 200);
   };
 
-  const submitReschedule = async (targetDate: Date, targetSlot: string) => {
-    setSubmitting(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("reschedule-order", {
-        body: {
-          orderId,
-          scheduledDate: format(targetDate, "yyyy-MM-dd"),
-          scheduledTimeSlot: targetSlot,
-        },
-      });
-      if (error || data?.error) throw new Error(data?.error || error?.message || "Please try again.");
-      toast.success("Order rescheduled successfully", {
-        description: `${format(targetDate, "MMM dd, yyyy")} • ${targetSlot}`,
-      });
-      onSuccess("rescheduled");
-      setSubmitting(false);
-      close();
-    } catch (e: any) {
-      setSubmitting(false);
-      toast.error("Could not reschedule", { description: e.message ?? "Please try again." });
-    }
-  };
-
-  const nextAvailableDate = useMemo(() => {
-    let offset = 1; // default tomorrow
-    for (let i = 1; i < dates.length; i++) {
-      if (!scheduleKnown || openByOffset[i]) {
-        offset = i;
-        break;
-      }
-    }
-    return addDays(new Date(), offset);
-  }, [dates, scheduleKnown, openByOffset]);
-
-  const nextDateKey = format(nextAvailableDate, "yyyy-MM-dd");
-  // 0 means the lab doesn't collect in that slot, which isn't the same as full.
-  const capacityForSlot = (value: string) => {
-    const normalized = FIXED_COLLECTION_SLOTS.find((candidate) => candidate.display === value);
-    return normalized ? availabilityByDate[nextDateKey]?.[normalized.id]?.capacity : null;
-  };
-
-  const remainingForSlot = (value: string) => {
-    const normalized = FIXED_COLLECTION_SLOTS.find((candidate) => candidate.display === value);
-    return normalized ? availabilityByDate[nextDateKey]?.[normalized.id]?.remaining : null;
-  };
-
-  const handlePreparationConfirm = async () => {
-    if (!slot) {
-      toast.error("Please select a time slot");
+  const submitReschedule = async () => {
+    const day = targetDay;
+    const slot = FIXED_COLLECTION_SLOTS.find((s) => s.id === slotId);
+    if (!day || !slot) {
+      toast.error("Please pick a time");
       return;
     }
-    await submitReschedule(nextAvailableDate, slot);
-  };
-
-  const handleReasonSelect = (r: Reason) => {
-    setReason(r);
-    if (r === "preparation") {
-      setSlot(slots[0] || null);
-      setStep("preparation-confirm");
-    } else if (r === "reschedule") {
-      setStep("reschedule");
-    }
-  };
-
-  const handleReschedule = () => {
-    if (!slot) {
-      toast.error("Please select a date and time slot");
+    setSubmitting(true);
+    const { data, error } = await supabase.functions.invoke("reschedule-order", {
+      body: { orderId, scheduledDate: day.fullDate, scheduledTimeSlot: slot.display },
+    });
+    if (error || (data as { error?: string } | null)?.error) {
+      setSubmitting(false);
+      toast.error("Couldn't reschedule", { description: await functionError(error, data) });
       return;
     }
-    submitReschedule(nextAvailableDate, slot);
+    toast.success("Booking rescheduled", { description: `${day.day}, ${day.date} ${day.month} · ${slot.time}` });
+    setSubmitting(false);
+    onSuccess("rescheduled");
+    close();
   };
 
-  const handleRefund = async () => {
-    setSubmitting(true);
-    try {
-      // 1. Cancel the order
-      const { error: cancelErr } = await supabase
-        .from("orders")
-        .update({ status: "cancelled", cancellation_reason: "User requested cancellation", cancelled_at: new Date().toISOString() })
-        .eq("id", orderId)
-        .eq("user_id", userId);
-      if (cancelErr) throw cancelErr;
-
-      toast.success("Order Cancelled Successfully", {
-        description: `₹${orderTotal} will be refunded to your original payment method.`,
-      });
-      onSuccess("cancelled");
-      setSubmitting(false);
-      close();
-    } catch (e: any) {
-      setSubmitting(false);
-      toast.error("Could not cancel order", { description: e.message ?? "Please try again." });
+  const submitCancel = async () => {
+    if (!reason) {
+      toast.error("Please choose a reason");
+      return;
     }
+    setSubmitting(true);
+    const { data, error } = await supabase.functions.invoke("cancel-order", { body: { orderId, reason } });
+    if (error || (data as { error?: string } | null)?.error) {
+      setSubmitting(false);
+      toast.error("Couldn't cancel", { description: await functionError(error, data) });
+      return;
+    }
+    toast.success("Booking cancelled", { description: "The lab has been told." });
+    setSubmitting(false);
+    onSuccess("cancelled");
+    close();
   };
+
+  const slide = { initial: { opacity: 0, x: 20 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -20 } };
 
   return (
     <Drawer open={open} onOpenChange={(v) => (v ? onOpenChange(true) : close())}>
       <DrawerContent className="max-w-md mx-auto p-0 overflow-hidden">
         <AnimatePresence mode="wait">
           {step === "choose" && (
-            <motion.div
-              key="choose"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="p-6"
-            >
-              <DrawerHeader className="text-left mb-4">
-                <DrawerTitle className="text-xl">Cancel Order</DrawerTitle>
-                <DrawerDescription>
-                  Tell us why so we can help you better.
-                </DrawerDescription>
+            <motion.div key="choose" {...slide} className="p-5">
+              <DrawerHeader className="text-left mb-3 p-0">
+                <DrawerTitle className="text-xl">Change your booking</DrawerTitle>
+                <DrawerDescription>Free until a collection partner is assigned.</DrawerDescription>
               </DrawerHeader>
 
               <div className="space-y-2.5">
-                {REASONS.map((r) => {
-                  const Icon = r.icon;
-                  return (
-                    <button
-                      key={r.key}
-                      onClick={() => handleReasonSelect(r.key)}
-                      className="w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all border-border hover:border-primary hover:bg-primary/5 active:scale-[0.98]"
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${r.tone}`}>
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm text-foreground">{r.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {r.subtitle}
-                        </p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  onClick={() => setStep("reschedule")}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-border text-left active:scale-[0.98] transition-transform"
+                >
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 text-primary">
+                    <CalendarClock className="w-5 h-5" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-sm text-foreground">Reschedule</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">Pick another date and time</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep("cancel")}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-border text-left active:scale-[0.98] transition-transform"
+                >
+                  <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-destructive/10 text-destructive">
+                    <XCircle className="w-5 h-5" />
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-semibold text-sm text-foreground">Cancel booking</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">The lab will be told</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                </button>
               </div>
 
-              <Button variant="ghost" className="w-full mt-4" onClick={close}>
-                Keep Order
+              <Button variant="ghost" className="w-full mt-3" onClick={close}>
+                Keep booking
               </Button>
             </motion.div>
           )}
 
-          {step === "preparation-confirm" && (
-            <motion.div
-              key="preparation-confirm"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="p-6"
-            >
-              <DrawerHeader className="text-left mb-4 p-0">
-                <DrawerTitle className="text-xl">Preparation Required</DrawerTitle>
-                <DrawerDescription>
-                  Review the terms for rescheduling due to preparation.
-                </DrawerDescription>
-              </DrawerHeader>
-
-              <div className="rounded-2xl border border-border p-4 mb-5 text-sm text-muted-foreground bg-muted/50">
-                <p className="font-semibold text-foreground mb-2">Terms & Conditions</p>
-                <ul className="list-disc pl-4 space-y-1 mb-4">
-                  <li>Your order will be automatically rescheduled to the next available lab opening day.</li>
-                  <li>Ensure you follow all fasting or preparation guidelines before the new scheduled time.</li>
-                </ul>
-
-                <p className="font-semibold text-foreground mb-2">
-                  Select your preferred time slot for <span className="text-primary">{format(nextAvailableDate, "MMM dd")}</span>:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {slots.map((s) => {
-                    const remaining = remainingForSlot(s);
-                    const full = remaining === 0;
-                    return (
-                    <button
-                      key={s}
-                      onClick={() => { if (!full) setSlot(s); }}
-                      disabled={full}
-                      className={`py-2 px-3 rounded-xl text-xs font-medium border transition-all ${
-                        full
-                          ? "border-border bg-muted text-muted-foreground opacity-50"
-                          :
-                        slot === s
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-foreground hover:border-primary/50"
-                      }`}
-                    >
-                      {s}
-                      {remaining != null && <span className="block mt-0.5 text-[9px]">{capacityForSlot(s) === 0 ? "Not offered" : full ? "Full" : `${remaining} left`}</span>}
-                    </button>
-                  )})}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setStep("choose")} disabled={submitting}>
-                  Back
-                </Button>
-                <Button className="flex-1" onClick={handlePreparationConfirm} disabled={submitting}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Reschedule"}
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
           {step === "reschedule" && (
-            <motion.div
-              key="reschedule"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="p-6"
-            >
-              <DrawerHeader className="text-left mb-4">
-                <DrawerTitle className="text-xl">Pick a new date & time</DrawerTitle>
-                <DrawerDescription>
-                  Your order will be rescheduled — no charges, no wallet refund.
-                </DrawerDescription>
+            <motion.div key="reschedule" {...slide} className="p-5">
+              <DrawerHeader className="text-left mb-3 p-0">
+                <DrawerTitle className="text-xl">Move to the next open day</DrawerTitle>
+                <DrawerDescription>No charge for rescheduling.</DrawerDescription>
               </DrawerHeader>
 
-
-
-              <div className="mb-4">
-                <p className="font-semibold text-foreground mb-2">
-                  Select your preferred time slot for <span className="text-primary">{format(nextAvailableDate, "MMM dd")}</span>:
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {slots.map((s) => {
-                    const remaining = remainingForSlot(s);
-                    const full = remaining === 0;
-                    return (
-                    <button
-                      key={s}
-                      onClick={() => { if (!full) setSlot(s); }}
-                      disabled={full}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all ${
-                        full
-                          ? "border-border bg-muted text-muted-foreground opacity-50"
-                          :
-                        slot === s
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-foreground hover:border-primary/50"
-                      }`}
-                    >
-                      {s}
-                      {remaining != null && <span className="block mt-0.5 text-[9px]">{capacityForSlot(s) === 0 ? "Not offered" : full ? "Full" : `${remaining} left`}</span>}
-                    </button>
-                  )})}
+              {!scheduleReady ? (
+                <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border px-4 text-center">
+                  {scheduleLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      <p className="text-sm text-muted-foreground">Loading the lab's collection times…</p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Couldn't load the lab's collection times. Please check your connection and try again.
+                    </p>
+                  )}
                 </div>
+              ) : !targetDay ? (
+                <div className="flex min-h-[160px] items-center justify-center rounded-2xl border border-dashed border-border px-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    The lab has no free collection times on its next open days. Please contact support to change this booking.
+                  </p>
+                </div>
+              ) : (
+              <>
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+                <span className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <span className="text-[10px] font-semibold leading-none">{targetDay.day}</span>
+                  <span className="text-base font-bold leading-tight">{targetDay.date}</span>
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-foreground">{`${targetDay.day}, ${targetDay.date} ${targetDay.month}`}</span>
+                  <span className="block text-xs text-muted-foreground">The next day the lab is open with free times. Pick a time.</span>
+                </span>
               </div>
 
-              <div className="rounded-2xl border border-border p-4 mb-5 text-sm text-muted-foreground bg-muted/50">
-                <p className="font-semibold text-foreground mb-2">Terms & Conditions</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Your order will be rescheduled to your newly selected date and time slot.</li>
-                  <li>Ensure you follow all fasting or preparation guidelines before the new scheduled time.</li>
-                </ul>
+              <div className="grid grid-cols-2 gap-2 mt-4" role="radiogroup" aria-label="Time">
+                {FIXED_COLLECTION_SLOTS.map((slot) => {
+                    const state = slotState(dateIndex, slot);
+                    const selected = slotId === slot.id;
+                    return (
+                      <button
+                        key={slot.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        disabled={state.disabled}
+                        onClick={() => setSlotId(slot.id)}
+                        className={`py-2.5 px-2 rounded-xl border text-xs font-semibold transition-colors ${
+                          selected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : state.disabled
+                              ? "border-border bg-muted text-muted-foreground opacity-60"
+                              : "border-border bg-background text-foreground"
+                        }`}
+                      >
+                        {slot.time}
+                        {state.note && <span className="block mt-0.5 text-[10px] font-medium">{state.note}</span>}
+                      </button>
+                    );
+                  })}
               </div>
+              </>
+              )}
 
-              <div className="flex gap-2">
+              <p className="mt-4 text-xs text-muted-foreground">
+                Follow your test's fasting and preparation instructions before the new time.
+              </p>
+
+              <div className="flex gap-2 mt-4">
                 <Button variant="outline" className="flex-1" onClick={() => setStep("choose")} disabled={submitting}>
                   Back
                 </Button>
-                <Button className="flex-1" onClick={handleReschedule} disabled={submitting || !date || !slot}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm Reschedule"}
+                <Button className="flex-1" onClick={submitReschedule} disabled={submitting || !targetDay || !slotId}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm"}
                 </Button>
               </div>
             </motion.div>
           )}
 
-          {step === "refund-confirm" && (
-            <motion.div
-              key="refund"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
-              className="p-6"
-            >
-              <div className="flex flex-col items-center text-center mb-5">
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                  className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mb-3"
-                >
-                  <CreditCard className="w-8 h-8 text-success" />
-                </motion.div>
-                <DrawerTitle className="text-xl">Refund Processed</DrawerTitle>
-                <DrawerDescription className="mt-2 max-w-sm">
-                  Your money will be refunded to your original payment method.
-                </DrawerDescription>
+          {step === "cancel" && (
+            <motion.div key="cancel" {...slide} className="p-5">
+              <DrawerHeader className="text-left mb-3 p-0">
+                <DrawerTitle className="text-xl">Cancel this booking?</DrawerTitle>
+                <DrawerDescription>Cancelling is free. Tell us why, so the lab knows.</DrawerDescription>
+              </DrawerHeader>
+
+              <div className="space-y-2" role="radiogroup" aria-label="Reason">
+                {CANCEL_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    role="radio"
+                    aria-checked={reason === r}
+                    onClick={() => setReason(r)}
+                    className={`w-full text-left px-3.5 py-3 rounded-xl border text-sm font-medium transition-colors ${
+                      reason === r ? "border-destructive bg-destructive/5 text-foreground" : "border-border bg-background text-foreground"
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
               </div>
 
-              <div className="rounded-2xl bg-gradient-to-br from-success/10 to-primary/10 p-5 mb-5 border border-success/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Refund amount</span>
-                  <span className="text-2xl font-bold text-success">₹{orderTotal}</span>
-                </div>
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-success/20">
-                  <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                  <span className="text-xs text-muted-foreground">Processed in 3-5 business days</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
+              <div className="flex gap-2 mt-5">
                 <Button variant="outline" className="flex-1" onClick={() => setStep("choose")} disabled={submitting}>
-                  Back
+                  Keep booking
                 </Button>
-                <Button className="flex-1 bg-success hover:bg-success/90 text-white" onClick={handleRefund} disabled={submitting}>
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Cancel"}
+                <Button variant="destructive" className="flex-1" onClick={submitCancel} disabled={submitting || !reason}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Cancel booking"}
                 </Button>
               </div>
             </motion.div>

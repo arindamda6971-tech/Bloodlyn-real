@@ -31,6 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
+import { canPatientChangeBooking } from "@/lib/booking-changes";
 import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt";
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
@@ -182,6 +183,8 @@ const TrackingScreen = () => {
     isVitalsOrder
       ? ["completed", "checked", "report_ready", "report_delivered"].includes(statusLower)
       : COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower);
+  // Until a collection partner is assigned; the server applies the same rule.
+  const canChangeBooking = canPatientChangeBooking(order);
   const showCollectionPrompt =
     !isCancelled &&
     statusLower !== "collection_pending" &&
@@ -517,11 +520,8 @@ const TrackingScreen = () => {
                 <dt className="text-xs text-muted-foreground flex-1">{isVitalsOrder ? "Visit" : "Collection"}</dt>
                 <dd className="text-right">
                   <p className="text-sm font-semibold text-foreground">{scheduleText}</p>
-                  {(order as any).is_rescheduled && (order as any).rescheduled_date && (
-                    <p className="text-xs font-semibold text-amber-600 mt-0.5">
-                      Rescheduled to {format(new Date((order as any).rescheduled_date), "dd MMM")}
-                      {(order as any).rescheduled_time_slot && ` · ${slotLabel((order as any).rescheduled_time_slot)}`}
-                    </p>
+                  {Number(order.reschedule_count) > 0 && (
+                    <p className="text-xs font-semibold text-amber-600 mt-0.5">Rescheduled</p>
                   )}
                 </dd>
               </div>
@@ -581,7 +581,7 @@ const TrackingScreen = () => {
 
         {/* Help & changes */}
         <section className="rounded-2xl border border-border/60 bg-card shadow-sm divide-y divide-border/60 overflow-hidden">
-          {!isCancelled && !partnerAssigned && (isVitalsOrder ? !collectionDone : completedIndex < 1) && (
+          {canChangeBooking && (
             <button
               type="button"
               onClick={() => setCancelOpen(true)}
@@ -591,6 +591,11 @@ const TrackingScreen = () => {
               <span className="flex-1 text-sm font-semibold text-destructive">Cancel or reschedule</span>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
+          )}
+          {!canChangeBooking && partnerAssigned && !collectionDone && !isCancelled && (
+            <p className="px-4 py-3 text-xs text-muted-foreground">
+              Your {partnerWord} partner is assigned, so this booking can't be cancelled or moved in the app. Contact support if you need to change it.
+            </p>
           )}
           <button
             type="button"
@@ -619,10 +624,10 @@ const TrackingScreen = () => {
           open={cancelOpen}
           onOpenChange={setCancelOpen}
           orderId={order.id}
-          orderTotal={order.total}
-          userId={supabaseUserId}
-          orderStatus={order.status}
+          vendorId={order.vendor_id}
           labId={order.lab_id}
+          currentDate={order.scheduled_date}
+          currentSlot={order.scheduled_time_slot}
           onSuccess={(mode) => {
             queryClient.invalidateQueries({ queryKey: ["order", order.id] });
             if (mode === "cancelled") {

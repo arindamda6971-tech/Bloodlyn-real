@@ -9,6 +9,7 @@
  * however many times the row is updated afterwards (partner phone, report
  * link, timestamps…).
  */
+import { cancelledByPatient } from "@/lib/booking-changes";
 
 export interface OrderNotificationContent {
   title: string;
@@ -52,6 +53,8 @@ export function orderStatusNotification(order: OrderRow): OrderNotificationConte
       return { title: "Booking completed ✅", message: "Your booking is complete. Your report is available in Reports." };
     case "cancelled": {
       const reason = (order.cancellation_reason || order.cancel_reason || "").trim();
+      // The patient cancelled it themselves; the app already confirmed that.
+      if (cancelledByPatient(reason)) return null;
       return { title: "Booking cancelled", message: reason ? `Your booking was cancelled: ${reason}` : "Your booking was cancelled." };
     }
     default:

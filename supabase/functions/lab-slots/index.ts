@@ -25,12 +25,18 @@ Deno.serve(async (req) => {
     const ANON = PARTNER_ANON_FALLBACK;
 
     let labUserId: string | null = null;
+    let requestedDays: unknown = null;
     if (req.method === "GET") {
-      labUserId = new URL(req.url).searchParams.get("lab_user_id");
+      const params = new URL(req.url).searchParams;
+      labUserId = params.get("lab_user_id");
+      requestedDays = params.get("days");
     } else {
       const body = await req.json().catch(() => ({}));
       labUserId = body?.lab_user_id ?? null;
+      requestedDays = body?.days ?? null;
     }
+    // Booking shows 3 days; rescheduling asks for today plus the next 7.
+    const dayCount = Math.min(8, Math.max(1, Math.floor(Number(requestedDays)) || 3));
 
     if (!labUserId || !/^[0-9a-f-]{36}$/i.test(labUserId)) {
       return new Response(JSON.stringify({ error: "Invalid lab_user_id" }), {
@@ -68,7 +74,7 @@ Deno.serve(async (req) => {
     const dateFormatter = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
     });
-    const dates = Array.from({ length: 3 }, (_, offset) => {
+    const dates = Array.from({ length: dayCount }, (_, offset) => {
       const target = new Date(now.getTime() + offset * 86_400_000);
       return dateFormatter.format(target);
     });
