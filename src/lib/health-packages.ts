@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { labServesPincode } from "../../supabase/functions/_shared/service-area";
 
 /**
  * Health packages as labs set them up in the Partner portal (synced into
@@ -55,6 +56,9 @@ export interface HealthPackage {
     rating: number | null;
     reviews: number | null;
     isActive: boolean | null;
+    /** The lab's own address PIN and its service PINs; together they decide where its packages show. */
+    pincode: string | null;
+    servicePincodes: string[];
   } | null;
 }
 
@@ -99,6 +103,8 @@ export function toHealthPackage(row: any): HealthPackage {
           rating: num(lab.rating),
           reviews: num(lab.reviews_count),
           isActive: typeof lab.is_active === "boolean" ? lab.is_active : null,
+          pincode: typeof lab.pincode === "string" ? lab.pincode : null,
+          servicePincodes: Array.isArray(lab.service_pincodes) ? lab.service_pincodes.map((p: unknown) => String(p).trim()) : [],
         }
       : null,
   };
@@ -126,7 +132,15 @@ export async function fetchPackage(id: string): Promise<HealthPackage | null> {
   return data ? toHealthPackage(data) : null;
 }
 
-export const ACTIVE_PACKAGES_QUERY_KEY = ["active-health-packages"] as const;
+// "with-pins": saved lists from before packages carried their lab's PINs are
+// left behind, so they can't hide every package until the next refresh.
+export const ACTIVE_PACKAGES_QUERY_KEY = ["active-health-packages", "with-pins"] as const;
+
+/** Packages whose lab collects at the user's PIN: its own PIN plus its service PINs. */
+export const packagesForPincode = (packages: HealthPackage[], pincode: string | null) =>
+  packages.filter((p) =>
+    labServesPincode(p.lab ? { pincode: p.lab.pincode, service_pincodes: p.lab.servicePincodes } : null, pincode),
+  );
 
 export const categoryLabel = (value: string | null) =>
   PACKAGE_CATEGORIES.find((c) => c.value === value)?.label ?? null;

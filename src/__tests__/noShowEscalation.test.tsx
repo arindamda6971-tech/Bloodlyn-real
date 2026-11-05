@@ -57,11 +57,13 @@ describe('No-show escalation', () => {
     expect(onConfirmed).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Comment')).toHaveValue('The collector did not arrive.');
   });
-  it('preserves the existing Yes mutation', async () => {
+  it('Yes confirms through the server and never asks for a PIN', async () => {
+    mocks.invoke.mockResolvedValue({ data: { success: true, status: 'sample_collected' }, error: null });
     mount();
     fireEvent.click(screen.getByRole('button', { name: /^Yes$/ }));
     await waitFor(() => expect(onConfirmed).toHaveBeenCalledWith('sample_collected'));
-    expect(mocks.update).toHaveBeenCalledWith({ status: 'sample_collected' });
-    expect(mocks.invoke).not.toHaveBeenCalled();
+    expect(mocks.invoke).toHaveBeenCalledWith('confirm-collection', { body: { orderId: '12345678-1234-4234-8234-123456789012', action: 'collected' } });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(screen.queryByText(/PIN/)).not.toBeInTheDocument();
   });
 });

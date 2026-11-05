@@ -4,13 +4,17 @@ import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";
 import { packagesStaleTime } from "@/hooks/useActivePackages";
-import { toHealthPackage, type HealthPackage } from "@/lib/health-packages";
+import { ACTIVE_PACKAGES_QUERY_KEY, toHealthPackage, type HealthPackage } from "@/lib/health-packages";
 
-const api = vi.hoisted(() => ({ fetch: vi.fn() }));
+const api = vi.hoisted(() => ({ fetch: vi.fn(), pincode: null as string | null }));
 
 vi.mock("@/lib/health-packages", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/health-packages")>()),
   fetchActivePackages: () => api.fetch(),
+}));
+
+vi.mock("@/hooks/useUserPincode", () => ({
+  useUserPincode: () => ({ pincode: api.pincode, loading: false }),
 }));
 
 const pkg: HealthPackage = toHealthPackage({
@@ -24,7 +28,7 @@ const pkg: HealthPackage = toHealthPackage({
 const show = (seed?: HealthPackage[], seededAt = Date.now()) => {
   // retryDelay 0: the hook's own retries shouldn't slow the test down.
   const client = new QueryClient({ defaultOptions: { queries: { retryDelay: 0 } } });
-  if (seed) client.setQueryData(["active-health-packages"], seed, { updatedAt: seededAt });
+  if (seed) client.setQueryData(ACTIVE_PACKAGES_QUERY_KEY, seed, { updatedAt: seededAt });
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
@@ -37,6 +41,25 @@ const show = (seed?: HealthPackage[], seededAt = Date.now()) => {
 describe("Home health packages", () => {
   beforeEach(() => {
     api.fetch.mockReset();
+    api.pincode = null;
+  });
+
+  it("shows only packages from labs that serve the user's PIN", async () => {
+    const at = (id: string, name: string, lab: Record<string, unknown>) =>
+      toHealthPackage({ id, name, price: 500, diagnostic_centers: { id: `lab-${id}`, name: `Lab ${id}`, ...lab } });
+    api.pincode = "700001";
+    api.fetch.mockResolvedValue([
+      at("a", "Own PIN Package", { pincode: "700001", service_pincodes: [] }),
+      at("b", "Service PIN Package", { pincode: "711101", service_pincodes: ["700001"] }),
+      at("c", "Far Away Package", { pincode: "560001", service_pincodes: ["560002"] }),
+      at("d", "No PIN Package", {}),
+    ]);
+    show();
+    expect(await screen.findByText("Own PIN Package")).toBeInTheDocument();
+    expect(screen.getByText("Service PIN Package")).toBeInTheDocument();
+    expect(screen.queryByText("Far Away Package")).not.toBeInTheDocument();
+    expect(screen.queryByText("No PIN Package")).not.toBeInTheDocument();
+    expect(screen.getByText("View all (2)")).toBeInTheDocument();
   });
 
   it("says the load failed, not that there are no packages, and recovers on Try again", async () => {

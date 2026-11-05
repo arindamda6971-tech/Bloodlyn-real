@@ -3,8 +3,8 @@
 // The customer answers "Is your blood collected by our partner?" on the order
 // tracking tile in BloodLyn Real. This function:
 //   1. validates the caller's JWT and that the order belongs to them
-//   2. for "collected": verifies the collection partner's PIN with the
-//      BloodLyn Partner Real project and marks the order sample_collected
+//   2. for "collected": marks the order sample_collected (no PIN: the
+//      partner PIN step was removed in Aug 2026)
 //   3. for "not_collected": only allowed after the booked slot has ended, and
 //      marks the order collection_pending
 //   4. mirrors the new status to the Partner project so the lab owner's
@@ -94,14 +94,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const orderId: string = String(body?.orderId ?? "");
     const action: string = String(body?.action ?? "");
-    const pin: string = String(body?.pin ?? "").trim();
 
     if (!/^[0-9a-f-]{36}$/i.test(orderId)) return json({ error: "Invalid orderId" }, 400);
     if (action !== "collected" && action !== "not_collected") {
       return json({ error: "action must be 'collected' or 'not_collected'" }, 400);
-    }
-    if (action === "collected" && !/^\d{4,8}$/.test(pin)) {
-      return json({ error: "Enter the 4-digit PIN shared by your collection partner" }, 400);
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
@@ -157,7 +153,6 @@ Deno.serve(async (req) => {
     return json({
       success: true,
       status: newStatus,
-      pin_verified: action === "collected",
       partner_synced: false,
     });
   } catch (error) {

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, X, Loader2, Clock, Phone, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -31,8 +30,6 @@ const CollectionConfirmPrompt = ({
   serviceType = "blood",
   onConfirmed,
 }: CollectionConfirmPromptProps) => {
-  const [pinOpen, setPinOpen] = useState(false);
-  const [pin, setPin] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [missed, setMissed] = useState(false);
@@ -76,7 +73,7 @@ const CollectionConfirmPrompt = ({
     }
   };
 
-  const submit = async (action: "collected" | "not_collected", pinValue?: string) => {
+  const submit = async (action: "collected" | "not_collected") => {
     setSubmitting(true);
     setErrorMessage("");
     try {
@@ -102,29 +99,11 @@ const CollectionConfirmPrompt = ({
         onConfirmed(payload.status || "completed");
         return;
       }
-      
-      // Try Option 2 first: Direct Database Update (if RLS is enabled)
-      const { data: directData, error: directError } = await supabase
-        .from("orders")
-        .update({ status: newStatus })
-        .eq("id", orderId)
-        .select();
 
-      // If direct update succeeds, we are done!
-      if (!directError && directData && directData.length > 0) {
-        toast.success(
-          action === "collected"
-            ? "Thanks! Your sample collection is confirmed."
-            : "We've told the lab your sample wasn't collected yet."
-        );
-        onConfirmed(newStatus);
-        setSubmitting(false);
-        return;
-      }
-
-      // If direct update fails (RLS block), fallback to Option 1: Edge Function
+      // Status changes go through the server: the orders table refuses them
+      // from the app (guard_order_booking_fields). No PIN is asked for.
       const { data: funcData, error: funcError } = await supabase.functions.invoke("confirm-collection", {
-        body: { orderId, action, pin: null },
+        body: { orderId, action },
       });
 
       const payload = (funcData ?? {}) as { success?: boolean; status?: string; error?: string };
