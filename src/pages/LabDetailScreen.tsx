@@ -61,6 +61,7 @@ import { LabOpenBadge, LabRating } from "@/components/labs/lab-display";
 import { LabCover, type LabArt } from "@/components/labs/LabCover";
 import { offeredCollectionSlots, tidyLabAddress } from "@/lib/lab-hours";
 import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
+import { activeLabOffers, describeLabOffer, type LabOffer } from "../../supabase/functions/_shared/lab-offers";
 
 // Lab brand data for visual identity
 const labBrandData: Record<string, { 
@@ -180,42 +181,26 @@ interface DynamicTest {
 
 // ─── Active Offers Component ───
 const ActiveOffers = ({ centerId }: { centerId?: string }) => {
-  const [offers, setOffers] = useState<any[]>([]);
+  const [offers, setOffers] = useState<LabOffer[]>([]);
 
+  // Offers arrive on the lab's own row from the Partner portal's sync.
   useEffect(() => {
     if (!centerId) return;
-    
-    const loadOffers = async () => {
+    let cancelled = false;
+    (async () => {
       const { data, error } = await supabase
-        .from('lab_offers')
-        .select('*')
-        .eq('lab_id', centerId)
-        .eq('is_active', true)
-        .gte('end_date', new Date().toISOString().split('T')[0])
-        .order('created_at', { ascending: false });
-        
-      if (!error && data) {
-        setOffers(data);
-      }
-    };
-    
-    loadOffers();
+        .from("diagnostic_centers")
+        .select("offers")
+        .eq("id", centerId)
+        .maybeSingle();
+      if (!cancelled) setOffers(error ? [] : activeLabOffers((data as { offers?: unknown } | null)?.offers));
+    })();
+    return () => { cancelled = true; };
   }, [centerId]);
 
   if (offers.length === 0) return null;
 
-  const generateDescription = (offer: any) => {
-    const min = `₹${offer.min_order_amount.toLocaleString("en-IN")}`;
-    switch (offer.type) {
-      case "free_delivery":
-        return `Free delivery on orders above ${min}`;
-      case "percentage_discount":
-        return `${offer.discount_value}% off on orders above ${min}${offer.max_discount_cap ? ` (up to ₹${offer.max_discount_cap.toLocaleString("en-IN")})` : ""}`;
-      case "flat_discount":
-        return `₹${offer.discount_value.toLocaleString("en-IN")} off on orders above ${min}`;
-    }
-    return "";
-  };
+  const generateDescription = (offer: LabOffer) => describeLabOffer(offer);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-IN", {
@@ -244,7 +229,7 @@ const ActiveOffers = ({ centerId }: { centerId?: string }) => {
                       <Icon className="w-4 h-4" />
                    </div>
                    <Badge variant="outline" className={`border-transparent font-bold ${badgeColorClass}`}>
-                     {isFreeDelivery ? "Free Delivery" : "Discount"}
+                     {isFreeDelivery ? "Free collection" : "Discount"}
                    </Badge>
                 </div>
               </div>

@@ -224,7 +224,7 @@ const PaymentProcessingScreen = () => {
       if (fnError) {
         // A 400 carries the reason in its body; surface the out-of-area one.
         const body = await fnError?.context?.json?.().catch(() => null);
-        if (body?.code === "lab_not_serviceable") throw new Error(body.error);
+        if (body?.code === "lab_not_serviceable" || body?.code === "offer_unavailable") throw new Error(body.error);
         throw fnError;
       }
       if (fnData?.error) throw new Error(fnData.error);

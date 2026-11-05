@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
 import { labServesPincode } from "../_shared/service-area.ts";
+import { activeLabOffers, indiaToday, offerApplies, offerSavings } from "../_shared/lab-offers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +33,8 @@ interface CreateOrderRequest {
   total: number;
   paymentMethod: string | null;
   couponCode: string | null;
+  /** A lab offer the patient picked; checked and priced here, never trusted from the client. */
+  offerId?: string | null;
   patientName?: string;
   patientAge?: number | string | null;
   patientGender?: string | null;
@@ -135,6 +138,7 @@ Deno.serve(async (req) => {
       total: z.number().min(0).max(1_000_000).optional(),
       paymentMethod: z.enum(["cod", "upi", "card", "netbanking", "wallet", "online"]).nullable().optional(),
       couponCode: z.string().trim().max(30).nullable().optional(),
+      offerId: z.string().trim().min(1).max(64).nullable().optional(),
       patientName: z.string().trim().max(120).optional(),
       patientAge: z.union([z.number().int().min(0).max(120), z.string().max(4)]).nullable().optional(),
       patientGender: z.string().max(20).nullable().optional(),
@@ -155,7 +159,7 @@ Deno.serve(async (req) => {
     }
 
     const body = parsed.data as CreateOrderRequest;
-    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
+    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, offerId, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -485,14 +489,40 @@ Deno.serve(async (req) => {
     // against the server-validated MRP before discounts, and add it once.
     let collectionFee = 0;
     const selectedLabId = labId || cartItems.find((item) => item.labId)?.labId || null;
+    let labOffersRaw: unknown = null;
     if (selectedLabId) {
+      // Offers are read only when one was picked, so orders without one never
+      // depend on the offers column.
       const { data: feeCenter, error: feeError } = await adminClient
         .from("diagnostic_centers")
-        .select("delivery_fee_rules")
+        .select(offerId ? "delivery_fee_rules, offers" : "delivery_fee_rules")
         .eq("id", selectedLabId)
         .maybeSingle();
       if (feeError) console.warn("Collection fee lookup failed, using ₹0:", feeError.message);
       collectionFee = calculateDeliveryFee(feeCenter?.delivery_fee_rules, serverSubtotal);
+      labOffersRaw = (feeCenter as { offers?: unknown } | null)?.offers ?? null;
+    }
+
+    // A lab offer replaces the coupon. It must be one of this lab's offers running
+    // today (India time) and the server-checked subtotal must reach its minimum;
+    // the discount is worked out here, whatever the client showed.
+    if (offerId) {
+      const offer = selectedLabId
+        ? activeLabOffers(labOffersRaw, indiaToday()).find((candidate) => candidate.id === offerId)
+        : undefined;
+      if (!offer || !offerApplies(offer, serverSubtotal)) {
+        return new Response(
+          JSON.stringify({
+            error: "This offer isn't available for this order any more. Please go back and check your total.",
+            code: "offer_unavailable",
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      const savings = offerSavings(offer, serverSubtotal);
+      serverDiscount = savings.discount;
+      if (savings.freeCollection) collectionFee = 0;
+      console.log(`Lab offer ${offer.id} (${offer.type}): ₹${savings.discount} off, free collection ${savings.freeCollection}`);
     }
 
     const netAmount = Math.max(0, serverSubtotal - serverDiscount);

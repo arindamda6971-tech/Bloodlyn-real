@@ -151,6 +151,7 @@ export type Database = {
           closing_time: string | null
           created_at: string
           delivery_fee_rules: Json | null
+          offers: Json
           ecg_available: boolean | null
           ecg_price: number | null
           email: string | null
@@ -184,6 +185,7 @@ export type Database = {
           closing_time?: string | null
           created_at?: string
           delivery_fee_rules?: Json | null
+          offers?: Json
           ecg_available?: boolean | null
           ecg_price?: number | null
           email?: string | null
@@ -217,6 +219,7 @@ export type Database = {
           closing_time?: string | null
           created_at?: string
           delivery_fee_rules?: Json | null
+          offers?: Json
           ecg_available?: boolean | null
           ecg_price?: number | null
           email?: string | null

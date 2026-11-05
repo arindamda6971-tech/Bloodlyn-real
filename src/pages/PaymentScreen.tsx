@@ -17,6 +17,13 @@ import { usePlatformFeeFlat } from "@/hooks/usePlatformFee";
 import { getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateDeliveryFee } from "@/lib/delivery-fee";
+import {
+  activeLabOffers,
+  describeLabOffer,
+  offerApplies,
+  offerSavings,
+  type LabOffer,
+} from "../../supabase/functions/_shared/lab-offers";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import { checkoutKeyFor, isCheckoutPlaced } from "@/lib/checkout-key";
 
@@ -78,8 +85,8 @@ const PaymentScreen = () => {
   const [bpAddonSelected, setBpAddonSelected] = useState(false);
   const [ecgAddonPrice, setEcgAddonPrice] = useState<number | null>(null);
   const [ecgAddonSelected, setEcgAddonSelected] = useState(false);
-  const [labOffers, setLabOffers] = useState<any[]>([]);
-  const [appliedOffer, setAppliedOffer] = useState<any | null>(null);
+  const [labOffers, setLabOffers] = useState<LabOffer[]>([]);
+  const [appliedOffer, setAppliedOffer] = useState<LabOffer | null>(null);
   const [deliveryFeeRules, setDeliveryFeeRules] = useState<unknown>(null);
 
 
@@ -157,54 +164,41 @@ const PaymentScreen = () => {
     };
   }, [orderLabId, alreadyHasBpItem, alreadyHasEcgItem]);
 
-  const orderVendorId = (() => {
-    const raw = paymentState?.labVendorId || paymentState?.cartItems?.[0]?.vendorId || "";
-    return UUID_MATCH.test(raw) ? raw : null;
-  })();
-
+  // The lab's offers come with its row (synced from the Partner portal). A query
+  // of their own, so a lab without the column yet still loads its fee rules above.
   useEffect(() => {
-    if (!orderVendorId) return;
+    if (!orderLabId) {
+      setLabOffers([]);
+      return;
+    }
     let cancelled = false;
-    const fetchOffers = async () => {
+    (async () => {
       const { data, error } = await supabase
-        .from('lab_offers')
-        .select('*')
-        .eq('lab_id', orderVendorId)
-        .eq('is_active', true)
-        .gte('end_date', new Date().toISOString().split('T')[0])
-        .order('created_at', { ascending: false });
-      if (!cancelled && data) {
-        setLabOffers(data);
-      }
-    };
-    fetchOffers();
+        .from("diagnostic_centers")
+        .select("offers")
+        .eq("id", orderLabId)
+        .maybeSingle();
+      if (cancelled) return;
+      setLabOffers(error ? [] : activeLabOffers((data as { offers?: unknown } | null)?.offers));
+    })();
     return () => { cancelled = true; };
-  }, [orderVendorId]);
+  }, [orderLabId]);
 
   const bpAddonActive = bpAddonPrice !== null && bpAddonSelected;
   const ecgAddonActive = ecgAddonPrice !== null && ecgAddonSelected;
-  const effectiveSubtotal = stateSubtotal 
+  const effectiveSubtotal = stateSubtotal
     + (bpAddonActive ? (bpAddonPrice || 0) : 0)
     + (ecgAddonActive ? (ecgAddonPrice || 0) : 0);
 
-  let appliedDiscount = 0;
-  let isFreeDelivery = false;
-  
-  if (appliedOffer) {
-    if (appliedOffer.type === 'flat_discount') {
-      appliedDiscount = appliedOffer.discount_value || 0;
-    } else if (appliedOffer.type === 'percentage_discount') {
-      let calc = (stateSubtotal * (appliedOffer.discount_value || 0)) / 100;
-      if (appliedOffer.max_discount_cap) {
-        calc = Math.min(calc, appliedOffer.max_discount_cap);
-      }
-      appliedDiscount = calc;
-    } else if (appliedOffer.type === 'free_delivery') {
-      isFreeDelivery = true;
-    }
-  } else if (couponApplied) {
-    appliedDiscount = 100;
-  }
+  // Same rules create-order uses, on the same subtotal it checks.
+  const offerResult = appliedOffer ? offerSavings(appliedOffer, effectiveSubtotal) : null;
+  const isFreeDelivery = offerResult?.freeCollection === true;
+  const appliedDiscount = offerResult ? offerResult.discount : couponApplied ? 100 : 0;
+
+  // An offer stops applying if the order drops below its minimum (an add-on removed).
+  useEffect(() => {
+    if (appliedOffer && !offerApplies(appliedOffer, effectiveSubtotal)) setAppliedOffer(null);
+  }, [appliedOffer, effectiveSubtotal]);
 
   const discount = Math.round(appliedDiscount);
   const platformFee = usePlatformFeeFlat();
@@ -473,7 +467,9 @@ const PaymentScreen = () => {
         discount,
         total,
         paymentMethod: selectedPaymentMethod.id,
-        couponCode: couponApplied ? "HEALTH100" : null,
+        couponCode: couponApplied && !appliedOffer ? "HEALTH100" : null,
+        // The server checks the offer and works out the discount itself.
+        offerId: appliedOffer?.id ?? null,
         // Keep the patient name clean — the collection address travels to the
         // partner via the order's address_id / partner webhook payload.
         patientName: paymentState?.patientName || "Patient",
@@ -704,21 +700,13 @@ const PaymentScreen = () => {
             <h3 className="text-base font-bold text-foreground tracking-tight px-1">Offers for you</h3>
             <div className="flex flex-col gap-3">
               {labOffers.map((offer) => {
-                const isApplicable = stateSubtotal >= offer.min_order_amount;
+                const isApplicable = offerApplies(offer, effectiveSubtotal);
                 const isSelected = appliedOffer?.id === offer.id;
-                
-                let title = "";
-                let desc = "";
-                if (offer.type === 'free_delivery') {
-                  title = `Free delivery on orders above ₹${offer.min_order_amount}`;
-                  desc = "Waives platform and home collection fees";
-                } else if (offer.type === 'percentage_discount') {
-                  title = `${offer.discount_value}% off on orders above ₹${offer.min_order_amount}`;
-                  desc = offer.max_discount_cap ? `Up to ₹${offer.max_discount_cap}` : "";
-                } else if (offer.type === 'flat_discount') {
-                  title = `Flat ₹${offer.discount_value} off on orders above ₹${offer.min_order_amount}`;
-                }
-                
+                const title = describeLabOffer(offer);
+                const desc = offer.type === "free_delivery"
+                  ? "Home collection fee waived"
+                  : `Valid till ${new Date(`${offer.end_date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`;
+
                 return (
                   <div 
                     key={offer.id} 
@@ -744,7 +732,7 @@ const PaymentScreen = () => {
                         {desc && <p className="text-xs text-muted-foreground mt-1">{desc}</p>}
                         {!isApplicable && (
                           <p className="text-[10px] font-semibold text-destructive mt-1.5">
-                            Add items worth ₹{offer.min_order_amount - stateSubtotal} more to apply
+                            Add items worth ₹{Math.ceil(offer.min_order_amount - effectiveSubtotal)} more to apply
                           </p>
                         )}
                       </div>
