@@ -10,6 +10,19 @@ interface BookingLike {
   delivery_partner_name?: string | null;
   delivery_partner_phone?: string | null;
   phlebotomist_id?: string | null;
+  reschedule_count?: number | null;
+}
+
+/** A booking can be moved once; after that it can still be cancelled. Matches the database. */
+export const MAX_RESCHEDULES = 1;
+
+export function hasUsedReschedule(order: BookingLike | null | undefined): boolean {
+  return Number(order?.reschedule_count ?? 0) >= MAX_RESCHEDULES;
+}
+
+/** Can still be moved: changeable, and not moved before. */
+export function canPatientReschedule(order: BookingLike | null | undefined): boolean {
+  return canPatientChangeBooking(order) && !hasUsedReschedule(order);
 }
 
 export function canPatientChangeBooking(order: BookingLike | null | undefined): boolean {

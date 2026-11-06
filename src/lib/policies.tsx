@@ -84,7 +84,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">9. Cancellation & Refunds</h3>
-              <p>You can cancel or reschedule a booking free of charge until the lab assigns a collection partner. The full rules are in our Order Terms and Refund & Cancellation Policy.</p>
+              <p>You can cancel a booking, or reschedule it once, free of charge until the lab assigns a collection partner. The full rules are in our Order Terms and Refund & Cancellation Policy.</p>
             </section>
 
             <section>
@@ -182,7 +182,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
 
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">6. Rescheduling</h3>
-              <p>Until the lab assigns a collection partner, you can move your booking, free of charge, to the next day after it. If the lab is closed or fully booked that day, it moves to the next day the lab is open with free times. You choose the time. Open the booking and tap "Cancel or reschedule". Once a collection partner is assigned, contact support to change the booking.</p>
+              <p>Until the lab assigns a collection partner, you can move your booking once, free of charge, to the next day after it. If the lab is closed or fully booked that day, it moves to the next day the lab is open with free times. You choose the time. Open the booking and tap "Cancel or reschedule". A booking that was already moved can still be cancelled, but not moved again. Once a collection partner is assigned, contact support to change the booking.</p>
             </section>
 
             <section>
@@ -374,7 +374,7 @@ export const POLICY_CATEGORIES: PolicyCategory[] = [
           <div className="space-y-6 text-sm text-slate-600">
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">1. Free changes until a collection partner is assigned</h3>
-              <p>Until the lab assigns a collection partner to your booking, you can cancel it free of charge, or move it to the next day the lab is open with free times after your booked day. Open the booking and tap "Cancel or reschedule".</p>
+              <p>Until the lab assigns a collection partner to your booking, you can cancel it free of charge, or move it once to the next day the lab is open with free times after your booked day. Open the booking and tap "Cancel or reschedule".</p>
             </section>
             <section>
               <h3 className="text-base font-bold text-slate-900 mb-2">2. After a collection partner is assigned</h3>

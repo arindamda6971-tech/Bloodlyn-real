@@ -6,6 +6,8 @@ import {
 } from "../_shared/booking-window.ts";
 import { fetchLabSchedule } from "../_shared/partner-schedule.ts";
 
+const ALREADY_RESCHEDULED = "This booking has already been rescheduled once. You can still cancel it.";
+
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -39,9 +41,13 @@ Deno.serve(async (req) => {
     if (targetProblem) return json({ error: targetProblem, code: "invalid_target" }, 400);
 
     const admin = createClient(url, service);
-    const { data: order } = await admin.from("orders").select("vendor_id,status,scheduled_date").eq("id", orderId).eq("user_id", userId).maybeSingle();
+    const { data: order } = await admin.from("orders").select("vendor_id,status,scheduled_date,reschedule_count").eq("id", orderId).eq("user_id", userId).maybeSingle();
     if (!order?.vendor_id) return json({ error: "Order or Partner lab not found" }, 404);
     if (String(order.status).toLowerCase() === "cancelled") return json({ error: "Cancelled orders cannot be rescheduled" }, 409);
+    // A booking moves once; the database refuses a second move too (under a row lock).
+    if (Number(order.reschedule_count ?? 0) >= 1) {
+      return json({ error: ALREADY_RESCHEDULED, code: "already_rescheduled" }, 409);
+    }
 
     const unavailable = () => json({ error: "Slot availability is temporarily unavailable. Please try again.", code: "capacity_unavailable" }, 503);
     const rows = await fetchLabSchedule(order.vendor_id);

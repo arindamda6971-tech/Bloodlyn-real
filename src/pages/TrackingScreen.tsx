@@ -31,7 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
-import { canPatientChangeBooking } from "@/lib/booking-changes";
+import { canPatientChangeBooking, hasUsedReschedule } from "@/lib/booking-changes";
 import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt";
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
@@ -185,6 +185,8 @@ const TrackingScreen = () => {
       : COLLECTED_STATUSES.includes(statusLower) || REPORT_STATUSES.includes(statusLower);
   // Until a collection partner is assigned; the server applies the same rule.
   const canChangeBooking = canPatientChangeBooking(order);
+  // Moved once already: it can still be cancelled, not moved again.
+  const rescheduleUsed = hasUsedReschedule(order);
   const showCollectionPrompt =
     !isCancelled &&
     statusLower !== "collection_pending" &&
@@ -588,7 +590,7 @@ const TrackingScreen = () => {
               className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-muted/50"
             >
               <XCircle className="w-5 h-5 text-destructive shrink-0" />
-              <span className="flex-1 text-sm font-semibold text-destructive">Cancel or reschedule</span>
+              <span className="flex-1 text-sm font-semibold text-destructive">{rescheduleUsed ? "Cancel booking" : "Cancel or reschedule"}</span>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </button>
           )}
@@ -628,6 +630,7 @@ const TrackingScreen = () => {
           labId={order.lab_id}
           currentDate={order.scheduled_date}
           currentSlot={order.scheduled_time_slot}
+          alreadyRescheduled={rescheduleUsed}
           onSuccess={(mode) => {
             queryClient.invalidateQueries({ queryKey: ["order", order.id] });
             if (mode === "cancelled") {

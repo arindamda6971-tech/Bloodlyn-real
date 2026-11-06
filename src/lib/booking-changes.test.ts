@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { canPatientChangeBooking, cancelledByPatient, rescheduleSlotState } from "./booking-changes";
+import { canPatientChangeBooking, canPatientReschedule, cancelledByPatient, hasUsedReschedule, MAX_RESCHEDULES, rescheduleSlotState } from "./booking-changes";
 import {
   nextRescheduleDate, RESCHEDULE_DAYS_AHEAD, rescheduleTargetProblem, type LabDays,
 } from "../../supabase/functions/_shared/booking-window";
@@ -112,5 +112,37 @@ describe("rescheduleTargetProblem", () => {
     expect(rescheduleTargetProblem("2026-11-04", "08:00-10:00", now)).toMatch(/already started/);
     expect(rescheduleTargetProblem("2026-11-03", "16:00-18:00", now)).toMatch(/already started/);
     expect(rescheduleTargetProblem("2026-11-12", "06:00-08:00", now)).toMatch(/next 7 days/);
+  });
+});
+
+describe("Reschedule only once", () => {
+  const open = { status: "confirmed" };
+  it("lets a booking be moved the first time", () => {
+    expect(canPatientReschedule({ ...open, reschedule_count: 0 })).toBe(true);
+    expect(canPatientReschedule({ ...open })).toBe(true);
+    expect(hasUsedReschedule({ ...open, reschedule_count: 0 })).toBe(false);
+  });
+
+  it("refuses a second move but still allows cancelling", () => {
+    const moved = { ...open, reschedule_count: 1 };
+    expect(hasUsedReschedule(moved)).toBe(true);
+    expect(canPatientReschedule(moved)).toBe(false);
+    expect(canPatientChangeBooking(moved)).toBe(true);
+    expect(MAX_RESCHEDULES).toBe(1);
+  });
+
+  it("never allows a move once a partner is assigned", () => {
+    expect(canPatientReschedule({ ...open, reschedule_count: 0, delivery_partner_name: "Ravi" })).toBe(false);
+  });
+});
+
+describe("Reschedule once, in the database", () => {
+  it("refuses a second move after locking the order row", () => {
+    const sql = readFileSync("supabase/migrations/20261106090000_reschedule_once.sql", "utf8");
+    const lock = sql.indexOf("FOR UPDATE");
+    const check = sql.indexOf("COALESCE(v_order.reschedule_count, 0) >= 1");
+    expect(lock).toBeGreaterThan(-1);
+    expect(check).toBeGreaterThan(lock);
+    expect(sql).toContain("DETAIL = 'already_rescheduled'");
   });
 });

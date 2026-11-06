@@ -21,6 +21,8 @@ interface CancelOrderDialogProps {
   /** The booking as it stands, so the same slot isn't offered again. */
   currentDate?: string | null;
   currentSlot?: string | null;
+  /** The booking was moved once already; it can still be cancelled, not moved again. */
+  alreadyRescheduled?: boolean;
   /** notify parent so it can refresh order */
   onSuccess: (mode: "rescheduled" | "cancelled") => void;
 }
@@ -48,6 +50,7 @@ const CancelOrderDialog = ({
   labId,
   currentDate,
   currentSlot,
+  alreadyRescheduled = false,
   onSuccess,
 }: CancelOrderDialogProps) => {
   const [step, setStep] = useState<"choose" | "reschedule" | "cancel">("choose");
@@ -151,23 +154,29 @@ const CancelOrderDialog = ({
             <motion.div key="choose" {...slide} className="p-5">
               <DrawerHeader className="text-left mb-3 p-0">
                 <DrawerTitle className="text-xl">Change your booking</DrawerTitle>
-                <DrawerDescription>Free until a collection partner is assigned.</DrawerDescription>
+                <DrawerDescription>
+                  {alreadyRescheduled ? "This booking was moved once, so it can only be cancelled now." : "Free until a collection partner is assigned. You can move a booking once."}
+                </DrawerDescription>
               </DrawerHeader>
 
               <div className="space-y-2.5">
                 <button
                   type="button"
                   onClick={() => setStep("reschedule")}
-                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-border text-left active:scale-[0.98] transition-transform"
+                  disabled={alreadyRescheduled}
+                  aria-disabled={alreadyRescheduled}
+                  className="w-full flex items-center gap-3 p-3.5 rounded-2xl border border-border text-left active:scale-[0.98] transition-transform disabled:opacity-55 disabled:active:scale-100"
                 >
                   <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 text-primary">
                     <CalendarClock className="w-5 h-5" />
                   </span>
                   <span className="flex-1 min-w-0">
                     <span className="block font-semibold text-sm text-foreground">Reschedule</span>
-                    <span className="block text-xs text-muted-foreground mt-0.5">Pick another date and time</span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">
+                      {alreadyRescheduled ? "Already rescheduled once. A booking can be moved only one time." : "Pick another date and time"}
+                    </span>
                   </span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  {!alreadyRescheduled && <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
                 </button>
                 <button
                   type="button"
