@@ -797,7 +797,8 @@ const LabDetailScreen = () => {
 
 
         {/* Active Offers Section */}
-        <ActiveOffers centerId={labFromDb?.vendor_id ?? undefined} />
+        {/* The lab's own row id: offers sit on diagnostic_centers.offers. */}
+        <ActiveOffers centerId={labFromDb?.id ?? undefined} />
 
         {/* Schedule Section */}
         <div className="px-4 mb-4">
