@@ -38,3 +38,7 @@ export function splitByOpenLab<T extends { labId?: string }>(
   }
   return { kept, removed };
 }
+
+/** "Add more tests" goes back to the cart's lab page; with no lab yet, to the test list. */
+export const addMoreTestsPath = (labId: string | null | undefined): string =>
+  labId && labId.trim() ? `/lab/${encodeURIComponent(labId.trim())}` : "/categories";

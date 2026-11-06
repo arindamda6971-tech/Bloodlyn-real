@@ -37,6 +37,7 @@ import { useSEO } from "@/hooks/useSEO";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
+import { addMoreTestsPath } from "@/lib/cart-cleanup";
 
 interface SavedAddress {
   id: string;
@@ -539,7 +540,9 @@ const CartScreen = () => {
 
             <button
               type="button"
-              onClick={() => navigate("/categories")}
+              // Back to the lab these tests are from (a cart holds one lab's tests);
+              // the test list only when the cart has no lab yet.
+              onClick={() => navigate(addMoreTestsPath(currentLabId))}
               className="w-full border-t border-border/60 py-3 text-primary text-xs font-bold flex items-center justify-center gap-1.5 active:bg-primary/5"
             >
               <Plus className="w-4 h-4" />
