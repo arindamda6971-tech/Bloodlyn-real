@@ -30,6 +30,7 @@ const getPasswordStrength = (pass: string) => {
 const LoginScreen = () => {
   useSEO({ title: "Sign in to BloodLyn", description: "Sign in to BloodLyn to book home diagnostic tests and access your health reports." });
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signInWithEmail, signUpWithEmail, signInWithGoogle } = useAuth();
   const { toast } = useToast();
 
@@ -37,7 +38,8 @@ const LoginScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
+  // Onboarding's "Get started" opens sign-up; its "Log in" link and every other entry open log-in.
+  const [isSignUp, setIsSignUp] = useState(() => (location.state as { signUp?: boolean } | null)?.signUp === true);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -47,7 +49,6 @@ const LoginScreen = () => {
 
   const strength = getPasswordStrength(password);
 
-  const location = useLocation();
   useEffect(() => {
     if (user) {
       const rawFrom = (location.state as { from?: string | { pathname?: string } } | null)?.from;

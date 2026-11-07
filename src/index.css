@@ -48,18 +48,18 @@ input[type="number"] {
     --popover: 0 0% 100%;
     --popover-foreground: 210 50% 15%;
 
-    /* Brand Blue - Primary (the "Lyn" blue from the logo, #0284c7).
-       Darker than the old sky blue (#4AB3F4) so white text on buttons is
-       readable (~4.6:1 contrast instead of ~2.4:1). */
-    --primary: 200 98% 39%;
+    /* Brand Blue - Primary: the "Lyn" blue from the logo (#0474DC, the middle of
+       its sky-to-royal gradient, slightly deepened). White text on it is ~4.6:1. */
+    --primary: 209 96% 44%;
     --primary-foreground: 0 0% 100%;
 
     /* Brand Red - the blood drop in the logo. For brand accents only;
        use --destructive for errors. */
     --brand-red: 0 72% 51%;
 
-    /* One brand gradient for hero buttons and highlights. */
-    --gradient-brand: linear-gradient(90deg, #0284c7 0%, #0ea5e9 100%);
+    /* One brand gradient for hero buttons and highlights: the logo's "Lyn"
+       gradient, top to bottom (see src/lib/booking-theme.ts). */
+    --gradient-brand: linear-gradient(180deg, #05A2E6 0%, #0474DC 48%, #0841D4 100%);
 
     /* Navy Blue - Secondary */
     --secondary: 210 40% 16%;
@@ -70,8 +70,8 @@ input[type="number"] {
     --muted-foreground: 210 20% 45%;
 
     /* Accent - lighter blue */
-    --accent: 200 94% 95%;
-    --accent-foreground: 200 98% 32%;
+    --accent: 209 96% 95%;
+    --accent-foreground: 216 92% 36%;
 
     /* Success - Soft Green */
     --success: 153 52% 53%;
@@ -90,7 +90,7 @@ input[type="number"] {
 
     --border: 210 20% 90%;
     --input: 210 20% 90%;
-    --ring: 200 98% 39%;
+    --ring: 209 96% 44%;
 
     /* Status indicators - New Pastel Palette */
     --status-success-bg: 153 52% 95%;
@@ -99,8 +99,8 @@ input[type="number"] {
     --status-warning-text: 38 92% 30%;
     --status-destructive-bg: 0 84% 95%;
     --status-destructive-text: 0 84% 35%;
-    --status-info-bg: 201 88% 95%;
-    --status-info-text: 201 88% 30%;
+    --status-info-bg: 209 96% 95%;
+    --status-info-text: 214 90% 30%;
 
     --radius: 1rem;
 
@@ -109,14 +109,14 @@ input[type="number"] {
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 6px 18px -4px hsl(200 98% 39% / 0.35);
+    --shadow-glow: 0 6px 18px -4px hsl(209 96% 44% / 0.35);
     --shadow-card: 0 2px 12px rgb(0 0 0 / 0.08);
 
     /* Gold Theme */
     --gold: 45 100% 50%;
     --gold-foreground: 45 100% 10%;
     --gold-gradient: linear-gradient(135deg, #FFD700 0%, #FDB931 50%, #8A6424 100%);
-    --gradient-hero: linear-gradient(180deg, hsl(201 88% 97%) 0%, hsl(0 0% 100%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(209 96% 97%) 0%, hsl(0 0% 100%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(153 52% 53%) 0%, hsl(153 52% 43%) 100%);
     --gradient-navy: linear-gradient(135deg, hsl(210 40% 20%) 0%, hsl(210 40% 12%) 100%);
 
@@ -141,7 +141,7 @@ input[type="number"] {
     --popover: 210 40% 12%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 199 89% 48%;
+    --primary: 206 95% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 30% 20%;
@@ -150,8 +150,8 @@ input[type="number"] {
     --muted: 210 30% 18%;
     --muted-foreground: 210 20% 65%;
 
-    --accent: 200 60% 18%;
-    --accent-foreground: 199 92% 74%;
+    --accent: 211 60% 18%;
+    --accent-foreground: 205 95% 74%;
 
     --success: 153 52% 45%;
     --success-foreground: 0 0% 100%;
@@ -167,24 +167,24 @@ input[type="number"] {
 
     --border: 210 30% 20%;
     --input: 210 30% 20%;
-    --ring: 199 89% 48%;
+    --ring: 206 95% 50%;
 
-    --shadow-glow: 0 6px 18px -4px hsl(199 89% 48% / 0.4);
+    --shadow-glow: 0 6px 18px -4px hsl(206 95% 50% / 0.4);
     --shadow-card: 0 2px 12px rgb(0 0 0 / 0.3);
 
-    --gradient-primary: linear-gradient(135deg, hsl(201 88% 55%) 0%, hsl(201 88% 45%) 100%);
+    --gradient-primary: linear-gradient(135deg, #05A2E6 0%, #0474DC 55%, #0841D4 100%);
     --gradient-hero: linear-gradient(180deg, hsl(210 40% 10%) 0%, hsl(210 40% 8%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(153 52% 45%) 0%, hsl(153 52% 35%) 100%);
     --gradient-navy: linear-gradient(135deg, hsl(210 40% 15%) 0%, hsl(210 40% 8%) 100%);
 
     --sidebar-background: 210 40% 10%;
     --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 201 88% 55%;
+    --sidebar-primary: 206 95% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 30% 15%;
     --sidebar-accent-foreground: 210 20% 90%;
     --sidebar-border: 210 30% 18%;
-    --sidebar-ring: 201 88% 55%;
+    --sidebar-ring: 206 95% 50%;
   }
 }
 
@@ -385,7 +385,7 @@ input[type="number"] {
   .btn-primary-gradient {
     background: var(--gradient-brand);
     @apply text-white font-bold rounded-2xl px-6 py-4 transition-all duration-300;
-    box-shadow: 0 10px 20px -6px rgba(2, 132, 199, 0.35);
+    box-shadow: 0 10px 20px -6px rgba(4, 116, 220, 0.35);
     backface-visibility: hidden;
     transform: translateZ(0);
   }
@@ -1015,3 +1015,40 @@ html.native [data-scroll-container] {
 
 
 
+
+/* ── Onboarding motion ─────────────────────────────────────────────────────
+   Compositor-only (transform/opacity) apart from the small ECG stroke inside the
+   drop, so it stays smooth on low-end Android WebViews. All of it stops for
+   "reduce motion". */
+@keyframes onb-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes onb-spin { to { transform: rotate(360deg); } }
+@keyframes onb-spin-back { to { transform: rotate(-360deg); } }
+@keyframes onb-beat {
+  0%, 100% { transform: scale(1); }
+  12% { transform: scale(1.06); }
+  22% { transform: scale(0.99); }
+  32% { transform: scale(1.04); }
+  46% { transform: scale(1); }
+}
+@keyframes onb-glow {
+  0%, 100% { opacity: 0.6; transform: scale(0.94); }
+  12% { opacity: 1; transform: scale(1.08); }
+  46% { opacity: 0.7; transform: scale(1); }
+}
+@keyframes onb-ecg {
+  0% { stroke-dashoffset: 100; }
+  45%, 100% { stroke-dashoffset: 0; }
+}
+.onb-rise { animation: onb-rise 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.onb-orbit { animation: onb-spin 48s linear infinite; will-change: transform; }
+.onb-counter { animation: onb-spin-back 48s linear infinite; }
+.onb-beat { animation: onb-beat 2.4s ease-in-out infinite; transform-origin: 50% 62%; will-change: transform; }
+.onb-glow { animation: onb-glow 2.4s ease-in-out infinite; }
+.onb-ecg { stroke-dasharray: 100; animation: onb-ecg 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .onb-rise, .onb-orbit, .onb-counter, .onb-beat, .onb-glow, .onb-ecg { animation: none; }
+  .onb-ecg { stroke-dashoffset: 0; }
+}

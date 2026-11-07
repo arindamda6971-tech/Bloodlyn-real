@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { ShieldCheck, FlaskConical, CalendarCheck, Check, AlertCircle, Lock } from "lucide-react";
 import { HeroCheck, HeroDecor } from "@/components/booking/BookingHero";
-import { BOOKING_HERO_BG, SAPPHIRE } from "@/lib/booking-theme";
+import { BOOKING_HERO_BG, BRAND_BLUE } from "@/lib/booking-theme";
 import { formatINR, formatPassDate, formatTimeWindow, relativeDayPhrase } from "@/lib/booking-format";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +65,7 @@ const StepDot = ({ state }: { state: StepState }) =>
       transition={{ type: "spring", stiffness: 420, damping: 20 }}
       className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white"
     >
-      <Check className="h-3.5 w-3.5" style={{ color: SAPPHIRE }} strokeWidth={3} />
+      <Check className="h-3.5 w-3.5" style={{ color: BRAND_BLUE }} strokeWidth={3} />
     </motion.span>
   ) : state === "active" ? (
     <span className="relative block h-6 w-6 shrink-0">

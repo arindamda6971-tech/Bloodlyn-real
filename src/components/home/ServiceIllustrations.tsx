@@ -44,7 +44,7 @@ const ART: Record<ServiceIllustrationName, (props: Shared) => JSX.Element> = {
     <Frame p={p}>
       <defs>
         <Grad id={`${p}-body`} from="#475569" to="#0f172a" />
-        <Grad id={`${p}-screen`} from="#e0f2fe" to="#a5d8f7" />
+        <Grad id={`${p}-screen`} from="#E0EEFF" to="#a5d8f7" />
         <Grad id={`${p}-skin`} from="#fdd9bd" to="#e9a27a" />
         <Grad id={`${p}-coat`} from="#ffffff" to="#d5dee8" />
         <Grad id={`${p}-hair`} from="#4b3427" to="#22150e" />
@@ -177,7 +177,7 @@ const ART: Record<ServiceIllustrationName, (props: Shared) => JSX.Element> = {
       <defs>
         <Grad id={`${p}-paper`} from="#ffffff" to="#e2e8f0" />
         <Grad id={`${p}-head`} from="#60a5fa" to="#2563eb" />
-        <Grad id={`${p}-up`} from="#38bdf8" to="#0369a1" />
+        <Grad id={`${p}-up`} from="#46B2FF" to="#0841D4" />
       </defs>
       <g transform="rotate(-6 54 58)">
         <rect x="26" y="10" width="62" height="88" rx="9" fill={`url(#${p}-paper)`} />

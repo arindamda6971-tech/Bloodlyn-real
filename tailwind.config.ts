@@ -18,6 +18,20 @@ export default {
         sans: ['Manrope', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // Tailwind's `sky` remapped to the logo's "Lyn" blue, so sky-* classes match the brand.
+        sky: {
+          50: "#F0F7FF",
+          100: "#E0EEFF",
+          200: "#BFDCFF",
+          300: "#8CC4FF",
+          400: "#46A8F5",
+          500: "#0B8DEB",
+          600: "#0474DC",
+          700: "#0841D4",
+          800: "#0A35A8",
+          900: "#0B2D80",
+          950: "#0A1E52",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

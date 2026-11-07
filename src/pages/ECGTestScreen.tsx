@@ -33,7 +33,7 @@ import { getServicePincode } from "@/lib/service-pincode";
 const confettiColors = [
   "hsl(var(--primary))",
   "hsl(340 82% 52%)",
-  "hsl(201 88% 62%)",
+  "hsl(206 95% 58%)",
   "hsl(142 71% 45%)",
   "hsl(48 96% 53%)",
   "hsl(280 65% 60%)",

@@ -23,7 +23,7 @@ const HowItWorks = memo(() => (
       />
       {STEPS.map(({ icon, title, text }) => (
         <li key={title} className="relative flex flex-col items-center text-center px-1">
-          <span className="w-[60px] h-[60px] rounded-full bg-white shadow-[0_4px_14px_-4px_rgba(2,132,199,0.25)] ring-1 ring-sky-100 flex items-center justify-center">
+          <span className="w-[60px] h-[60px] rounded-full bg-white shadow-[0_4px_14px_-4px_rgba(4,116,220,0.25)] ring-1 ring-sky-100 flex items-center justify-center">
             <img
               src={`/icons/3d/${icon}.webp`}
               alt=""

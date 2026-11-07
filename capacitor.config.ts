@@ -38,7 +38,7 @@ const config: CapacitorConfig = {
     },
     LocalNotifications: {
       smallIcon: "ic_stat_bloodlyn",
-      iconColor: "#4AB3F4",
+      iconColor: "#0474DC",
       sound: "beep.wav",
     },
   },

@@ -16,17 +16,17 @@ export interface LabBannerTheme {
 }
 
 const THEMES: Record<string, LabBannerTheme> = {
-  "Dr. Lal PathLabs":     { from: "#001f5b", via: "#0052cc", to: "#0a82ff", accent: "#7dd3fc" },
+  "Dr. Lal PathLabs":     { from: "#001f5b", via: "#0052cc", to: "#0a82ff", accent: "#8CC4FF" },
   "Thyrocare":            { from: "#3b0764", via: "#7c3aed", to: "#a855f7", accent: "#f0abfc" },
   "Metropolis Healthcare":{ from: "#064e3b", via: "#14b8a6", to: "#5eead4", accent: "#a7f3d0" },
   "SRL Diagnostics":      { from: "#7f1d1d", via: "#dc2626", to: "#fb7185", accent: "#fecaca" },
-  "Apollo Diagnostics":   { from: "#0c4a6e", via: "#0284c7", to: "#38bdf8", accent: "#bae6fd" },
+  "Apollo Diagnostics":   { from: "#0A2A6B", via: "#0474DC", to: "#46B2FF", accent: "#bae6fd" },
   "LifeCare Diagnostics": { from: "#064e3b", via: "#059669", to: "#34d399", accent: "#bbf7d0" },
 };
 
 const FALLBACKS: LabBannerTheme[] = [
   { from: "#1e1b4b", via: "#4338ca", to: "#818cf8", accent: "#c7d2fe" },
-  { from: "#0f172a", via: "#0ea5e9", to: "#38bdf8", accent: "#bae6fd" },
+  { from: "#0f172a", via: "#05A2E6", to: "#46B2FF", accent: "#bae6fd" },
   { from: "#3f0d33", via: "#be185d", to: "#f472b6", accent: "#fbcfe8" },
   { from: "#052e2b", via: "#0d9488", to: "#5eead4", accent: "#99f6e4" },
 ];

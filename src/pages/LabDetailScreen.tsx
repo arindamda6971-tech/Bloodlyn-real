@@ -101,10 +101,10 @@ const labBrandData: Record<string, {
   },
   "Apollo Diagnostics": {
     logo: "https://www.apollodiagnostics.in/assets/images/apollo-logo.png",
-    bannerGradient: "from-[#0369a1] via-[#0284c7] to-[#38bdf8]",
+    bannerGradient: "from-[#0841D4] via-[#0474DC] to-[#46B2FF]",
     bannerImage: "https://images.unsplash.com/photo-1538108149393-fbbd81895907?w=800&q=80",
     tagline: "Healthcare You Can Trust",
-    accentColor: "#0284c7"
+    accentColor: "#0474DC"
   },
   "LifeCare Diagnostics": {
     logo: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=100&q=80",
@@ -724,8 +724,8 @@ const LabDetailScreen = () => {
                 disabled={isOutOfArea}
                 className="flex min-w-0 items-center gap-1.5 rounded-2xl border border-border/60 bg-white px-2 py-2 text-left shadow-sm transition-transform active:scale-95 disabled:opacity-50 disabled:active:scale-100"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#e0f2fe]">
-                  <Activity className="h-4 w-4 text-[#0284c7]" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#E0EEFF]">
+                  <Activity className="h-4 w-4 text-[#0474DC]" />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-[12px] font-bold text-foreground">{serviceCount === 3 ? "BP" : "BP check"}</span>
@@ -961,7 +961,7 @@ const LabDetailScreen = () => {
                       className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 duration-100 ease-out press disabled:opacity-40 disabled:active:scale-100 ${
                         isAdded
                           ? "bg-success text-white shadow-md"
-                          : "bg-[#38bdf8] text-white shadow-md"
+                          : "bg-[#46B2FF] text-white shadow-md"
                       }`}
                       aria-label={isAdded ? "View item in cart" : "Add test to cart"}
                     >
@@ -1008,7 +1008,7 @@ const LabDetailScreen = () => {
           >
             <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/10">
               <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#38bdf8] px-1 text-[10px] font-black text-[#0f172a] ring-2 ring-[#0f172a]">
+              <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#46B2FF] px-1 text-[10px] font-black text-[#0f172a] ring-2 ring-[#0f172a]">
                 {items.length}
               </span>
             </span>

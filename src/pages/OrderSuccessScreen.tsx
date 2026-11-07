@@ -224,8 +224,8 @@ const OrderSuccessScreen = () => {
                       return (
                         <li key={item.id} className="flex items-start justify-between gap-4 pt-3">
                           <div className="flex min-w-0 gap-3">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[hsl(222_70%_40%/0.08)] dark:bg-white/[0.06]">
-                              <FlaskConical className="h-4 w-4 text-[hsl(222_70%_40%)] dark:text-[hsl(214_85%_72%)]" />
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#0841D4]/[0.08] dark:bg-white/[0.06]">
+                              <FlaskConical className="h-4 w-4 text-[#0841D4] dark:text-[#46B2FF]" />
                             </span>
                             <div className="min-w-0">
                               <p className="text-[14px] font-semibold leading-snug text-foreground">

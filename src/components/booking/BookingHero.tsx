@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { SAPPHIRE } from "@/lib/booking-theme";
+import { BRAND_BLUE } from "@/lib/booking-theme";
 
 /** Soft circles that give the gradient some depth. */
 export const HeroDecor = ({ drift = false }: { drift?: boolean }) => (
@@ -34,7 +34,7 @@ export const HeroCheck = ({ size = 56 }: { size?: number }) => (
     <svg viewBox="0 0 24 24" className="h-1/2 w-1/2" fill="none" aria-hidden>
       <motion.path
         d="M5 12.5l4.2 4.2L19 7"
-        stroke={SAPPHIRE}
+        stroke={BRAND_BLUE}
         strokeWidth={3}
         strokeLinecap="round"
         strokeLinejoin="round"

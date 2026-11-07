@@ -393,7 +393,7 @@ const ICONS: Record<ConcernIconName, (props: Shared) => JSX.Element> = {
       <defs>
         <Grad id={`${p}-rim`} from="#94a3b8" to="#334155" />
         <Grad id={`${p}-h`} from="#475569" to="#0f172a" />
-        <radialGradient id={`${p}-lens`} cx="0.4" cy="0.35" r="0.7"><stop offset="0" stopColor="#f0f9ff" /><stop offset="1" stopColor="#bae6fd" /></radialGradient>
+        <radialGradient id={`${p}-lens`} cx="0.4" cy="0.35" r="0.7"><stop offset="0" stopColor="#F0F7FF" /><stop offset="1" stopColor="#bae6fd" /></radialGradient>
       </defs>
       <g transform="rotate(45 68 68)"><rect x="61" y="54" width="14" height="34" rx="7" fill={`url(#${p}-h)`} /></g>
       <circle cx="42" cy="42" r="26" fill={`url(#${p}-lens)`} />

@@ -86,7 +86,7 @@ const notifyDownloaded = async (filename: string) => {
           summaryText: "BloodLyn",
           smallIcon: "ic_stat_bloodlyn",
           largeIcon: "splash_icon",
-          iconColor: "#4AB3F4",
+          iconColor: "#0474DC",
           extra: { route: "/reports" },
         },
       ],
