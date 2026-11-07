@@ -1,7 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { ShieldCheck, CreditCard, Package, CheckCircle2, Loader2 } from "lucide-react";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
+import { ShieldCheck, FlaskConical, CalendarCheck, Check, AlertCircle, Lock } from "lucide-react";
+import { HeroCheck, HeroDecor } from "@/components/booking/BookingHero";
+import { BOOKING_HERO_BG, SAPPHIRE } from "@/lib/booking-theme";
+import { formatINR, formatPassDate, formatTimeWindow, relativeDayPhrase } from "@/lib/booking-format";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -40,72 +44,68 @@ interface ProcessingState {
 /* Stage config                                                        */
 /* ------------------------------------------------------------------ */
 
+// Wording is payment-neutral: most orders are "Pay after blood collection".
 const STAGES = [
-  {
-    id: "verify",
-    label: "Verifying payment",
-    sublabel: "Securing your transaction…",
-    icon: ShieldCheck,
-    color: "hsl(201, 88%, 62%)",
-  },
-  {
-    id: "process",
-    label: "Processing order",
-    sublabel: "Connecting with the lab…",
-    icon: CreditCard,
-    color: "hsl(262, 83%, 65%)",
-  },
-  {
-    id: "confirm",
-    label: "Confirming booking",
-    sublabel: "Almost there…",
-    icon: Package,
-    color: "hsl(142, 71%, 50%)",
-  },
-  {
-    id: "done",
-    label: "Order placed!",
-    sublabel: "Redirecting you now…",
-    icon: CheckCircle2,
-    color: "hsl(142, 71%, 45%)",
-  },
+  { id: "verify", label: "Checking your details", sublabel: "Making sure everything is in order", step: "Verifying your details", doneStep: "Details verified", icon: ShieldCheck },
+  { id: "process", label: "Reserving your slot", sublabel: "Sending your booking to the lab", step: "Reserving your slot with the lab", doneStep: "Slot reserved with the lab", icon: FlaskConical },
+  { id: "confirm", label: "Confirming your booking", sublabel: "Almost done", step: "Confirming booking", doneStep: "Booking confirmed", icon: CalendarCheck },
+  { id: "done", label: "Booking confirmed", sublabel: "Opening your booking", step: "Booking confirmed", doneStep: "Booking confirmed", icon: Check },
 ] as const;
 
-/* ------------------------------------------------------------------ */
-/* Floating particles                                                  */
-/* ------------------------------------------------------------------ */
+const WORK_STAGES = STAGES.length - 1;
 
-const Particle = ({ index }: { index: number }) => {
-  const size = 3 + Math.random() * 4;
-  const x = Math.random() * 100;
-  const delay = Math.random() * 3;
-  const duration = 4 + Math.random() * 4;
+type StepState = "done" | "active" | "todo";
 
-  return (
-    <motion.div
-      className="absolute rounded-full pointer-events-none"
-      style={{
-        width: size,
-        height: size,
-        left: `${x}%`,
-        bottom: -10,
-        background: `hsl(${200 + index * 15}, 70%, 80%)`,
-        opacity: 0,
-      }}
-      animate={{
-        y: [0, -window.innerHeight * 1.2],
-        opacity: [0, 0.35, 0.15, 0],
-        x: [0, (Math.random() - 0.5) * 60],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: "easeOut",
-      }}
-    />
+/** Step marker drawn for the blue background. */
+const StepDot = ({ state }: { state: StepState }) =>
+  state === "done" ? (
+    <motion.span
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 420, damping: 20 }}
+      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white"
+    >
+      <Check className="h-3.5 w-3.5" style={{ color: SAPPHIRE }} strokeWidth={3} />
+    </motion.span>
+  ) : state === "active" ? (
+    <span className="relative block h-6 w-6 shrink-0">
+      <span className="absolute inset-0 rounded-full border-2 border-white/25" />
+      <motion.span
+        className="absolute inset-0 rounded-full border-2 border-transparent border-t-white"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 0.9, repeat: Infinity, ease: "linear" }}
+      />
+    </span>
+  ) : (
+    <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+      <span className="h-2 w-2 rounded-full bg-white/35" />
+    </span>
   );
-};
+
+/** White spinning ring around the current stage's icon. */
+const StageSpinner = ({ icon: Icon }: { icon: typeof Check }) => (
+  <div className="relative h-20 w-20">
+    <span className="absolute inset-0 rounded-full border-[3px] border-white/20" />
+    <motion.span
+      className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-white"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+    />
+    <span className="absolute inset-[10px] flex items-center justify-center rounded-full bg-white/15">
+      <AnimatePresence mode="wait">
+        <motion.span
+          key={Icon.displayName ?? String(Icon)}
+          initial={{ opacity: 0, scale: 0.6 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.6 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Icon className="h-7 w-7 text-white" />
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  </div>
+);
 
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
@@ -370,194 +370,127 @@ const PaymentProcessingScreen = () => {
   }, [processingState, navigate]);
 
   const stage = STAGES[currentStage];
-  const StageIcon = stage.icon;
-  const progress = ((currentStage + 1) / STAGES.length) * 100;
+  const isDone = currentStage === STAGES.length - 1 && !failed;
+
+  const summary = processingState?.successState ?? {};
+  const labName: string | null = processingState?.labName || summary.selectedLabName || null;
+  const items: Array<{ name?: string }> = processingState?.cartItems ?? summary.cartItems ?? [];
+  const firstTest = items[0]?.name ? simplifyTestName(String(items[0].name)) : null;
+  const moreTests = items.length > 1 ? ` + ${items.length - 1} more` : "";
+  const day = relativeDayPhrase(summary.scheduledDate)?.replace(/^on /, "") ?? formatPassDate(summary.scheduledDate);
+  const when = [day, formatTimeWindow(summary.scheduledTimeSlot)].filter(Boolean).join(" · ");
+  const total = typeof summary.total === "number" ? formatINR(summary.total) : null;
+
+  const eyebrow = failed ? "Booking not placed" : isDone ? "All set" : `Step ${currentStage + 1} of ${WORK_STAGES}`;
+  const title = failed ? "We couldn't place your order" : stage.label;
+  const subtitle = failed
+    ? "Nothing was booked. Taking you back to checkout…"
+    : stage.id === "process" && labName
+      ? `Sending your booking to ${labName}`
+      : `${stage.sublabel}…`;
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden"
-      style={{
-        background: "linear-gradient(160deg, hsl(210, 40%, 98%) 0%, hsl(220, 30%, 96%) 40%, hsl(215, 25%, 94%) 100%)",
-      }}
-    >
-      {/* Floating particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <Particle key={i} index={i} />
-        ))}
-      </div>
+    <MotionConfig reducedMotion="user">
+      <div className="fixed inset-0 z-[9999] overflow-y-auto text-white" style={BOOKING_HERO_BG} role="status" aria-live="polite">
+        <HeroDecor drift />
 
-      {/* Ambient glow */}
-      <motion.div
-        className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
-        style={{
-          background: `radial-gradient(circle, ${stage.color}18 0%, transparent 70%)`,
-          filter: "blur(60px)",
-        }}
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.2, 0.4, 0.2],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
+        <div
+          className="relative mx-auto flex min-h-full w-full max-w-md flex-col px-6"
+          style={{ paddingTop: "max(var(--sat), 24px)", paddingBottom: "max(var(--sab), 20px)" }}
+        >
+          <div className="flex flex-1 flex-col justify-center py-6">
+            {/* Indicator */}
+            <div className="h-20">
+              {failed ? (
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg ring-8 ring-white/15"
+                >
+                  <AlertCircle className="h-8 w-8 text-destructive" />
+                </motion.div>
+              ) : isDone ? (
+                <HeroCheck size={64} />
+              ) : (
+                <StageSpinner icon={stage.icon} />
+              )}
+            </div>
 
-      {/* Center card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="relative z-10 flex flex-col items-center px-8 py-10 max-w-sm w-full mx-6"
-      >
-        {/* Animated icon ring */}
-        <div className="relative mb-8">
-          {/* Outer rotating ring */}
-          <motion.div
-            className="absolute inset-0 rounded-full"
-            style={{
-              width: 120,
-              height: 120,
-              border: `3px solid transparent`,
-              borderTopColor: stage.color,
-              borderRightColor: `${stage.color}60`,
-            }}
-            animate={failed ? {} : { rotate: 360 }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-
-          {/* Inner pulsing ring */}
-          <motion.div
-            className="absolute rounded-full"
-            style={{
-              width: 100,
-              height: 100,
-              top: 10,
-              left: 10,
-              background: `${stage.color}10`,
-              border: `1px solid ${stage.color}30`,
-            }}
-            animate={{
-              scale: [1, 1.05, 1],
-              opacity: [0.5, 0.8, 0.5],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-
-          {/* Icon */}
-          <div
-            className="relative flex items-center justify-center"
-            style={{ width: 120, height: 120 }}
-          >
+            {/* Headline */}
             <AnimatePresence mode="wait">
               <motion.div
-                key={stage.id}
-                initial={{ opacity: 0, scale: 0.5, rotate: -30 }}
-                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                exit={{ opacity: 0, scale: 0.5, rotate: 30 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
+                key={failed ? "failed" : stage.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-7 min-h-[104px]"
               >
-                {failed ? (
-                  <Loader2
-                    className="animate-spin"
-                    style={{ color: "hsl(0, 70%, 60%)" }}
-                    size={40}
-                    strokeWidth={1.5}
-                  />
-                ) : (
-                  <StageIcon
-                    style={{ color: stage.color }}
-                    size={40}
-                    strokeWidth={1.5}
-                  />
-                )}
+                <p className="text-[14px] font-medium text-white/70">{eyebrow}</p>
+                <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight">{title}</h1>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-white/70">{subtitle}</p>
               </motion.div>
             </AnimatePresence>
-          </div>
-        </div>
 
-        {/* Stage text */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={failed ? "failed" : stage.id}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.35 }}
-            className="text-center mb-8"
-          >
-            <h2
-              className="text-xl font-bold tracking-tight mb-2"
-              style={{ color: failed ? "hsl(0, 65%, 50%)" : "hsl(220, 20%, 15%)" }}
-            >
-              {failed ? "Something went wrong" : stage.label}
-            </h2>
-            <p
-              className="text-sm"
-              style={{ color: "hsl(220, 10%, 50%)" }}
-            >
-              {failed ? "Taking you back…" : stage.sublabel}
-            </p>
-          </motion.div>
-        </AnimatePresence>
+            {/* Steps */}
+            {!failed && (
+              <motion.ol
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-6 space-y-4 rounded-3xl bg-white/10 p-5 ring-1 ring-inset ring-white/15 backdrop-blur"
+              >
+                {STAGES.slice(0, WORK_STAGES).map((s, i) => {
+                  const state: StepState = isDone || i < currentStage ? "done" : i === currentStage ? "active" : "todo";
+                  return (
+                    <li key={s.id} className="flex items-center gap-3">
+                      <StepDot state={state} />
+                      <span className={`text-[14px] ${state === "todo" ? "text-white/50" : "font-semibold text-white"}`}>
+                        {state === "done" ? s.doneStep : s.step}
+                      </span>
+                    </li>
+                  );
+                })}
+              </motion.ol>
+            )}
 
-        {/* Progress bar */}
-        {!failed && (
-          <div className="w-full max-w-[240px]">
-            <div
-              className="h-1.5 rounded-full overflow-hidden"
-              style={{ background: "hsl(220, 15%, 90%)" }}
-            >
+            {/* What is being booked */}
+            {(firstTest || when || total) && (
               <motion.div
-                className="h-full rounded-full"
-                style={{
-                  background: `linear-gradient(90deg, ${STAGES[0].color}, ${stage.color})`,
-                }}
-                initial={{ width: "0%" }}
-                animate={{ width: `${progress}%` }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              />
-            </div>
-
-            {/* Stage dots */}
-            <div className="flex justify-between mt-3 px-1">
-              {STAGES.map((s, i) => (
-                <motion.div
-                  key={s.id}
-                  className="w-2 h-2 rounded-full"
-                  style={{
-                    background: i <= currentStage ? s.color : "hsl(220, 15%, 82%)",
-                  }}
-                  animate={
-                    i === currentStage
-                      ? { scale: [1, 1.4, 1], opacity: [0.7, 1, 0.7] }
-                      : {}
-                  }
-                  transition={{
-                    duration: 1.2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                />
-              ))}
-            </div>
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="mt-4"
+              >
+                <div
+                  className={`rounded-3xl bg-white p-4 text-slate-900 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.45)] transition-opacity duration-300 ${failed ? "opacity-70" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      {firstTest && (
+                        <p className="truncate text-[14px] font-semibold">
+                          {firstTest}
+                          {moreTests && <span className="font-medium text-slate-500">{moreTests}</span>}
+                        </p>
+                      )}
+                      {when && <p className="mt-0.5 text-[12px] text-slate-500">{when.charAt(0).toUpperCase() + when.slice(1)}</p>}
+                    </div>
+                    {total && <p className="shrink-0 text-[16px] font-bold tabular-nums">{total}</p>}
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
-        )}
 
-
-
-      </motion.div>
-    </div>
+          {!failed && (
+            <p className="flex items-center justify-center gap-1.5 text-center text-[12px] text-white/60">
+              <Lock className="h-3 w-3" />
+              Secure booking · please keep the app open
+            </p>
+          )}
+        </div>
+      </div>
+    </MotionConfig>
   );
 };
 

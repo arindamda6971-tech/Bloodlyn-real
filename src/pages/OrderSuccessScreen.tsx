@@ -1,9 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Home, Package, Sparkles, Calendar, User, Phone, Beaker, Receipt, CreditCard, Building2, FileText, Check, MapPin } from "lucide-react";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
+import { ArrowRight, Building2, Check, Copy, FlaskConical, MapPin, User } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import MobileLayout from "@/components/layout/MobileLayout";
+import { HeroCheck, HeroDecor } from "@/components/booking/BookingHero";
+import { BOOKING_BUTTON_BG, BOOKING_HERO_BG } from "@/lib/booking-theme";
+import { formatINR, formatPassDate, formatTimeWindow, relativeDayPhrase, testSampleLine } from "@/lib/booking-format";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 
 interface BookingState {
@@ -18,6 +22,9 @@ interface BookingState {
     labName?: string;
     vendorId?: string;
     category?: string;
+    sampleType?: string;
+    fastingRequired?: boolean;
+    fastingInstruction?: string;
   }>;
   addressId: string | null;
   scheduledDate: string | null;
@@ -42,52 +49,37 @@ interface BookingState {
   orderAddressString?: string;
 }
 
-const confettiColors = [
-  "hsl(var(--primary))",
-  "hsl(var(--success))",
-  "hsl(201 88% 62%)",
-  "hsl(142 71% 45%)",
-  "hsl(48 96% 53%)",
-  "hsl(280 65% 60%)",
-];
-
-const ConfettiPiece = ({ index }: { index: number }) => {
-  const randomX = Math.random() * 100;
-  const randomDelay = Math.random() * 0.8;
-  const randomDuration = 1.5 + Math.random() * 1.5;
-  const randomRotation = Math.random() * 720 - 360;
-  const color = confettiColors[index % confettiColors.length];
-  const size = 6 + Math.random() * 8;
-  const isCircle = Math.random() > 0.5;
-
-  return (
-    <motion.div
-      className="absolute top-0 pointer-events-none"
-      style={{
-        left: `${randomX}%`,
-        width: size,
-        height: isCircle ? size : size * 2.5,
-        borderRadius: isCircle ? "50%" : "2px",
-        backgroundColor: color,
-      }}
-      initial={false}
-      animate={{
-        y: ["0%", "800%"],
-        opacity: [1, 1, 0.8, 0],
-        rotate: randomRotation,
-        scale: [0, 1.2, 1, 0.6],
-        x: [0, (Math.random() - 0.5) * 120],
-      }}
-      transition={{
-        duration: randomDuration,
-        delay: 0,
-        ease: "easeOut",
-      }}
-    />
-  );
+/** "8575575757" → "85755 75757" */
+const formatPhone = (phone?: string | null) => {
+  if (!phone) return null;
+  const digits = phone.replace(/\D/g, "").slice(-10);
+  return digits.length === 10 ? `${digits.slice(0, 5)} ${digits.slice(5)}` : phone;
 };
 
-const Divider = () => <div className="h-[1px] w-full bg-slate-100" />;
+const rise = (delay: number) => ({
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] as const },
+});
+
+const DetailRow = ({ icon: Icon, label, children }: { icon: typeof User; label: string; children: React.ReactNode }) => (
+  <div className="flex items-start gap-3 py-2">
+    <Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+    <div className="min-w-0">
+      <p className="text-[12px] text-muted-foreground">{label}</p>
+      <div className="text-[14px] font-semibold leading-snug text-foreground">{children}</div>
+    </div>
+  </div>
+);
+
+const BillRow = ({ label, value, valueClass = "text-foreground" }: { label: string; value: string; valueClass?: string }) => (
+  <div className="flex justify-between gap-4 text-[13px]">
+    <span className="text-muted-foreground">{label}</span>
+    <span className={`font-medium tabular-nums ${valueClass}`}>{value}</span>
+  </div>
+);
+
+const CARD = "rounded-3xl bg-card p-5 shadow-[0_16px_40px_-22px_hsl(215_50%_15%/0.35)] dark:ring-1 dark:ring-white/5";
 
 const OrderSuccessScreen = () => {
   const navigate = useNavigate();
@@ -96,15 +88,8 @@ const OrderSuccessScreen = () => {
 
   const orderId = bookingState?.orderId ?? null;
   const orderNumber = bookingState?.orderNumber ?? null;
-  const [showConfetti, setShowConfetti] = useState(false);
-
   const [fetchedAddress, setFetchedAddress] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Trigger confetti shortly after mount for the success celebration
-    const t = setTimeout(() => setShowConfetti(true), 150);
-    return () => clearTimeout(t);
-  }, []);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!bookingState?.paymentVerified || !orderId) {
@@ -115,19 +100,13 @@ const OrderSuccessScreen = () => {
   useEffect(() => {
     // If we already have the string from the payload, no need to fetch
     if (bookingState?.orderAddressString) return;
-    
-    // Fetch if we have an addressId but no string
+
     if (bookingState?.addressId) {
       const addressId = bookingState.addressId;
       const fetchAddress = async () => {
         try {
           const { supabase } = await import("@/integrations/supabase/client");
-          const { data } = await supabase
-            .from("addresses")
-            .select("*")
-            .eq("id", addressId)
-            .maybeSingle();
-            
+          const { data } = await supabase.from("addresses").select("*").eq("id", addressId).maybeSingle();
           if (data) {
             const str = [data.address_line1, data.address_line2, data.city, data.state, data.pincode].filter(Boolean).join(", ");
             setFetchedAddress(str);
@@ -141,278 +120,186 @@ const OrderSuccessScreen = () => {
   }, [bookingState?.addressId, bookingState?.orderAddressString]);
 
   const displayAddress = bookingState?.orderAddressString || fetchedAddress;
+  const displayOrderNumber = orderNumber || orderId?.slice(0, 8).toUpperCase() || "";
+  const labName = bookingState?.selectedLabName || null;
+  const timeText = formatTimeWindow(bookingState?.scheduledTimeSlot);
+  const dayPhrase = relativeDayPhrase(bookingState?.scheduledDate);
+  const items = bookingState?.cartItems ?? [];
+  const testCount = items.reduce((n, item) => n + (item.quantity || 1), 0);
+  const payLater = bookingState?.selectedPayment === "cod" || /after|collection|cash/i.test(bookingState?.selectedPaymentName ?? "");
+
+  // "today, 2 – 4 PM" / "on Saturday, 2 – 4 PM"; falls back to the plain date.
+  const whenLine = [dayPhrase ?? formatPassDate(bookingState?.scheduledDate), timeText].filter(Boolean).join(", ");
+
+  const copyOrderNumber = async () => {
+    try {
+      await navigator.clipboard.writeText(displayOrderNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      toast.error("Couldn't copy the order ID");
+    }
+  };
 
   return (
     <MobileLayout showNav={false} showFloatingAdd={false}>
-      {/* 
-        We use min-h-[100dvh] so it takes up the full screen, 
-        and flex-col with overflow-y-auto so it fits on one screen if small enough, 
-        but allows scrolling if the content is too tall.
-      */}
-      <div className="relative min-h-[100dvh] w-full max-w-md mx-auto bg-background md:bg-white flex flex-col pt-8 pb-6 px-4 sm:px-6 overflow-y-auto">
-        
-        {/* Background blobs matching the mockup */}
-        <div className="absolute top-0 left-0 w-40 h-40 bg-blue-100 rounded-br-full opacity-50 pointer-events-none -z-10 blur-[40px]" />
-        <div className="absolute top-0 right-0 w-40 h-40 bg-green-100 rounded-bl-full opacity-50 pointer-events-none -z-10 blur-[40px]" />
-
-        {/* Confetti */}
-        <AnimatePresence>
-          {showConfetti && (
-            <div className="absolute inset-0 overflow-hidden pointer-events-none z-10">
-              {Array.from({ length: 40 }).map((_, i) => (
-                <ConfettiPiece key={i} index={i} />
-              ))}
+      <MotionConfig reducedMotion="user">
+        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-muted/60 dark:bg-background">
+          {/* Hero */}
+          <header
+            className="relative overflow-hidden px-6 pb-24 text-white"
+            style={{ ...BOOKING_HERO_BG, paddingTop: "calc(max(var(--sat), 12px) + 36px)" }}
+          >
+            <HeroDecor />
+            <div className="relative">
+              <HeroCheck />
+              <motion.p {...rise(0.2)} className="mt-6 text-[14px] font-medium text-white/75">
+                Booking confirmed
+              </motion.p>
+              <motion.h1 {...rise(0.28)} className="mt-1 text-[28px] font-bold leading-[1.15] tracking-tight">
+                Sample collection
+                {whenLine && (
+                  <>
+                    <br />
+                    {whenLine}
+                  </>
+                )}
+              </motion.h1>
+              {displayOrderNumber && (
+                <motion.button
+                  {...rise(0.36)}
+                  type="button"
+                  onClick={copyOrderNumber}
+                  className="-ml-1.5 mt-3 inline-flex items-center gap-1.5 rounded-lg px-1.5 py-0.5 text-[13px] text-white/70 active:bg-white/10"
+                  aria-label={`Copy order ID ${displayOrderNumber}`}
+                >
+                  Order <span className="tabular-nums text-white/90">{displayOrderNumber}</span>
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={copied ? "done" : "copy"}
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.6 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 text-white" /> : <Copy className="h-3.5 w-3.5" />}
+                    </motion.span>
+                  </AnimatePresence>
+                </motion.button>
+              )}
             </div>
-          )}
-        </AnimatePresence>
+          </header>
 
-        {/* 1. Header Area */}
-        <div className="flex flex-col items-center text-center mt-2 mb-6 shrink-0">
-          <div className="relative mb-4">
-            {/* Radiating decorative lines */}
-            <div className="absolute -inset-6 flex items-center justify-center pointer-events-none">
-              <div className="w-1.5 h-1.5 bg-green-400 rounded-full absolute top-0 -translate-y-4 opacity-70" />
-              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full absolute bottom-0 translate-y-4 opacity-70" />
-              <div className="w-1 h-3 bg-green-400 rounded-full absolute -left-4 -rotate-45 opacity-70" />
-              <div className="w-1 h-3 bg-blue-400 rounded-full absolute -right-4 rotate-45 opacity-70" />
-            </div>
-            
-            <motion.div
-              className="relative w-[72px] h-[72px] rounded-full bg-[#2dd4bf] flex items-center justify-center shadow-[0_8px_30px_rgb(45,212,191,0.3)]"
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15 }}
-            >
-              <Check className="w-10 h-10 text-white" strokeWidth={3} />
-            </motion.div>
-          </div>
-          
-          <h1 className="text-[22px] font-bold text-[#0f172a] tracking-tight mb-1">Order Placed!</h1>
-          <p className="text-[13px] text-slate-500 max-w-[260px] leading-snug">
-            Your booking has been confirmed successfully. We'll notify you with updates.
-          </p>
-        </div>
+          <div className="relative -mt-14 flex flex-col gap-3 px-4 pb-6">
+            {/* Booking details */}
+            <motion.section {...rise(0.4)} className={CARD}>
+              {labName && (
+                <DetailRow icon={Building2} label="Lab">
+                  {labName}
+                </DetailRow>
+              )}
+              {bookingState?.patientName && (
+                <DetailRow icon={User} label="Patient">
+                  {bookingState.patientName}
+                  {bookingState.patientPhone && <span className="tabular-nums"> · {formatPhone(bookingState.patientPhone)}</span>}
+                </DetailRow>
+              )}
+              {displayAddress && (
+                <DetailRow icon={MapPin} label="Address">
+                  {displayAddress}
+                </DetailRow>
+              )}
+            </motion.section>
 
-        {/* 2. Main Card Container */}
-        <div className="bg-white rounded-[24px] shadow-[0_4px_24px_rgb(0,0,0,0.03)] border border-slate-100 p-4 mb-6 shrink-0 flex flex-col gap-3.5">
-          
-          {/* Order ID Row */}
-          {orderId && (
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                <FileText className="w-4 h-4 text-blue-500" />
-              </div>
-              <div className="flex-1 min-w-0 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] text-slate-500 font-medium mb-0.5">Order ID</p>
-                  <p className="text-[14px] font-bold text-slate-800 tracking-tight truncate">{orderNumber || orderId?.slice(0, 8).toUpperCase()}</p>
-                </div>
-                <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full border border-green-100/50">
-                  <CheckCircle className="w-3 h-3" />
-                  <span className="text-[11px] font-bold tracking-wide">Confirmed</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <Divider />
-
-          {/* Patient Name */}
-          {bookingState?.patientName && (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                  <User className="w-4 h-4 text-sky-500" />
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-500 font-medium mb-0.5">Patient Name</p>
-                  <p className="text-[14px] font-bold text-slate-800">{bookingState.patientName}</p>
-                </div>
-              </div>
-              <Divider />
-            </>
-          )}
-
-          {/* Phone Number */}
-          {bookingState?.patientPhone && (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
-                  <Phone className="w-4 h-4 text-indigo-500" />
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-500 font-medium mb-0.5">Phone Number</p>
-                  <p className="text-[14px] font-bold text-slate-800">{bookingState.patientPhone}</p>
-                </div>
-              </div>
-              <Divider />
-            </>
-          )}
-
-          {/* Scheduled Date & Time */}
-          {(bookingState?.scheduledDate || bookingState?.scheduledTimeSlot) && (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                  <Calendar className="w-4 h-4 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-500 font-medium mb-0.5">Scheduled Date & Time</p>
-                  <p className="text-[14px] font-bold text-slate-800">
-                    {bookingState.scheduledDate ?? "Today"} <span className="text-slate-400 mx-1">•</span> {bookingState.scheduledTimeSlot ?? "Any time"}
+            {/* Tests + bill */}
+            <motion.section {...rise(0.5)} className={CARD}>
+              {items.length > 0 && (
+                <>
+                  <p className="text-[12px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {items.length > 1 ? `Tests booked (${items.length})` : "Test booked"}
                   </p>
-                </div>
-              </div>
-              <Divider />
-            </>
-          )}
+                  <ul className="mt-1">
+                    {items.map((item) => {
+                      const meta = testSampleLine(item);
+                      return (
+                        <li key={item.id} className="flex items-start justify-between gap-4 pt-3">
+                          <div className="flex min-w-0 gap-3">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[hsl(222_70%_40%/0.08)] dark:bg-white/[0.06]">
+                              <FlaskConical className="h-4 w-4 text-[hsl(222_70%_40%)] dark:text-[hsl(214_85%_72%)]" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-[14px] font-semibold leading-snug text-foreground">
+                                {simplifyTestName(item.name)}
+                                {(item.quantity || 1) > 1 && <span className="font-medium text-muted-foreground"> × {item.quantity}</span>}
+                              </p>
+                              {meta && <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{meta}</p>}
+                            </div>
+                          </div>
+                          <p className="shrink-0 text-[14px] font-semibold tabular-nums text-foreground">
+                            {formatINR(item.price * (item.quantity || 1))}
+                          </p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <div className="mt-4 border-t border-dashed border-border" />
+                </>
+              )}
 
-          {/* Diagnostic Lab */}
-          {bookingState?.selectedLabName && (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-sky-50 flex items-center justify-center shrink-0">
-                  <Building2 className="w-4 h-4 text-sky-500" />
-                </div>
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+              <div className="space-y-1.5 pt-4">
+                {bookingState?.subtotal != null && <BillRow label={`Tests (${testCount})`} value={formatINR(bookingState.subtotal)} />}
+                {(bookingState?.discount ?? 0) > 0 && (
+                  <BillRow
+                    label="Discount"
+                    value={`− ${formatINR(bookingState?.discount ?? 0)}`}
+                    valueClass="text-emerald-600 dark:text-emerald-400"
+                  />
+                )}
+                <BillRow
+                  label="Home collection"
+                  value={bookingState?.collectionFee ? formatINR(bookingState.collectionFee) : "Free"}
+                  valueClass={bookingState?.collectionFee ? "text-foreground" : "text-emerald-600 dark:text-emerald-400"}
+                />
+                <BillRow label="Platform fee" value={formatINR(bookingState?.platformFee ?? 0)} />
+              </div>
+
+              {bookingState?.total != null && (
+                <div className="mt-3 flex items-center justify-between gap-4 border-t border-border pt-3">
                   <div className="min-w-0">
-                    <p className="text-[11px] text-slate-500 font-medium mb-0.5">Diagnostic Lab</p>
-                    <p className="text-[14px] font-bold text-slate-800 truncate">{bookingState.selectedLabName}</p>
+                    <p className="text-[14px] font-semibold text-foreground">{payLater ? "To pay at collection" : "Amount paid"}</p>
+                    {bookingState.selectedPaymentName && (
+                      <p className="text-[11px] text-muted-foreground">{bookingState.selectedPaymentName}</p>
+                    )}
                   </div>
-                  {/* Mock "View on Map" matching reference image */}
-                  <div className="flex items-center gap-1 bg-sky-50 text-[#0ea5e9] px-2 py-1 rounded-md shrink-0">
-                    <MapPin className="w-3 h-3" />
-                    <span className="text-[10px] font-semibold">View on Map</span>
-                  </div>
-                </div>
-              </div>
-              <Divider />
-            </>
-          )}
-
-          {/* Collection Address */}
-          {displayAddress && (
-            <>
-              <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
-                  <Home className="w-4 h-4 text-green-600" />
-                </div>
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-slate-500 font-medium mb-0.5">Collection Address</p>
-                    <p className="text-[14px] font-bold text-slate-800 line-clamp-2 leading-tight">{displayAddress}</p>
-                  </div>
-                </div>
-              </div>
-              <Divider />
-            </>
-          )}
-
-          {/* Test Details */}
-          {bookingState?.cartItems?.length ? (
-            <>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
-                    <Beaker className="w-4 h-4 text-purple-500" />
-                  </div>
-                  <div className="flex-1 flex items-center justify-between">
-                    <p className="text-[14px] font-bold text-slate-800">Test Details</p>
-                    <div className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide">
-                      {bookingState.cartItems.length} {bookingState.cartItems.length > 1 ? "Items" : "Item"}
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-slate-50/70 rounded-[14px] p-3 border border-slate-100 flex flex-col gap-2 ml-12">
-                  {bookingState.cartItems.map((item) => (
-                    <div key={item.id} className="flex justify-between items-start">
-                      <p className="text-[13px] font-semibold text-slate-700 leading-tight pr-4">{simplifyTestName(item.name)}</p>
-                      <p className="text-[13px] font-bold text-slate-900 shrink-0">₹{(item.price * (item.quantity || 1)).toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <Divider />
-            </>
-          ) : null}
-
-          {/* Bill Summary */}
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-3 mb-0.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
-                <Receipt className="w-4 h-4 text-emerald-600" />
-              </div>
-              <p className="text-[14px] font-bold text-slate-800">Bill Summary</p>
-            </div>
-            
-            <div className="pl-12 pr-1 flex flex-col gap-1.5">
-              {bookingState?.subtotal != null && (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-slate-500 font-medium">Subtotal</span>
-                  <span className="font-bold text-slate-800">₹{bookingState.subtotal.toLocaleString()}</span>
+                  <p className="shrink-0 text-[20px] font-bold tabular-nums text-foreground">{formatINR(bookingState.total)}</p>
                 </div>
               )}
-              {(bookingState?.discount ?? 0) > 0 && (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-slate-500 font-medium">Discount</span>
-                  <span className="font-bold text-green-600">- ₹{(bookingState?.discount ?? 0).toLocaleString()}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-[13px]">
-                <span className="text-slate-500 font-medium">Home Collection</span>
-                <span className={bookingState?.collectionFee ? "font-bold text-slate-800" : "font-bold text-green-600"}>
-                  {bookingState?.collectionFee ? `₹${bookingState.collectionFee.toLocaleString()}` : "FREE"}
-                </span>
-              </div>
-              <div className="flex justify-between text-[13px]">
-                <span className="text-slate-500 font-medium">Platform fee</span>
-                <span className="font-bold text-slate-800">₹{(bookingState?.platformFee ?? 0).toLocaleString()}</span>
-              </div>
-              {bookingState?.selectedPaymentName && (
-                <div className="flex justify-between text-[13px]">
-                  <span className="text-slate-500 font-medium">Payment Method</span>
-                  <span className="font-bold text-slate-800">{bookingState.selectedPaymentName}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Amount Paid - Green Box */}
-            {bookingState?.total != null && (
-              <div className="bg-[#f0fdf4] rounded-xl p-3 flex justify-between items-center border border-green-200 mt-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[14px] font-bold text-green-800">Amount Paid</span>
-                </div>
-                <span className="text-[18px] font-black text-green-900">₹{bookingState.total.toLocaleString()}</span>
-              </div>
-            )}
+            </motion.section>
           </div>
 
-        </div>
-
-        {/* 3. Action Buttons */}
-        {/* We use mt-auto so if the content is short, buttons stick to bottom of available space, but if long they just flow below */}
-        <div 
-          className="flex flex-col gap-3 mt-auto shrink-0 pt-4"
-          style={{ paddingBottom: 'max(var(--sab), 16px)' }}
-        >
-          <Button
-            className="w-full h-[48px] rounded-2xl bg-[#0f172a] hover:bg-[#1e293b] text-white text-[15px] font-bold shadow-sm flex items-center justify-center gap-2"
-            onClick={() => navigate("/home")}
+          {/* Actions */}
+          <div
+            className="sticky bottom-0 z-20 mt-auto border-t border-border/70 bg-card px-4 pt-3"
+            style={{ paddingBottom: "max(var(--sab), 8px)" }}
           >
-            <Home className="w-[18px] h-[18px]" />
-            Back to Home
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full h-[48px] rounded-2xl border-2 border-[#0f172a] text-[#0f172a] hover:bg-slate-50 text-[15px] font-bold flex items-center justify-center gap-2 shadow-sm"
-            onClick={() => navigate("/bookings")}
-          >
-            <Package className="w-[18px] h-[18px]" />
-            View My Orders
-          </Button>
+            <Button
+              className="h-14 w-full gap-2 rounded-2xl text-[15px] font-semibold text-white hover:opacity-95"
+              style={BOOKING_BUTTON_BG}
+              onClick={() => navigate(orderId ? `/tracking/${orderId}` : "/bookings")}
+            >
+              Track booking
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <button
+              type="button"
+              className="h-11 w-full rounded-2xl text-[14px] font-semibold text-muted-foreground active:bg-muted"
+              onClick={() => navigate("/home")}
+            >
+              Back to home
+            </button>
+          </div>
         </div>
-
-      </div>
+      </MotionConfig>
     </MobileLayout>
   );
 };
