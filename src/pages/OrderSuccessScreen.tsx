@@ -293,7 +293,7 @@ const OrderSuccessScreen = () => {
             <button
               type="button"
               className="h-11 w-full rounded-2xl text-[14px] font-semibold text-muted-foreground active:bg-muted"
-              onClick={() => navigate("/home")}
+              onClick={() => navigate("/home", { replace: true })}
             >
               Back to home
             </button>

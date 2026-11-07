@@ -285,9 +285,11 @@ const PaymentProcessingScreen = () => {
 
       markCheckoutPlaced(idempotencyKey, fnData?.orderId || null);
 
-      // Navigate to success
+      // Leave the finished checkout behind: this screen becomes Home in history and
+      // the order screen opens on top, so Back from it goes Home instead of walking
+      // into the emptied cart, lab and payment pages.
+      navigate("/home", { replace: true });
       navigate("/order-success", {
-        replace: true,
         state: {
           ...successState,
           total: typeof fnData?.total === "number" ? fnData.total : successState.total,

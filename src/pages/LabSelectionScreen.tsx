@@ -255,7 +255,9 @@ const LabSelectionScreen = () => {
   }, [hasVendorLab, items, userPincode]);
 
   useEffect(() => {
-    if (items.length === 0) navigate("/cart");
+    // Replace, not push: reached by Back after an order, a push would add a new
+    // cart entry each time and Back would bounce between cart and this screen.
+    if (items.length === 0) navigate("/cart", { replace: true });
   }, [items, navigate]);
 
   // Reset a stale slot pick whenever the date or the lab changes.
