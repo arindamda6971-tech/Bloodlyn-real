@@ -28,7 +28,8 @@ describe("downloadReport on the phone", () => {
     native.writes = [];
     native.notifications = [];
     native.permission = "granted";
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(new Blob(["%PDF"], { type: "application/pdf" }))));
+    // Return a jsdom Blob: a Node Response's Blob is rejected by jsdom's FileReader on Node 22 (CI).
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, blob: async () => new Blob(["%PDF"], { type: "application/pdf" }) })));
   });
 
   it("saves the PDF in Documents/BloodLyn Reports and shows a 'downloaded' notification", async () => {
