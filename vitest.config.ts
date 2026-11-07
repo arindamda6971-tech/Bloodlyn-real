@@ -12,5 +12,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/setupTests.ts'],
     css: false,
+    // Heavy page tests can pass 5s on a busy machine or CI runner (favoriteLabs did).
+    testTimeout: 20000,
   },
 });

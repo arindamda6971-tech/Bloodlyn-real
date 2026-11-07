@@ -12,7 +12,8 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to Ubuntu 26, where `playwright install --with-deps` fails.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
