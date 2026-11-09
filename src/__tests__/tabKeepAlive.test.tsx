@@ -101,7 +101,7 @@ describe("bottom-bar tabs are kept alive", () => {
     await act(async () => { vi.advanceTimersByTime(1000); });
 
     await act(async () => fireEvent.click(tab("Reports")));
-    expect(layer("/reports")?.className).toContain("page-anim-tab");
+    expect(layer("/reports")?.className).toContain("page-anim-tab-layer");
     expect(layer("/categories")?.style.visibility).toBe("visible");
     expect(Number(layer("/reports")?.style.zIndex)).toBeGreaterThan(Number(layer("/categories")?.style.zIndex));
 
@@ -135,10 +135,10 @@ describe("bottom-bar tabs are kept alive", () => {
     await act(async () => { vi.advanceTimersByTime(1000); });
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Details back" })));
     expect(layer("/bookings")?.className).not.toContain("page-anim-tab-covered");
-    expect(layer("/bookings")?.className).toContain("page-anim-pop");
+    expect(layer("/bookings")?.className).toContain("page-anim-tab-uncover");
 
     await act(async () => { vi.advanceTimersByTime(1000); });
-    expect(layer("/bookings")?.className).not.toContain("page-anim-pop");
+    expect(layer("/bookings")?.className).not.toContain("page-anim-tab-uncover");
   });
 
   it("drops the active tab highlight onto the tapped tab immediately", async () => {

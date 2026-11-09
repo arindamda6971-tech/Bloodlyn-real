@@ -20,8 +20,9 @@ import {
   recordNavigation,
   getTransitionDuration,
   isTabToTabTransition,
-  TAB_ENTER_CLASS,
+  TAB_LAYER_ENTER_CLASS,
   TAB_COVERED_CLASS,
+  TAB_UNCOVER_CLASS,
 } from "@/lib/navigation-transition";
 
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -147,10 +148,12 @@ interface TabStackLayerProps {
  * and scroll offset. A hidden tab renders against its own frozen location, so route
  * changes elsewhere don't re-render it.
  *
- * IMPORTANT: a tab layer does NOT play its own slide animation. The incoming/
- * outgoing PageTransition already animates. Having TWO simultaneous translate3d
- * animations on overlapping layers is the #1 cause of frame drops on Android
- * WebView. Tab-to-tab switches use a lightweight opacity fade-through instead.
+ * Motion on a tab layer must stay compositor-only and cheap to start: the layer is
+ * composited for good (`.home-stack` / `.tab-stack`), and its classes
+ * (TAB_LAYER_ENTER_CLASS, TAB_COVERED_CLASS, TAB_UNCOVER_CLASS) add no will-change
+ * and no "pause every child" rule. Either would re-create the layer or restyle the
+ * whole kept screen on the first frame, which shows as jitter on Android. The tab's
+ * own animations are paused via data-tab-active once the motion is over.
  */
 const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerProps) => {
   const Screen = TAB_SCREENS[path];
@@ -215,11 +218,11 @@ const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerPr
   }, [uncovering]);
 
   const stackClass = tabEntering
-    ? TAB_ENTER_CLASS
+    ? TAB_LAYER_ENTER_CLASS
     : covered
       ? TAB_COVERED_CLASS
       : uncovering
-        ? "page-anim-pop"
+        ? TAB_UNCOVER_CLASS
         : "";
 
   const visible = isHome || shown;

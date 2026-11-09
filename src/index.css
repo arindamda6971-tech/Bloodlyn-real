@@ -978,14 +978,22 @@ html.native [data-scroll-container] {
   100% { transform: translate3d(-25%, 0, 0); }
 }
 
-.page-anim-tab-covered {
-  animation: pageTabCovered var(--page-transition-duration) var(--page-transition-ease) forwards;
-  will-change: transform;
-  backface-visibility: hidden;
+/* Kept-alive tab layers (TabStackLayer) animate with these lighter classes. The
+   layer is already composited for good (.home-stack / .tab-stack), so there is no
+   will-change to add (adding/removing it re-creates the layer and re-paints the whole
+   screen), and there is no "pause every child" rule: on a big screen like Home that
+   restyles hundreds of elements on the first frame, which is what made the slide
+   jitter. The tab's own animations are paused by data-tab-active after the motion. */
+.page-anim-tab-layer {
+  animation: pageTabEnter 0.24s cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-.page-anim-tab-covered * {
-  animation-play-state: paused !important;
+.page-anim-tab-covered {
+  animation: pageTabCovered var(--page-transition-duration) var(--page-transition-ease) forwards;
+}
+
+.page-anim-tab-uncover {
+  animation: pagePopEnter var(--page-transition-duration) var(--page-transition-ease) forwards;
 }
 
 .page-anim-fade-exit {
@@ -994,8 +1002,11 @@ html.native [data-scroll-container] {
   backface-visibility: hidden;
 }
 
-/* Keep the cached Home viewport composited instead of promoting every card. */
-.home-stack {
+/* Keep each kept-alive tab composited instead of promoting every card, and so its
+   fade or slide never has to create the layer on the first frame and drop it on the
+   last. A hidden tab (visibility: hidden) has nothing to paint in its layer. */
+.home-stack,
+.tab-stack {
   transform: translateZ(0);
 }
 

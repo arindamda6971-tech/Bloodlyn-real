@@ -19,8 +19,19 @@ export const BOTTOM_NAV_PATHS = [
 /** Fade-through used when a bottom-bar tab comes in (see `pageTabEnter` in index.css). */
 export const TAB_ENTER_CLASS = "page-anim-tab";
 
-/** A tab with a pushed screen on top shifts left like any covered screen (see `pageTabCovered`). */
+/*
+ * Classes for the kept-alive bottom-bar tab layers (TabStackLayer). Same motion as
+ * the classes above, but light enough for a big kept screen like Home: no will-change
+ * (the layer is composited for good, see `.tab-stack`) and no "pause every child"
+ * rule, which would restyle the whole screen on the first frame. A tab layer pauses
+ * its own animations through data-tab-active once the motion is over.
+ */
+/** Fade-through for a tab layer coming in from another tab (`pageTabEnter`). */
+export const TAB_LAYER_ENTER_CLASS = "page-anim-tab-layer";
+/** A tab with a pushed screen on top shifts left like any covered screen (`pageTabCovered`). */
 export const TAB_COVERED_CLASS = "page-anim-tab-covered";
+/** Back from a pushed screen slides the tab home again (`pagePopEnter`). */
+export const TAB_UNCOVER_CLASS = "page-anim-tab-uncover";
 
 export function hasPersistentBottomNav(pathname: string): boolean {
   return BOTTOM_NAV_PATHS.includes(pathname);
