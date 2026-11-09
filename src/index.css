@@ -970,6 +970,24 @@ html.native [data-scroll-container] {
   animation-play-state: paused !important;
 }
 
+/* A bottom-bar tab under a pushed screen slides a quarter to the left with it, like
+   the outgoing screen of any push (pagePushExit), and stays there while covered.
+   Back plays pagePopEnter on the tab to bring it home. */
+@keyframes pageTabCovered {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-25%, 0, 0); }
+}
+
+.page-anim-tab-covered {
+  animation: pageTabCovered var(--page-transition-duration) var(--page-transition-ease) forwards;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+.page-anim-tab-covered * {
+  animation-play-state: paused !important;
+}
+
 .page-anim-fade-exit {
   animation: pageFadeExit 0.25s cubic-bezier(0.25, 0.9, 0.25, 1) forwards;
   will-change: opacity;

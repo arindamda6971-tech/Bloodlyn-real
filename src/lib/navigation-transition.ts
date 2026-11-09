@@ -19,6 +19,9 @@ export const BOTTOM_NAV_PATHS = [
 /** Fade-through used when a bottom-bar tab comes in (see `pageTabEnter` in index.css). */
 export const TAB_ENTER_CLASS = "page-anim-tab";
 
+/** A tab with a pushed screen on top shifts left like any covered screen (see `pageTabCovered`). */
+export const TAB_COVERED_CLASS = "page-anim-tab-covered";
+
 export function hasPersistentBottomNav(pathname: string): boolean {
   return BOTTOM_NAV_PATHS.includes(pathname);
 }

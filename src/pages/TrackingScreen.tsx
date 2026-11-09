@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
@@ -126,8 +127,39 @@ const TrackingScreen = () => {
     return (
       <MobileLayout showNav={false}>
         <ScreenHeader title="Order Details" />
-        <div className="flex items-center justify-center h-[60vh]">
-          <div className="w-12 h-12 rounded-full border-4 border-muted border-t-primary animate-spin" />
+        {/* Skeleton in the shape of the page: status card, progress steps, booking details */}
+        <div className="px-4 pb-8 space-y-3" role="status" aria-label="Loading order details">
+          <section className="mt-3 rounded-2xl border border-border/60 bg-card shadow-sm p-4" aria-hidden="true">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-3 w-24 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+            <Skeleton className="mt-4 h-5 w-2/3 rounded-full" />
+            <Skeleton className="mt-2 h-3 w-5/6 rounded-full" />
+            <Skeleton className="mt-4 h-11 w-full rounded-xl" />
+          </section>
+          <section className="rounded-2xl border border-border/60 bg-card shadow-sm p-4 space-y-4" aria-hidden="true">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-3">
+                <Skeleton className="h-7 w-7 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-3.5 rounded-full" style={{ width: `${45 + i * 10}%` }} />
+                  <Skeleton className="h-2.5 w-1/3 rounded-full opacity-70" />
+                </div>
+              </div>
+            ))}
+          </section>
+          <section className="rounded-2xl border border-border/60 bg-card shadow-sm p-4" aria-hidden="true">
+            <Skeleton className="h-4 w-32 rounded-full" />
+            <Skeleton className="mt-3 h-11 w-full rounded-xl" />
+            <Skeleton className="mt-2 h-11 w-full rounded-xl" />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="mt-4 flex items-center justify-between">
+                <Skeleton className="h-3 w-20 rounded-full" />
+                <Skeleton className="h-3.5 w-28 rounded-full" />
+              </div>
+            ))}
+          </section>
         </div>
       </MobileLayout>
     );

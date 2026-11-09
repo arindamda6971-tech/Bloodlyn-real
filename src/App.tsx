@@ -21,6 +21,7 @@ import {
   getTransitionDuration,
   isTabToTabTransition,
   TAB_ENTER_CLASS,
+  TAB_COVERED_CLASS,
 } from "@/lib/navigation-transition";
 
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
@@ -195,6 +196,32 @@ const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerPr
     return () => clearTimeout(timer);
   }, [active, animationsActive]);
 
+  // A pushed screen sliding over this tab moves the tab a quarter to the left, and Back
+  // slides it home again, exactly like one stacked screen under another. Transform-only
+  // on the layer Home already composites, so no cards are repainted.
+  const covered = current && !active;
+  const [wasCovered, setWasCovered] = useState(covered);
+  const [uncovering, setUncovering] = useState(false);
+  if (covered !== wasCovered) {
+    setWasCovered(covered);
+    // Only slide back when Back reveals this tab; a switch to another tab leaves it hidden.
+    setUncovering(!covered && current);
+  }
+
+  useEffect(() => {
+    if (!uncovering) return;
+    const timer = setTimeout(() => setUncovering(false), getTransitionDuration() + 80);
+    return () => clearTimeout(timer);
+  }, [uncovering]);
+
+  const stackClass = tabEntering
+    ? TAB_ENTER_CLASS
+    : covered
+      ? TAB_COVERED_CLASS
+      : uncovering
+        ? "page-anim-pop"
+        : "";
+
   const visible = isHome || shown;
 
   // Feeds useLocation()/useNavigate() inside the tab. <Routes location> would re-read
@@ -207,9 +234,11 @@ const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerPr
 
   return (
     <div
-      className={`${isHome ? "home-stack" : "tab-stack"} w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${tabEntering ? TAB_ENTER_CLASS : ""}`}
+      className={`${isHome ? "home-stack" : "tab-stack"} w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${stackClass}`}
       onAnimationEnd={(e) => {
-        if (e.target === e.currentTarget && e.animationName === "pageTabEnter") setTabEntering(false);
+        if (e.target !== e.currentTarget) return;
+        if (e.animationName === "pageTabEnter") setTabEntering(false);
+        if (e.animationName === "pagePopEnter") setUncovering(false);
       }}
       data-tab-layer={path}
       data-tab-active={animationsActive ? "true" : "false"}

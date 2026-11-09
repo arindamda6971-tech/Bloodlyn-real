@@ -33,7 +33,17 @@ vi.mock("@/pages/CategoriesScreen", () => ({ default: makeScreen("Tests") }));
 vi.mock("@/pages/BookingsScreen", () => ({ default: makeScreen("Orders") }));
 vi.mock("@/pages/ReportsScreen", () => ({ default: makeScreen("Reports") }));
 vi.mock("@/pages/ProfileScreen", () => ({ default: makeScreen("Profile") }));
-vi.mock("@/pages/NotificationsScreen", () => ({ default: () => <p>Details screen</p> }));
+vi.mock("@/pages/NotificationsScreen", () => ({
+  default: function DetailsScreen() {
+    const navigate = useNavigate();
+    return (
+      <div>
+        <p>Details screen</p>
+        <button onClick={() => navigate(-1)}>Details back</button>
+      </div>
+    );
+  },
+}));
 
 const { AnimatedRoutes } = await import("@/App");
 
@@ -111,6 +121,24 @@ describe("bottom-bar tabs are kept alive", () => {
     expect(layer("/bookings")?.style.visibility).toBe("visible");
     expect(layer("/bookings")?.getAttribute("aria-hidden")).toBe("true");
     expect(stats.mounts.Orders).toBe(1);
+  });
+
+  it("slides the tab left under a screen opened from it, and back again on Back", async () => {
+    renderApp();
+    await act(async () => fireEvent.click(tab("My Orders")));
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(layer("/bookings")?.className).not.toContain("page-anim-tab-covered");
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Orders open details" })));
+    expect(layer("/bookings")?.className).toContain("page-anim-tab-covered");
+
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Details back" })));
+    expect(layer("/bookings")?.className).not.toContain("page-anim-tab-covered");
+    expect(layer("/bookings")?.className).toContain("page-anim-pop");
+
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(layer("/bookings")?.className).not.toContain("page-anim-pop");
   });
 
   it("drops the active tab highlight onto the tapped tab immediately", async () => {
