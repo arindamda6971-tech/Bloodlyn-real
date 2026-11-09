@@ -200,9 +200,12 @@ const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerPr
   }, [active, animationsActive]);
 
   // A pushed screen sliding over this tab moves the tab a quarter to the left, and Back
-  // slides it home again, exactly like one stacked screen under another. Transform-only
-  // on the layer Home already composites, so no cards are repainted.
-  const covered = current && !active;
+  // slides it home again, exactly like one stacked screen under another.
+  // Not Home: its slide starts on the tap's frame, but the pushed screen only starts
+  // once it has mounted and painted, which from heavy Home takes long enough on a phone
+  // that Home was already gone and a blank strip showed before the new screen arrived.
+  // Home stays still and the new screen slides over it, as it always did.
+  const covered = current && !active && !isHome;
   const [wasCovered, setWasCovered] = useState(covered);
   const [uncovering, setUncovering] = useState(false);
   if (covered !== wasCovered) {

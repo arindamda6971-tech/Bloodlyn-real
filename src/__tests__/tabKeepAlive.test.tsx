@@ -123,6 +123,18 @@ describe("bottom-bar tabs are kept alive", () => {
     expect(stats.mounts.Orders).toBe(1);
   });
 
+  it("keeps Home still under a screen opened from it (the new screen slides over it)", async () => {
+    renderApp();
+    await act(async () => { vi.advanceTimersByTime(1000); });
+
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Home open details" })));
+    expect(layer("/home")?.className).not.toContain("page-anim-tab-covered");
+
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Details back" })));
+    expect(layer("/home")?.className).not.toContain("page-anim-tab-uncover");
+  });
+
   it("slides the tab left under a screen opened from it, and back again on Back", async () => {
     renderApp();
     await act(async () => fireEvent.click(tab("My Orders")));
