@@ -53,6 +53,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useLabSlots } from "@/hooks/useLabSlots";
+import { useFavoriteLabs } from "@/hooks/useFavoriteLabs";
 import { normalizeAvailabilityType } from "@/lib/test-availability";
 import { TestFacts } from "@/components/tests/TestFacts";
 import { commonTestsFirst } from "@/lib/test-order";
@@ -250,6 +251,8 @@ const globalLabCache = new Map<string, { labFromDb: any; dynamicTests: DynamicTe
 
 const LabDetailScreen = () => {
   const { labId } = useParams<{ labId: string }>();
+  const { isFavorite, toggleFavorite } = useFavoriteLabs();
+  const saved = labId ? isFavorite(labId) : false;
   // The cover Home showed for this lab (it varies a colour to differ from its neighbours).
   const homeCover = (useLocation().state as { cover?: { palette: number; art: LabArt } } | null)?.cover;
   const navigate = useNavigate();
@@ -635,13 +638,13 @@ const LabDetailScreen = () => {
             (under the status bar too), with back, search and cart on it. */}
         <div className="relative overflow-hidden rounded-b-[2rem] shadow-sm">
           <LabCover name={labName} city={labAddress} logoUrl={logoUrl} palette={homeCover?.palette} art={homeCover?.art} className="absolute inset-0" infoPosition="bottom-5" />
-          {/* Just below the status bar: its real height plus a little, not the 40px floor .pt-safe uses. */}
-          <div className="relative z-10 flex items-center justify-between gap-3 px-4" style={{ paddingTop: "max(calc(var(--sat, 0px) + 6px), 24px)" }}>
+          {/* MobileLayout already leaves room for the status bar, so only a small gap here. */}
+          <div className="relative z-10 flex items-center justify-between gap-2.5 px-4 pt-3">
             <button onClick={() => navigate(-1)} aria-label="Back" className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <div className="relative flex items-center w-full h-10 rounded-full bg-white shadow-sm overflow-hidden">
                 <Search className="w-4 h-4 text-muted-foreground ml-3" />
                 <input
@@ -652,10 +655,22 @@ const LabDetailScreen = () => {
                     if (selectedCategory) setSelectedCategory(null);
                   }}
                   placeholder="Search tests..."
-                  className="flex-1 bg-transparent border-none text-foreground text-sm px-2 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-0"
+                  className="min-w-0 flex-1 bg-transparent border-none text-foreground text-sm px-2 py-2 placeholder:text-muted-foreground focus:outline-none focus:ring-0"
                 />
               </div>
             </div>
+
+            {labId && (
+              <button
+                type="button"
+                onClick={() => toggleFavorite(labId)}
+                aria-label={saved ? `Remove ${labName} from saved labs` : `Save ${labName}`}
+                aria-pressed={saved}
+                className="w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0"
+              >
+                <Heart className={`w-5 h-5 transition-colors ${saved ? "fill-destructive text-destructive" : ""}`} />
+              </button>
+            )}
 
             <button onClick={() => navigate("/cart")} aria-label="Cart" className="relative w-10 h-10 rounded-full bg-white flex items-center justify-center transition-transform active:scale-90 text-secondary shadow-sm flex-shrink-0">
               <ShoppingCart className="w-5 h-5" />
