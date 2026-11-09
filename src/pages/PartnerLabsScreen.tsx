@@ -13,7 +13,6 @@ import ScreenHeader from "@/components/layout/ScreenHeader";
 import MobileLayout from "@/components/layout/MobileLayout";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
-import { useRealtimeDiagnosticCenters } from "@/hooks/useRealtimeDiagnosticCenters";
 import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { Bell, MapPinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,8 +49,6 @@ const PartnerLabsScreen = () => {
   const [totalCities, setTotalCities] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Subscribe to real-time updates
-  useRealtimeDiagnosticCenters();
   const { pincode: userPincode } = useUserPincode();
 
   useEffect(() => {

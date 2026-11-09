@@ -18,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications } from "@/contexts/NotificationContext";
-import { useRealtimeProducts } from "@/hooks/useRealtimeProducts";
 import { useCart } from "@/contexts/CartContext";
 import DiagnosticCentersCarousel from "@/components/home/DiagnosticCentersCarousel";
 import HealthPackagesSection from "@/components/home/HealthPackagesSection";

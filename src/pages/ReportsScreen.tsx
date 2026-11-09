@@ -16,6 +16,7 @@ import StickySearch from "@/components/ui/StickySearch";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import { simplifyTestName } from "@/utils/simplify-test-name";
+import { subscribeUserLive } from "@/lib/userLive";
 
 interface ReportOrder {
   id: string;
@@ -106,13 +107,9 @@ const ReportsScreen = () => {
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
-      .channel("reports-orders-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["reports", user.id] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return subscribeUserLive("orders", user.id, () => {
+      queryClient.invalidateQueries({ queryKey: ["reports", user.id] });
+    });
   }, [user, queryClient]);
 
   const selfName = (user?.user_metadata?.full_name as string | undefined)?.trim() || "You";

@@ -239,6 +239,10 @@ const BookingsScreen = () => {
                 {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM yyyy") : "ASAP"}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">{order.scheduled_time_slot || "60 min express"}</p>
+              {/* Same note as the order details page, for a visit the patient moved. */}
+              {Number(order.reschedule_count) > 0 && order.status !== "cancelled" && (
+                <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">Rescheduled</p>
+              )}
             </div>
           </div>
 

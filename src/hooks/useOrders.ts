@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { subscribeUserLive } from "@/lib/userLive";
 
 export interface Order {
   id: string;
@@ -14,6 +15,8 @@ export interface Order {
   scheduled_date: string | null;
   scheduled_time_slot: string | null;
   patient_name?: string | null;
+  /** How many times the patient moved the visit (one is allowed). */
+  reschedule_count?: number | null;
   family_members?: {
     full_name: string;
   } | null;
@@ -26,21 +29,10 @@ export const useOrders = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const channel = supabase
-      .channel("user_orders_realtime_sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders", filter: `user_id=eq.${user.id}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
-          queryClient.invalidateQueries({ queryKey: ["order-details"] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeUserLive("orders", user.id, () => {
+      queryClient.invalidateQueries({ queryKey: ["orders", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["order-details"] });
+    });
   }, [user?.id, queryClient]);
 
   return useQuery({

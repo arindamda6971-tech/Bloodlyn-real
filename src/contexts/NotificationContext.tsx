@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { subscribeUserLive } from "@/lib/userLive";
 import { useAuth } from "@/hooks/useAuth";
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { orderStatusNotification, shouldNotifyStatus } from "@/lib/order-notifications";
@@ -63,53 +63,31 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const channel = supabase
-      .channel(`orders-notifications-${user.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "orders",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          const order = payload.new as { order_number: string; status: string };
-          shouldNotifyStatus((payload.new as { id: string }).id, order.status);
-          addNotification({
-            title: "Booking Confirmed! 🩸",
-            message: "Home sample collection scheduled. A certified phlebotomist will arrive at your address.",
-            type: "order",
-            data: { orderId: (payload.new as { id: string }).id, orderNumber: order.order_number },
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "orders",
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload) => {
-          // Realtime sends only the new row (no previous status), so notify once
-          // per order per status — other edits to the row don't repeat it.
-          const order = payload.new as { id: string; order_number: string; status: string };
-          const content = orderStatusNotification(order);
-          if (!content || !shouldNotifyStatus(order.id, order.status)) return;
-          addNotification({
-            ...content,
-            type: "order",
-            data: { orderId: order.id, orderNumber: order.order_number },
-          });
-        }
-      )
-      .subscribe();
+    const unsubscribe = subscribeUserLive("orders", user.id, (payload) => {
+      if (payload.eventType === "INSERT") {
+        const order = payload.new as { order_number: string; status: string };
+        shouldNotifyStatus((payload.new as { id: string }).id, order.status);
+        addNotification({
+          title: "Booking Confirmed! 🩸",
+          message: "Home sample collection scheduled. A certified phlebotomist will arrive at your address.",
+          type: "order",
+          data: { orderId: (payload.new as { id: string }).id, orderNumber: order.order_number },
+        });
+      } else if (payload.eventType === "UPDATE") {
+        // Realtime sends only the new row (no previous status), so notify once
+        // per order per status — other edits to the row don't repeat it.
+        const order = payload.new as { id: string; order_number: string; status: string };
+        const content = orderStatusNotification(order);
+        if (!content || !shouldNotifyStatus(order.id, order.status)) return;
+        addNotification({
+          ...content,
+          type: "order",
+          data: { orderId: order.id, orderNumber: order.order_number },
+        });
+      }
+    });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return unsubscribe;
   }, [user]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
