@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Edit2, Trash2, Loader, Star, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -445,9 +446,19 @@ const SavedAddressesScreen = () => {
         ) : (
           <motion.div initial={false} animate={{ opacity: 1, y: 0 }} className="mt-6">
             {loading ? (
-              <div className="soft-card p-6 text-center text-muted-foreground">
-                <Loader className="mx-auto w-8 h-8 text-muted-foreground animate-spin" />
-                <p className="mt-3">Loading addresses...</p>
+              <div className="space-y-3" role="status" aria-label="Loading addresses">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="soft-card p-4" aria-hidden="true">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-10 w-10 shrink-0 rounded-xl" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-1/3 rounded-full" />
+                        <Skeleton className="h-3 w-5/6 rounded-full" />
+                        <Skeleton className="h-3 w-2/3 rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : addresses.length === 0 ? (
               <div className="soft-card p-6 text-center text-muted-foreground">

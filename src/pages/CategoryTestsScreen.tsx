@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, FlaskConical, ShoppingCart, Plus, Search, ChevronRight } from "lucide-react";
+import { FlaskConical, ShoppingCart, Plus, Search, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BannerGraphic from "@/components/BannerGraphic";
@@ -49,6 +50,21 @@ const TestItem = React.memo(({
 ));
 
 TestItem.displayName = "TestItem";
+
+/** Skeleton rows shaped like TestItem, so loading matches the app's other screens. */
+const TestItemSkeletons = ({ count }: { count: number }) => (
+  <>
+    {Array.from({ length: count }).map((_, i) => (
+      <div key={i} className="soft-card p-4" aria-hidden="true">
+        <div className="flex items-center gap-3">
+          <Skeleton className="w-10 h-10 rounded-xl flex-shrink-0" />
+          <Skeleton className="h-4 rounded-full flex-1" style={{ maxWidth: `${55 + ((i * 17) % 35)}%` }} />
+          <Skeleton className="ml-auto h-5 w-5 rounded-full flex-shrink-0 opacity-60" />
+        </div>
+      </div>
+    ))}
+  </>
+);
 
 const CategoryTestsScreen = () => {
   const navigate = useNavigate();
@@ -172,8 +188,9 @@ const CategoryTestsScreen = () => {
 
       <div className="px-4 mt-4 pb-32">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          <div className="space-y-3" role="status" aria-label="Loading tests">
+            <Skeleton className="h-3 w-20 rounded-full" />
+            <TestItemSkeletons count={8} />
           </div>
         ) : !searching && error ? (
           <div className="text-center py-12">
@@ -211,8 +228,8 @@ const CategoryTestsScreen = () => {
                   </button>
                 </div>
               ) : (
-                <div ref={loadMoreRef} className="h-8 flex items-center justify-center" aria-label="Loading more tests">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                <div ref={loadMoreRef} className="space-y-3" aria-label="Loading more tests">
+                  <TestItemSkeletons count={2} />
                 </div>
               )
             )}

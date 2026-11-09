@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Ticket, Search, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import MobileLayout from "@/components/layout/MobileLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMyTickets } from "@/hooks/useBridgeTickets";
 import { useSEO } from "@/hooks/useSEO";
 
@@ -31,8 +32,17 @@ const TicketHistoryScreen = () => {
 
       <div className="px-4 py-4 space-y-4">
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="space-y-4" role="status" aria-label="Loading tickets">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="rounded-2xl border border-border bg-card p-4" aria-hidden="true">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-28 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="mt-3 h-4 w-3/4 rounded-full" />
+                <Skeleton className="mt-2 h-3 w-1/2 rounded-full" />
+              </div>
+            ))}
           </div>
         ) : tickets.length === 0 ? (
           <motion.div 
