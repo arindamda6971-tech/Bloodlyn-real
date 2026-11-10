@@ -181,7 +181,9 @@ export function simplifyTestName(rawName: string): string {
 const lettersOnly = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /** False when the clinical name differs only in punctuation, so showing it would repeat the name. */
-export function clinicalNameAddsDetail(rawName: string): boolean {
+export function clinicalNameAddsDetail(rawName: string | null | undefined): boolean {
+  // A test whose name hasn't loaded (or is missing) has no second line to show.
+  if (!rawName) return false;
   return lettersOnly(simplifyTestName(rawName)) !== lettersOnly(rawName);
 }
 

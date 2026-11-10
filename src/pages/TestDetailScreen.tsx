@@ -111,7 +111,7 @@ const TestDetailScreen = () => {
 
     // If state already has the correct test, we're done. This comes first: setting
     // the test again below would rerun this effect forever and freeze the app.
-    if (test && (test.id === id || test.name.toLowerCase() === id.toLowerCase())) {
+    if (test && (test.id === id || test.name?.toLowerCase() === id.toLowerCase())) {
       setLoading(false);
       return;
     }
@@ -148,7 +148,7 @@ const TestDetailScreen = () => {
 
         if (bridgeData?.tests?.length) {
           const match = bridgeData.tests.find(
-            (t) => t.id === id || ((t as any).slug && (t as any).slug === id) || t.test_name.toLowerCase() === id.toLowerCase()
+            (t) => t.id === id || ((t as any).slug && (t as any).slug === id) || t.test_name?.toLowerCase() === id.toLowerCase()
           );
           if (match) {
             setTest(fromBridgeTest(match));
@@ -212,7 +212,7 @@ const TestDetailScreen = () => {
         }
       }
 
-      const targetTestName = test.name.trim().toLowerCase();
+      const targetTestName = (test.name || "").trim().toLowerCase();
 
       const matchedLabs = pincodeFiltered.map((lab: any) => {
         // Lab-specific pricing map: { "Test Name": price }

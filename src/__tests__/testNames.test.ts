@@ -53,6 +53,9 @@ describe("patient-facing test names", () => {
 
   it("only offers the clinical name when it says something more", () => {
     expect(clinicalNameAddsDetail("3-Methyl Histidine - Quantitative, EDTA Plasma**")).toBe(false);
+    // A test with no name yet (still loading, or missing) must not crash the page.
+    expect(clinicalNameAddsDetail(undefined)).toBe(false);
+    expect(clinicalNameAddsDetail("")).toBe(false);
     expect(clinicalNameAddsDetail("4H syndrome gene panel")).toBe(false);
     expect(clinicalNameAddsDetail("Glucose [Mass/volume] in Serum or Plasma --fasting")).toBe(true);
     expect(clinicalNameAddsDetail("Hemoglobin A1c/Hemoglobin.total [Molar ratio] in Blood by IFCC protocol")).toBe(true);
