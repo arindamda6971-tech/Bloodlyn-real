@@ -4,16 +4,28 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { Phone, PhoneOff, Video } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { startRingtone, stopRingtone } from "@/lib/ringtone";
+
+// Stop ringing after this long; the doctor can ring again.
+const RING_TIMEOUT_MS = 45_000;
 
 export function IncomingCallListener() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [incomingCall, setIncomingCall] = useState<{ id: string; doctorName?: string } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ id: string; doctorName?: string; audioOnly?: boolean } | null>(null);
 
-  const incomingCallRef = useRef<{ id: string; doctorName?: string } | null>(null);
+  const incomingCallRef = useRef<{ id: string; doctorName?: string; audioOnly?: boolean } | null>(null);
 
   useEffect(() => {
     incomingCallRef.current = incomingCall;
+    if (!incomingCall) return;
+    // Ring with the BloodLyn ringtone until answered, declined, ended or timed out.
+    startRingtone();
+    const timeout = setTimeout(() => setIncomingCall(null), RING_TIMEOUT_MS);
+    return () => {
+      clearTimeout(timeout);
+      stopRingtone();
+    };
   }, [incomingCall]);
 
   useEffect(() => {
@@ -34,8 +46,13 @@ export function IncomingCallListener() {
           if (newOrder.call_status === "ringing") {
             if (window.location.pathname.includes(`/call/${newOrder.id}`)) return;
             const doctorName = newOrder.lab_name || newOrder.test_name || "Doctor";
-            setIncomingCall({ id: newOrder.id, doctorName });
-          } else if (newOrder.call_status === "ended" && incomingCallRef.current?.id === newOrder.id) {
+            const audioOnly = /^audio call/i.test(newOrder.test_name || "");
+            setIncomingCall({ id: newOrder.id, doctorName, audioOnly });
+          } else if (
+            // The doctor portal reports completed / missed / cancelled when a call stops.
+            ["ended", "completed", "missed", "cancelled", "failed"].includes(newOrder.call_status) &&
+            incomingCallRef.current?.id === newOrder.id
+          ) {
             setIncomingCall(null);
           }
         }
@@ -76,9 +93,9 @@ export function IncomingCallListener() {
         >
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mb-4 animate-pulse">
-              <Video className="w-8 h-8 text-blue-500" />
+              {incomingCall.audioOnly ? <Phone className="w-8 h-8 text-green-500" /> : <Video className="w-8 h-8 text-blue-500" />}
             </div>
-            <h3 className="text-xl font-semibold text-white mb-1">Incoming Video Call</h3>
+            <h3 className="text-xl font-semibold text-white mb-1">{incomingCall.audioOnly ? "Incoming Audio Call" : "Incoming Video Call"}</h3>
             <p className="text-gray-400 mb-8">{incomingCall.doctorName}</p>
             
             <div className="flex items-center gap-6 w-full justify-center">
@@ -98,6 +115,7 @@ export function IncomingCallListener() {
                 <Phone className="w-6 h-6 text-white" />
               </button>
 
+              {!incomingCall.audioOnly && (
               <button
                 onClick={() => handleAccept('video')}
                 className="w-14 h-14 rounded-full bg-blue-500 hover:bg-blue-600 flex items-center justify-center transition-colors shadow-lg animate-bounce"
@@ -105,6 +123,7 @@ export function IncomingCallListener() {
               >
                 <Video className="w-6 h-6 text-white" />
               </button>
+              )}
             </div>
           </div>
         </motion.div>

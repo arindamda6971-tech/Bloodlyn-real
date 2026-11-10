@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { sendToDoctor, waitForIceGathering } from "@/lib/callSignal";
 import { PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff, SwitchCamera } from "lucide-react";
 
 export default function EmbeddedCallScreen() {
@@ -15,6 +16,8 @@ export default function EmbeddedCallScreen() {
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const localStream = useRef<MediaStream | null>(null);
   const channel = useRef<any>(null);
+  // Set once the doctor has been told the call is over.
+  const endedRef = useRef(false);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(mode === 'audio');
@@ -56,8 +59,10 @@ export default function EmbeddedCallScreen() {
           }
         };
 
-        // 3. Setup Supabase Channel (private: authorized via RLS on realtime.messages,
-        // so only the patient who owns this order — or the doctor portal — can join)
+        // 3. Signalling. The doctor's messages arrive on this order's private channel,
+        // which only this patient can join. Ours go to the doctor through the partner
+        // portal's call-signal function, which checks we made this booking. (The
+        // doctor isn't a user of this project, so they can't join this channel.)
         const { data: sessionData } = await supabase.auth.getSession();
         const accessToken = sessionData.session?.access_token;
         if (!accessToken) {
@@ -71,64 +76,26 @@ export default function EmbeddedCallScreen() {
         const chan = supabase.channel(roomName, { config: { private: true } });
         channel.current = chan;
 
-        const iceQueue: RTCIceCandidate[] = [];
-
         chan.on('broadcast', { event: 'webrtc-offer' }, async (payload) => {
-          if (payload.payload.offer) {
-            setCallStatus("Answering call...");
-            await pc.setRemoteDescription(new RTCSessionDescription(payload.payload.offer));
-            
-            while(iceQueue.length > 0) {
-              const candidate = iceQueue.shift();
-              if (candidate) await pc.addIceCandidate(candidate).catch(e => console.error(e));
-            }
-
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            
-            chan.send({
-              type: 'broadcast',
-              event: 'webrtc-answer',
-              payload: { answer }
-            });
-          }
+          const offer = payload.payload?.offer;
+          // Answer one offer per call.
+          if (!offer || pc.signalingState !== 'stable' || pc.remoteDescription) return;
+          setCallStatus("Answering call...");
+          await pc.setRemoteDescription(new RTCSessionDescription(offer));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+          // Send the answer with all its network routes in one message.
+          await waitForIceGathering(pc);
+          await sendToDoctor(id, 'webrtc-answer', { answer: pc.localDescription?.toJSON() });
         });
-
-        chan.on('broadcast', { event: 'webrtc-ice' }, async (payload) => {
-          if (payload.payload.candidate) {
-            try {
-              const candidate = new RTCIceCandidate(payload.payload.candidate);
-              if (pc.remoteDescription) {
-                await pc.addIceCandidate(candidate);
-              } else {
-                iceQueue.push(candidate);
-              }
-            } catch (e) {
-              console.error("Error adding ice candidate", e);
-            }
-          }
-        });
-
-        pc.onicecandidate = (event) => {
-          if (event.candidate) {
-            chan.send({
-              type: 'broadcast',
-              event: 'webrtc-ice',
-              payload: { candidate: event.candidate }
-            });
-          }
-        };
 
         chan.on('broadcast', { event: 'doctor-ready' }, () => {
-          // If doctor just connected, let them know we are already here
-          chan.send({
-            type: 'broadcast',
-            event: 'patient-ready',
-            payload: {}
-          });
+          // The doctor opened the call after us: tell them we're here.
+          void sendToDoctor(id, 'patient-ready');
         });
 
         chan.on('broadcast', { event: 'webrtc-hangup' }, () => {
+          endedRef.current = true;
           setCallStatus("Doctor ended the call");
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (localVideoRef.current) localVideoRef.current.srcObject = null;
@@ -155,14 +122,10 @@ export default function EmbeddedCallScreen() {
 
         chan.subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
-            // Signal to doctor that patient is ready to receive offer
-            chan.send({
-              type: 'broadcast',
-              event: 'patient-ready',
-              payload: {}
-            });
-          } else if (status === 'CHANNEL_ERROR' || status === 'CLOSED') {
-            setCallStatus("Not authorized to join this call.");
+            // Tell the doctor we're here so they send the offer.
+            void sendToDoctor(id, 'patient-ready');
+          } else if (status === 'CHANNEL_ERROR') {
+            setCallStatus("Couldn't join the call. Check your internet and try again.");
           }
         });
 
@@ -178,6 +141,11 @@ export default function EmbeddedCallScreen() {
       localStream.current?.getTracks().forEach(t => t.stop());
       peerConnection.current?.close();
       channel.current?.unsubscribe();
+      // Left the call screen without hanging up: let the doctor know.
+      if (!endedRef.current) {
+        endedRef.current = true;
+        void sendToDoctor(id, 'webrtc-hangup');
+      }
     };
   }, [id, mode]);
 
@@ -261,12 +229,9 @@ export default function EmbeddedCallScreen() {
 
   const handleHangup = async () => {
     setCallStatus("Ending call...");
-    if (channel.current) {
-      channel.current.send({
-        type: 'broadcast',
-        event: 'webrtc-hangup',
-        payload: {}
-      });
+    if (id && !endedRef.current) {
+      endedRef.current = true;
+      void sendToDoctor(id, 'webrtc-hangup');
     }
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     if (localVideoRef.current) localVideoRef.current.srcObject = null;

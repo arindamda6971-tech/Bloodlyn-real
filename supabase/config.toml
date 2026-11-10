@@ -59,3 +59,7 @@ verify_jwt = false
 [functions.cancel-order]
 verify_jwt = false
 # Validates the caller with Supabase Auth; the stage rule lives in cancel_order_by_customer.
+
+[functions.update-call-status]
+verify_jwt = false
+# Called by the partner portal's forward-call-status with the shared webhook secret, not a user JWT

@@ -968,10 +968,11 @@ Deno.serve(async (req) => {
 
         let formattedTime = "10:00";
         if (scheduledTimeSlot) {
-          const match = scheduledTimeSlot.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          // First time in the slot: "10:30 AM", or "6 AM" in "Morning (6 AM - 8 AM)".
+          const match = scheduledTimeSlot.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
           if (match) {
             let hour = parseInt(match[1], 10);
-            const minute = match[2];
+            const minute = match[2] ?? "00";
             const ampm = match[3].toUpperCase();
             if (ampm === "PM" && hour < 12) hour += 12;
             if (ampm === "AM" && hour === 12) hour = 0;
@@ -997,7 +998,7 @@ Deno.serve(async (req) => {
           external_booking_id: orderData.id,
           doctor_id: doctorIdRaw,
           patient_user_id: userId,
-          patient_name: patientName ?? null,
+          patient_name: patientName || "Patient",
           patient_phone: patientPhone ?? null,
           patient_email: patientEmail,
           patient_age: patientAge ?? null,
@@ -1008,14 +1009,24 @@ Deno.serve(async (req) => {
           symptoms: specialInstructions,
         };
 
-        fetch("https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-appointment-webhook", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-webhook-secret": doctorWebhookSecret,
-          },
-          body: JSON.stringify(payload),
-        }).catch((e) => console.error("Doctor appointment webhook error (non-blocking):", e));
+        // Awaited (with a timeout): Supabase ends a function once it has answered, so a
+        // fire-and-forget fetch was cut off and the booking never reached the doctor.
+        try {
+          const webhookRes = await fetch("https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-appointment-webhook", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-webhook-secret": doctorWebhookSecret,
+            },
+            body: JSON.stringify(payload),
+            signal: AbortSignal.timeout(8000),
+          });
+          if (!webhookRes.ok) {
+            console.error("Doctor appointment webhook failed:", webhookRes.status, await webhookRes.text().catch(() => ""));
+          }
+        } catch (e) {
+          console.error("Doctor appointment webhook error (order still placed):", e);
+        }
       }
     } catch (e) {
       console.error("Doctor webhook dispatch error (non-blocking):", e);
