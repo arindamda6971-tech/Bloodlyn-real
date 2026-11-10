@@ -264,9 +264,12 @@ const TabStackLayer = memo(({ path, location, active, current }: TabStackLayerPr
     >
       <ScreenPathContext.Provider value={path}>
         <LocationContext.Provider value={locationContext}>
-          <ProtectedRoute>
-            <Screen />
-          </ProtectedRoute>
+          {/* A crash inside one tab stays in that tab instead of blanking the app. */}
+          <ErrorBoundary>
+            <ProtectedRoute>
+              <Screen />
+            </ProtectedRoute>
+          </ErrorBoundary>
         </LocationContext.Provider>
       </ScreenPathContext.Provider>
     </div>
@@ -341,6 +344,9 @@ export const AnimatedRoutes = () => {
       <AnimatePresence initial={false}>
         {!isTab && (
           <PageTransition location={location} key={location.pathname}>
+            {/* One boundary per screen: a crash on one page shows that page's error
+                card (Back still works) instead of taking down the whole app. */}
+            <ErrorBoundary>
             <Suspense fallback={<RouteFallback />}>
               <Routes location={location}>
                 {/* Public Routes */}
@@ -403,6 +409,7 @@ export const AnimatedRoutes = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
+            </ErrorBoundary>
           </PageTransition>
         )}
       </AnimatePresence>
