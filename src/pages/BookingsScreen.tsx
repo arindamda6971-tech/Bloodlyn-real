@@ -187,6 +187,7 @@ const BookingsScreen = () => {
     }
 
     const isDone = ["completed", "report_ready", "report_delivered"].includes(order.status || "");
+    const isRescheduled = Number(order.reschedule_count) > 0 && order.status !== "cancelled";
 
     return (
       // CSS-only entrance (compositor driven). The previous spring + `layout`
@@ -234,15 +235,16 @@ const BookingsScreen = () => {
               <p className="text-xs font-bold text-foreground truncate">{order.lab_name || "BloodLyn Direct"}</p>
             </div>
             <div className="min-w-0 text-right">
-              <p className="text-[10px] font-semibold text-muted-foreground">Scheduled</p>
+              {/* A visit the patient moved says so in the label itself, not in an extra line. */}
+              {isRescheduled ? (
+                <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Rescheduled</p>
+              ) : (
+                <p className="text-[10px] font-semibold text-muted-foreground">Scheduled</p>
+              )}
               <p className="text-xs font-bold text-foreground">
                 {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM yyyy") : "ASAP"}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">{order.scheduled_time_slot || "60 min express"}</p>
-              {/* Same note as the order details page, for a visit the patient moved. */}
-              {Number(order.reschedule_count) > 0 && order.status !== "cancelled" && (
-                <p className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 mt-0.5">Rescheduled</p>
-              )}
             </div>
           </div>
 

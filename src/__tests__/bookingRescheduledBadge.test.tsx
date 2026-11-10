@@ -47,7 +47,9 @@ describe("My Orders tile", () => {
     renderPage();
     expect(await screen.findByText("Glucose Fasting")).toBeInTheDocument();
     expect(screen.getByText("HbA1c")).toBeInTheDocument();
-    // Only the moved, still-active booking carries the note (not the cancelled one).
+    // The moved, still-active booking's date is labelled "Rescheduled" instead of
+    // "Scheduled" (no extra line); the others, cancelled included, keep "Scheduled".
     expect(screen.getAllByText("Rescheduled")).toHaveLength(1);
+    expect(screen.getAllByText("Scheduled")).toHaveLength(3);
   });
 });
