@@ -32,6 +32,7 @@ export const OnlineFlow = ({
   updateState,
   updateOnlineState,
   doctors,
+  doctorsLoading = false,
   onBook,
   familyMembers = [],
   selectedMemberId = "self",
@@ -66,7 +67,7 @@ export const OnlineFlow = ({
         <ConsultationTypeStep key="type" state={state.onlineState} updateOnlineState={updateOnlineState} onNext={() => updateState({ currentStep: 6 })} />
       )}
       {step === 6 && (
-        <DoctorMatchingStep key="match" state={state} doctors={doctors} onBook={onBook} />
+        <DoctorMatchingStep key="match" state={state} doctors={doctors} doctorsLoading={doctorsLoading} onBook={onBook} />
       )}
     </AnimatePresence>
   );
@@ -292,28 +293,42 @@ const ConsultationTypeStep = ({ state, updateOnlineState, onNext }: any) => {
 };
 
 // --- Step 6: Doctor Matching ---
-const DoctorMatchingStep = ({ state, doctors, onBook }: any) => {
-  // Smart match logic: Filter doctors by matched specialty
+const DoctorMatchingStep = ({ state, doctors, doctorsLoading, onBook }: any) => {
+  // Doctors who offer the chosen mode. (There is no symptom or language matching yet,
+  // so the list doesn't claim one.)
   const matchedDoctors = doctors.filter((d: Doctor) => {
-    if (state.selectedSpecialty && !d.specialty.includes(state.selectedSpecialty) && state.selectedSpecialty !== "Other") {
-      if (state.selectedSpecialty !== "General Physician" && !d.specialty.includes("General")) {
-        // Fallback for demo purposes
-      }
-    }
-    // Filter by online availability
     if (state.onlineState.consultationType === "video" && !d.videoCallFee) return false;
     if (state.onlineState.consultationType === "audio" && !d.audioCallFee) return false;
     return true;
   });
+  if (doctorsLoading) {
+    return (
+      <div className="mt-6 space-y-4" role="status" aria-label="Finding doctors">
+        <p className="text-sm font-semibold text-muted-foreground">Finding doctors…</p>
+        {[0, 1].map((i) => (
+          <div key={i} className="h-40 rounded-3xl border border-border/50 bg-muted/40 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  const modeLabel =
+    state.onlineState.consultationType === "audio" ? "audio" : state.onlineState.consultationType === "video" ? "video" : "online";
 
   return (
     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-4">
       <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl border border-emerald-500/20 flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
         <div>
-          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">Smart Match Complete</h3>
+          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-400">
+            {matchedDoctors.length > 0
+              ? `${matchedDoctors.length} verified doctor${matchedDoctors.length === 1 ? "" : "s"} for a ${modeLabel} consultation`
+              : "No doctor is free right now"}
+          </h3>
           <p className="text-xs text-emerald-600/80 dark:text-emerald-500 mt-1 font-medium">
-            We found {matchedDoctors.length} {state.selectedSpecialty}s matching your symptoms and language preference.
+            {matchedDoctors.length > 0
+              ? "Every doctor here is registered with a medical council and checked by BloodLyn."
+              : "Doctors appear here when they are accepting consultations."}
           </p>
         </div>
       </div>
@@ -330,8 +345,8 @@ const DoctorMatchingStep = ({ state, doctors, onBook }: any) => {
           ))
         ) : (
           <div className="p-8 text-center bg-card rounded-3xl border border-border/50">
-            <p className="font-bold text-foreground">No matching doctors found</p>
-            <p className="text-xs text-muted-foreground mt-2">Try changing your consultation type or language.</p>
+            <p className="font-bold text-foreground">No doctors available right now</p>
+            <p className="text-xs text-muted-foreground mt-2">Try the other consultation mode, or check again in a little while.</p>
           </div>
         )}
       </div>

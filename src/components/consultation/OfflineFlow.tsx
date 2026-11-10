@@ -15,6 +15,7 @@ interface OfflineFlowProps {
   updateState: (updates: Partial<ConsultationFlowState>) => void;
   updateOfflineState: (updates: Partial<ConsultationFlowState["offlineState"]>) => void;
   doctors: Doctor[];
+  doctorsLoading?: boolean;
   onBook: (doctor: Doctor, type: "video" | "audio" | "physical") => void;
   familyMembers?: any[];
   selectedMemberId?: string | null;
@@ -30,7 +31,7 @@ const HEALTH_CONCERNS = [
   "Lungs", "Sexual Health", "Nutrition", "Physiotherapy", "Other"
 ];
 
-export const OfflineFlow = ({ state, updateState, updateOfflineState, doctors, onBook }: OfflineFlowProps) => {
+export const OfflineFlow = ({ state, updateState, updateOfflineState, doctors, doctorsLoading = false, onBook }: OfflineFlowProps) => {
   const step = state.currentStep;
 
   return (
@@ -45,7 +46,7 @@ export const OfflineFlow = ({ state, updateState, updateOfflineState, doctors, o
         <FiltersStep key="filters" state={state.offlineState} updateOfflineState={updateOfflineState} onNext={() => updateState({ currentStep: 5 })} />
       )}
       {step === 5 && (
-        <DoctorListStep key="doctors" state={state} updateState={updateState} updateOfflineState={updateOfflineState} doctors={doctors} onBook={onBook} />
+        <DoctorListStep key="doctors" state={state} updateState={updateState} updateOfflineState={updateOfflineState} doctors={doctors} doctorsLoading={doctorsLoading} onBook={onBook} />
       )}
     </AnimatePresence>
   );
@@ -323,7 +324,7 @@ const FiltersStep = ({ state, updateOfflineState, onNext }: any) => {
 };
 
 // --- Step 5: Doctor List ---
-const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, onBook }: any) => {
+const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, doctorsLoading, onBook }: any) => {
   const [nameQuery, setNameQuery] = useState("");
   const [showFallbackDocs, setShowFallbackDocs] = useState(false);
   const targetPincode = state?.offlineState?.pincode?.trim() || "";
@@ -331,6 +332,8 @@ const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, onBoo
 
   // Filter logic
   const matchedDoctors = doctors.filter((d: Doctor) => {
+    // A clinic visit needs a clinic: online-only doctors aren't bookable here.
+    if (!d.clinicAddress && !d.hospitalName) return false;
     // Search query filter
     if (nameQuery.trim()) {
       const q = nameQuery.toLowerCase();
@@ -357,6 +360,17 @@ const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, onBoo
         return false;
       })
     : matchedDoctors;
+
+  if (doctorsLoading) {
+    return (
+      <div className="mt-6 space-y-4" role="status" aria-label="Finding doctors">
+        <p className="text-sm font-semibold text-muted-foreground">Finding doctors…</p>
+        {[0, 1].map((i) => (
+          <div key={i} className="h-40 rounded-3xl border border-border/50 bg-muted/40 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   // Check if pincode has NO direct clinic doctors
   const hasNoDirectDoctors = targetPincode.length === 6 && pincodeFiltered.length === 0;

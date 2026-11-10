@@ -16,6 +16,7 @@ import { ConsultationFlowState, initialConsultationState, Doctor } from "@/types
 import { ConsultationTypeStep } from "@/components/consultation/ConsultationTypeStep";
 import { OfflineFlow } from "@/components/consultation/OfflineFlow";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
+import { doctorCartId, doctorsFromDirectory } from "@/lib/doctor-directory";
 import { OnlineFlow } from "@/components/consultation/OnlineFlow";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -75,6 +76,8 @@ const DoctorConsultScreen = () => {
   });
   
   const [doctors, setDoctors] = useState<Doctor[]>([]);
+  // Until the directory answers, the lists say "Finding doctors" instead of "none free".
+  const [doctorsLoading, setDoctorsLoading] = useState(true);
 
   // Family Members System
   const { members: familyMembers, addMember } = useFamilyMembers();
@@ -136,41 +139,14 @@ const DoctorConsultScreen = () => {
       let found: Doctor[] = [];
       try {
         const { data, error } = await supabase.functions.invoke(`doctor-directory?_ts=${Date.now()}`, { method: "GET" });
-        if (!error && data) {
-          const raw = Array.isArray(data) ? data : Array.isArray(data?.doctors) ? data.doctors : [];
-          found = raw
-            .filter((d: any) => d && (d.id || d.user_id) && (d.name || d.full_name))
-            .map((d: any) => {
-              const fee = Number(d.consultation_fee ?? 0) || 0;
-              return {
-                id: String(d.id || d.user_id),
-                name: d.name || d.full_name,
-                specialty: d.specialty || d.specialization || "General Physician",
-                qualification: d.qualification || "",
-                experience: Number(d.experience ?? d.experience_years ?? 0) || 0,
-                rating: Number(d.rating ?? 0) || 0,
-                reviews: Number(d.reviews ?? d.reviews_count ?? 0) || 0,
-                available: d.available !== false,
-                nextSlot: "See times",
-                videoCallFee: Number(d.videoCallFee ?? d.video_call_fee ?? fee) || fee,
-                audioCallFee: Number(d.audioCallFee ?? d.audio_call_fee ?? fee) || fee,
-                physicalCallFee: Number(d.physicalCallFee ?? d.in_clinic_fee ?? fee) || fee,
-                image: d.image || d.photo_url || undefined,
-                hospitalName: d.hospitalName || d.clinic_name || "",
-                clinicAddress: d.clinicAddress || d.clinic_address || "",
-                pincode: d.pincode || (d.clinic_address ? (d.clinic_address.match(/\b\d{6}\b/)?.[0] || "") : ""),
-                service_pincodes: d.service_pincodes || (d.pincode ? [d.pincode] : []),
-                gender: d.gender || "Any",
-                languages: d.languages || ["English", "Hindi"],
-              } as Doctor;
-            });
-        }
+        if (!error && data) found = doctorsFromDirectory(data);
       } catch (e) {
         console.warn("doctor-directory unavailable:", e);
       }
 
       if (cancelled) return;
       setDoctors(found);
+      setDoctorsLoading(false);
     };
 
     fetchDoctors();
@@ -203,7 +179,10 @@ const DoctorConsultScreen = () => {
     const patientName = getSelectedPatientName();
     
     const success = addToCart({
-      id: `doc-${type}-${doctor.id}`,
+      // create-order reads the mode from the id: doc-video-{id}, doc-audio-{id}, or
+      // doc-{id} for a clinic visit. "doc-physical-{id}" made it look up a doctor called
+      // "physical-{id}" and refuse the booking as "no longer available".
+      id: doctorCartId(type, String(doctor.id)),
       name: `${typeLabel} with ${doctor.name} (${patientName})`,
       price: fee,
       labId: "doctor-service",
@@ -255,8 +234,9 @@ const DoctorConsultScreen = () => {
         {/* Progress Bar */}
         <div className="px-4 mt-2">
           <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary" data-initial={false} data-animate={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }} data-transition={{ duration: 0.3, ease: "easeInOut" }}
+            <div
+              className="h-full bg-primary transition-[width] duration-300 ease-in-out"
+              style={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }}
             />
           </div>
         </div>
@@ -283,6 +263,7 @@ const DoctorConsultScreen = () => {
             updateState={updateState}
             updateOfflineState={updateOfflineState}
             doctors={doctors}
+            doctorsLoading={doctorsLoading}
             onBook={handleBook}
             familyMembers={familyMembers}
             selectedMemberId={selectedMemberId}
@@ -299,6 +280,7 @@ const DoctorConsultScreen = () => {
             updateState={updateState}
             updateOnlineState={updateOnlineState}
             doctors={doctors}
+            doctorsLoading={doctorsLoading}
             onBook={handleBook}
             familyMembers={familyMembers}
             selectedMemberId={selectedMemberId}

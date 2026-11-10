@@ -45,7 +45,7 @@ export function AppointmentStatusListener() {
               description: "Tap to join your video/audio consultation call.",
               action: {
                 label: "Join Call",
-                onClick: () => navigate(`/consultation/call/${newAppt.id}?mode=${newAppt.mode || 'video'}`),
+                onClick: () => navigate(`/call/${newAppt.id}?mode=${newAppt.mode || 'video'}`),
               },
               duration: 10000,
             });
