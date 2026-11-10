@@ -47,9 +47,12 @@ export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "
         <div className="text-center border-l border-r border-border/60">
           <div className="flex items-center justify-center gap-1">
             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-            <span className="text-sm font-bold text-foreground">{doctor.rating}</span>
+            {/* No reviews yet means no rating: never show a number we made up. */}
+            <span className="text-sm font-bold text-foreground">{doctor.reviews > 0 ? doctor.rating.toFixed(1) : "New"}</span>
           </div>
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">({doctor.reviews})</p>
+          <p className="text-[10px] text-muted-foreground font-semibold uppercase mt-1">
+            {doctor.reviews > 0 ? `(${doctor.reviews})` : "No reviews"}
+          </p>
         </div>
         <div className="text-center">
           <div className="flex items-center justify-center gap-1">

@@ -146,7 +146,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
             {data.title}
           </h2>
 
-          {(serviceType === "doctor" || serviceType === "physio") && (
+          {serviceType === "physio" && (
             <div
               className="w-full mb-8 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm"
             >
@@ -154,7 +154,7 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
               <div className="flex-1">
                 <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>
                 <p className="text-[13px] text-amber-700/90 mt-1 leading-relaxed">
-                  {serviceType === "doctor" ? "Doctor consultancy" : "Physiotherapist"} services are currently not available in your area. We will notify you once we expand to your location.
+                  Physiotherapist services are currently not available in your area. We will notify you once we expand to your location.
                 </p>
               </div>
             </div>
@@ -196,11 +196,11 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           >
             <Button
               onClick={onProceed}
-              variant={(serviceType === "doctor" || serviceType === "physio") ? "outline" : "hero"}
-              disabled={(serviceType === "doctor" || serviceType === "physio")}
+              variant={serviceType === "physio" ? "outline" : "hero"}
+              disabled={serviceType === "physio"}
               className="w-full h-14 rounded-2xl text-[15px]"
             >
-              {(serviceType === "doctor" || serviceType === "physio") ? "Currently Unavailable" : "Proceed to Booking"}
+              {serviceType === "physio" ? "Currently Unavailable" : "Proceed to Booking"}
             </Button>
           </div>
 

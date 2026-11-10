@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
@@ -123,101 +123,54 @@ const DoctorConsultScreen = () => {
     sessionStorage.setItem("consultationState", JSON.stringify(state));
   }, [state]);
 
-  // Fetch doctors from doctor-directory edge function + Supabase profiles + fallback list
+  // Doctors come only from the doctor-directory function: doctors the admin approved and
+  // that are active in the partner portal. There is no sample list and no made-up rating:
+  // a patient must never be able to book (and pay) a doctor who doesn't exist.
   // Start loading once the screen has slid in, so replies don't re-render it mid-slide.
   const afterSlide = useAfterTransition();
   useEffect(() => {
     if (!afterSlide) return;
     let cancelled = false;
-    const defaultList: Doctor[] = [
-      { id: "doc-1", name: "Dr. Priya Sharma", specialty: "General Physician", qualification: "MBBS, MD (General Medicine)", experience: 12, rating: 4.9, reviews: 1240, available: true, nextSlot: "Available today", videoCallFee: 299, audioCallFee: 199, physicalCallFee: 499, hospitalName: "Apollo Health Clinic", clinicAddress: "12/A Park Street, Kolkata - 700016", pincode: "700016", service_pincodes: ["700016", "700001", "700019", "700020", "110001"], gender: "Female", languages: ["English", "Hindi", "Bengali"] },
-      { id: "doc-2", name: "Dr. Rajesh Kumar", specialty: "Internal Medicine", qualification: "MBBS, MD", experience: 15, rating: 4.8, reviews: 980, available: true, nextSlot: "Available today", videoCallFee: 399, audioCallFee: 299, physicalCallFee: 599, hospitalName: "Fortis Care Center", clinicAddress: "45 Salt Lake Sector 1, Kolkata - 700064", pincode: "700064", service_pincodes: ["700064", "700091", "700001", "110001"], gender: "Male", languages: ["English", "Hindi"] },
-      { id: "doc-3", name: "Dr. Ananya Roy", specialty: "Dermatologist", qualification: "MBBS, MD (Dermatology)", experience: 8, rating: 4.9, reviews: 620, available: true, nextSlot: "Available today", videoCallFee: 499, audioCallFee: 399, physicalCallFee: 699, hospitalName: "Skin & Care Aesthetics", clinicAddress: "88 Camac Street, Kolkata - 700017", pincode: "700017", service_pincodes: ["700017", "700001", "700016", "110001"], gender: "Female", languages: ["English", "Bengali"] },
-      { id: "doc-4", name: "Dr. Vikramaditya Sen", specialty: "Cardiologist", qualification: "MBBS, MD, DM (Cardiology)", experience: 20, rating: 5.0, reviews: 2150, available: true, nextSlot: "Available today", videoCallFee: 799, audioCallFee: 599, physicalCallFee: 999, hospitalName: "Ruby Cardiac Clinic", clinicAddress: "EM Bypass, Kasba, Kolkata - 700107", pincode: "700107", service_pincodes: ["700107", "700001", "700019", "110001"], gender: "Male", languages: ["English", "Hindi", "Bengali"] },
-      { id: "doc-5", name: "Dr. Sneha Verma", specialty: "Pediatrician", qualification: "MBBS, DCH, MD (Pediatrics)", experience: 11, rating: 4.9, reviews: 840, available: true, nextSlot: "Available today", videoCallFee: 349, audioCallFee: 249, physicalCallFee: 499, hospitalName: "Little Stars Children's Clinic", clinicAddress: "23 Ballygunge Circular Rd, Kolkata - 700019", pincode: "700019", service_pincodes: ["700019", "700001", "700029", "110001"], gender: "Female", languages: ["English", "Hindi"] },
-      { id: "doc-6", name: "Dr. Sourav Banerjee", specialty: "Orthopedic", qualification: "MBBS, MS (Orthopedics)", experience: 14, rating: 4.8, reviews: 730, available: true, nextSlot: "Available today", videoCallFee: 450, audioCallFee: 350, physicalCallFee: 650, hospitalName: "Joint & Bone Institute", clinicAddress: "14 Gariahat Road, Kolkata - 700019", pincode: "700019", service_pincodes: ["700019", "700001", "700032"], gender: "Male", languages: ["English", "Bengali"] },
-    ];
 
     const fetchDoctors = async () => {
-      let edgeDocs: Doctor[] = [];
-      let dbDocs: Doctor[] = [];
-
+      let found: Doctor[] = [];
       try {
         const { data, error } = await supabase.functions.invoke(`doctor-directory?_ts=${Date.now()}`, { method: "GET" });
         if (!error && data) {
           const raw = Array.isArray(data) ? data : Array.isArray(data?.doctors) ? data.doctors : [];
-          edgeDocs = raw.map((d: any) => ({
-            id: String(d.id || d.user_id || Math.random()),
-            name: d.name || d.full_name || "Dr. Specialist",
-            specialty: d.specialty || d.specialization || "General Physician",
-            qualification: d.qualification || "MBBS, MD",
-            experience: d.experience ?? d.experience_years ?? 10,
-            rating: d.rating ?? 4.9,
-            reviews: d.reviews ?? d.reviews_count ?? 150,
-            available: d.available !== false,
-            nextSlot: "Available today",
-            videoCallFee: d.videoCallFee ?? d.video_call_fee ?? 299,
-            audioCallFee: d.audioCallFee ?? d.audio_call_fee ?? 199,
-            physicalCallFee: d.physicalCallFee ?? d.in_clinic_fee ?? d.consultation_fee ?? 499,
-            image: d.image || d.photo_url || undefined,
-            hospitalName: d.hospitalName || d.clinic_name || "BloodLyn Clinic",
-            clinicAddress: d.clinicAddress || d.clinic_address || "Main Road Clinic",
-            pincode: d.pincode || (d.clinic_address ? (d.clinic_address.match(/\b\d{6}\b/)?.[0] || "") : ""),
-            service_pincodes: d.service_pincodes || (d.pincode ? [d.pincode] : []),
-            gender: d.gender || "Any",
-            languages: d.languages || ["English", "Hindi"],
-          }));
+          found = raw
+            .filter((d: any) => d && (d.id || d.user_id) && (d.name || d.full_name))
+            .map((d: any) => {
+              const fee = Number(d.consultation_fee ?? 0) || 0;
+              return {
+                id: String(d.id || d.user_id),
+                name: d.name || d.full_name,
+                specialty: d.specialty || d.specialization || "General Physician",
+                qualification: d.qualification || "",
+                experience: Number(d.experience ?? d.experience_years ?? 0) || 0,
+                rating: Number(d.rating ?? 0) || 0,
+                reviews: Number(d.reviews ?? d.reviews_count ?? 0) || 0,
+                available: d.available !== false,
+                nextSlot: "See times",
+                videoCallFee: Number(d.videoCallFee ?? d.video_call_fee ?? fee) || fee,
+                audioCallFee: Number(d.audioCallFee ?? d.audio_call_fee ?? fee) || fee,
+                physicalCallFee: Number(d.physicalCallFee ?? d.in_clinic_fee ?? fee) || fee,
+                image: d.image || d.photo_url || undefined,
+                hospitalName: d.hospitalName || d.clinic_name || "",
+                clinicAddress: d.clinicAddress || d.clinic_address || "",
+                pincode: d.pincode || (d.clinic_address ? (d.clinic_address.match(/\b\d{6}\b/)?.[0] || "") : ""),
+                service_pincodes: d.service_pincodes || (d.pincode ? [d.pincode] : []),
+                gender: d.gender || "Any",
+                languages: d.languages || ["English", "Hindi"],
+              } as Doctor;
+            });
         }
       } catch (e) {
-        console.warn("doctor-directory edge function fallback:", e);
-      }
-
-      try {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("*")
-          .not("specialization", "is", null);
-
-        if (profs && profs.length > 0) {
-          dbDocs = profs.map((p: any) => ({
-            id: String(p.user_id || p.id),
-            name: p.full_name || "Dr. Partner Specialist",
-            specialty: p.specialization || "General Physician",
-            qualification: p.qualification || "MBBS, MD",
-            experience: p.experience_years ?? 10,
-            rating: p.rating ?? 4.9,
-            reviews: p.reviews_count ?? 95,
-            available: true,
-            nextSlot: "Available today",
-            videoCallFee: p.video_call_fee ?? p.consultation_fee ?? 299,
-            audioCallFee: p.audio_call_fee ?? 199,
-            physicalCallFee: p.in_clinic_fee ?? p.consultation_fee ?? 499,
-            image: p.photo_url || undefined,
-            hospitalName: p.clinic_name || "BloodLyn Partner Clinic",
-            clinicAddress: p.clinic_address || "Clinic Address",
-            pincode: p.pincode || (p.clinic_address ? (p.clinic_address.match(/\b\d{6}\b/)?.[0] || "") : ""),
-            service_pincodes: Array.isArray(p.service_pincodes) ? p.service_pincodes : (p.pincode ? [p.pincode] : []),
-            treated_symptoms: Array.isArray(p.treated_symptoms) ? p.treated_symptoms : (typeof p.treated_symptoms === 'string' ? p.treated_symptoms.split(',').map((s: string) => s.trim()).filter(Boolean) : []),
-            gender: p.gender || "Any",
-            languages: ["English", "Hindi"],
-          }));
-        }
-      } catch (e) {
-        console.warn("DB profiles fetch fallback:", e);
+        console.warn("doctor-directory unavailable:", e);
       }
 
       if (cancelled) return;
-
-      // Merge edgeDocs, dbDocs, and defaultList without duplicates by name/id
-      const mergedMap = new Map<string, Doctor>();
-      [...dbDocs, ...edgeDocs, ...defaultList].forEach((doc) => {
-        const key = doc.name.toLowerCase().trim();
-        if (!mergedMap.has(key)) {
-          mergedMap.set(key, doc);
-        }
-      });
-
-      setDoctors(Array.from(mergedMap.values()));
+      setDoctors(found);
     };
 
     fetchDoctors();
@@ -309,19 +262,51 @@ const DoctorConsultScreen = () => {
         </div>
       </div>
 
-      <div className="px-4 pb-32 pt-4">
-        {/* Service Not Available Banner */}
-        <div className="mb-6 bg-amber-50/80 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 shadow-sm">
-          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-bold text-sm text-amber-800">Service Not Available</h3>
-            <p className="text-[13px] text-amber-700/90 mt-1 leading-relaxed">
-              Doctor consultancy services are currently not available in your area. We will notify you once we expand to your location.
-            </p>
-          </div>
-        </div>
+      <div className="px-4 pb-32">
+        {/* Step 1: Choose Type (with fallback if state.type is missing) */}
+        {(state.currentStep === 1 || !state.type) && (
+          <ConsultationTypeStep
+            onSelect={(type) => {
+              updateState({
+                type,
+                currentStep: 2,
+                totalSteps: type === "offline" ? 5 : 6,
+              });
+            }}
+          />
+        )}
 
-        {/* Booking steps have been disabled as the service is unavailable */}
+        {/* Offline Flow Steps (2-5) */}
+        {state.type === "offline" && state.currentStep > 1 && (
+          <OfflineFlow
+            state={state}
+            updateState={updateState}
+            updateOfflineState={updateOfflineState}
+            doctors={doctors}
+            onBook={handleBook}
+            familyMembers={familyMembers}
+            selectedMemberId={selectedMemberId}
+            setSelectedMemberId={setSelectedMemberId}
+            selfProfile={selfProfile}
+            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
+          />
+        )}
+
+        {/* Online Flow Steps (2-6) */}
+        {state.type === "online" && state.currentStep > 1 && (
+          <OnlineFlow
+            state={state}
+            updateState={updateState}
+            updateOnlineState={updateOnlineState}
+            doctors={doctors}
+            onBook={handleBook}
+            familyMembers={familyMembers}
+            selectedMemberId={selectedMemberId}
+            setSelectedMemberId={setSelectedMemberId}
+            selfProfile={selfProfile}
+            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
+          />
+        )}
       </div>
 
       {/* Add Family Member Modal */}
