@@ -199,12 +199,12 @@ const BookingsScreen = () => {
         className="animate-fade-in press-row"
         onClick={() => handleOrderClick(order)}
       >
-        <div className={`border rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-transform duration-150 ${
+        <div className={`border rounded-3xl p-4 shadow-sm active:scale-[0.99] transition-transform duration-150 ${
           isVitals ? "bg-blue-500/[0.04] border-blue-500/30" : "bg-card border-border/60"
         }`}>
           {/* Top: what was booked, for whom, and where it stands */}
           <div className="flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
               isVitals ? "bg-blue-600 text-white" : "bg-primary/10 text-primary"
             }`}>
               {isVitals ? <Heart className="w-5 h-5" /> : <BookingIcon className="w-5 h-5" />}
@@ -229,7 +229,7 @@ const BookingsScreen = () => {
           </div>
 
           {/* Lab & schedule */}
-          <div className="mt-3 rounded-xl bg-muted/50 px-3 py-2.5 grid grid-cols-2 gap-3">
+          <div className="mt-3 rounded-2xl bg-muted/50 px-3 py-2.5 grid grid-cols-2 gap-3">
             <div className="min-w-0">
               <p className="text-[10px] font-semibold text-muted-foreground">Lab</p>
               <p className="text-xs font-bold text-foreground truncate">{order.lab_name || "BloodLyn Direct"}</p>
@@ -275,7 +275,7 @@ const BookingsScreen = () => {
                   Join now
                 </button>
               )}
-              <button className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-xs font-bold transition-colors ${
+              <button className={`flex items-center gap-1 px-3.5 py-2 rounded-2xl text-xs font-bold transition-colors ${
                 isDone && !isVitals
                   ? "bg-primary text-primary-foreground"
                   : isVitals
@@ -364,7 +364,7 @@ const BookingsScreen = () => {
           {loading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card border border-border/50 rounded-[2rem] p-5 h-48 animate-pulse">
+                <div key={i} className="bg-card border border-border/50 rounded-3xl p-5 h-48 animate-pulse">
                   <div className="flex gap-4">
                     <div className="w-11 h-11 rounded-2xl bg-muted" />
                     <div className="flex-1 space-y-3 py-1">
