@@ -9,6 +9,7 @@ import { useOrderDetails } from "@/hooks/useOrderDetails";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo, consultStatus } from "@/lib/doctor-orders";
+import { MEET_APP_URL, meetLinkOf, openMeet } from "@/lib/meet";
 
 const STATUS = {
   upcoming: { label: "Upcoming", tone: "bg-primary/10 text-primary" },
@@ -63,7 +64,9 @@ const AppointmentDetailScreen = () => {
         ? "Consultation completed."
         : info.mode === "clinic"
           ? "Please reach the clinic a few minutes before your time."
-          : "The doctor will call you in the app at your time. You can also join from here.";
+          : meetLinkOf(order)
+            ? "Your doctor has started the consultation on Google Meet."
+            : "When the doctor starts, your phone rings and you join on Google Meet from here.";
 
   return (
     <MobileLayout showNav={false}>
@@ -105,12 +108,25 @@ const AppointmentDetailScreen = () => {
           </div>
 
           {status === "upcoming" && info.mode !== "clinic" && (
-            <Button
-              className="mt-3 w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={() => navigate(`/call/${order.id}?mode=${info.mode}`)}
-            >
-              <ModeIcon className="w-4 h-4 mr-1.5" /> Join call
-            </Button>
+            <>
+              <Button
+                className="mt-3 w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={!meetLinkOf(order)}
+                onClick={() => {
+                  const link = meetLinkOf(order);
+                  if (link) openMeet(link);
+                }}
+              >
+                <ModeIcon className="w-4 h-4 mr-1.5" />
+                {meetLinkOf(order) ? "Join on Google Meet" : "Waiting for the doctor to start"}
+              </Button>
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                The consultation happens in the Google Meet app.{" "}
+                <button type="button" className="font-semibold text-primary underline-offset-2 hover:underline" onClick={() => openMeet(MEET_APP_URL)}>
+                  Don't have it? Install
+                </button>
+              </p>
+            </>
           )}
           {status === "completed" && order.report_url && (
             <Button className="mt-3 w-full h-11 rounded-xl" onClick={() => window.open(order.report_url!, "_blank")}>

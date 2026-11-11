@@ -31,6 +31,7 @@ import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import OrderStatusTimeline from "@/components/orders/OrderStatusTimeline";
 import { useOrders, Order } from "@/hooks/useOrders";
 import { consultInfo, consultStatus, isDoctorOrder } from "@/lib/doctor-orders";
+import { meetLinkOf, openMeet } from "@/lib/meet";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All" },
@@ -169,7 +170,8 @@ const BookingsScreen = () => {
     const statusInfo = CONSULT_STATUS_LABEL[status];
     const ModeIcon = info.mode === "video" ? Video : info.mode === "audio" ? Phone : Building2;
     const modeLabel = info.mode === "video" ? "Video consultation" : info.mode === "audio" ? "Audio consultation" : "Clinic visit";
-    const canJoin = status === "upcoming" && info.mode !== "clinic";
+    // Consultations run on Google Meet: joinable once the doctor has opened one.
+    const meetLink = status === "upcoming" && info.mode !== "clinic" ? meetLinkOf(order) : null;
 
     return (
       <div
@@ -221,16 +223,16 @@ const BookingsScreen = () => {
               <p className="text-base font-black text-foreground tabular-nums">₹{order.total}</p>
             </div>
             <div className="flex items-center gap-2">
-              {canJoin && (
+              {meetLink && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/call/${order.id}?mode=${info.mode}`);
+                    openMeet(meetLink);
                   }}
                   className="flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700"
                 >
                   <ModeIcon className="w-3.5 h-3.5" />
-                  Join call
+                  Join Meet
                 </button>
               )}
               <button className="flex items-center gap-1 px-3.5 py-2 rounded-2xl text-xs font-bold bg-primary/10 text-primary">

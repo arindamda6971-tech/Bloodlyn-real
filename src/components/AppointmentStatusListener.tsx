@@ -42,10 +42,10 @@ export function AppointmentStatusListener() {
 
           if (newAppt.status === "in_consultation") {
             toast.success(`🎉 ${doctorName} is ready for your consultation!`, {
-              description: "Tap to join your video/audio consultation call.",
+              description: "Open My Orders → Appointments to join on Google Meet.",
               action: {
-                label: "Join Call",
-                onClick: () => navigate(`/call/${newAppt.id}?mode=${newAppt.mode || 'video'}`),
+                label: "Open",
+                onClick: () => navigate("/bookings"),
               },
               duration: 10000,
             });

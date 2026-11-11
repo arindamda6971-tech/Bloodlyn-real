@@ -17,6 +17,8 @@ export interface Order {
   patient_name?: string | null;
   /** How many times the patient moved the visit (one is allowed). */
   reschedule_count?: number | null;
+  /** Doctor consultations: the Google Meet the doctor opened. */
+  meet_link?: string | null;
   family_members?: {
     full_name: string;
   } | null;

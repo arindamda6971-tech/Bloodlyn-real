@@ -384,10 +384,10 @@ const TrackingScreen = () => {
           {isOnlineCall && !isCancelled && completedIndex < 4 && (
             <Button
               className="mt-3 w-full h-11 rounded-xl gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => navigate(`/call/${order.id}`)}
+              onClick={() => navigate(`/appointment/${order.id}`)}
             >
               <Video className="w-4 h-4" />
-              Join video / audio call
+              Open appointment
             </Button>
           )}
         </section>

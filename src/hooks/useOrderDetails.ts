@@ -30,6 +30,8 @@ export interface OrderData {
     full_name: string;
   } | null;
   special_instructions?: string | null;
+  /** Doctor consultations: the Google Meet the doctor opened. */
+  meet_link?: string | null;
 }
 
 export interface OrderItem {

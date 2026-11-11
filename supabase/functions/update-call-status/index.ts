@@ -31,7 +31,7 @@ serve(async (req) => {
       })
     }
 
-    const { order_id, call_status, order_status } = await req.json()
+    const { order_id, call_status, order_status, meet_link } = await req.json()
 
     if (!order_id || !call_status) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -42,6 +42,8 @@ serve(async (req) => {
 
     // The doctor finished or cancelled the consultation: the patient's booking shows it.
     const update: Record<string, unknown> = { call_status }
+    // The Google Meet link the doctor opened: the patient joins from their booking.
+    if (typeof meet_link === 'string' && /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meet_link)) update.meet_link = meet_link
     if (order_status === 'completed') update.status = 'completed'
     if (order_status === 'cancelled') {
       update.status = 'cancelled'
@@ -50,11 +52,18 @@ serve(async (req) => {
     }
 
     // Update the order
-    const { data, error } = await supabaseClient
+    let { data, error } = await supabaseClient
       .from('orders')
       .update(update)
       .eq('id', order_id)
       .select()
+
+    // Before migration 20261111140000 runs there is no meet_link column: still ring.
+    if (error && 'meet_link' in update && /meet_link/.test(error.message ?? '')) {
+      console.error('orders.meet_link is missing; ringing without the link')
+      delete update.meet_link
+      ;({ data, error } = await supabaseClient.from('orders').update(update).eq('id', order_id).select())
+    }
 
     if (error) throw error
 

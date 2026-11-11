@@ -58,8 +58,8 @@ const BookDoctorScreen = () => {
     type === "physical"
       ? `Visit ${doctor.hospitalName || "the clinic"} ${dayText} during clinic hours. Pay at the clinic.`
       : isToday
-        ? "The doctor will call you in the BloodLyn app as soon as they can. Keep the app open. Pay after the consultation."
-        : `The doctor will call you in the BloodLyn app ${dayText}. Pay after the consultation.`;
+        ? "The doctor will ring you in the BloodLyn app as soon as they can and you'll join on Google Meet. Pay after the consultation."
+        : `The doctor will ring you in the BloodLyn app ${dayText} and you'll join on Google Meet. Pay after the consultation.`;
 
   const confirm = async () => {
     if (!user || placing) return;
