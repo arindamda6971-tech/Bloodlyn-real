@@ -227,9 +227,10 @@ const SupportScreen = () => {
 
   const renderCategorySelect = () => (
     <motion.div 
-      initial={{ opacity: 0, x: -20 }} 
-      animate={{ opacity: 1, x: 0 }} 
-      exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, transform: "translateX(-20px)" }} 
+      animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }}
+      transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+      exit={{ opacity: 0, transform: "translateX(-20px)" }}
       className="space-y-6"
     >
       {/* Search */}
@@ -273,9 +274,10 @@ const SupportScreen = () => {
 
   const renderOrderSelect = () => (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }} 
-      animate={{ opacity: 1, x: 0 }} 
-      exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, transform: "translateX(20px)" }} 
+      animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }}
+      transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+      exit={{ opacity: 0, transform: "translateX(-20px)" }}
       className="space-y-6"
     >
       <div className="mb-2">
@@ -332,9 +334,10 @@ const SupportScreen = () => {
 
     return (
       <motion.div 
-        initial={{ opacity: 0, x: 20 }} 
-        animate={{ opacity: 1, x: 0 }} 
-        exit={{ opacity: 0, x: -20 }}
+        initial={{ opacity: 0, transform: "translateX(20px)" }} 
+        animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }}
+        transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+        exit={{ opacity: 0, transform: "translateX(-20px)" }}
         className="space-y-6"
       >
         <div className="mb-2">
@@ -371,9 +374,10 @@ const SupportScreen = () => {
 
   const renderOtherEntry = () => (
     <motion.div 
-      initial={{ opacity: 0, x: 20 }} 
-      animate={{ opacity: 1, x: 0 }} 
-      exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, transform: "translateX(20px)" }} 
+      animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }}
+      transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+      exit={{ opacity: 0, transform: "translateX(-20px)" }}
       className="space-y-6"
     >
       <div className="mb-2">
@@ -422,8 +426,9 @@ const SupportScreen = () => {
 
   const renderSuccess = () => (
     <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }} 
-      animate={{ opacity: 1, scale: 1 }} 
+      initial={{ opacity: 0, transform: "scale(0.95)" }} 
+      animate={{ opacity: 1, transform: "scale(1)", transitionEnd: { transform: "none" } }}
+      transition={{ transform: { type: "spring", stiffness: 550, damping: 30, restSpeed: 10 } }}
       className="flex flex-col items-center text-center pt-10 pb-6 px-4"
     >
       <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mb-6">

@@ -93,7 +93,7 @@ const LocationStep = ({ updateOfflineState, onNext }: any) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-5">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-5">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Where would you like to visit?</h2>
         <p className="text-sm text-muted-foreground mt-1">Enter your pincode or select a saved location to find nearby clinics and doctors.</p>
@@ -193,7 +193,7 @@ const HealthConcernStep = ({ updateState, onNext }: any) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-4">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-4">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">What health issue are you facing?</h2>
         <p className="text-sm text-muted-foreground mt-1">Select a category or search for symptoms.</p>
@@ -250,7 +250,7 @@ const FiltersStep = ({ state, updateOfflineState, onNext }: any) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-6">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Select Date & Filter</h2>
         <p className="text-sm text-muted-foreground mt-1">Choose a booking slot over the next 7 days.</p>
@@ -376,7 +376,7 @@ const DoctorListStep = ({ state, updateState, updateOfflineState, doctors, docto
   const hasNoDirectDoctors = targetPincode.length === 6 && pincodeFiltered.length === 0;
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-4 flex flex-col gap-4">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-4 flex flex-col gap-4">
       {/* Location / Pincode Bar */}
       <div className="flex items-center justify-between p-3.5 bg-card border border-border/60 rounded-2xl shadow-sm">
         <div className="flex items-center gap-2.5 min-w-0">

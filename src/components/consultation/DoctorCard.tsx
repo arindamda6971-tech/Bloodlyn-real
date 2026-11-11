@@ -12,9 +12,9 @@ interface DoctorCardProps {
 export const DoctorCard = ({ doctor, onBook, allowedTypes = ["video", "audio", "physical"], delay = 0 }: DoctorCardProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay }}
+      initial={{ opacity: 0, transform: "translateY(15px)" }}
+      animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+      transition={{ delay, transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10, delay } }}
       className="p-5 rounded-3xl bg-card/98 border border-border/50 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_30px_-10px_rgba(0,0,0,0.15)] hover:border-primary/30 transition-all duration-300 group"
     >
       {/* Doctor Header */}

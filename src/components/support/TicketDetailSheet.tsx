@@ -100,8 +100,9 @@ export default function TicketDetailSheet({ ticket, open, onClose }: TicketDetai
               </div>
             ) : replies.length === 0 ? (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, transform: "translateY(10px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+                transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
                 className="soft-card text-center py-6"
               >
                 <AlertCircle className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
@@ -113,9 +114,9 @@ export default function TicketDetailSheet({ ticket, open, onClose }: TicketDetai
                 {replies.map((reply: any, idx: number) => (
                   <motion.div
                     key={reply.id || idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0}}
+                    initial={{ opacity: 0, transform: "translateY(10px)" }}
+                    animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+                    transition={{ delay: 0, transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10, delay: 0 } }}
                     className="soft-card border-l-2 border-primary/40"
                   >
                     <div className="flex items-center justify-between mb-1.5">

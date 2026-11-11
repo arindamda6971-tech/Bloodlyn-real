@@ -8,9 +8,10 @@ interface ConsultationTypeStepProps {
 export const ConsultationTypeStep = ({ onSelect }: ConsultationTypeStepProps) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
+      initial={{ opacity: 0, transform: "translateX(0px) translateY(20px)" }}
+      animate={{ opacity: 1, transform: "translateX(0px) translateY(0px)", transitionEnd: { transform: "none" } }}
+      transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+      exit={{ opacity: 0, transform: "translateX(-20px) translateY(0px)" }}
       className="flex flex-col gap-4 mt-6"
     >
       <div className="mb-4">

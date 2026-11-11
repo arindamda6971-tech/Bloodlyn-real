@@ -30,9 +30,10 @@ const InstallPrompt = () => {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
+        initial={{ opacity: 0, transform: "translateY(100px)" }}
+        animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+        transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+        exit={{ opacity: 0, transform: "translateY(100px)" }}
         className="fixed bottom-20 left-4 right-4 max-w-[398px] mx-auto z-50"
       >
         <div className="glass-card rounded-2xl p-4 shadow-lg">

@@ -142,8 +142,9 @@ const StickySearch = ({
           )}
           {results && (
             <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, transform: "translateY(-6px)" }}
+              animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+              transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
               className="absolute left-0 right-0 top-full mt-2 z-50"
             >
               {results}

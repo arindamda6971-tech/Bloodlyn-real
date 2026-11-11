@@ -251,8 +251,9 @@ export const ZomatoStyleHeader = ({
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
               <motion.span 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ transform: "scale(0)" }}
+                animate={{ transform: "scale(1)", transitionEnd: { transform: "none" } }}
+                transition={{ transform: { type: "spring", stiffness: 550, damping: 30, restSpeed: 10 } }}
                 className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-background shadow-sm" 
               >
                 {cartCount}

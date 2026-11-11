@@ -46,8 +46,9 @@ const TicketHistoryScreen = () => {
           </div>
         ) : tickets.length === 0 ? (
           <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, transform: "translateY(10px)" }}
+            animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+            transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
             className="flex flex-col items-center justify-center pt-20 text-center"
           >
             <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
@@ -60,8 +61,9 @@ const TicketHistoryScreen = () => {
           <div className="space-y-3">
             {tickets.map((ticket: any) => (
               <motion.button 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, transform: "translateY(10px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+                transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
                 key={ticket.id} 
                 onClick={() => navigate(`/support/ticket/${ticket.id}`)}
                 className="w-full text-left bg-white rounded-3xl p-5 shadow-sm border border-slate-100 hover:border-blue-200 active:scale-95 transition-all"

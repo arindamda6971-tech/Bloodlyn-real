@@ -95,9 +95,9 @@ const StageSpinner = ({ icon: Icon }: { icon: typeof Check }) => (
       <AnimatePresence mode="wait">
         <motion.span
           key={Icon.displayName ?? String(Icon)}
-          initial={{ opacity: 0, scale: 0.6 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.6 }}
+          initial={{ opacity: 0, transform: "scale(0.6)" }}
+          animate={{ opacity: 1, transform: "scale(1)", transitionEnd: { transform: "none" } }}
+          exit={{ opacity: 0, transform: "scale(0.6)" }}
           transition={{ duration: 0.2 }}
         >
           <Icon className="h-7 w-7 text-white" />
@@ -405,8 +405,9 @@ const PaymentProcessingScreen = () => {
             <div className="h-20">
               {failed ? (
                 <motion.div
-                  initial={{ scale: 0.6, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
+                  initial={{ opacity: 0, transform: "scale(0.6)" }}
+                  animate={{ opacity: 1, transform: "scale(1)", transitionEnd: { transform: "none" } }}
+                  transition={{ transform: { type: "spring", stiffness: 550, damping: 30, restSpeed: 10 } }}
                   className="flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg ring-8 ring-white/15"
                 >
                   <AlertCircle className="h-8 w-8 text-destructive" />
@@ -422,9 +423,9 @@ const PaymentProcessingScreen = () => {
             <AnimatePresence mode="wait">
               <motion.div
                 key={failed ? "failed" : stage.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0, transform: "translateY(10px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+                exit={{ opacity: 0, transform: "translateY(-8px)" }}
                 transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
                 className="mt-7 min-h-[104px]"
               >
@@ -437,8 +438,8 @@ const PaymentProcessingScreen = () => {
             {/* Steps */}
             {!failed && (
               <motion.ol
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, transform: "translateY(16px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
                 transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
                 className="mt-6 space-y-4 rounded-3xl bg-white/10 p-5 ring-1 ring-inset ring-white/15 backdrop-blur"
               >
@@ -459,8 +460,8 @@ const PaymentProcessingScreen = () => {
             {/* What is being booked */}
             {(firstTest || when || total) && (
               <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, transform: "translateY(16px)" }}
+                animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
                 transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
                 className="mt-4"
               >

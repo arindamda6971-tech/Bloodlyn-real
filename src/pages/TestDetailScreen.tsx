@@ -592,9 +592,10 @@ const TestDetailScreen = () => {
             className="fixed inset-0 bg-black/50 z-50 flex items-end"
           >
             <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
+              initial={{ transform: "translateY(100px)" }}
+              animate={{ transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+              transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+              exit={{ transform: "translateY(100px)" }}
               className="w-full bg-background rounded-t-3xl p-6 shadow-2xl"
               style={{ paddingBottom: "max(var(--sab), 24px)" }}
             >

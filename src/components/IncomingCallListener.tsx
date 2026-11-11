@@ -86,9 +86,10 @@ export function IncomingCallListener() {
     <AnimatePresence>
       {incomingCall && (
         <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -50 }}
+          initial={{ opacity: 0, transform: "translateY(-50px)" }}
+          animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
+          transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
+          exit={{ opacity: 0, transform: "translateY(-50px)" }}
           className="fixed inset-x-4 top-12 z-[100] bg-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-800"
         >
           <div className="flex flex-col items-center">

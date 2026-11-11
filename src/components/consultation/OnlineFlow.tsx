@@ -79,7 +79,7 @@ const LanguageStep = ({ state, updateOnlineState, onNext }: any) => {
   const filtered = LANGUAGES.filter(l => l.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-4">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-4">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Which language are you comfortable with?</h2>
       </div>
@@ -121,7 +121,7 @@ const HealthConcernStep = ({ updateState, onNext }: any) => {
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-4">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-4">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">What health problem are you experiencing?</h2>
       </div>
@@ -172,7 +172,7 @@ const BasicHealthInfoStep = ({
   };
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-6">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Patient & Health Details</h2>
         <p className="text-xs text-muted-foreground mt-1 font-semibold text-emerald-600">Select patient and share optional health details.</p>
@@ -265,7 +265,7 @@ const ConsultationTypeStep = ({ state, updateOnlineState, onNext }: any) => {
   ];
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-6">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-6">
       <div>
         <h2 className="text-xl font-black text-foreground tracking-tight">Choose consultation mode</h2>
       </div>
@@ -316,7 +316,7 @@ const DoctorMatchingStep = ({ state, doctors, doctorsLoading, onBook }: any) => 
     state.onlineState.consultationType === "audio" ? "audio" : state.onlineState.consultationType === "video" ? "video" : "online";
 
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mt-6 flex flex-col gap-4">
+    <motion.div initial={{ opacity: 0, transform: "translateX(20px)" }} animate={{ opacity: 1, transform: "translateX(0px)", transitionEnd: { transform: "none" } }} transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }} exit={{ opacity: 0, transform: "translateX(-20px)" }} className="mt-6 flex flex-col gap-4">
       <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl border border-emerald-500/20 flex items-start gap-3">
         <ShieldCheck className="w-5 h-5 text-emerald-600 mt-0.5 shrink-0" />
         <div>
