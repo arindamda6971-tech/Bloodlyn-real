@@ -16,7 +16,8 @@ import { ConsultationFlowState, initialConsultationState, Doctor } from "@/types
 import { ConsultationTypeStep } from "@/components/consultation/ConsultationTypeStep";
 import { OfflineFlow } from "@/components/consultation/OfflineFlow";
 import { ServiceIntro } from "@/components/services/ServiceIntro";
-import { doctorCartId, doctorsFromDirectory } from "@/lib/doctor-directory";
+import { doctorsFromDirectory } from "@/lib/doctor-directory";
+import type { BookDoctorState } from "@/pages/BookDoctorScreen";
 import { OnlineFlow } from "@/components/consultation/OnlineFlow";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -173,32 +174,29 @@ const DoctorConsultScreen = () => {
     }
   };
 
+  // Practo-style: no cart. The patient picks a date and one of the doctor's free times
+  // on the booking screen, and the booking is placed from there.
   const handleBook = (doctor: Doctor, type: "video" | "audio" | "physical") => {
-    const fee = type === "video" ? doctor.videoCallFee : type === "audio" ? doctor.audioCallFee : doctor.physicalCallFee;
-    const typeLabel = type === "video" ? "Video Call" : type === "audio" ? "Audio Call" : "Physical Appointment";
-    const patientName = getSelectedPatientName();
-    
-    const success = addToCart({
-      // create-order reads the mode from the id: doc-video-{id}, doc-audio-{id}, or
-      // doc-{id} for a clinic visit. "doc-physical-{id}" made it look up a doctor called
-      // "physical-{id}" and refuse the booking as "no longer available".
-      id: doctorCartId(type, String(doctor.id)),
-      name: `${typeLabel} with ${doctor.name} (${patientName})`,
-      price: fee,
-      labId: "doctor-service",
-      labName: doctor.hospitalName || "BloodLyn Medical Care",
-      vendorId: String(doctor.id),
-      doctorId: String(doctor.id),
-      doctorName: doctor.name,
-      consultationType: type,
-      patientName: patientName,
-      symptoms: `${state.healthConcern || "Consultation"}${state.onlineState.basicInfo.bloodPressure ? ` | BP: ${state.onlineState.basicInfo.bloodPressure}` : ""}${state.onlineState.basicInfo.bloodSugar ? ` | Sugar: ${state.onlineState.basicInfo.bloodSugar}` : ""}${state.onlineState.basicInfo.medications ? ` | Note: ${state.onlineState.basicInfo.medications}` : ""}`,
-    } as any);
-    
-    if (success) {
-      toast.success(`${typeLabel} for ${patientName} added to cart`);
-      navigate("/cart");
-    }
+    const member = selectedMemberId === "self" ? null : familyMembers.find((m) => m.id === selectedMemberId);
+    const patient = member
+      ? { name: member.fullName, age: member.age, gender: member.gender, phone: member.phone }
+      : {
+          name: selfProfile?.name || "Self",
+          age: selfProfile?.age || "",
+          gender: selfProfile?.gender || "",
+          phone: selfProfile?.mobile || "",
+        };
+    const info = state.onlineState.basicInfo;
+    const symptoms = [
+      state.healthConcern,
+      info.bloodPressure ? `BP ${info.bloodPressure}` : "",
+      info.bloodSugar ? `Sugar ${info.bloodSugar}` : "",
+      info.medications ? `Medicines: ${info.medications}` : "",
+    ]
+      .filter(Boolean)
+      .join(", ");
+    const booking: BookDoctorState = { doctor, type, patient, symptoms };
+    navigate("/book-doctor", { state: booking });
   };
 
   const handleConfirmReplace = () => {

@@ -39,6 +39,7 @@ interface CreateOrderRequest {
   patientAge?: number | string | null;
   patientGender?: string | null;
   patientPhone?: string | null;
+  reason?: string;
   labId?: string | null;
   labName?: string | null;
   vendorId?: string | null;
@@ -143,6 +144,8 @@ Deno.serve(async (req) => {
       patientAge: z.union([z.number().int().min(0).max(120), z.string().max(4)]).nullable().optional(),
       patientGender: z.string().max(20).nullable().optional(),
       patientPhone: z.string().regex(/^\d{10}$/, "Phone must be 10 digits").nullable().optional(),
+      // Doctor bookings: what the patient wants to discuss.
+      reason: z.string().trim().max(500).optional(),
       labId: z.string().uuid().nullable().optional(),
       labName: z.string().max(200).nullable().optional(),
       vendorId: z.string().uuid().nullable().optional(),
@@ -159,7 +162,7 @@ Deno.serve(async (req) => {
     }
 
     const body = parsed.data as CreateOrderRequest;
-    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, offerId, patientName, patientAge, patientGender, patientPhone, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
+    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, offerId, patientName, patientAge, patientGender, patientPhone, reason, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -467,9 +470,12 @@ Deno.serve(async (req) => {
     // Flat platform fee controlled by Admin Finance & Revenue. Invalid or
     // unavailable settings intentionally resolve to ₹0.
     let platformFee = 0;
+    // A doctor consultation pays the doctor's fee only: the lab platform fee and the
+    // collection fee are for lab tests.
+    const isDoctorOnly = cartItems.length > 0 && cartItems.every((item) => item.id.startsWith("doc-"));
     try {
       const adminKey = Deno.env.get("ADMIN_SUPABASE_PUBLISHABLE_KEY");
-      if (adminKey) {
+      if (adminKey && !isDoctorOnly) {
         const settingsRes = await fetch(
           "https://yhigcsypzwhbjvaqhhwq.supabase.co/functions/v1/bridge-settings",
           { headers: { apikey: adminKey, Authorization: `Bearer ${adminKey}` } },
@@ -490,7 +496,7 @@ Deno.serve(async (req) => {
     let collectionFee = 0;
     const selectedLabId = labId || cartItems.find((item) => item.labId)?.labId || null;
     let labOffersRaw: unknown = null;
-    if (selectedLabId) {
+    if (selectedLabId && !isDoctorOnly) {
       // Offers are read only when one was picked, so orders without one never
       // depend on the offers column.
       const { data: feeCenter, error: feeError } = await adminClient
@@ -579,6 +585,9 @@ Deno.serve(async (req) => {
     }
     if (prescriptionUrl) {
       parts.push(`Prescription: ${prescriptionUrl}`);
+    }
+    if (reason) {
+      parts.push(`Reason: ${reason.replace(/\|/g, "/")}`);
     }
     if (parts.length > 0) {
       specialInstructions = parts.join(" | ");
@@ -730,6 +739,34 @@ Deno.serve(async (req) => {
                 { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
               );
             }
+
+            const mode = raw.startsWith("video-") ? "video" : raw.startsWith("audio-") ? "audio" : "clinic";
+            const realFee = Number(
+              mode === "video" ? match.videoCallFee : mode === "audio" ? match.audioCallFee : match.physicalCallFee,
+            );
+            if (!(realFee > 0) || Number(doctorItem.price) !== realFee) {
+              return new Response(
+                JSON.stringify({
+                  error: realFee > 0
+                    ? "The doctor's fee has changed. Please go back and book again."
+                    : "This doctor doesn't offer this kind of consultation.",
+                  code: "fee_changed",
+                }),
+                { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+              );
+            }
+
+            // The doctor switches "Accepting consultations" off when they've had enough
+            // bookings; from then on nobody can book them until they switch it back on.
+            if (match.available === false) {
+              return new Response(
+                JSON.stringify({
+                  error: "This doctor isn't taking bookings right now. Please try another doctor.",
+                  code: "doctor_not_accepting",
+                }),
+                { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+              );
+            }
           } else if (dirRes.status === 403) {
             // Partner explicitly rejected — surface uniformly to the client.
             return new Response(
@@ -752,7 +789,8 @@ Deno.serve(async (req) => {
     // Re-read Partner capacity immediately before insertion. The frontend's
     // remaining count is informational only and is never trusted here.
     let slotCapacity: number | null = null;
-    if (orderVendorId && scheduledDate && scheduledTimeSlot) {
+    // Lab collection slots only: a doctor booking is for a day, with no collection slot.
+    if (!isDoctorOnly && orderVendorId && scheduledDate && scheduledTimeSlot) {
       const normalizedSlot = normalizeCollectionSlot(scheduledTimeSlot);
       if (!normalizedSlot) {
         return new Response(JSON.stringify({ error: "Invalid collection time slot", code: "invalid_slot" }), {
@@ -816,12 +854,17 @@ Deno.serve(async (req) => {
         test_name: cartItems.map(item => item.name).join(" | "),
         client_idempotency_key: idempotencyKey || null,
       };
-    const { data: orderData, error: orderError } = await adminClient
-      .rpc("create_order_with_slot_capacity", {
-        _order: orderInsert,
-        _slot_capacity: slotCapacity,
-      })
-      .single();
+    // Lab orders go through the collection-slot capacity check in the database. A doctor
+    // booking has no collection slot ("As soon as possible" / "Any time that day"), so it
+    // is inserted as is.
+    const { data: orderData, error: orderError } = isDoctorOnly
+      ? await adminClient.from("orders").insert(orderInsert).select().single()
+      : await adminClient
+          .rpc("create_order_with_slot_capacity", {
+            _order: orderInsert,
+            _slot_capacity: slotCapacity,
+          })
+          .single();
 
     if (orderError) {
       // Postgres unique-violation → another request with the same idempotency key
@@ -915,8 +958,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Notify partner hub (replaces pg_net trigger)
-    try {
+    // Notify partner hub (replaces pg_net trigger). A doctor-only booking is not a lab
+    // order: it goes to the doctor's appointments (below), never into the labs' queue.
+    if (!isDoctorOnly) try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const webhookPayload = {
@@ -966,7 +1010,7 @@ Deno.serve(async (req) => {
         if (raw.startsWith("video-")) { mode = "video"; doctorIdRaw = raw.slice(6); }
         else if (raw.startsWith("audio-")) { mode = "audio"; doctorIdRaw = raw.slice(6); }
 
-        let formattedTime = "10:00";
+        let formattedTime: string | null = null;
         if (scheduledTimeSlot) {
           // First time in the slot: "10:30 AM", or "6 AM" in "Morning (6 AM - 8 AM)".
           const match = scheduledTimeSlot.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
@@ -979,9 +1023,12 @@ Deno.serve(async (req) => {
             formattedTime = `${hour.toString().padStart(2, "0")}:${minute}`;
           }
         }
-        const scheduledAt = scheduledDate
+        const istToday = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+        const scheduledAt = formattedTime && scheduledDate
           ? `${scheduledDate}T${formattedTime}:00+05:30`
-          : null;
+          : !scheduledDate || scheduledDate <= istToday
+            ? new Date().toISOString()
+            : `${scheduledDate}T00:00:00+05:30`;
 
         // Fetch patient email for the webhook
         let patientEmail: string | null = null;
@@ -1006,7 +1053,7 @@ Deno.serve(async (req) => {
           scheduled_at: scheduledAt,
           mode,
           fee: serverTotal,
-          symptoms: specialInstructions,
+          symptoms: reason || specialInstructions,
         };
 
         // Awaited (with a timeout): Supabase ends a function once it has answered, so a

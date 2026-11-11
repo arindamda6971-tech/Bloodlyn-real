@@ -15,6 +15,8 @@ import {
   ArrowRight,
   User,
   Video,
+  Phone,
+  Building2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -28,6 +30,7 @@ import { useSEO } from "@/hooks/useSEO";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import OrderStatusTimeline from "@/components/orders/OrderStatusTimeline";
 import { useOrders, Order } from "@/hooks/useOrders";
+import { consultInfo, consultStatus, isDoctorOrder } from "@/lib/doctor-orders";
 
 const STATUS_FILTERS = [
   { key: "all", label: "All" },
@@ -36,25 +39,21 @@ const STATUS_FILTERS = [
   { key: "cancelled", label: "Cancelled" },
 ] as const;
 
+// Left: everything a lab does (blood tests, home ECG and BP). Right: doctor consultations.
 const SERVICE_TABS = [
   { key: "blood", label: "Blood Tests", icon: TestTube },
-  { key: "vitals", label: "ECG & BP", icon: Activity },
+  { key: "doctor", label: "Appointments", icon: Stethoscope },
 ] as const;
 
-const BP_PATTERN = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
-const ECG_PATTERN = /ecg|electrocardiogram/i;
+type ServiceKind = (typeof SERVICE_TABS)[number]["key"];
 
-/** Classify an order as a blood-test booking or an ECG / BP vitals booking. */
-const getServiceKind = (order: Order): "blood" | "vitals" => {
-  const parts = splitTestNames(order.test_name);
-  const label = `${order.order_number || ""} ${order.test_name || ""}`;
-  const isVitals =
-    parts.length > 0
-      ? parts.every((p) => BP_PATTERN.test(p) || ECG_PATTERN.test(p))
-      : BP_PATTERN.test(label) || ECG_PATTERN.test(label);
-  return isVitals ? "vitals" : "blood";
-};
+const getServiceKind = (order: Order): ServiceKind => (isDoctorOrder(order) ? "doctor" : "blood");
 
+const CONSULT_STATUS_LABEL = {
+  upcoming: { label: "Upcoming", tone: "bg-primary/10 text-primary" },
+  completed: { label: "Completed", tone: "bg-success/15 text-success" },
+  cancelled: { label: "Cancelled", tone: "bg-destructive/10 text-destructive" },
+} as const;
 
 const BookingsScreen = () => {
   useSEO({ title: "My Orders | BloodLyn", description: "Track your diagnostic test orders, sample collection status and view past bookings." });
@@ -63,7 +62,7 @@ const BookingsScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [activeFilter, setActiveFilter] = useState<string>("all");
-  const [serviceTab, setServiceTab] = useState<"blood" | "vitals">("blood");
+  const [serviceTab, setServiceTab] = useState<ServiceKind>("blood");
 
   useRealtimeOrders();
 
@@ -73,14 +72,17 @@ const BookingsScreen = () => {
         acc[getServiceKind(o)] += 1;
         return acc;
       },
-      { blood: 0, vitals: 0 } as Record<"blood" | "vitals", number>,
+      { blood: 0, doctor: 0 } as Record<ServiceKind, number>,
     );
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
     let result = orders.filter((o) => getServiceKind(o) === serviceTab);
 
-    if (serviceTab === "blood" && activeFilter !== "all") {
+    if (serviceTab === "doctor" && activeFilter !== "all") {
+      const wanted = activeFilter === "confirmed" ? "upcoming" : activeFilter;
+      result = result.filter((o) => consultStatus(o.status) === wanted);
+    } else if (serviceTab === "blood" && activeFilter !== "all") {
       if (activeFilter === "confirmed") {
         result = result.filter((o) => [
           "confirmed", "pending", "accepted", "assigned", "partner_assigned", "out_for_collection",
@@ -161,7 +163,89 @@ const BookingsScreen = () => {
     }
   };
 
+  const renderConsultCard = (order: Order, index: number) => {
+    const info = consultInfo(order)!;
+    const status = consultStatus(order.status);
+    const statusInfo = CONSULT_STATUS_LABEL[status];
+    const ModeIcon = info.mode === "video" ? Video : info.mode === "audio" ? Phone : Building2;
+    const modeLabel = info.mode === "video" ? "Video consultation" : info.mode === "audio" ? "Audio consultation" : "Clinic visit";
+    const canJoin = status === "upcoming" && info.mode !== "clinic";
+
+    return (
+      <div
+        key={order.id}
+        style={{ animationDelay: `${Math.min(index, 6) * 40}ms` }}
+        className="animate-fade-in press-row"
+        onClick={() => navigate(`/appointment/${order.id}`)}
+      >
+        <div className="border rounded-3xl p-4 shadow-sm active:scale-[0.99] transition-transform duration-150 bg-card border-border/60">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <Stethoscope className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mb-0.5">
+                <ModeIcon className="w-3 h-3" /> {modeLabel}
+              </p>
+              <h3 className="font-bold text-foreground text-[15px] leading-snug truncate">{info.doctorName}</h3>
+              <p className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5 truncate">
+                <User className="w-3 h-3 shrink-0" /> {info.patientName || order.patient_name || "Self"}
+              </p>
+            </div>
+            <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap ${statusInfo.tone}`}>
+              <span className="h-1.5 w-1.5 rounded-full bg-current" />
+              {statusInfo.label}
+            </span>
+          </div>
+
+          <div className="mt-3 rounded-2xl bg-muted/50 px-3 py-2.5 grid grid-cols-2 gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-muted-foreground">Date</p>
+              <p className="flex items-center gap-1 text-xs font-bold text-foreground">
+                <Calendar className="w-3 h-3 shrink-0" />
+                {order.scheduled_date ? format(new Date(order.scheduled_date), "dd MMM yyyy") : "To be fixed"}
+              </p>
+            </div>
+            <div className="min-w-0 text-right">
+              <p className="text-[10px] font-semibold text-muted-foreground">Time</p>
+              <p className="flex items-center justify-end gap-1 text-xs font-bold text-foreground truncate">
+                <Clock className="w-3 h-3 shrink-0" />
+                {order.scheduled_time_slot || "To be fixed"}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mt-3">
+            <div>
+              <p className="text-[10px] font-semibold text-muted-foreground">Fee</p>
+              <p className="text-base font-black text-foreground tabular-nums">₹{order.total}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {canJoin && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/call/${order.id}?mode=${info.mode}`);
+                  }}
+                  className="flex items-center gap-1.5 bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-emerald-700"
+                >
+                  <ModeIcon className="w-3.5 h-3.5" />
+                  Join call
+                </button>
+              )}
+              <button className="flex items-center gap-1 px-3.5 py-2 rounded-2xl text-xs font-bold bg-primary/10 text-primary">
+                Details
+                <ArrowRight className="w-3.5 h-3.5" strokeWidth={2.5} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderOrderCard = (order: Order, index: number) => {
+    if (isDoctorOrder(order)) return renderConsultCard(order, index);
     const BP_RE = /(?:home\s*bp|bp\s*check|blood\s*pressure)/i;
     const ECG_RE = /ecg|electrocardiogram/i;
     const vitalsParts = splitTestNames(order.test_name);
@@ -263,18 +347,6 @@ const BookingsScreen = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              {order.order_number?.startsWith("DOC") && !["completed", "cancelled"].includes(order.status || "") && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/call/${order.id}?mode=video`);
-                  }}
-                  className="flex items-center gap-1.5 bg-blue-500 text-white px-3.5 py-2 rounded-xl text-xs font-bold hover:bg-blue-600"
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  Join now
-                </button>
-              )}
               <button className={`flex items-center gap-1 px-3.5 py-2 rounded-2xl text-xs font-bold transition-colors ${
                 isDone && !isVitals
                   ? "bg-primary text-primary-foreground"
@@ -308,7 +380,7 @@ const BookingsScreen = () => {
       <StickySearch
         value={searchQuery}
         onChange={setSearchQuery}
-        placeholder="Search tests, orders, labs..."
+        placeholder={serviceTab === "doctor" ? "Search doctors, patients..." : "Search tests, orders, labs..."}
         accent="from-emerald-500 via-teal-500 to-primary"
         footer={
           <div className="w-full space-y-2">
@@ -336,7 +408,7 @@ const BookingsScreen = () => {
                 );
               })}
             </div>
-            {serviceTab === "blood" && (
+            {(
               <div className="flex w-full p-1 rounded-full bg-muted/60 border border-border/50">
                 {STATUS_FILTERS.map((f) => (
                   <button
@@ -348,7 +420,7 @@ const BookingsScreen = () => {
                         : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    {f.label}
+                    {serviceTab === "doctor" && f.key === "confirmed" ? "Upcoming" : f.label}
                   </button>
                 ))}
               </div>
@@ -382,6 +454,22 @@ const BookingsScreen = () => {
           ) : filteredOrders.length > 0 ? (
             <div className="space-y-3 list-virtual-lg">
               {filteredOrders.map((order, idx) => renderOrderCard(order, idx))}
+            </div>
+          ) : serviceTab === "doctor" && serviceCounts.doctor === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mb-6">
+                <Stethoscope className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-black text-foreground mb-2">No doctor appointments yet</h3>
+              <p className="text-sm text-muted-foreground max-w-[240px] font-medium leading-relaxed mb-6">
+                Talk to a doctor on video or audio, or book a clinic visit.
+              </p>
+              <button
+                onClick={() => navigate("/doctor-consult")}
+                className="bg-emerald-600 text-white px-6 py-3 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+              >
+                Consult a doctor
+              </button>
             </div>
           ) : orders.length > 0 ? (
             <motion.div

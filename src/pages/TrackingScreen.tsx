@@ -38,6 +38,7 @@ import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
 import { simplifyTestName } from "@/utils/simplify-test-name";
+import { isDoctorOrder } from "@/lib/doctor-orders";
 
 const workflowSteps = [
   { key: "accepted", label: "Order accepted", icon: CheckCircle },
@@ -121,6 +122,11 @@ const TrackingScreen = () => {
 
   const { latestStatus } = useRealtimeOrders(paramOrderId || undefined);
 
+  // Doctor consultations have their own page (no sample collection or lab steps).
+  const isConsult = !!order && isDoctorOrder(order);
+  useEffect(() => {
+    if (isConsult && order) navigate(`/appointment/${order.id}`, { replace: true });
+  }, [isConsult, order, navigate]);
 
 
   if (loading) {

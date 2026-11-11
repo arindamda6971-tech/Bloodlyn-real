@@ -31,7 +31,7 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
         rating: Number(d.rating ?? 0) || 0,
         reviews: Number(d.reviews ?? d.reviews_count ?? 0) || 0,
         available: d.available !== false && d.is_online !== false,
-        nextSlot: "See times",
+        nextSlot: "Available today",
         videoCallFee: money(d.videoCallFee, d.video_call_fee, base),
         audioCallFee: money(d.audioCallFee, d.audio_call_fee, base),
         physicalCallFee: money(d.physicalCallFee, d.in_clinic_fee, clinicAddress ? base : 0),

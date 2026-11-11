@@ -31,7 +31,7 @@ serve(async (req) => {
       })
     }
 
-    const { order_id, call_status } = await req.json()
+    const { order_id, call_status, order_status } = await req.json()
 
     if (!order_id || !call_status) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -40,10 +40,19 @@ serve(async (req) => {
       })
     }
 
+    // The doctor finished or cancelled the consultation: the patient's booking shows it.
+    const update: Record<string, unknown> = { call_status }
+    if (order_status === 'completed') update.status = 'completed'
+    if (order_status === 'cancelled') {
+      update.status = 'cancelled'
+      update.cancelled_at = new Date().toISOString()
+      update.cancellation_reason = 'Cancelled by the doctor'
+    }
+
     // Update the order
     const { data, error } = await supabaseClient
       .from('orders')
-      .update({ call_status })
+      .update(update)
       .eq('id', order_id)
       .select()
 

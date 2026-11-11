@@ -89,6 +89,8 @@ import SupportScreen from "./pages/SupportScreen";
 import EmbeddedCallScreen from "./pages/EmbeddedCallScreen";
 import OrderSuccessScreen from "./pages/OrderSuccessScreen";
 import TrackingScreen from "./pages/TrackingScreen";
+import AppointmentDetailScreen from "./pages/AppointmentDetailScreen";
+import BookDoctorScreen from "./pages/BookDoctorScreen";
 import FamilyMembersScreen from "./pages/FamilyMembersScreen";
 import AddFamilyMemberScreen from "./pages/AddFamilyMemberScreen";
 
@@ -399,6 +401,8 @@ export const AnimatedRoutes = () => {
                 <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
                 <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                 <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
+                <Route path="/appointment/:id" element={<ProtectedRoute><AppointmentDetailScreen /></ProtectedRoute>} />
+                <Route path="/book-doctor" element={<ProtectedRoute><BookDoctorScreen /></ProtectedRoute>} />
                 <Route path="/terms" element={<TermsScreen />} />
                 <Route path="/policy/:id" element={<PolicyDetailScreen />} />
                 <Route path="/privacy" element={<PrivacyPolicyScreen />} />
