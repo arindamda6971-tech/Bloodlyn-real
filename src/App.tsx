@@ -18,6 +18,7 @@ import {
 import { AnimatePresence } from "framer-motion";
 import {
   recordNavigation,
+  installTapGuard,
   getTransitionDuration,
   isTabToTabTransition,
   TAB_LAYER_ENTER_CLASS,
@@ -302,6 +303,10 @@ export const AnimatedRoutes = () => {
     return !sessionStorage.getItem("bl_opening_shown");
   });
 
+  // iOS-style: taps on a screen that is still sliding in are ignored (see installTapGuard).
+  // Off in unit tests, which tap in the same millisecond they navigate.
+  useEffect(() => (import.meta.env.MODE === "test" ? undefined : installTapGuard()), []);
+
   const handleSplashComplete = useCallback(() => {
     try {
       sessionStorage.setItem("bl_opening_shown", "1");
@@ -487,7 +492,9 @@ const App = () => {
                     <Toaster />
                     <Sonner />
                     <OfflineBanner />
-                      <BrowserRouter>
+                      {/* v7_startTransition: route changes render concurrently, so building a
+                          new screen no longer blocks taps or JS-driven animations. */}
+                      <BrowserRouter future={{ v7_startTransition: true }}>
                         <IncomingCallListener />
                         <DoctorAvailabilityListener />
                         <AppointmentStatusListener />

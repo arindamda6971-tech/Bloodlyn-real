@@ -189,6 +189,7 @@ const PageTransition = ({ children, location: propLocation }: PageTransitionProp
         if (e.target === elRef.current && e.animationName.startsWith("page")) setMotionStarted(true);
       }}
       onAnimationEnd={handleAnimationEnd}
+      data-screen-layer
       className={`w-full h-full absolute top-0 left-0 bg-background overflow-hidden ${animClass}`}
       style={{
         zIndex: zIndex,

@@ -49,7 +49,44 @@ export function recordNavigation(pathname: string, navType: "PUSH" | "POP" | "RE
     previousPathname = currentPathname;
     currentPathname = pathname;
     currentNavType = navType;
+    lastNavigationAt = now();
   }
+}
+
+// ==========================================
+// Tap guard (iOS-style)
+// ==========================================
+/*
+ * iOS ignores touches on a screen while it slides in. Here a quick second tap used to
+ * land on the incoming screen at the same spot: it opened a second screen, pressed a
+ * button the user never saw, or queued navigations until the app stuttered. For a
+ * short moment after each navigation, taps on screen content are dropped. The bottom
+ * bar, dialogs and sheets (rendered outside the screen layers) are not affected, and
+ * nothing about the animations changes.
+ */
+export const TAP_GUARD_MS = 350;
+const SCREEN_LAYERS = "[data-screen-layer],[data-tab-layer]";
+let lastNavigationAt = Number.NEGATIVE_INFINITY;
+function now(): number {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
+/** True when a tap on `target` should be ignored because a screen is still arriving. */
+export function isTapGuarded(target: EventTarget | null, at = now()): boolean {
+  if (at - lastNavigationAt >= TAP_GUARD_MS) return false;
+  const el = target as Element | null;
+  return !!el && typeof el.closest === "function" && !!el.closest(SCREEN_LAYERS);
+}
+
+/** Installs the guard on the document (capture phase, before React sees the tap). */
+export function installTapGuard(doc: Document = document): () => void {
+  const onClick = (e: MouseEvent) => {
+    if (!isTapGuarded(e.target)) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  doc.addEventListener("click", onClick, true);
+  return () => doc.removeEventListener("click", onClick, true);
 }
 
 /**
