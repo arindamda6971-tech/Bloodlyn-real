@@ -87,7 +87,6 @@ import LabDetailScreen from "./pages/LabDetailScreen";
 import PackagesScreen from "./pages/PackagesScreen";
 import PackageDetailScreen from "./pages/PackageDetailScreen";
 import SupportScreen from "./pages/SupportScreen";
-import EmbeddedCallScreen from "./pages/EmbeddedCallScreen";
 import OrderSuccessScreen from "./pages/OrderSuccessScreen";
 import TrackingScreen from "./pages/TrackingScreen";
 import AppointmentDetailScreen from "./pages/AppointmentDetailScreen";
@@ -402,7 +401,6 @@ export const AnimatedRoutes = () => {
                 <Route path="/ecg-booking" element={<Navigate replace to="/ecg-test" />} />
                 <Route path="/bp-check" element={<ProtectedRoute><BPCheckScreen /></ProtectedRoute>} />
                 <Route path="/consultation-booking" element={<Navigate replace to="/doctor-consult" />} />
-                <Route path="/call/:id" element={<ProtectedRoute><EmbeddedCallScreen /></ProtectedRoute>} />
                 <Route path="/order-success" element={<ProtectedRoute><OrderSuccessScreen /></ProtectedRoute>} />
                 <Route path="/tracking" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />
                 <Route path="/tracking/:orderId" element={<ProtectedRoute><TrackingScreen /></ProtectedRoute>} />

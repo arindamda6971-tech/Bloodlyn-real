@@ -19,4 +19,14 @@ describe("doctor orders", () => {
     expect(consultStatus("completed")).toBe("completed");
     expect(consultStatus("cancelled")).toBe("cancelled");
   });
+
+  it("calls an open booking missed once its day in India has passed", () => {
+    // 20:00 UTC on the 12th is already the 13th in India.
+    const now = new Date("2026-11-12T20:00:00Z");
+    expect(consultStatus("confirmed", "2026-11-13", now)).toBe("upcoming");
+    expect(consultStatus("confirmed", "2026-11-12", now)).toBe("missed");
+    expect(consultStatus("completed", "2026-11-01", now)).toBe("completed");
+    expect(consultStatus("cancelled", "2026-11-01", now)).toBe("cancelled");
+    expect(consultStatus("confirmed", null, now)).toBe("upcoming");
+  });
 });

@@ -54,6 +54,7 @@ const CONSULT_STATUS_LABEL = {
   upcoming: { label: "Upcoming", tone: "bg-primary/10 text-primary" },
   completed: { label: "Completed", tone: "bg-success/15 text-success" },
   cancelled: { label: "Cancelled", tone: "bg-destructive/10 text-destructive" },
+  missed: { label: "Missed", tone: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
 } as const;
 
 const BookingsScreen = () => {
@@ -82,7 +83,8 @@ const BookingsScreen = () => {
 
     if (serviceTab === "doctor" && activeFilter !== "all") {
       const wanted = activeFilter === "confirmed" ? "upcoming" : activeFilter;
-      result = result.filter((o) => consultStatus(o.status) === wanted);
+      // A missed booking is neither upcoming nor completed: it shows under "All" only.
+      result = result.filter((o) => consultStatus(o.status, o.scheduled_date) === wanted);
     } else if (serviceTab === "blood" && activeFilter !== "all") {
       if (activeFilter === "confirmed") {
         result = result.filter((o) => [
@@ -166,7 +168,7 @@ const BookingsScreen = () => {
 
   const renderConsultCard = (order: Order, index: number) => {
     const info = consultInfo(order)!;
-    const status = consultStatus(order.status);
+    const status = consultStatus(order.status, order.scheduled_date);
     const statusInfo = CONSULT_STATUS_LABEL[status];
     const ModeIcon = info.mode === "video" ? Video : info.mode === "audio" ? Phone : Building2;
     const modeLabel = info.mode === "video" ? "Video consultation" : info.mode === "audio" ? "Audio consultation" : "Clinic visit";

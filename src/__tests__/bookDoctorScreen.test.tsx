@@ -7,7 +7,7 @@ const invoke = vi.hoisted(() => vi.fn());
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { functions: { invoke } } }));
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: "patient-1" } }) }));
 vi.mock("@/components/layout/MobileLayout", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
 
 import BookDoctorScreen, { type BookDoctorState } from "@/pages/BookDoctorScreen";
 
@@ -75,5 +75,38 @@ describe("Book doctor screen", () => {
     fireEvent.click(screen.getByText("Confirm booking"));
     await screen.findByText("appointment page");
     expect(sentBody().scheduledTimeSlot).toBe("Any time that day");
+  });
+
+  const sentKey = (call: number) =>
+    invoke.mock.calls.filter(([name]) => name === "create-order")[call][1].headers["Idempotency-Key"] as string;
+
+  it("retries a booking under the same key, and books again under a new one", async () => {
+    invoke.mockResolvedValueOnce({ data: null, error: { context: new Response(JSON.stringify({ error: "We couldn't reach the doctor" }), { status: 502 }) } });
+    const first = renderScreen();
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(screen.getByText("Confirm booking").closest("button")!.disabled).toBe(false));
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await screen.findByText("appointment page");
+    expect(sentKey(1)).toBe(sentKey(0));
+    // Not the patient's id, doctor and day alone: that made a second family member's
+    // booking (or one made after cancelling) come back as the first booking.
+    expect(sentKey(0)).not.toContain("patient-1");
+    first.unmount();
+
+    renderScreen();
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await screen.findByText("appointment page");
+    expect(sentKey(2)).not.toBe(sentKey(0));
+  });
+
+  it("opens the booking the patient already has instead of booking twice", async () => {
+    invoke.mockResolvedValueOnce({
+      data: null,
+      error: { context: new Response(JSON.stringify({ error: "Already booked", code: "already_booked", orderId: "order-1" }), { status: 409 }) },
+    });
+    renderScreen();
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await screen.findByText("appointment page");
   });
 });

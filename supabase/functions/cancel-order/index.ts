@@ -1,9 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2.110.0/cors";
 import { z } from "https://esm.sh/zod@3.25.76";
+import { CONSULT_TEST_NAME, deliverToDoctor } from "../_shared/doctor-partner.ts";
 
 // Patients cancel until the lab assigns a collection partner; the database
 // function holds that rule so the app and the server can't disagree.
+// A doctor consultation is cancelled the same way, and the doctor is told.
 const schema = z.object({ orderId: z.string().uuid(), reason: z.string().trim().max(200).optional() }).strict();
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -35,7 +37,23 @@ Deno.serve(async (req) => {
       console.error("cancel-order error:", error);
       return json({ error: "Could not cancel this booking. Please try again." }, 500);
     }
-    return json({ order });
+
+    // A doctor consultation: the doctor's list drops it too. If this doesn't get through,
+    // the doctor is still told the moment they try to ring (update-call-status refuses).
+    let doctorTold: boolean | undefined;
+    const cancelled = order as { id: string; test_name?: string | null };
+    if (CONSULT_TEST_NAME.test((cancelled.test_name ?? "").trim())) {
+      const secret = Deno.env.get("DOCTOR_APPOINTMENT_WEBHOOK_SECRET");
+      doctorTold = secret
+        ? (await deliverToDoctor(
+            { action: "cancel", external_booking_id: cancelled.id, reason: parsed.data.reason ?? "" },
+            secret,
+          )).ok
+        : false;
+      if (!doctorTold) console.error("The doctor wasn't told about the cancelled booking", cancelled.id);
+    }
+
+    return json(doctorTold === undefined ? { order } : { order, doctorTold });
   } catch (error) {
     console.error("Unexpected cancel-order error:", error);
     return json({ error: "Could not cancel this booking. Please try again." }, 500);

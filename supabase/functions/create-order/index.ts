@@ -3,6 +3,7 @@ import { z } from "https://esm.sh/zod@3.23.8";
 import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-capacity.ts";
 import { labServesPincode } from "../_shared/service-area.ts";
 import { activeLabOffers, indiaToday, offerApplies, offerSavings } from "../_shared/lab-offers.ts";
+import { deliverToDoctor } from "../_shared/doctor-partner.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -786,6 +787,36 @@ Deno.serve(async (req) => {
       console.error("Doctor pre-booking verification error (non-fatal):", verifyErr);
     }
 
+    // One open booking per patient, doctor, consultation type and day. Each booking
+    // attempt sends its own Idempotency-Key, so a second family member (a different
+    // name in test_name) or a booking made again after cancelling is a real new booking;
+    // only the same person booked twice is sent back to the booking they already have.
+    if (isDoctorOnly && orderVendorId && scheduledDate) {
+      const { data: openBooking, error: openBookingError } = await adminClient
+        .from("orders")
+        .select("id, client_idempotency_key")
+        .eq("user_id", userId)
+        .eq("vendor_id", orderVendorId)
+        .eq("scheduled_date", scheduledDate)
+        .eq("test_name", cartItems.map((item) => item.name).join(" | "))
+        .not("status", "in", "(cancelled,completed,report_ready,report_delivered)")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (openBookingError) console.warn("Doctor duplicate-booking probe failed (non-fatal):", openBookingError);
+      // The same key means this very request is being retried: the insert below returns it.
+      if (openBooking?.id && (!idempotencyKey || openBooking.client_idempotency_key !== idempotencyKey)) {
+        return new Response(
+          JSON.stringify({
+            error: "You already have this booking with the doctor for that day.",
+            code: "already_booked",
+            orderId: openBooking.id,
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     // Re-read Partner capacity immediately before insertion. The frontend's
     // remaining count is informational only and is never trusted here.
     let slotCapacity: number | null = null;
@@ -994,14 +1025,22 @@ Deno.serve(async (req) => {
       console.error("Partner notification error (non-blocking):", e);
     }
 
-    // Doctor-consultation webhook — mirror booking to Partner project.
-    // Detects cart items whose id matches doc-video-{doctorId}, doc-audio-{doctorId},
-    // or doc-{doctorId}. Fire-and-forget; never blocks the order response.
+    // Doctor-consultation webhook — send the booking to the doctor in the Partner
+    // project. Detects cart items whose id matches doc-video-{doctorId},
+    // doc-audio-{doctorId}, or doc-{doctorId}. A booking the doctor never receives is
+    // worse than no booking, so if it can't be delivered the order is taken back and
+    // the patient is asked to try again.
+    let doctorDeliveryFailure: { refused: boolean; code: string | null } | null = null;
     try {
       const doctorItem = cartItems.find((i) =>
         /^doc-(video-|audio-)?[0-9a-zA-Z_-]+/.test(i.id)
       );
       const doctorWebhookSecret = Deno.env.get("DOCTOR_APPOINTMENT_WEBHOOK_SECRET");
+
+      if (doctorItem && !doctorWebhookSecret) {
+        console.error("DOCTOR_APPOINTMENT_WEBHOOK_SECRET is not set: the booking can't reach the doctor");
+        doctorDeliveryFailure = { refused: false, code: null };
+      }
 
       if (doctorItem && doctorWebhookSecret) {
         const raw = doctorItem.id.replace(/^doc-/, "");
@@ -1056,27 +1095,46 @@ Deno.serve(async (req) => {
           symptoms: reason || specialInstructions,
         };
 
-        // Awaited (with a timeout): Supabase ends a function once it has answered, so a
-        // fire-and-forget fetch was cut off and the booking never reached the doctor.
-        try {
-          const webhookRes = await fetch("https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-appointment-webhook", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-webhook-secret": doctorWebhookSecret,
-            },
-            body: JSON.stringify(payload),
-            signal: AbortSignal.timeout(8000),
-          });
-          if (!webhookRes.ok) {
-            console.error("Doctor appointment webhook failed:", webhookRes.status, await webhookRes.text().catch(() => ""));
+        // Awaited, and tried again on failure: Supabase ends a function once it has
+        // answered, so a fire-and-forget fetch was cut off and the booking was lost.
+        const delivery = await deliverToDoctor(payload, doctorWebhookSecret);
+        if (!delivery.ok) {
+          doctorDeliveryFailure = { refused: delivery.refused, code: delivery.code };
+          // An attempt may have landed even though its answer didn't: take it back.
+          if (!delivery.refused) {
+            await deliverToDoctor(
+              { action: "cancel", external_booking_id: orderData.id, reason: "The booking could not be completed" },
+              doctorWebhookSecret,
+              { attempts: 1, timeoutMs: 4000 },
+            );
           }
-        } catch (e) {
-          console.error("Doctor appointment webhook error (order still placed):", e);
         }
       }
     } catch (e) {
-      console.error("Doctor webhook dispatch error (non-blocking):", e);
+      console.error("Doctor webhook dispatch error:", e);
+      if (isDoctorOnly) doctorDeliveryFailure = { refused: false, code: null };
+    }
+
+    if (doctorDeliveryFailure && isDoctorOnly) {
+      await adminClient.from("order_items").delete().eq("order_id", orderData.id);
+      const { error: undoError } = await adminClient.from("orders").delete().eq("id", orderData.id);
+      if (undoError) {
+        console.error("Couldn't remove the undelivered doctor booking; cancelling it instead:", undoError);
+        await adminClient
+          .from("orders")
+          // Freeing the key lets the patient's retry place a fresh booking.
+          .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancellation_reason: "The booking could not reach the doctor", client_idempotency_key: null })
+          .eq("id", orderData.id);
+      }
+      const notApproved = doctorDeliveryFailure.refused && doctorDeliveryFailure.code === "vendor_not_approved";
+      return new Response(
+        JSON.stringify(
+          notApproved
+            ? { error: "This doctor is no longer available for booking.", code: "vendor_not_approved" }
+            : { error: "We couldn't reach the doctor just now, so nothing was booked. Please try again.", code: "doctor_unreachable" },
+        ),
+        { status: notApproved ? 409 : 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
     }
 
 

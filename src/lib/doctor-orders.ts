@@ -35,10 +35,23 @@ export function consultInfo(order: OrderLike): ConsultInfo | null {
 
 export const isDoctorOrder = (order: OrderLike): boolean => consultInfo(order) !== null;
 
-export type ConsultStatus = "upcoming" | "completed" | "cancelled";
+/** missed: the booked day passed and the consultation never happened. */
+export type ConsultStatus = "upcoming" | "completed" | "cancelled" | "missed";
 
-export function consultStatus(status: string | null | undefined): ConsultStatus {
+/** Today's date in India, YYYY-MM-DD: bookings are for an India day. */
+export const indiaToday = (now = new Date()): string => new Date(now.getTime() + 330 * 60_000).toISOString().slice(0, 10);
+
+/**
+ * Where a consultation stands. A booking is for a day, so one that is still open after
+ * its day has passed was missed: it is no longer joinable and can be booked again.
+ */
+export function consultStatus(
+  status: string | null | undefined,
+  scheduledDate?: string | null,
+  now = new Date(),
+): ConsultStatus {
   if (status === "cancelled") return "cancelled";
   if (status === "completed" || status === "report_ready" || status === "report_delivered") return "completed";
+  if (scheduledDate && scheduledDate.slice(0, 10) < indiaToday(now)) return "missed";
   return "upcoming";
 }

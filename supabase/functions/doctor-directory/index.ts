@@ -12,8 +12,31 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const PARTNER_URL =
   "https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/doctor-directory";
+
+type Rating = { rating: number; reviews: number };
+
+// Patients' ratings of finished consultations live in this project (on their orders).
+// A doctor nobody has rated yet shows no rating; the list never makes one up.
+async function consultRatings(): Promise<Map<string, Rating>> {
+  const ratings = new Map<string, Rating>();
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return ratings;
+    const { data, error } = await createClient(url, key).rpc("doctor_consult_ratings");
+    if (error) throw error;
+    for (const row of (data ?? []) as { doctor_id: string; rating: number; reviews: number }[]) {
+      ratings.set(String(row.doctor_id), { rating: Number(row.rating) || 0, reviews: Number(row.reviews) || 0 });
+    }
+  } catch (err) {
+    console.warn("Doctor ratings unavailable (the list is shown without them):", err);
+  }
+  return ratings;
+}
 
 // Only surface doctors that the partner project has explicitly approved.
 function isApprovedDoctor(d: any): boolean {
@@ -77,14 +100,17 @@ Deno.serve(async (req) => {
 
     const target = `${PARTNER_URL}?${forwarded.toString()}`;
 
-    const upstream = await fetch(target, {
-      method: "GET",
-      headers: {
-        "x-webhook-secret": secret,
-        "Content-Type": "application/json",
-        ...(cacheBust ? { "x-cache-bust": String(cacheBust), "Cache-Control": "no-cache" } : {}),
-      },
-    });
+    const [upstream, ratings] = await Promise.all([
+      fetch(target, {
+        method: "GET",
+        headers: {
+          "x-webhook-secret": secret,
+          "Content-Type": "application/json",
+          ...(cacheBust ? { "x-cache-bust": String(cacheBust), "Cache-Control": "no-cache" } : {}),
+        },
+      }),
+      consultRatings(),
+    ]);
 
     const bodyText = await upstream.text();
 
@@ -99,7 +125,10 @@ Deno.serve(async (req) => {
           : null;
 
       if (list) {
-        const filtered = list.filter(isApprovedDoctor);
+        const filtered = list.filter(isApprovedDoctor).map((d: any) => {
+          const rated = ratings.get(String(d.id ?? d.user_id ?? d.doctor_id));
+          return rated ? { ...d, rating: rated.rating, reviews: rated.reviews } : d;
+        });
         const payload = Array.isArray(parsed) ? filtered : { ...parsed, doctors: filtered };
         return new Response(JSON.stringify(payload), {
           status: upstream.status,

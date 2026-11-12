@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Clock, Loader2, Phone, ShieldCheck, Stethoscope, User, Video, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +40,10 @@ const BookDoctorScreen = () => {
   const [date, setDate] = useState(days[0].date);
   const [reason, setReason] = useState(state?.symptoms ?? "");
   const [placing, setPlacing] = useState(false);
+  // One key per visit to this screen: a double tap or a retry is the same booking, while
+  // booking again (another family member, or after cancelling) is a new one. The server
+  // refuses a second open booking for the same person, doctor and day.
+  const attemptKey = useRef(crypto.randomUUID());
 
   useEffect(() => {
     if (!state?.doctor) navigate("/doctor-consult", { replace: true });
@@ -97,18 +101,22 @@ const BookDoctorScreen = () => {
           vendorId: String(doctor.id),
           reason: reason.trim() || undefined,
         },
-        headers: { "Idempotency-Key": `doc-${user.id}-${doctor.id}-${date}-${type}` },
+        headers: { "Idempotency-Key": `doc-${attemptKey.current}-${date}-${type}` },
       });
 
-      const body = (data ?? {}) as { orderId?: string; error?: string };
+      let body = (data ?? {}) as { orderId?: string; error?: string; code?: string };
+      // functions.invoke hides the body of a refused request in error.context.
+      const ctx = (error as { context?: Response } | null)?.context;
+      if (error && ctx && typeof ctx.json === "function") {
+        body = (await ctx.json().catch(() => null)) ?? body;
+      }
+      if (body.code === "already_booked" && body.orderId) {
+        toast.info(`You already have this booking with ${doctor.name} for ${dayText}.`);
+        navigate(`/appointment/${body.orderId}`, { replace: true });
+        return;
+      }
       if (error || !body.orderId) {
-        let message = body.error;
-        // functions.invoke hides the body of a refused request in error.context.
-        const ctx = (error as { context?: Response } | null)?.context;
-        if (!message && ctx && typeof ctx.json === "function") {
-          message = (await ctx.json().catch(() => null))?.error;
-        }
-        toast.error(message || "Couldn't book. Please try again.");
+        toast.error(body.error || "Couldn't book. Please try again.");
         return;
       }
 

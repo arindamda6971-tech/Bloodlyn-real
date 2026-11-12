@@ -46,7 +46,6 @@ const RoutePrefetcher = () => {
       import("../pages/PhysioConsultScreen");
       import("../pages/ECGTestScreen");
       import("../pages/BPCheckScreen");
-      import("../pages/EmbeddedCallScreen");
       import("../pages/OrderSuccessScreen");
       import("../pages/TrackingScreen");
       import("../pages/FamilyMembersScreen");

@@ -1,19 +1,21 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Call messages from the patient to the doctor. The doctor's room lives in the partner
- * project, so the patient can't post into it directly; the partner's call-signal
- * function checks this patient made the booking and passes the message on.
- * (Messages from the doctor arrive on the patient's own private channel.)
+ * What the patient did with the doctor's call, told to the doctor. The doctor's
+ * appointments live in the partner project, so the patient can't write there directly;
+ * the partner's call-signal function checks this patient made the booking and marks the
+ * appointment, and the doctor's screen shows it at once ("Patient joined", "Declined",
+ * "No answer").
  */
 export const PARTNER_CALL_SIGNAL_URL = "https://wkhwuzsiehrcvlxfeytf.supabase.co/functions/v1/call-signal";
 // The partner project's public anon key (it ships in the partner portal too). It lets
 // the request through the function gateway; the patient's own token goes separately.
 const PARTNER_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndraHd1enNpZWhyY3ZseGZleXRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNzE2MTYsImV4cCI6MjEwMTk0NzYxNn0.fFrH7uJ_fCn0hkAlQdf3yLNW5x9LOTE2yAg8jhWyPxM";
 
-export type PatientCallEvent = "patient-ready" | "webrtc-answer" | "webrtc-hangup";
+/** joined: opened Google Meet. declined: pressed decline. missed: rang out unanswered. */
+export type PatientCallEvent = "patient-joined" | "patient-declined" | "patient-missed";
 
-export async function sendToDoctor(orderId: string, event: PatientCallEvent, payload: Record<string, unknown> = {}): Promise<boolean> {
+export async function tellDoctor(orderId: string, event: PatientCallEvent): Promise<boolean> {
   try {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
@@ -27,8 +29,9 @@ export async function sendToDoctor(orderId: string, event: PatientCallEvent, pay
         "x-patient-token": token,
         "x-bloodlyn-apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "",
       },
-      body: JSON.stringify({ orderId, event, payload }),
-      keepalive: event === "webrtc-hangup",
+      body: JSON.stringify({ orderId, event }),
+      // The patient may leave for Google Meet the moment they join.
+      keepalive: true,
     });
     if (!res.ok) console.error(`Call message "${event}" failed`, res.status);
     return res.ok;
@@ -36,24 +39,4 @@ export async function sendToDoctor(orderId: string, event: PatientCallEvent, pay
     console.error(`Call message "${event}" failed`, err);
     return false;
   }
-}
-
-/**
- * Resolves once the connection has found its network routes (or after a short wait),
- * so the offer/answer can carry them in one message instead of one message per route.
- */
-export function waitForIceGathering(pc: RTCPeerConnection, timeoutMs = 2500): Promise<void> {
-  if (pc.iceGatheringState === "complete") return Promise.resolve();
-  return new Promise((resolve) => {
-    const finish = () => {
-      clearTimeout(timer);
-      pc.removeEventListener("icegatheringstatechange", check);
-      resolve();
-    };
-    const check = () => {
-      if (pc.iceGatheringState === "complete") finish();
-    };
-    const timer = setTimeout(finish, timeoutMs);
-    pc.addEventListener("icegatheringstatechange", check);
-  });
 }
