@@ -29,7 +29,11 @@ export type ConcernIconName =
   | "magnifier"
   | "flask"
   | "dna"
-  | "stethoscope";
+  | "stethoscope"
+  | "liver"
+  | "kidney"
+  | "female"
+  | "male";
 
 interface Shared {
   /** Unique id prefix, so gradients of different icons on one page don't clash. */
@@ -452,6 +456,57 @@ const ICONS: Record<ConcernIconName, (props: Shared) => JSX.Element> = {
       <circle cx="72" cy="74" r="12" fill={`url(#${p}-st)`} />
       <circle cx="72" cy="74" r="7" fill="#cbd5e1" stroke="#94a3b8" />
       <Sheen p={p} cx={68} cy={69} rx={3.5} ry={2.5} />
+    </Frame>
+  ),
+
+  // The liver with its small green gall bladder.
+  liver: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-liver`} from="#f59a7a" to="#a8402a" />
+        <Grad id={`${p}-gall`} from="#a7e08a" to="#3f9a3a" />
+      </defs>
+      <path d="M10 40 C10 26 26 18 46 20 C62 21 78 17 86 25 C91 30 89 37 82 41 C70 48 60 60 47 72 C40 78 31 79 25 72 C15 62 10 52 10 40 Z" fill={`url(#${p}-liver)`} />
+      <ellipse cx="54" cy="64" rx="5.5" ry="9" transform="rotate(-28 54 64)" fill={`url(#${p}-gall)`} />
+      <Sheen p={p} cx={28} cy={33} rx={10} ry={5} rotate={-12} />
+    </Frame>
+  ),
+
+  // A pair of kidneys with their ureters.
+  kidney: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-kid`} from="#ff9d8f" to="#bf3b4a" />
+      </defs>
+      <path d="M39 52 C44 64 46 74 46 86 M57 52 C52 64 50 74 50 86" fill="none" stroke="#f6b9a6" strokeWidth="4" strokeLinecap="round" />
+      <path d="M30 14 C17 14 10 29 10 45 C10 63 18 77 31 77 C40 77 43 69 39 62 C36 57 36 47 40 41 C45 33 43 14 30 14 Z" fill={`url(#${p}-kid)`} />
+      <path d="M66 14 C79 14 86 29 86 45 C86 63 78 77 65 77 C56 77 53 69 57 62 C60 57 60 47 56 41 C51 33 53 14 66 14 Z" fill={`url(#${p}-kid)`} />
+      <Sheen p={p} cx={20} cy={36} rx={4} ry={10} rotate={10} />
+      <Sheen p={p} cx={76} cy={36} rx={4} ry={10} rotate={-10} opacity={0.55} />
+    </Frame>
+  ),
+
+  // The female sign: women's health.
+  female: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-fem`} from="#ff9ccf" to="#d63384" />
+      </defs>
+      <circle cx="48" cy="36" r="21" fill="none" stroke={`url(#${p}-fem)`} strokeWidth="10" />
+      <path d="M48 57 V86 M34 73 H62" fill="none" stroke={`url(#${p}-fem)`} strokeWidth="10" strokeLinecap="round" />
+      <Sheen p={p} cx={34} cy={24} rx={6} ry={3} rotate={-35} />
+    </Frame>
+  ),
+
+  // The male sign: men's health.
+  male: ({ p }) => (
+    <Frame p={p}>
+      <defs>
+        <Grad id={`${p}-male`} from="#7cc4ff" to="#1f6fd6" />
+      </defs>
+      <circle cx="40" cy="58" r="21" fill="none" stroke={`url(#${p}-male)`} strokeWidth="10" />
+      <path d="M55 43 L79 19 M62 17 H81 V36" fill="none" stroke={`url(#${p}-male)`} strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
+      <Sheen p={p} cx={27} cy={47} rx={6} ry={3} rotate={-35} />
     </Frame>
   ),
 };
