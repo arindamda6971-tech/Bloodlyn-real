@@ -37,6 +37,7 @@ import { useSEO } from "@/hooks/useSEO";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPincode } from "@/hooks/useUserPincode";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
+import { collectionAddressProblem } from "@/lib/addressCheck";
 import { addMoreTestsPath } from "@/lib/cart-cleanup";
 
 interface SavedAddress {
@@ -275,7 +276,12 @@ const CartScreen = () => {
       toast.error("Please select your service PIN first");
       return;
     }
-    if (!addressForm.address_line1.trim() || !addressForm.city.trim() || !addressForm.state.trim()) {
+    const addressProblem = collectionAddressProblem(addressForm);
+    if (addressProblem) {
+      toast.error(addressProblem);
+      return;
+    }
+    if (!addressForm.city.trim() || !addressForm.state.trim()) {
       toast.error("Please enter your complete collection address");
       return;
     }
@@ -354,6 +360,15 @@ const CartScreen = () => {
     if (prescriptionTests.length > 0 && !prescription) {
       toast.error("A prescription is required", { description: `The lab needs one for ${prescriptionTests.join(", ")}.` });
       prescriptionUploadRef.current?.pick();
+      return;
+    }
+
+    // An older saved address may lack the house or a landmark; the collector needs both.
+    const chosenAddress = savedAddresses.find((address) => address.id === selectedAddressId);
+    const chosenAddressProblem = chosenAddress ? collectionAddressProblem(chosenAddress) : null;
+    if (chosenAddress && chosenAddressProblem) {
+      toast.error(chosenAddressProblem);
+      openEditAddressForm(chosenAddress);
       return;
     }
 
@@ -740,7 +755,7 @@ const CartScreen = () => {
                 <SelectContent><SelectItem value="Home">Home</SelectItem><SelectItem value="Office">Office</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
               </Select>
               <Input maxLength={150} value={addressForm.address_line1} onChange={(event) => setAddressForm((current) => ({ ...current, address_line1: event.target.value }))} placeholder="House/Flat No., Building, Street *" className="bg-background" />
-              <Input maxLength={150} value={addressForm.address_line2} onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))} placeholder="Landmark, Area (optional)" className="bg-background" />
+              <Input maxLength={150} value={addressForm.address_line2} onChange={(event) => setAddressForm((current) => ({ ...current, address_line2: event.target.value }))} placeholder="Landmark, e.g. near Shiv Mandir *" className="bg-background" />
               <div className="grid grid-cols-2 gap-2">
                 <Input maxLength={60} value={addressForm.city} onChange={(event) => setAddressForm((current) => ({ ...current, city: event.target.value }))} placeholder="City *" className="bg-background" />
                 <Input maxLength={60} value={addressForm.state} onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))} placeholder="State *" className="bg-background" />

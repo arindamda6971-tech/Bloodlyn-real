@@ -18,6 +18,7 @@ import {
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { toast } from "sonner";
+import { collectionAddressProblem } from "@/lib/addressCheck";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizePincode } from "@/utils/inputSanitizers";
 import { useAuth } from "@/hooks/useAuth";
@@ -203,8 +204,9 @@ const SavedAddressesScreen = () => {
       return;
     }
 
-    if (!formData.address_line1.trim()) {
-      toast.error("Please enter an address");
+    const addressProblem = collectionAddressProblem(formData);
+    if (addressProblem) {
+      toast.error(addressProblem);
       return;
     }
 
@@ -359,7 +361,7 @@ const SavedAddressesScreen = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address_line1">Address Line 1 *</Label>
+              <Label htmlFor="address_line1">House / flat no. and street *</Label>
               <Input
                 id="address_line1"
                 maxLength={150} value={formData.address_line1}
@@ -370,12 +372,12 @@ const SavedAddressesScreen = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address_line2">Address Line 2</Label>
+              <Label htmlFor="address_line2">Landmark *</Label>
               <Input
                 id="address_line2"
                 maxLength={150} value={formData.address_line2}
                 onChange={(e) => setFormData(prev => ({ ...prev, address_line2: e.target.value }))}
-                placeholder="Landmark, Area (Optional)"
+                placeholder="e.g. Near Shiv Mandir, opposite the school"
                 className="bg-muted border-0"
               />
             </div>
