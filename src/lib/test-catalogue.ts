@@ -17,7 +17,8 @@ export const CATALOGUE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 const DB_NAME = "BloodLynCatalogue";
 const STORE_NAME = "catalogue";
-const RECORD_KEY = "tests";
+// Bump when the Admin test list is replaced, so phones drop their saved copy of the old one.
+const RECORD_KEY = "tests-2026-11-14";
 // Matches the bridge's search, whose results this replaces.
 const PER_TERM_LIMIT = 40;
 
@@ -64,13 +65,15 @@ async function downloadCatalogue(): Promise<CatalogueTest[]> {
 /** Today's saved catalogue, or a fresh one. An older copy beats nothing if the download fails. */
 export async function fetchCatalogue(): Promise<CatalogueTest[]> {
   const saved = await readSaved().catch(() => null);
-  if (saved && Date.now() - saved.savedAt < CATALOGUE_MAX_AGE_MS) return saved.tests;
+  // An empty copy is never kept: it would hide every test for a day.
+  const usable = saved && saved.tests.length > 0 ? saved : null;
+  if (usable && Date.now() - usable.savedAt < CATALOGUE_MAX_AGE_MS) return usable.tests;
   try {
     const tests = await downloadCatalogue();
-    save(tests).catch(() => {});
+    if (tests.length > 0) save(tests).catch(() => {});
     return tests;
   } catch (error) {
-    if (saved) return saved.tests;
+    if (usable) return usable.tests;
     throw error;
   }
 }
