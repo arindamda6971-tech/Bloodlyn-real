@@ -17,6 +17,7 @@ import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
 import { formatTestsLabel, splitTestNames } from "@/lib/format-tests";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import { subscribeUserLive } from "@/lib/userLive";
+import { PrescriptionList } from "@/components/prescriptions/PrescriptionList";
 
 interface ReportOrder {
   id: string;
@@ -60,6 +61,10 @@ const ReportsScreen = () => {
   const [patient, setPatient] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  // Test reports on the left, the doctor's prescriptions on the right (?tab=prescriptions).
+  const [tab, setTab] = useState<"reports" | "prescriptions">(() =>
+    new URLSearchParams(window.location.search).get("tab") === "prescriptions" ? "prescriptions" : "reports",
+  );
 
   const queryClient = useQueryClient();
   const { data: orders = [], isLoading: loading } = useQuery({
@@ -173,6 +178,30 @@ const ReportsScreen = () => {
       <div className="px-5 pt-3 pb-1">
         <PremiumPageHeader title="My Reports" subtitle="Your lab reports in one place" icon={FileText} />
       </div>
+
+      <div className="px-4 pt-2">
+        <div role="tablist" aria-label="Reports or prescriptions" className="grid grid-cols-2 gap-1 rounded-2xl bg-muted p-1">
+          {([["reports", "Test reports", FlaskConical], ["prescriptions", "Prescriptions", FileText]] as const).map(([key, label, Icon]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={tab === key}
+              onClick={() => setTab(key)}
+              className={`flex h-10 items-center justify-center gap-1.5 rounded-xl text-sm font-bold transition-colors ${tab === key ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
+            >
+              <Icon className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "prescriptions" ? (
+        <div className="px-4 pb-8 mt-3">
+          <PrescriptionList />
+        </div>
+      ) : (
+      <>
 
       {/* Sticky Search Input Bar - Pins at top-0 */}
       <StickySearch
@@ -421,6 +450,8 @@ const ReportsScreen = () => {
           </>
         )}
       </div>
+      </>
+      )}
     </MobileLayout>
   );
 };

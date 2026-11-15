@@ -61,6 +61,11 @@ serve(async (req) => {
     const update: Record<string, unknown> = { call_status, call_status_at: new Date().toISOString() }
     // The Google Meet link the doctor opened: the patient joins from their booking.
     if (typeof meet_link === 'string' && /^https:\/\/meet\.google\.com\/[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meet_link)) update.meet_link = meet_link
+    // The doctor ended the call or closed the consultation: the link is removed so the
+    // patient can't rejoin the call from the app.
+    if (['ended', 'completed', 'cancelled'].includes(call_status) || order_status === 'completed' || order_status === 'cancelled') {
+      update.meet_link = null
+    }
     if (order_status === 'completed') update.status = 'completed'
     if (order_status === 'cancelled') {
       update.status = 'cancelled'

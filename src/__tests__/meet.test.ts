@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { MEET_ANDROID_URL, MEET_IOS_URL, meetInstallUrl, meetLinkOf, openMeet } from "@/lib/meet";
+import { MEET_ANDROID_URL, MEET_IOS_URL, callEnded, meetInstallUrl, meetLinkOf, openMeet } from "@/lib/meet";
 
 describe("Google Meet on the patient's booking", () => {
   afterEach(() => {
@@ -12,6 +12,16 @@ describe("Google Meet on the patient's booking", () => {
     expect(meetLinkOf({ meet_link: "javascript:alert(1)" })).toBeNull();
     expect(meetLinkOf({ meet_link: null })).toBeNull();
     expect(meetLinkOf(null)).toBeNull();
+  });
+
+  it("can't be rejoined once the doctor has ended the call", () => {
+    const link = "https://meet.google.com/abc-defg-hij";
+    expect(meetLinkOf({ meet_link: link, call_status: "ringing" })).toBe(link);
+    expect(meetLinkOf({ meet_link: link, call_status: "in_progress" })).toBe(link);
+    expect(meetLinkOf({ meet_link: link, call_status: "ended" })).toBeNull();
+    expect(meetLinkOf({ meet_link: link, call_status: "completed" })).toBeNull();
+    expect(callEnded({ call_status: "ended" })).toBe(true);
+    expect(callEnded({ call_status: "ringing" })).toBe(false);
   });
 
   it("sends an iPhone to the App Store and other phones to Google Play", () => {

@@ -24,7 +24,8 @@ import { useOrderDetails } from "@/hooks/useOrderDetails";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo, consultStatus } from "@/lib/doctor-orders";
-import { meetInstallUrl, meetLinkOf, openMeet } from "@/lib/meet";
+import { callEnded, meetInstallUrl, meetLinkOf, openMeet } from "@/lib/meet";
+import { prescriptionOf } from "@/lib/prescription";
 
 const STATUS = {
   upcoming: { label: "Upcoming", tone: "bg-primary/10 text-primary" },
@@ -106,7 +107,9 @@ const AppointmentDetailScreen = () => {
             : "The doctor didn't call on the booked day. You can book again; nothing is charged for this booking."
           : info.mode === "clinic"
             ? "Please reach the clinic a few minutes before your time."
-            : meetLinkOf(order)
+            : callEnded(order)
+              ? "The doctor has ended the consultation. Your prescription will appear here as soon as the doctor sends it."
+              : meetLinkOf(order)
               ? "Your doctor has started the consultation on Google Meet."
               : "When the doctor starts, your phone rings and you join on Google Meet from here. Keep BloodLyn open so you don't miss the call.";
 
@@ -185,7 +188,7 @@ const AppointmentDetailScreen = () => {
             </div>
           </div>
 
-          {status === "upcoming" && info.mode !== "clinic" && (
+          {status === "upcoming" && info.mode !== "clinic" && !callEnded(order) && (
             <>
               <Button
                 className="mt-3 w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -206,11 +209,35 @@ const AppointmentDetailScreen = () => {
               </p>
             </>
           )}
-          {status === "completed" && order.report_url && (
+          {prescriptionOf(order) ? (
+            <button
+              type="button"
+              onClick={() => navigate(`/prescription/${order.id}`)}
+              className="mt-3 flex w-full items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-left active:scale-[0.99] transition-transform"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                <FileText className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-foreground">Your prescription is ready</span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  {(() => {
+                    const rx = prescriptionOf(order)!;
+                    const parts = [
+                      rx.medicines.length > 0 && `${rx.medicines.length} ${rx.medicines.length === 1 ? "medicine" : "medicines"}`,
+                      rx.tests.length > 0 && `${rx.tests.length} ${rx.tests.length === 1 ? "test" : "tests"} advised`,
+                    ].filter(Boolean);
+                    return parts.length ? parts.join(" · ") : "Tap to read your doctor's advice";
+                  })()}
+                </span>
+              </span>
+              <Eye className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-400" />
+            </button>
+          ) : status === "completed" && order.report_url ? (
             <Button className="mt-3 w-full h-11 rounded-xl" onClick={() => window.open(order.report_url!, "_blank")}>
               <Eye className="w-4 h-4 mr-1.5" /> View prescription
             </Button>
-          )}
+          ) : null}
           {(status === "missed" || status === "cancelled") && (
             <Button className="mt-3 w-full h-11 rounded-xl" onClick={() => navigate("/doctor-consult", { state: { reset: true } })}>
               Book again

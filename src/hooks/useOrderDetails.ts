@@ -32,6 +32,10 @@ export interface OrderData {
   special_instructions?: string | null;
   /** Doctor consultations: the Google Meet the doctor opened. */
   meet_link?: string | null;
+  /** Doctor consultations: where the call stands ("ringing", "ended", ...). */
+  call_status?: string | null;
+  /** Doctor consultations: the digital prescription (see lib/prescription.ts). */
+  prescription?: unknown;
   cancellation_reason?: string | null;
   /** Doctor consultations: the patient's 1-5 rating once it is finished. */
   consult_rating?: number | null;
