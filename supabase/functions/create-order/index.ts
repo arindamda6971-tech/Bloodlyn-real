@@ -936,6 +936,21 @@ Deno.serve(async (req) => {
       );
     }
 
+    // The lab's share, saved apart from BloodLyn's platform fee so the partner portal
+    // can show labs their own amount only. A lab offer is the lab's own discount; a
+    // coupon is BloodLyn's, so it doesn't reduce what the lab earns.
+    if (!isDoctorOnly) {
+      const labDiscount = offerId ? serverDiscount : 0;
+      const moneySplit = {
+        collection_fee: collectionFee,
+        platform_fee: platformFee,
+        lab_amount: Math.max(0, serverSubtotal - labDiscount) + collectionFee,
+      };
+      const { error: splitError } = await adminClient.from("orders").update(moneySplit).eq("id", orderData.id);
+      if (splitError) console.error("Could not save the lab's amount on the order:", splitError.message);
+      else Object.assign(orderData, moneySplit);
+    }
+
     // Create order items with server-validated prices
     const orderItems = cartItems.map((item) => {
       const isSpecialItem = item.id.startsWith("ecg-") || item.id.startsWith("ai-") || item.id.startsWith("dc-") || item.id.startsWith("reorder-") || item.id.startsWith("doc-") || item.id.startsWith("physio-") || item.id.startsWith("bp-");
