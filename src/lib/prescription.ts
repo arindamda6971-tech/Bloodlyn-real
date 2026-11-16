@@ -43,17 +43,3 @@ export const medicineLine = (m: PrescriptionMedicine) => [m.dosage, m.frequency,
 
 /** A test's display name (catalog names can carry a second line listing what's included). */
 export const testTitle = (t: PrescriptionTest) => t.name.split(/\r?\n/)[0].trim();
-
-/**
- * The prescribed tests as cart items without a lab yet: the cart sends the patient to
- * lab selection, which matches them to each lab's prices.
- */
-export function prescriptionCartItems(p: Prescription) {
-  return p.tests.map((t, i) => ({
-    id: t.id ?? `rx-${i}-${testTitle(t).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
-    name: t.name,
-    price: 0,
-    kind: "test" as const,
-    category: "Prescribed by your doctor",
-  }));
-}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { CalendarClock, ClipboardList, FileText, FlaskConical, Pill, ShoppingCart, Stethoscope, User } from "lucide-react";
@@ -20,7 +20,10 @@ import { useOrderDetails } from "@/hooks/useOrderDetails";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo } from "@/lib/doctor-orders";
-import { medicineLine, prescriptionCartItems, prescriptionOf, testTitle } from "@/lib/prescription";
+import { medicineLine, prescriptionOf, testTitle } from "@/lib/prescription";
+import { labCartItems, type PrescriptionLabOption } from "@/lib/prescriptionLabs";
+import { PrescriptionLabSheet } from "@/components/prescriptions/PrescriptionLabSheet";
+import { toast } from "sonner";
 
 function Block({ icon: Icon, title, children }: { icon: typeof FileText; title: string; children: React.ReactNode }) {
   return (
@@ -40,7 +43,11 @@ const PrescriptionScreen = () => {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useOrderDetails(orderId);
   const { items, replaceCart } = useCart();
-  const [confirmReplace, setConfirmReplace] = useState(false);
+  const [labSheetOpen, setLabSheetOpen] = useState(false);
+  /** The lab the patient picked, waiting for them to agree to replace their cart. */
+  const [pendingLab, setPendingLab] = useState<PrescriptionLabOption | null>(null);
+  const order = data?.order;
+  const rx = useMemo(() => prescriptionOf(order), [order]);
 
   if (isLoading) {
     return (
@@ -54,8 +61,6 @@ const PrescriptionScreen = () => {
     );
   }
 
-  const order = data?.order;
-  const rx = prescriptionOf(order);
   if (isError || !order || !rx) {
     return (
       <MobileLayout showNav={false}>
@@ -73,12 +78,23 @@ const PrescriptionScreen = () => {
   const issued = rx.issued_at ? new Date(rx.issued_at) : new Date(order.created_at);
   const patient = [rx.patient_name, rx.patient_age && `${rx.patient_age} yrs`, rx.patient_gender].filter(Boolean).join(" · ");
 
-  const putTestsInCart = () => {
-    replaceCart(prescriptionCartItems(rx));
-    setConfirmReplace(false);
+  /** The chosen lab's tests go in the cart with its prices; the cart goes on to the slot. */
+  const bookFromLab = (option: PrescriptionLabOption) => {
+    replaceCart(labCartItems(option));
+    setPendingLab(null);
+    setLabSheetOpen(false);
+    const n = option.matches.length;
+    toast.success(`${n} ${n === 1 ? "test" : "tests"} added from ${option.lab.name}`);
     navigate("/cart");
   };
-  const addTests = () => (items.length > 0 ? setConfirmReplace(true) : putTestsInCart());
+  const chooseLab = (option: PrescriptionLabOption) => {
+    if (items.length > 0) {
+      setLabSheetOpen(false);
+      setPendingLab(option);
+    } else {
+      bookFromLab(option);
+    }
+  };
 
   return (
     <MobileLayout showNav={false}>
@@ -136,7 +152,7 @@ const PrescriptionScreen = () => {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-muted-foreground">Add them to your cart, then choose a lab near you for home collection.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Choose a lab near you to see its prices, then book home collection.</p>
           </Block>
         )}
 
@@ -165,23 +181,25 @@ const PrescriptionScreen = () => {
 
       {rx.tests.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-          <Button className="h-12 w-full rounded-2xl text-base font-bold" onClick={addTests}>
+          <Button className="h-12 w-full rounded-2xl text-base font-bold" onClick={() => setLabSheetOpen(true)}>
             <ShoppingCart className="mr-2 h-5 w-5" /> Add {rx.tests.length} {rx.tests.length === 1 ? "test" : "tests"} to cart
           </Button>
         </div>
       )}
 
-      <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
+      <PrescriptionLabSheet open={labSheetOpen} onOpenChange={setLabSheetOpen} tests={rx.tests} onChoose={chooseLab} />
+
+      <AlertDialog open={pendingLab !== null} onOpenChange={(open) => !open && setPendingLab(null)}>
         <AlertDialogContent className="max-w-[90%] rounded-3xl border border-border bg-card shadow-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-lg font-bold">Replace your cart?</AlertDialogTitle>
             <AlertDialogDescription className="text-xs leading-relaxed">
-              Your cart already has {items.length} {items.length === 1 ? "item" : "items"}. Replace them with the {rx.tests.length} tests your doctor advised?
+              Your cart already has {items.length} {items.length === 1 ? "item" : "items"}. Replace them with your prescribed tests from {pendingLab?.lab.name}?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-row gap-3">
             <AlertDialogCancel className="mt-0 h-11 flex-1 rounded-2xl text-xs font-bold">Keep my cart</AlertDialogCancel>
-            <AlertDialogAction className="h-11 flex-1 rounded-2xl text-xs font-bold" onClick={putTestsInCart}>Replace</AlertDialogAction>
+            <AlertDialogAction className="h-11 flex-1 rounded-2xl text-xs font-bold" onClick={() => pendingLab && bookFromLab(pendingLab)}>Replace</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

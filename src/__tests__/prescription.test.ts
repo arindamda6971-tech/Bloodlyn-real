@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { medicineLine, prescriptionCartItems, prescriptionOf, testTitle } from "@/lib/prescription";
+import { medicineLine, prescriptionOf, testTitle } from "@/lib/prescription";
+import { labCartItems, labOptionFor, labOptionsForPrescription } from "@/lib/prescriptionLabs";
 
 const order = {
   prescription: {
@@ -28,11 +29,61 @@ describe("prescription on a consultation", () => {
     expect(prescriptionOf({ prescription: "text" })).toBeNull();
     expect(prescriptionOf(null)).toBeNull();
   });
+});
 
-  it("turns the advised tests into cart items without a lab yet", () => {
-    const items = prescriptionCartItems(prescriptionOf(order)!);
-    expect(items[0]).toEqual({ id: "17452ffd-aade-4009-9017-cd7a0cc1eb7c", name: "COMPLETE BLOOD COUNT", price: 0, kind: "test", category: "Prescribed by your doctor" });
-    expect(items[1].id).toBe("rx-1-vitamin-d-screen");
-    expect(items.every((i) => !("labId" in i))).toBe(true);
+describe("choosing a lab for the prescribed tests", () => {
+  const tests = prescriptionOf(order)!.tests;
+  const product = (vendor_id: string, name: string, price: number, extra = {}) => ({ vendor_id, name, product_name: name, price, ...extra });
+
+  it("prices each test from the lab's own products, its price list winning", () => {
+    const option = labOptionFor(
+      tests,
+      { id: "lab-1", name: "Sen Diagnostics", vendor_id: "v1", pricing: { "Vitamin D Screen": 900 } },
+      [product("v1", "Complete Blood Count", 350, { fasting_required: false }), product("v1", "Vitamin D Screen", 1200)],
+    )!;
+    expect(option.missing).toEqual([]);
+    expect(option.matches.map((m) => [m.name, m.price])).toEqual([["Complete Blood Count", 350], ["Vitamin D Screen", 900]]);
+    expect(option.total).toBe(1250);
+    expect(option.noCommonDay).toBe(false);
+  });
+
+  it("names what a lab doesn't do, and skips tests it has no price for", () => {
+    const option = labOptionFor(tests, { id: "lab-2", name: "Lab Two", available_tests: [{ test_name: "Complete Blood Count", price: 0 }, "Vitamin D Screen"] }, [
+      product("v2", "Complete Blood Count", 300),
+    ]);
+    expect(option!.matches.map((m) => m.name)).toEqual(["Complete Blood Count"]);
+    expect(option!.missing.map((t) => t.name)).toEqual([tests[1].name]);
+    expect(labOptionFor(tests, { id: "lab-3", name: "Lab Three", available_tests: ["Lipid Profile"] })).toBeNull();
+  });
+
+  it("lists labs with every test first, otherwise keeping their order", () => {
+    const labs = [
+      { id: "a", name: "A", vendor_id: "va" },
+      { id: "b", name: "B", vendor_id: "vb" },
+      { id: "c", name: "C", vendor_id: "vc" },
+    ];
+    const products = {
+      va: [product("va", "Complete Blood Count", 300)],
+      vb: [product("vb", "Complete Blood Count", 320), product("vb", "Vitamin D Screen", 1000)],
+    };
+    expect(labOptionsForPrescription(tests, labs, products).map((o) => o.lab.id)).toEqual(["b", "a"]);
+  });
+
+  it("can't book specialized tests that share no collection day", () => {
+    const option = labOptionFor(tests, { id: "d", name: "D", vendor_id: "vd" }, [
+      product("vd", "Complete Blood Count", 300, { availability_type: "SPECIALIZED", available_days: ["Monday"] }),
+      product("vd", "Vitamin D Screen", 900, { availability_type: "SPECIALIZED", available_days: ["Tuesday"] }),
+    ])!;
+    expect(option.noCommonDay).toBe(true);
+  });
+
+  it("puts the chosen lab's tests in the cart, priced and tied to that lab", () => {
+    const option = labOptionFor(tests, { id: "lab-1", name: "Sen Diagnostics", vendor_id: "v1" }, [
+      product("v1", "Complete Blood Count", 350),
+      product("v1", "Vitamin D Screen", 900),
+    ])!;
+    const items = labCartItems(option);
+    expect(items[0]).toMatchObject({ id: "17452ffd-aade-4009-9017-cd7a0cc1eb7c", name: "Complete Blood Count", price: 350, labId: "lab-1", labName: "Sen Diagnostics", vendorId: "v1", kind: "test" });
+    expect(items[1]).toMatchObject({ id: "rx-1-vitamin-d-screen", price: 900, labId: "lab-1" });
   });
 });
