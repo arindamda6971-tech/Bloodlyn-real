@@ -7,7 +7,7 @@ import { DoctorListCard } from "@/components/doctors/DoctorListCard";
 import { specialtyIcon } from "@/components/doctors/specialtyIcons";
 import { useDoctors } from "@/hooks/useDoctors";
 import { useSEO } from "@/hooks/useSEO";
-import { SPECIALTIES, defaultType, doctorCounts, findDoctors, specialtyByKey, specialtyOf, type DoctorSort } from "@/lib/doctor-finder";
+import { SPECIALTIES, defaultType, doctorCounts, findDoctors, firstSpecialties, rankSpecialties, specialtyByKey, specialtyOf, type DoctorSort } from "@/lib/doctor-finder";
 import type { Doctor } from "@/types/consultation";
 import type { BookDoctorState } from "@/pages/BookDoctorScreen";
 
@@ -18,7 +18,7 @@ const SORTS: Array<{ key: DoctorSort; label: string }> = [
 ];
 
 /** How many specialty tiles show before "See all". */
-const FIRST_TILES = 9;
+const FIRST_TILES = 3;
 
 /**
  * Consult a doctor online: pick a specialty and the doctors in it are listed; search and
@@ -35,7 +35,7 @@ const DoctorConsultScreen = () => {
   const specialty = specialtyByKey(params.get("specialty"));
   const sort = (SORTS.some((s) => s.key === params.get("sort")) ? params.get("sort") : "recommended") as DoctorSort;
   const search = params.get("q") ?? "";
-  const [showAll, setShowAll] = useState(() => SPECIALTIES.findIndex((s) => s.key === specialty?.key) >= FIRST_TILES);
+  const [showAll, setShowAll] = useState(false);
 
   const set = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params);
@@ -48,7 +48,9 @@ const DoctorConsultScreen = () => {
 
   const counts = useMemo(() => doctorCounts(doctors), [doctors]);
   const results = useMemo(() => findDoctors(doctors, { specialty: specialty?.key, search, sort }), [doctors, specialty, search, sort]);
-  const tiles = showAll ? SPECIALTIES : SPECIALTIES.slice(0, FIRST_TILES);
+  // The specialties with the most doctors first; the top three show until "See all".
+  const ranked = useMemo(() => rankSpecialties(counts), [counts]);
+  const tiles = showAll ? ranked : firstSpecialties(ranked, specialty?.key, FIRST_TILES);
   const general = SPECIALTIES[0];
 
   const book = (doctor: Doctor) => {

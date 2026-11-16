@@ -216,6 +216,26 @@ export function doctorCounts(doctors: Doctor[]): Record<string, number> {
   return counts;
 }
 
+/**
+ * Every specialty, the ones with the most doctors first; specialties with as many
+ * doctors keep the catalogue order (General Physician first).
+ */
+export function rankSpecialties(counts: Record<string, number>): Specialty[] {
+  return SPECIALTIES.map((s, i) => ({ s, i }))
+    .sort((a, b) => (counts[b.s.key] ?? 0) - (counts[a.s.key] ?? 0) || a.i - b.i)
+    .map(({ s }) => s);
+}
+
+/**
+ * The specialty tiles shown before "See all": the top few, with the chosen specialty
+ * taking the last place when it isn't already among them.
+ */
+export function firstSpecialties(ranked: Specialty[], chosen: string | null | undefined, howMany = 3): Specialty[] {
+  const first = ranked.slice(0, howMany);
+  const picked = chosen ? ranked.find((s) => s.key === chosen) : undefined;
+  return picked && !first.includes(picked) ? [...first.slice(0, howMany - 1), picked] : first;
+}
+
 export interface DoctorQuery {
   specialty?: string | null;
   search?: string;

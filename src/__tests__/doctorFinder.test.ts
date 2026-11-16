@@ -7,8 +7,10 @@ import {
   doctorInitials,
   doctorName,
   findDoctors,
+  firstSpecialties,
   onlineFee,
   problemsFor,
+  rankSpecialties,
   specialtyOf,
 } from "@/lib/doctor-finder";
 import { consultProgress } from "@/lib/doctor-orders";
@@ -69,6 +71,18 @@ describe("finding a doctor", () => {
 
   it("counts doctors per specialty for the tiles", () => {
     expect(doctorCounts(all)).toEqual({ general: 1, skin: 1, child: 1 });
+  });
+
+  it("puts the specialties with the most doctors first, three before See all", () => {
+    const ranked = rankSpecialties({ ent: 4, skin: 2, heart: 2 });
+    expect(ranked.slice(0, 4).map((s) => s.key)).toEqual(["ent", "skin", "heart", "general"]);
+    expect(ranked).toHaveLength(SPECIALTIES.length);
+    expect(firstSpecialties(ranked, null).map((s) => s.key)).toEqual(["ent", "skin", "heart"]);
+    // A chosen specialty further down still shows, in the last place.
+    expect(firstSpecialties(ranked, "teeth").map((s) => s.key)).toEqual(["ent", "skin", "teeth"]);
+    expect(firstSpecialties(ranked, "skin").map((s) => s.key)).toEqual(["ent", "skin", "heart"]);
+    // No doctors yet: the catalogue order, General Physician first.
+    expect(firstSpecialties(rankSpecialties({}), null).map((s) => s.key)).toEqual(["general", "women", "child"]);
   });
 
   it("offers the chosen specialty's problems, else the doctor's own, else a GP's", () => {
