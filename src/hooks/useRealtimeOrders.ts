@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { subscribeUserLive } from "@/lib/userLive";
+import { isPaidStatus } from "../../supabase/functions/_shared/payment-status";
 
 type OrderStatus =
   | "pending"
@@ -106,7 +107,7 @@ export const useRealtimeOrders = (orderId?: string) => {
 
       // Notify payment status changes
       if (oldData.payment_status !== newData.payment_status) {
-        if (newData.payment_status === "completed") {
+        if (isPaidStatus(newData.payment_status) && !isPaidStatus(oldData.payment_status)) {
           toast.success("Payment confirmed! ✅");
         } else if (newData.payment_status === "failed") {
           toast.error("Payment failed. Please try again.");

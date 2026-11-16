@@ -4,15 +4,17 @@
 // tracking tile in BloodLyn Real. This function:
 //   1. validates the caller's JWT and that the order belongs to them
 //   2. for "collected": marks the order sample_collected (no PIN: the
-//      partner PIN step was removed in Aug 2026)
+//      partner PIN step was removed in Aug 2026). In the testing phase the
+//      patient's "Yes" also counts as the online payment, so the order turns
+//      paid (see _shared/payment-status.ts; it ends when Razorpay goes live)
 //   3. for "not_collected": only allowed after the booked slot has ended, and
 //      marks the order collection_pending
-//   4. mirrors the new status to the Partner project so the lab owner's
-//      booking tile updates without any manual click
+//   The Partner Portal picks the new status and payment up from its order sync.
 //
 // Collection-window parsing supports both current two-hour slots and legacy
 // three-window orders so existing bookings keep their original timing.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PAYMENT_PAID, collectionConfirmationPays, isConsultationName } from "../_shared/payment-status.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -104,7 +106,7 @@ Deno.serve(async (req) => {
     const { data: order, error: orderError } = await admin
       .from("orders")
       .select(
-        "id, order_number, user_id, vendor_id, status, scheduled_date, scheduled_time_slot, delivery_partner_name, delivery_partner_phone",
+        "id, order_number, user_id, vendor_id, status, payment_status, test_name, scheduled_date, scheduled_time_slot, delivery_partner_name, delivery_partner_phone",
       )
       .eq("id", orderId)
       .eq("user_id", userId)
@@ -117,6 +119,8 @@ Deno.serve(async (req) => {
     if (!order) return json({ error: "Order not found" }, 404);
 
     if (order.status === "cancelled") return json({ error: "This order was cancelled" }, 409);
+    // A doctor consultation has no sample to collect.
+    if (isConsultationName(order.test_name)) return json({ error: "This booking has no sample collection" }, 409);
     const alreadyDone = [
       "sample_collected",
       "in_progress",
@@ -126,8 +130,28 @@ Deno.serve(async (req) => {
       "report_delivered",
       "completed",
     ].includes(order.status ?? "");
+    // Testing phase: the patient's "Yes" is the payment for a blood test (see
+    // _shared/payment-status.ts). BP and ECG visits are confirmed elsewhere.
+    const paysNow = action === "collected" && collectionConfirmationPays(order);
+
     if (alreadyDone && action === "collected") {
-      return json({ success: true, status: order.status, message: "Already marked collected" });
+      if (paysNow) {
+        const { error: payError } = await admin
+          .from("orders")
+          .update({ payment_status: PAYMENT_PAID, updated_at: new Date().toISOString() })
+          .eq("id", order.id)
+          .eq("user_id", userId);
+        if (payError) {
+          console.error("payment update failed", payError);
+          return json({ error: "Could not update your order" }, 500);
+        }
+      }
+      return json({
+        success: true,
+        status: order.status,
+        payment_status: paysNow ? PAYMENT_PAID : order.payment_status,
+        message: "Already marked collected",
+      });
     }
 
     if (action === "not_collected" && !slotHasEnded(order.scheduled_date, order.scheduled_time_slot)) {
@@ -139,9 +163,11 @@ Deno.serve(async (req) => {
 
     // ---- Update our own order status (source of truth for the customer app) ----
     const newStatus = action === "collected" ? "sample_collected" : "collection_pending";
+    const update: Record<string, unknown> = { status: newStatus, updated_at: new Date().toISOString() };
+    if (paysNow) update.payment_status = PAYMENT_PAID;
     const { error: updateError } = await admin
       .from("orders")
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .update(update)
       .eq("id", order.id)
       .eq("user_id", userId);
 
@@ -153,6 +179,7 @@ Deno.serve(async (req) => {
     return json({
       success: true,
       status: newStatus,
+      payment_status: paysNow ? PAYMENT_PAID : order.payment_status,
       partner_synced: false,
     });
   } catch (error) {

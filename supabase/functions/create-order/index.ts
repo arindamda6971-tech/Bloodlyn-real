@@ -4,6 +4,7 @@ import { normalizeCollectionSlot, parseSlotCapacities } from "../_shared/slot-ca
 import { labServesPincode } from "../_shared/service-area.ts";
 import { activeLabOffers, indiaToday, offerApplies, offerSavings } from "../_shared/lab-offers.ts";
 import { deliverToDoctor } from "../_shared/doctor-partner.ts";
+import { PAYMENT_DUE } from "../_shared/payment-status.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -536,10 +537,10 @@ Deno.serve(async (req) => {
     const serverTotal = netAmount + collectionFee + platformFee;
     console.log(`Collection fee: ₹${collectionFee}; flat platform fee: ₹${platformFee}; total ₹${serverTotal}`);
 
-    // Accept all payment methods from the client
-    // In production, online methods would be verified via a payment gateway callback
-
-    const paymentStatus = "completed";
+    // Nothing is paid at booking: the patient pays online after collection (or after the
+    // consultation). Only a confirmed payment may set "paid"; for now the testing-phase
+    // rule in _shared/payment-status.ts stands in for the gateway.
+    const paymentStatus = PAYMENT_DUE;
     const orderStatus = "confirmed";
 
     // Prescription attached to THIS order in the cart takes priority. It must be a
@@ -1178,8 +1179,8 @@ Deno.serve(async (req) => {
       patient_gender: patientGender || "Male",
       test_name: cartItems.map(c => c.name).join(", ") || "Lab Diagnostic Test",
       total_amount: serverTotal,
-      payment_status: "Paid",
-      payment_method: paymentMethod || "UPI / Online",
+      payment_status: paymentStatus,
+      payment_method: paymentMethod || "cod",
       scheduled_date: scheduledDate || new Date().toISOString().slice(0, 10),
       scheduled_time_slot: scheduledTimeSlot || "Morning Slot",
       test_items: cartItems.map(c => c.name || "Diagnostic Test"),

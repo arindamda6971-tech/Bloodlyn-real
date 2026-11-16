@@ -39,6 +39,7 @@ import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import { isDoctorOrder } from "@/lib/doctor-orders";
+import { isPaidStatus } from "../../supabase/functions/_shared/payment-status";
 
 const workflowSteps = [
   { key: "accepted", label: "Order accepted", icon: CheckCircle },
@@ -611,9 +612,10 @@ const TrackingScreen = () => {
             <div className="mt-3 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5">
               <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-xs font-semibold text-foreground">{paymentLabel}</span>
-              {/* Pay-later orders can carry a "completed" status before any money changes hands, so only online payments say Paid. */}
-              {order.payment_method?.toLowerCase() !== "cod" && ["paid", "completed", "success"].includes(order.payment_status?.toLowerCase() || "") && (
+              {isPaidStatus(order.payment_status) ? (
                 <span className="ml-auto text-[11px] font-bold text-success">Paid</span>
+              ) : (
+                <span className="ml-auto text-[11px] font-semibold text-muted-foreground">Not paid yet</span>
               )}
             </div>
           )}

@@ -234,47 +234,12 @@ const PaymentProcessingScreen = () => {
       await new Promise((r) => setTimeout(r, 600));
 
       // ---- Post-order bookkeeping (must never block success) ----
+      // The order lives on the server (create-order); nothing about it is kept in this
+      // browser. An old copy here wrongly said "Paid" with made-up details, and nothing read it.
       try {
-        // Save real booking order for partner portal sync
-        const newRealOrder = {
-          id: fnData?.orderId || `ord-real-${Date.now()}`,
-          order_number: fnData?.orderNumber || `BL-${Math.floor(10000 + Math.random() * 90000)}`,
-          status: "accepted",
-          created_at: new Date().toISOString(),
-          customer_name: paymentState?.patientName || "Patient",
-          customer_phone: paymentState?.patientPhone || "9876543210",
-          customer_address: orderAddress
-            ? [orderAddress.address_line1, orderAddress.address_line2, orderAddress.city, orderAddress.state, orderAddress.pincode].filter(Boolean).join(", ")
-            : "Address not available locally",
-          patient_name: paymentState?.patientName || "Patient",
-          patient_age: paymentState?.patientAge || "30",
-          patient_gender: paymentState?.patientGender || "Male",
-          test_name: cartItems.map((c: any) => c.name).join(" | ") || "Lab Diagnostic Test",
-          total_amount: successState?.total || 0,
-          payment_status: "Paid",
-          payment_method: selectedPaymentMethod.name || "UPI / Online",
-          scheduled_date: paymentState?.scheduledDate || new Date().toISOString().slice(0, 10),
-          test_items: cartItems.map((c: any) => c.name || "Diagnostic Test"),
-          items: cartItems.map((c: any) => ({
-            name: c.name || "Diagnostic Test",
-            price: Number(c.price) || 0,
-            quantity: Number(c.quantity) || 1,
-          })),
-        };
-
-        try {
-          const existingRealStr = localStorage.getItem("BloodLyn_real_orders") || "[]";
-          const existingRealList = JSON.parse(existingRealStr);
-          existingRealList.unshift(newRealOrder);
-          localStorage.setItem("BloodLyn_real_orders", JSON.stringify(existingRealList));
-        } catch (e) {
-          console.warn("Failed to update BloodLyn_real_orders in localStorage:", e);
-        }
-
         clearCart();
         clearStoredPrescription();
-
-
+        localStorage.removeItem("BloodLyn_real_orders");
       } catch (postOrderError) {
         console.warn("Post-order bookkeeping failed (order was created):", postOrderError);
       }
