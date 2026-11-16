@@ -27,13 +27,13 @@ export const ServiceIntro = ({ serviceType, onProceed }: ServiceIntroProps) => {
           steps: [
             {
               icon: Stethoscope,
-              title: "Choose Consultancy Type",
-              description: "Select between an in-clinic visit or online consultancy.",
+              title: "Choose a Specialty",
+              description: "Pick the kind of doctor you need and book a time today.",
             },
             {
               icon: Languages,
-              title: "Choose Your Language",
-              description: "Select your preferred language for better communication.",
+              title: "Tell the Doctor",
+              description: "Share what's wrong briefly; explain the rest on the call.",
             },
             {
               icon: Video,

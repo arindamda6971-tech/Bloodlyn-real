@@ -22,7 +22,7 @@ describe("doctor directory", () => {
     const [d] = doctorsFromDirectory({ doctors: [partnerRow] });
     expect(d.videoCallFee).toBe(400);
     expect(d.audioCallFee).toBe(400);
-    expect(d.physicalCallFee).toBe(400);
+    expect(d).not.toHaveProperty("physicalCallFee");
     expect(d.image).toBe("https://example.test/a.jpg");
     expect(d.hospitalName).toBe("Sen Clinic");
     expect(d.pincode).toBe("721424");
@@ -30,9 +30,8 @@ describe("doctor directory", () => {
     expect(d.reviews).toBe(0);
   });
 
-  it("offers no clinic visit to an online-only doctor and no mode without a fee", () => {
+  it("offers no mode without a fee", () => {
     const [d] = doctorsFromDirectory({ doctors: [{ ...partnerRow, clinicName: null, clinicAddress: null, consultation_fee: null, videoCallFee: 300 }] });
-    expect(d.physicalCallFee).toBe(0);
     expect(d.audioCallFee).toBe(0);
     expect(d.videoCallFee).toBe(300);
   });
@@ -46,6 +45,5 @@ describe("doctor directory", () => {
   it("builds the cart id create-order understands", () => {
     expect(doctorCartId("video", "abc")).toBe("doc-video-abc");
     expect(doctorCartId("audio", "abc")).toBe("doc-audio-abc");
-    expect(doctorCartId("physical", "abc")).toBe("doc-abc");
   });
 });

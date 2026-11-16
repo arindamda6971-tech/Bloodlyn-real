@@ -16,29 +16,25 @@ import { useSelfPatient, type PatientDetails } from "@/hooks/useSelfPatient";
 import type { Doctor } from "@/types/consultation";
 import { doctorCartId } from "@/lib/doctor-directory";
 import { bookingDays, bookingReason, bookingWhen } from "@/lib/doctor-booking";
-import { PROBLEMS, doctorName } from "@/lib/doctor-finder";
+import { doctorName, problemsFor, specialtyByKey, specialtyOf, type ConsultType } from "@/lib/doctor-finder";
 import { sanitizeBloodPressure, sanitizeBloodSugar } from "@/utils/inputSanitizers";
-import { MODES } from "@/components/doctors/consultModes";
+import { MODES, feeOf } from "@/components/doctors/consultModes";
 
 export interface BookDoctorState {
   doctor: Doctor;
-  type: "video" | "audio" | "physical";
-  /** What the patient already said is wrong (a problem picked on the doctor list). */
-  symptoms: string;
+  type: ConsultType;
+  /** The specialty the patient chose on the doctor list: its common problems are offered. */
+  specialty?: string | null;
   /** Book for this person instead of asking (kept for links that already know). */
   patient?: PatientDetails;
 }
 
-const CALL_NAME = { video: "Video Call", audio: "Audio Call", physical: "Physical Appointment" } as const;
-
-const feeOf = (doctor: Doctor, type: BookDoctorState["type"]) =>
-  type === "video" ? doctor.videoCallFee : type === "audio" ? doctor.audioCallFee : doctor.physicalCallFee;
-
+const CALL_NAME = { video: "Video Call", audio: "Audio Call" } as const;
 
 /**
- * Booking a doctor on one page: who it's for, which day, what's wrong. Doctors book by
- * day, not time: today (the doctor calls as soon as they can) or one of the next two
- * days. Online consultations are paid after the call; clinic visits at the clinic.
+ * Booking a doctor on one page: who it's for, which day, and briefly what's wrong (the
+ * rest is said on the call). Doctors book by day, not time: today (the doctor calls as
+ * soon as they can) or one of the next two days. Paid after the consultation.
  */
 const BookDoctorScreen = () => {
   const navigate = useNavigate();
@@ -53,13 +49,8 @@ const BookDoctorScreen = () => {
   const [date, setDate] = useState(days[0].date);
   const [who, setWho] = useState<string>("self");
   const [addingMember, setAddingMember] = useState(false);
-  const known = PROBLEMS.map((p) => p.label);
-  const [problems, setProblems] = useState<string[]>(() => (state?.symptoms && known.includes(state.symptoms) ? [state.symptoms] : []));
-  // The patient already picked the problem on the doctor list: the booking shows it
-  // instead of asking again, and the full list opens only if they want to add one.
-  const askedOnList = !!state?.symptoms && known.includes(state.symptoms);
-  const [showAllProblems, setShowAllProblems] = useState(false);
-  const [note, setNote] = useState(() => (state?.symptoms && !known.includes(state.symptoms) ? state.symptoms : ""));
+  const [problems, setProblems] = useState<string[]>([]);
+  const [note, setNote] = useState("");
   const [showHealth, setShowHealth] = useState(false);
   const [health, setHealth] = useState({ bp: "", sugar: "", medicines: "" });
   const [placing, setPlacing] = useState(false);
@@ -74,9 +65,10 @@ const BookDoctorScreen = () => {
 
   if (!state?.doctor) return null;
   const { doctor } = state;
-  const offered = (["video", "audio", "physical"] as const).filter((t) => feeOf(doctor, t) > 0);
+  const offered = (["video", "audio"] as const).filter((t) => feeOf(doctor, t) > 0);
   const fee = feeOf(doctor, type);
-  const online = type !== "physical";
+  const specialty = specialtyByKey(state.specialty) ?? specialtyOf(doctor);
+  const suggestions = problemsFor(state.specialty, doctor);
   const chosenDay = days.find((d) => d.date === date)!;
   const isToday = date === days[0].date;
   const dayText = isToday ? "today" : chosenDay.top === "Tomorrow" ? "tomorrow" : `${chosenDay.top}, ${chosenDay.day} ${chosenDay.month}`;
@@ -87,9 +79,7 @@ const BookDoctorScreen = () => {
     ? { name: member.fullName, age: member.age, gender: member.gender, phone: member.phone }
     : selfPatient;
 
-  const whatHappens = !online
-    ? `Visit ${doctor.hospitalName || "the clinic"} ${dayText} during clinic hours and pay the fee there.`
-    : isToday
+  const whatHappens = isToday
       ? "The doctor will ring you in BloodLyn as soon as they can, and you'll join on Google Meet."
       : `The doctor will ring you in BloodLyn ${dayText}, and you'll join on Google Meet.`;
 
@@ -193,7 +183,7 @@ const BookDoctorScreen = () => {
             </div>
           </div>
           {offered.length > 1 && (
-            <div className={`mt-3.5 grid gap-2 ${offered.length === 3 ? "grid-cols-3" : "grid-cols-2"}`} role="radiogroup" aria-label="Consultation type">
+            <div className="mt-3.5 grid grid-cols-2 gap-2" role="radiogroup" aria-label="Consultation type">
               {offered.map((t) => {
                 const info = MODES[t];
                 const active = t === type;
@@ -273,7 +263,7 @@ const BookDoctorScreen = () => {
                   <p className={`mt-0.5 text-[11px] font-semibold ${active ? "text-primary-foreground/90" : "text-muted-foreground"}`}>
                     {d.day} {d.month}
                   </p>
-                  {i === 0 && online && (
+                  {i === 0 && (
                     <p className={`mt-1 inline-flex items-center gap-0.5 text-[10px] font-bold ${active ? "text-primary-foreground" : "text-emerald-600"}`}>
                       <Zap className="h-3 w-3" /> Quick
                     </p>
@@ -289,39 +279,21 @@ const BookDoctorScreen = () => {
 
         {/* Problem */}
         <section>
-          {askedOnList && !showAllProblems && problems.length > 0 ? (
-            <>
-              {/* Already told on the doctor list: show it, don't ask again. */}
-              <h3 className="text-sm font-black text-foreground">Your problem</h3>
-              <p className="mb-2.5 text-xs text-muted-foreground">Tell the doctor a little more so they're ready for you.</p>
-              <div className="flex flex-wrap gap-2">
-                {problems.map((label) => (
-                  <button key={label} type="button" aria-pressed onClick={() => toggleProblem(label)} className={chip(true)} aria-label={`Remove ${label}`}>
-                    {label} <span aria-hidden className="ml-1 opacity-75">×</span>
-                  </button>
-                ))}
-                <button type="button" onClick={() => setShowAllProblems(true)} className={`${chip(false)} border-dashed text-primary`}>
-                  + Add another
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3 className="text-sm font-black text-foreground">What's the problem?</h3>
-              <p className="mb-2.5 text-xs text-muted-foreground">Pick any that fit, and tell the doctor more if you like.</p>
-              <div className="flex flex-wrap gap-2">
-                {PROBLEMS.map((p) => (
-                  <button key={p.key} type="button" aria-pressed={problems.includes(p.label)} onClick={() => toggleProblem(p.label)} className={chip(problems.includes(p.label))}>
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          <h3 className="text-sm font-black text-foreground">What's the problem? <span className="font-semibold text-muted-foreground">(optional)</span></h3>
+          <p className="mb-2.5 text-xs text-muted-foreground">
+            {specialty ? `Common reasons to see a ${specialty.label.toLowerCase()}. ` : ""}Pick any that fit; you can tell the doctor the rest on the call.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {suggestions.map((label) => (
+              <button key={label} type="button" aria-pressed={problems.includes(label)} onClick={() => toggleProblem(label)} className={chip(problems.includes(label))}>
+                {label}
+              </button>
+            ))}
+          </div>
           <Textarea
             value={note}
             onChange={(e) => setNote(e.target.value.slice(0, 300))}
-            placeholder={problems.length ? "E.g. since 3 days, with body ache" : "E.g. fever for 3 days with body ache"}
+            placeholder="Anything else? E.g. since 3 days"
             aria-label="Describe the problem"
             className="mt-3 min-h-[84px] rounded-2xl text-sm"
           />
@@ -368,7 +340,7 @@ const BookDoctorScreen = () => {
           </div>
           <p className="mt-2.5 flex items-start gap-2 rounded-2xl bg-emerald-500/10 px-3 py-2 text-xs font-semibold leading-snug text-emerald-800 dark:text-emerald-300">
             <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
-            {online ? "You pay only after the doctor has seen you." : "You pay the fee at the clinic."}
+            You pay only after the doctor has seen you.
           </p>
         </section>
 

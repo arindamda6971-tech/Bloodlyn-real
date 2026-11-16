@@ -466,7 +466,7 @@ const BookingsScreen = () => {
               </div>
               <h3 className="text-lg font-black text-foreground mb-2">No doctor appointments yet</h3>
               <p className="text-sm text-muted-foreground max-w-[240px] font-medium leading-relaxed mb-6">
-                Talk to a doctor on video or audio, or book a clinic visit.
+                Talk to a doctor on video or audio from home.
               </p>
               <button
                 onClick={() => navigate("/doctor-consult")}

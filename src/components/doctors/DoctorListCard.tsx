@@ -1,20 +1,17 @@
-import { BadgeCheck, Building2, Phone, Star, Video } from "lucide-react";
+import { BadgeCheck, Phone, Star, Video } from "lucide-react";
 import type { Doctor } from "@/types/consultation";
-import { doctorName, feeFor, specialtyOf, type ConsultMode } from "@/lib/doctor-finder";
+import { doctorName, onlineFee, specialtyOf } from "@/lib/doctor-finder";
 import { DoctorAvatar } from "./DoctorAvatar";
 
 interface Props {
   doctor: Doctor;
-  mode: ConsultMode;
   onOpen: () => void;
   onBook: () => void;
 }
 
 /** One doctor in the list: who they are, how they consult, and their fee. */
-export function DoctorListCard({ doctor, mode, onOpen, onBook }: Props) {
-  const fee = feeFor(doctor, mode);
+export function DoctorListCard({ doctor, onOpen, onBook }: Props) {
   const specialty = doctor.specialty || specialtyOf(doctor)?.label || "Doctor";
-  const place = [doctor.hospitalName && doctor.hospitalName !== doctor.name ? doctor.hospitalName : "", doctor.city].filter(Boolean).join(", ");
 
   return (
     <article className="rounded-3xl border border-border/60 bg-card p-4 shadow-[0_6px_20px_-12px_rgba(15,23,42,0.18)]">
@@ -41,25 +38,15 @@ export function DoctorListCard({ doctor, mode, onOpen, onBook }: Props) {
         </div>
       </button>
 
-      {mode === "clinic" && place && (
-        <p className="mt-3 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-          <Building2 className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{place}</span>
-        </p>
-      )}
-
       <div className="mt-3.5 flex items-center gap-3 border-t border-border/50 pt-3.5">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold text-muted-foreground">
-            {mode === "clinic" ? "Clinic visit" : "Consultation fee"}
-          </p>
+          <p className="text-[11px] font-semibold text-muted-foreground">Consultation fee</p>
           <p className="flex items-center gap-2">
-            <span className="text-lg font-black tabular-nums text-foreground">₹{fee}</span>
-            {mode === "online" && (
-              <span className="flex items-center gap-1 text-muted-foreground">
-                {doctor.videoCallFee > 0 && <Video className="h-3.5 w-3.5" aria-label="Video call" />}
-                {doctor.audioCallFee > 0 && <Phone className="h-3.5 w-3.5" aria-label="Audio call" />}
-              </span>
-            )}
+            <span className="text-lg font-black tabular-nums text-foreground">₹{onlineFee(doctor)}</span>
+            <span className="flex items-center gap-1 text-muted-foreground">
+              {doctor.videoCallFee > 0 && <Video className="h-3.5 w-3.5" aria-label="Video call" />}
+              {doctor.audioCallFee > 0 && <Phone className="h-3.5 w-3.5" aria-label="Audio call" />}
+            </span>
           </p>
         </div>
         <button
@@ -67,7 +54,7 @@ export function DoctorListCard({ doctor, mode, onOpen, onBook }: Props) {
           onClick={onBook}
           className="h-11 shrink-0 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-transform active:scale-[0.97]"
         >
-          {mode === "clinic" ? "Book visit" : "Book now"}
+          Book now
         </button>
       </div>
     </article>

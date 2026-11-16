@@ -1,12 +1,14 @@
 import { describe, it, expect } from "vitest";
 import type { Doctor } from "@/types/consultation";
 import {
+  SPECIALTIES,
   defaultType,
+  doctorCounts,
   doctorInitials,
   doctorName,
-  feeFor,
   findDoctors,
-  specialtiesWithDoctors,
+  onlineFee,
+  problemsFor,
   specialtyOf,
 } from "@/lib/doctor-finder";
 import { consultProgress } from "@/lib/doctor-orders";
@@ -23,65 +25,62 @@ const doc = (over: Partial<Doctor>): Doctor => ({
   nextSlot: "",
   videoCallFee: 0,
   audioCallFee: 0,
-  physicalCallFee: 0,
   qualification: "",
   ...over,
 });
 
-const gp = doc({ name: "Dr Ar Das", specialty: "Family Medicine", qualification: "MBBS", experience: 2, videoCallFee: 400, audioCallFee: 300, physicalCallFee: 500 });
+const gp = doc({ name: "Dr Ar Das", specialty: "Family Medicine", qualification: "MBBS", experience: 2, videoCallFee: 400, audioCallFee: 300 });
 const skin = doc({ name: "Dr Rupa Sen", specialty: "Dermatologist", qualification: "MBBS, MD", experience: 9, videoCallFee: 700 });
 const kids = doc({ name: "Dr K Paul", specialty: "Paediatrics", experience: 15, audioCallFee: 350, rating: 4.6, reviews: 12 });
-const clinicOnly = doc({ name: "Dr Bose", specialty: "Orthopaedic surgeon", physicalCallFee: 600, city: "Belda" });
-const all = [gp, skin, kids, clinicOnly];
+const noFee = doc({ name: "Dr Bose", specialty: "ENT surgeon" });
+const all = [gp, skin, kids, noFee];
 
 describe("finding a doctor", () => {
+  it("has the common medical specialties, each with its own problems", () => {
+    const labels = SPECIALTIES.map((s) => s.label);
+    for (const l of ["General Physician", "Gynaecologist", "Paediatrician", "Dermatologist", "ENT Specialist", "Dentist", "Cardiologist", "Psychiatrist"]) {
+      expect(labels).toContain(l);
+    }
+    expect(SPECIALTIES.every((s) => s.problems.length >= 4)).toBe(true);
+    expect(new Set(SPECIALTIES.map((s) => s.key)).size).toBe(SPECIALTIES.length);
+  });
+
   it("reads the specialty from what the doctor wrote, the specific one winning", () => {
     expect(specialtyOf(gp)?.key).toBe("general");
     expect(specialtyOf(skin)?.key).toBe("skin");
     expect(specialtyOf(kids)?.key).toBe("child");
-    expect(specialtyOf(clinicOnly)?.key).toBe("bones");
+    expect(specialtyOf(noFee)?.key).toBe("ent");
     expect(specialtyOf(doc({ specialty: "Senior Resident", qualification: "MBBS" }))?.key).toBe("general");
-    expect(specialtyOf(doc({ specialty: "Heart specialist" }))?.key).toBe("heart");
+    expect(specialtyOf(doc({ specialty: "Neurologist" }))?.key).toBe("brain");
+    expect(specialtyOf(doc({ specialty: "Obstetrics & Gynaecology" }))?.key).toBe("women");
+    expect(specialtyOf(doc({ specialty: "Homeopath", qualification: "BHMS" }))?.key).toBe("homeo");
   });
 
-  it("shows online doctors by default, and clinic doctors in clinic mode", () => {
-    expect(findDoctors(all, { mode: "online" }).doctors.map((d) => d.name)).not.toContain("Dr Bose");
-    expect(findDoctors(all, { mode: "clinic" }).doctors.map((d) => d.name)).toEqual(["Dr Ar Das", "Dr Bose"]);
+  it("lists only doctors who consult online, rated first, then by experience; or by fee", () => {
+    expect(findDoctors(all).map((d) => d.name)).toEqual(["Dr K Paul", "Dr Rupa Sen", "Dr Ar Das"]);
+    expect(findDoctors(all, { sort: "fee" }).map((d) => d.name)).toEqual(["Dr Ar Das", "Dr K Paul", "Dr Rupa Sen"]);
   });
 
-  it("lists rated doctors first, then by experience; or by fee", () => {
-    expect(findDoctors(all, { mode: "online" }).doctors.map((d) => d.name)).toEqual(["Dr K Paul", "Dr Rupa Sen", "Dr Ar Das"]);
-    expect(findDoctors(all, { mode: "online", sort: "fee" }).doctors.map((d) => d.name)).toEqual(["Dr Ar Das", "Dr K Paul", "Dr Rupa Sen"]);
+  it("filters by the specialty chosen and by search words", () => {
+    expect(findDoctors(all, { specialty: "skin" })).toEqual([skin]);
+    expect(findDoctors(all, { specialty: "teeth" })).toEqual([]);
+    expect(findDoctors(all, { search: "family das" })).toEqual([gp]);
   });
 
-  it("filters by specialty and by search words", () => {
-    expect(findDoctors(all, { mode: "online", specialty: "skin" }).doctors).toEqual([skin]);
-    expect(findDoctors(all, { mode: "online", search: "family das" }).doctors).toEqual([gp]);
-    expect(findDoctors(all, { mode: "clinic", search: "belda" }).doctors).toEqual([clinicOnly]);
+  it("counts doctors per specialty for the tiles", () => {
+    expect(doctorCounts(all)).toEqual({ general: 1, skin: 1, child: 1 });
   });
 
-  it("takes a problem to its specialty, and says so when it falls back", () => {
-    const rash = findDoctors(all, { mode: "online", problem: "skin" });
-    expect(rash.doctors).toEqual([skin]);
-    expect(rash.fallbackFrom).toBeNull();
-
-    const stomach = findDoctors(all, { mode: "online", problem: "stomach" });
-    expect(stomach.doctors).toEqual([gp]);
-    expect(stomach.fallbackFrom?.key).toBe("stomach");
-
-    expect(findDoctors(all, { mode: "online", problem: "tooth" }).doctors).toEqual([]);
+  it("offers the chosen specialty's problems, else the doctor's own, else a GP's", () => {
+    expect(problemsFor("ent")).toContain("Ear pain");
+    expect(problemsFor(null, skin)).toContain("Hair fall");
+    expect(problemsFor(null, doc({ specialty: "Something new" }))).toContain("Fever");
   });
 
-  it("counts doctors per specialty for the chips", () => {
-    expect(specialtiesWithDoctors(all, "online").map((s) => [s.key, s.count])).toEqual([["general", 1], ["skin", 1], ["child", 1]]);
-  });
-
-  it("quotes the cheaper online fee, and starts with video when offered", () => {
-    expect(feeFor(gp, "online")).toBe(300);
-    expect(feeFor(gp, "clinic")).toBe(500);
-    expect(defaultType(gp, "online")).toBe("video");
-    expect(defaultType(kids, "online")).toBe("audio");
-    expect(defaultType(gp, "clinic")).toBe("physical");
+  it("quotes the cheaper fee, and starts with video when offered", () => {
+    expect(onlineFee(gp)).toBe(300);
+    expect(defaultType(gp)).toBe("video");
+    expect(defaultType(kids)).toBe("audio");
   });
 
   it("writes names and initials once", () => {
@@ -104,10 +103,10 @@ describe("booking reason", () => {
 
 describe("consultation tracker", () => {
   const now = new Date("2026-11-16T06:00:00Z");
-  const states = (o: Parameters<typeof consultProgress>[0], mode: "video" | "clinic" = "video") =>
-    consultProgress(o, mode, now)?.map((s) => `${s.key}:${s.state}`).join(" ");
+  const states = (o: Parameters<typeof consultProgress>[0]) =>
+    consultProgress(o, "video", now)?.map((s) => `${s.key}:${s.state}`).join(" ");
 
-  it("follows an online consultation from booking to prescription", () => {
+  it("follows a consultation from booking to prescription", () => {
     const booked = { status: "confirmed", scheduled_date: "2026-11-16" };
     expect(states(booked)).toBe("booked:done call:current consult:todo prescription:todo");
     expect(states({ ...booked, meet_link: "https://meet.google.com/abc-defg-hij", call_status: "in_progress" })).toBe(
@@ -117,10 +116,6 @@ describe("consultation tracker", () => {
       "booked:done call:done consult:done prescription:current",
     );
     expect(states({ ...booked, status: "completed", prescription: { tests: [] } })).toBe("booked:done call:done consult:done prescription:done");
-  });
-
-  it("has three steps for a clinic visit", () => {
-    expect(states({ status: "confirmed", scheduled_date: "2026-11-17" }, "clinic")).toBe("booked:done visit:current prescription:todo");
   });
 
   it("has no tracker for a cancelled or missed booking", () => {

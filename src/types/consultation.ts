@@ -13,7 +13,6 @@ export interface Doctor {
   /** 0 means the doctor doesn't offer that mode. */
   videoCallFee: number;
   audioCallFee: number;
-  physicalCallFee: number;
   qualification: string;
   image?: string;
   hospitalName?: string;

@@ -1,47 +1,35 @@
 import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { BadgeCheck, Building2, Check, FileText, MapPin, Phone, ShieldCheck, Star, Video, Wallet } from "lucide-react";
+import { BadgeCheck, Check, FileText, Phone, ShieldCheck, Star, Video, Wallet } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DoctorAvatar } from "@/components/doctors/DoctorAvatar";
+import { MODES, feeOf } from "@/components/doctors/consultModes";
 import { useDoctor } from "@/hooks/useDoctors";
 import { useSEO } from "@/hooks/useSEO";
-import { doctorName, problemByKey, specialtyOf } from "@/lib/doctor-finder";
-import { MODES } from "@/components/doctors/consultModes";
+import { doctorName, onlineFee, specialtyByKey, specialtyOf, type ConsultType } from "@/lib/doctor-finder";
 import type { BookDoctorState } from "@/pages/BookDoctorScreen";
 
-type Mode = BookDoctorState["type"];
+const STEPS: Array<{ icon: typeof Video; title: string; text: string }> = [
+  { icon: Check, title: "Book today or a later day", text: "Tell the doctor briefly what's wrong. No payment now." },
+  { icon: Phone, title: "Your phone rings", text: "When the doctor starts, BloodLyn rings and you join on Google Meet." },
+  { icon: FileText, title: "Prescription in the app", text: "Medicines and tests arrive here. Add the tests to your cart in one tap." },
+  { icon: Wallet, title: "Pay after the consultation", text: "You pay only once you've spoken to the doctor." },
+];
 
-const STEPS: Record<"online" | "clinic", Array<{ icon: typeof Video; title: string; text: string }>> = {
-  online: [
-    { icon: Check, title: "Book today or a later day", text: "Tell the doctor what's wrong. No payment now." },
-    { icon: Phone, title: "Your phone rings", text: "When the doctor starts, BloodLyn rings and you join on Google Meet." },
-    { icon: FileText, title: "Prescription in the app", text: "Medicines and tests arrive here. Add the tests to your cart in one tap." },
-    { icon: Wallet, title: "Pay after the consultation", text: "You pay only once you've spoken to the doctor." },
-  ],
-  clinic: [
-    { icon: Check, title: "Book your day", text: "Today or one of the next two days." },
-    { icon: Building2, title: "Visit the clinic", text: "Go during clinic hours and show your booking." },
-    { icon: Wallet, title: "Pay at the clinic", text: "The fee shown here is the clinic's fee." },
-  ],
-};
-
-/** A doctor's page: who they are, how they consult and for how much, then booking. */
+/** A doctor's page: who they are, video or audio and for how much, then booking. */
 const DoctorProfileScreen = () => {
   const { id } = useParams();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { doctor, isLoading, isError } = useDoctor(id);
-  useSEO({ title: doctor ? `${doctorName(doctor.name)} | BloodLyn` : "Doctor | BloodLyn", description: "Book a consultation with a verified doctor." });
+  useSEO({ title: doctor ? `${doctorName(doctor.name)} | BloodLyn` : "Doctor | BloodLyn", description: "Book an online consultation with a verified doctor." });
 
-  const offered = doctor
-    ? (["video", "audio", "physical"] as Mode[]).filter((m) => (m === "video" ? doctor.videoCallFee : m === "audio" ? doctor.audioCallFee : doctor.physicalCallFee) > 0)
-    : [];
-  const wanted: Mode | undefined = params.get("mode") === "clinic" ? "physical" : offered.find((m) => m !== "physical");
-  const [picked, setPicked] = useState<Mode | null>(null);
-  const mode = picked && offered.includes(picked) ? picked : wanted && offered.includes(wanted) ? wanted : offered[0];
+  const offered = doctor ? (["video", "audio"] as ConsultType[]).filter((m) => feeOf(doctor, m) > 0) : [];
+  const [picked, setPicked] = useState<ConsultType | null>(null);
+  const mode = picked && offered.includes(picked) ? picked : offered[0];
 
   if (isLoading) {
     return (
@@ -68,13 +56,15 @@ const DoctorProfileScreen = () => {
     );
   }
 
-  const fee = mode === "video" ? doctor.videoCallFee : mode === "audio" ? doctor.audioCallFee : doctor.physicalCallFee;
+  const fee = feeOf(doctor, mode);
   const specialty = doctor.specialty || specialtyOf(doctor)?.label || "Doctor";
-  const clinic = [doctor.hospitalName && doctor.hospitalName !== doctor.name ? doctor.hospitalName : "", doctor.clinicAddress, doctor.city].filter(Boolean);
-  const steps = STEPS[mode === "physical" ? "clinic" : "online"];
 
   const book = () => {
-    const state: BookDoctorState = { doctor, type: mode, symptoms: problemByKey(params.get("problem"))?.label ?? "" };
+    const state: BookDoctorState = {
+      doctor,
+      type: mode,
+      specialty: specialtyByKey(params.get("specialty"))?.key ?? specialtyOf(doctor)?.key ?? null,
+    };
     navigate("/book-doctor", { state });
   };
 
@@ -111,19 +101,18 @@ const DoctorProfileScreen = () => {
               </p>
             </div>
             <div>
-              <p className="text-base font-black text-foreground">₹{Math.min(...offered.map((m) => (m === "video" ? doctor.videoCallFee : m === "audio" ? doctor.audioCallFee : doctor.physicalCallFee)))}</p>
+              <p className="text-base font-black text-foreground">₹{onlineFee(doctor)}</p>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Fee from</p>
             </div>
           </div>
         </section>
 
         <section>
-          <h3 className="mb-2.5 text-sm font-black text-foreground">How do you want to consult?</h3>
-          <div className="space-y-2">
+          <h3 className="mb-2.5 text-sm font-black text-foreground">How do you want to talk?</h3>
+          <div className="space-y-2" role="radiogroup" aria-label="Consultation type">
             {offered.map((m) => {
               const info = MODES[m];
               const active = m === mode;
-              const price = m === "video" ? doctor.videoCallFee : m === "audio" ? doctor.audioCallFee : doctor.physicalCallFee;
               return (
                 <button
                   key={m}
@@ -142,30 +131,21 @@ const DoctorProfileScreen = () => {
                     <span className="block text-sm font-bold text-foreground">{info.label}</span>
                     <span className="block text-xs text-muted-foreground">{info.note}</span>
                   </span>
-                  <span className="text-base font-black tabular-nums text-foreground">₹{price}</span>
+                  <span className="text-base font-black tabular-nums text-foreground">₹{feeOf(doctor, m)}</span>
                 </button>
               );
             })}
           </div>
         </section>
 
-        {mode === "physical" && clinic.length > 0 && (
-          <section className="rounded-3xl border border-border/60 bg-card p-4">
-            <h3 className="flex items-center gap-1.5 text-sm font-black text-foreground">
-              <MapPin className="h-4 w-4 text-primary" /> Clinic
-            </h3>
-            <p className="mt-1.5 text-sm leading-snug text-muted-foreground">{clinic.join(", ")}</p>
-          </section>
-        )}
-
         <section className="rounded-3xl border border-border/60 bg-card p-4">
           <h3 className="text-sm font-black text-foreground">What happens next</h3>
           <ol className="mt-3 space-y-3.5">
-            {steps.map((s, i) => (
+            {STEPS.map((s, i) => (
               <li key={s.title} className="flex gap-3">
                 <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <s.icon className="h-4 w-4" />
-                  {i < steps.length - 1 && <span className="absolute left-1/2 top-8 h-3.5 w-px -translate-x-1/2 bg-border" />}
+                  {i < STEPS.length - 1 && <span className="absolute left-1/2 top-8 h-3.5 w-px -translate-x-1/2 bg-border" />}
                 </span>
                 <div className="min-w-0 pt-0.5">
                   <p className="text-sm font-bold text-foreground">{s.title}</p>
@@ -189,7 +169,7 @@ const DoctorProfileScreen = () => {
             <p className="text-lg font-black tabular-nums text-foreground">₹{fee}</p>
           </div>
           <Button className="h-12 rounded-2xl px-6 text-[15px] font-bold" onClick={book}>
-            {mode === "physical" ? "Book clinic visit" : "Book consultation"}
+            Book consultation
           </Button>
         </div>
       </div>

@@ -31,12 +31,11 @@ const booking: BookDoctorState = {
     nextSlot: "",
     videoCallFee: 400,
     audioCallFee: 400,
-    physicalCallFee: 0,
     qualification: "MBBS",
   },
   type: "audio",
+  specialty: "ent",
   patient: { name: "Pk", age: "43", gender: "Female", phone: "8575575757" },
-  symptoms: "Fever",
 };
 
 const renderScreen = () =>
@@ -74,7 +73,8 @@ describe("Book doctor screen", () => {
     expect(body.scheduledTimeSlot).toBe("As soon as possible");
     expect(body.labId).toBeNull();
     expect(body.cartItems[0]).toMatchObject({ id: `doc-audio-${booking.doctor.id}`, price: 400, labId: null, name: "Audio Call with Dr Ar Das (Pk)" });
-    expect(body.reason).toBe("Fever");
+    // Saying what's wrong is optional: the patient can tell the doctor on the call.
+    expect(body.reason).toBeUndefined();
   });
 
   it("books a later day for any time that day", async () => {
@@ -117,18 +117,32 @@ describe("Book doctor screen", () => {
     fireEvent.click(screen.getByText("Confirm booking"));
     await screen.findByText("appointment page");
   });
-it("shows the problem picked on the list, and sends it with the note and health details", async () => {
+  it("offers the chosen specialty's problems, and sends them with the note and health details", async () => {
     renderScreen();
-    // Fever came from the doctor list, so it is shown, not asked again.
-    expect(screen.queryByRole("button", { name: "Cold & cough" })).toBeNull();
-    fireEvent.click(screen.getByText("+ Add another"));
-    fireEvent.click(screen.getByRole("button", { name: "Cold & cough" }));
+    // ENT was picked on the doctor list, so ear and throat problems are offered, not fever.
+    expect(screen.queryByRole("button", { name: "Fever" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Ear pain" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sore throat" }));
     fireEvent.change(screen.getByLabelText("Describe the problem"), { target: { value: "since 3 days" } });
     fireEvent.click(screen.getByText(/Health details/));
     fireEvent.change(screen.getByPlaceholderText("120/80"), { target: { value: "130/85" } });
     fireEvent.click(screen.getByText("Confirm booking"));
     await screen.findByText("appointment page");
-    expect(sentBody().reason).toBe("Fever, Cold & cough. since 3 days, BP 130/85");
+    expect(sentBody().reason).toBe("Ear pain, Sore throat. since 3 days, BP 130/85");
+  });
+
+  it("offers the doctor's own specialty's problems when none was chosen", () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={[{ pathname: "/book-doctor", state: { ...booking, specialty: null } }]}>
+          <Routes>
+            <Route path="/book-doctor" element={<BookDoctorScreen />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("button", { name: "Fever" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Ear pain" })).toBeNull();
   });
 
   it("books for a family member, and for the consultation type picked", async () => {

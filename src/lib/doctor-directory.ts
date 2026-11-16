@@ -34,7 +34,6 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
         nextSlot: "Available today",
         videoCallFee: money(d.videoCallFee, d.video_call_fee, base),
         audioCallFee: money(d.audioCallFee, d.audio_call_fee, base),
-        physicalCallFee: money(d.physicalCallFee, d.in_clinic_fee, clinicAddress ? base : 0),
         image: d.image || d.photo_url || d.photo || undefined,
         hospitalName: d.hospitalName || d.clinic_name || d.clinicName || "",
         clinicAddress,
@@ -53,9 +52,9 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
 }
 
 /**
- * The cart id create-order reads the consultation mode from: doc-video-{id},
- * doc-audio-{id}, or doc-{id} for a clinic visit.
+ * The cart id create-order reads the consultation mode from: doc-video-{id} or
+ * doc-audio-{id}. Consultations are online only; BloodLyn offers no clinic visits.
  */
-export function doctorCartId(type: "video" | "audio" | "physical", doctorId: string): string {
-  return type === "physical" ? `doc-${doctorId}` : `doc-${type}-${doctorId}`;
+export function doctorCartId(type: "video" | "audio", doctorId: string): string {
+  return `doc-${type}-${doctorId}`;
 }
