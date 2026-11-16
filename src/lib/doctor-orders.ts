@@ -55,3 +55,42 @@ export function consultStatus(
   if (scheduledDate && scheduledDate.slice(0, 10) < indiaToday(now)) return "missed";
   return "upcoming";
 }
+
+export type StepState = "done" | "current" | "todo";
+export interface ConsultStep {
+  key: "booked" | "call" | "consult" | "visit" | "prescription";
+  label: string;
+  state: StepState;
+}
+
+interface ProgressOrder {
+  status?: string | null;
+  scheduled_date?: string | null;
+  meet_link?: string | null;
+  call_status?: string | null;
+  report_url?: string | null;
+  prescription?: unknown;
+}
+
+/**
+ * The steps of a consultation and how far it has got, for the tracker on the
+ * appointment page. Null for a cancelled or missed booking: nothing more will happen.
+ */
+export function consultProgress(order: ProgressOrder, mode: ConsultMode, now = new Date()): ConsultStep[] | null {
+  const status = consultStatus(order.status, order.scheduled_date, now);
+  if (status === "cancelled" || status === "missed") return null;
+
+  const hasPrescription =
+    (!!order.prescription && typeof order.prescription === "object" && !Array.isArray(order.prescription)) || !!order.report_url;
+  const over = status === "completed" || ["ended", "completed"].includes(String(order.call_status ?? ""));
+  const live = !over && /^https:\/\/meet\.google\.com\//.test(order.meet_link ?? "");
+
+  const keys: Array<[ConsultStep["key"], string]> =
+    mode === "clinic"
+      ? [["booked", "Booked"], ["visit", "Clinic visit"], ["prescription", "Prescription"]]
+      : [["booked", "Booked"], ["call", "Doctor calls"], ["consult", "Consultation"], ["prescription", "Prescription"]];
+
+  // How many steps are finished.
+  const done = hasPrescription ? keys.length : over ? keys.length - 1 : live ? 2 : 1;
+  return keys.map(([key, label], i) => ({ key, label, state: i < done ? "done" : i === done ? "current" : "todo" }));
+}

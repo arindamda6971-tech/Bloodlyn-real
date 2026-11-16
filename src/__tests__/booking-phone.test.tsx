@@ -37,7 +37,7 @@ describe('Unified Booking screens — Cart workflow verification', () => {
     expect((await screen.findAllByText(/Physio/i)).length).toBeGreaterThan(0);
   });
 
-  it('DoctorConsultScreen renders advanced consultation header and doctor list', async () => {
+  it('DoctorConsultScreen opens straight on the doctor list', async () => {
     render(
       <MemoryRouter initialEntries={[{ pathname: '/doctor-consult' }]}>
         <Routes>
@@ -46,6 +46,6 @@ describe('Unified Booking screens — Cart workflow verification', () => {
       </MemoryRouter>
     );
 
-    expect((await screen.findAllByText(/Consultancy/i)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/Consult a doctor/i)).length).toBeGreaterThan(0);
   });
 });

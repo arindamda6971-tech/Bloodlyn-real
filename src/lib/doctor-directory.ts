@@ -38,6 +38,7 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
         image: d.image || d.photo_url || d.photo || undefined,
         hospitalName: d.hospitalName || d.clinic_name || d.clinicName || "",
         clinicAddress,
+        city: String(d.city || ""),
         pincode: String(d.pincode || clinicAddress.match(/\b\d{6}\b/)?.[0] || ""),
         service_pincodes: Array.isArray(d.service_pincodes)
           ? d.service_pincodes.map(String)

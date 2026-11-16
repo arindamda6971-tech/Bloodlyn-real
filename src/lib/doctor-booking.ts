@@ -33,3 +33,17 @@ export function bookingDays(now = new Date()): BookingDay[] {
 
 /** What the booking says instead of a time. */
 export const bookingWhen = (isToday: boolean) => (isToday ? "As soon as possible" : "Any time that day");
+
+/** "Fever, Cold & cough. Since 3 days. BP 130/85, Sugar 140, Medicines: Metformin" */
+export function bookingReason(problems: string[], note: string, health: { bp: string; sugar: string; medicines: string }): string {
+  const said = [problems.join(", "), note.trim()].filter(Boolean).join(". ");
+  return [
+    said,
+    health.bp ? `BP ${health.bp}` : "",
+    health.sugar ? `Sugar ${health.sugar}` : "",
+    health.medicines.trim() ? `Medicines: ${health.medicines.trim()}` : "",
+  ]
+    .filter(Boolean)
+    .join(", ")
+    .slice(0, 500);
+}

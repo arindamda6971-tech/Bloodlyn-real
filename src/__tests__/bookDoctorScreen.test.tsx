@@ -8,6 +8,14 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { functions: { invo
 vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ user: { id: "patient-1" } }) }));
 vi.mock("@/components/layout/MobileLayout", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+vi.mock("@/hooks/useSelfPatient", () => ({ useSelfPatient: () => ({ name: "Ar", age: "30", gender: "Male", phone: "9000000000" }) }));
+vi.mock("@/hooks/useFamilyMembers", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/hooks/useFamilyMembers")>()),
+  useFamilyMembers: () => ({
+    members: [{ id: "fm-1", fullName: "Rina", age: "60", gender: "Female", phone: "9111111111", relationship: "Mother" }],
+    addMember: vi.fn(),
+  }),
+}));
 
 import BookDoctorScreen, { type BookDoctorState } from "@/pages/BookDoctorScreen";
 
@@ -108,5 +116,39 @@ describe("Book doctor screen", () => {
     renderScreen();
     fireEvent.click(screen.getByText("Confirm booking"));
     await screen.findByText("appointment page");
+  });
+it("shows the problem picked on the list, and sends it with the note and health details", async () => {
+    renderScreen();
+    // Fever came from the doctor list, so it is shown, not asked again.
+    expect(screen.queryByRole("button", { name: "Cold & cough" })).toBeNull();
+    fireEvent.click(screen.getByText("+ Add another"));
+    fireEvent.click(screen.getByRole("button", { name: "Cold & cough" }));
+    fireEvent.change(screen.getByLabelText("Describe the problem"), { target: { value: "since 3 days" } });
+    fireEvent.click(screen.getByText(/Health details/));
+    fireEvent.change(screen.getByPlaceholderText("120/80"), { target: { value: "130/85" } });
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await screen.findByText("appointment page");
+    expect(sentBody().reason).toBe("Fever, Cold & cough. since 3 days, BP 130/85");
+  });
+
+  it("books for a family member, and for the consultation type picked", async () => {
+    const withoutPatient = { ...booking, patient: undefined };
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={[{ pathname: "/book-doctor", state: withoutPatient }]}>
+          <Routes>
+            <Route path="/book-doctor" element={<BookDoctorScreen />} />
+            <Route path="/appointment/:id" element={<p>appointment page</p>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    fireEvent.click(screen.getByRole("radio", { name: /Video/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Rina/ }));
+    fireEvent.click(screen.getByText("Confirm booking"));
+    await screen.findByText("appointment page");
+    const body = sentBody();
+    expect(body.cartItems[0]).toMatchObject({ id: `doc-video-${booking.doctor.id}`, name: "Video Call with Dr Ar Das (Rina)" });
+    expect(body).toMatchObject({ patientName: "Rina", patientAge: 60, patientGender: "Female", patientPhone: "9111111111" });
   });
 });

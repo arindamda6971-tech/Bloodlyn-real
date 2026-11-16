@@ -1,318 +1,324 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Stethoscope, Users, Plus, Heart, User, RefreshCw } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Building2, CalendarCheck, FileText, MonitorSmartphone, RefreshCw, Search, SlidersHorizontal, Stethoscope, Video, Wallet, X } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { toast } from "sonner";
-import { useCart } from "@/contexts/CartContext";
-import { useAfterTransition } from "@/hooks/useAfterTransition";
-import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
-import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
-
-// Consultation specific types and components
-import { ConsultationFlowState, initialConsultationState, Doctor } from "@/types/consultation";
-import { ConsultationTypeStep } from "@/components/consultation/ConsultationTypeStep";
-import { OfflineFlow } from "@/components/consultation/OfflineFlow";
-import { ServiceIntro } from "@/components/services/ServiceIntro";
-import { doctorsFromDirectory } from "@/lib/doctor-directory";
+import { Button } from "@/components/ui/button";
+import { DoctorListCard } from "@/components/doctors/DoctorListCard";
+import { DoctorFilterSheet } from "@/components/doctors/DoctorFilterSheet";
+import { useDoctors } from "@/hooks/useDoctors";
+import { useSEO } from "@/hooks/useSEO";
+import {
+  PROBLEMS,
+  defaultType,
+  findDoctors,
+  problemByKey,
+  specialtiesWithDoctors,
+  specialtyByKey,
+  type ConsultMode,
+  type DoctorSort,
+} from "@/lib/doctor-finder";
+import type { Doctor } from "@/types/consultation";
 import type { BookDoctorState } from "@/pages/BookDoctorScreen";
-import { OnlineFlow } from "@/components/consultation/OnlineFlow";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
+const SORT_LABEL: Record<DoctorSort, string> = { recommended: "Recommended", fee: "Lowest fee", experience: "Most experienced" };
+
+
+/**
+ * Consult a doctor: every doctor accepting consultations, with search, an online / clinic
+ * switch, specialty chips, a filter in the corner, and everyday problems that lead to the
+ * right specialty. What the patient chose lives in the address, so Back from a doctor's
+ * page comes back to the same list.
+ */
 const DoctorConsultScreen = () => {
+  useSEO({ title: "Consult a doctor | BloodLyn", description: "Book a verified doctor for an online consultation or a clinic visit." });
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
-  const { addToCart, pendingItem, confirmReplace, cancelReplace } = useCart();
-  const [showIntro, setShowIntro] = useState(true);
-  
-  // State machine with deep safe restoration
-  const [state, setState] = useState<ConsultationFlowState>(() => {
-    try {
-      if (location.state?.reset) {
-        sessionStorage.removeItem("consultationState");
-        return initialConsultationState;
-      }
-      const saved = sessionStorage.getItem("consultationState");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (
-          parsed &&
-          typeof parsed.currentStep === "number" &&
-          (parsed.type === "offline" || parsed.type === "online" || parsed.currentStep === 1)
-        ) {
-          return {
-            ...initialConsultationState,
-            ...parsed,
-            offlineState: {
-              ...initialConsultationState.offlineState,
-              ...(parsed.offlineState || {}),
-              filters: {
-                ...initialConsultationState.offlineState.filters,
-                ...((parsed.offlineState && parsed.offlineState.filters) || {}),
-              },
-            },
-            onlineState: {
-              ...initialConsultationState.onlineState,
-              ...(parsed.onlineState || {}),
-              basicInfo: {
-                ...initialConsultationState.onlineState.basicInfo,
-                ...((parsed.onlineState && parsed.onlineState.basicInfo) || {}),
-              },
-              filters: {
-                ...initialConsultationState.onlineState.filters,
-                ...((parsed.onlineState && parsed.onlineState.filters) || {}),
-              },
-            },
-          };
-        }
-      }
-    } catch (e) {
-      console.error("Failed to restore consultationState", e);
-      sessionStorage.removeItem("consultationState");
+  const [params, setParams] = useSearchParams();
+  const { data: doctors = [], isLoading, isError, refetch, isFetching } = useDoctors();
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const mode: ConsultMode = params.get("mode") === "clinic" ? "clinic" : "online";
+  const specialty = specialtyByKey(params.get("specialty"))?.key ?? null;
+  const problem = problemByKey(params.get("problem"))?.key ?? null;
+  const sort = (["fee", "experience"].includes(params.get("sort") ?? "") ? params.get("sort") : "recommended") as DoctorSort;
+  const search = params.get("q") ?? "";
+
+  const set = (changes: Record<string, string | null>) => {
+    const next = new URLSearchParams(params);
+    for (const [k, v] of Object.entries(changes)) {
+      if (v) next.set(k, v);
+      else next.delete(k);
     }
-    return initialConsultationState;
-  });
-  
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  // Until the directory answers, the lists say "Finding doctors" instead of "none free".
-  const [doctorsLoading, setDoctorsLoading] = useState(true);
-
-  // Family Members System
-  const { members: familyMembers, addMember } = useFamilyMembers();
-  const [selectedMemberId, setSelectedMemberId] = useState<string | "self">("self");
-  const [showAddFamilyDialog, setShowAddFamilyDialog] = useState(false);
-  const [selfProfile, setSelfProfile] = useState<{ name: string; age: string; gender: string; mobile: string } | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name, phone, gender, date_of_birth")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (data) {
-        const dob = data.date_of_birth ? new Date(data.date_of_birth) : null;
-        const age = dob ? Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 3600 * 1000)) : null;
-        setSelfProfile({
-          name: data.full_name || "Self",
-          age: age && age > 0 ? String(age) : "",
-          gender: data.gender ? data.gender.charAt(0).toUpperCase() + data.gender.slice(1) : "",
-          mobile: (data.phone || "").replace(/\D/g, "").slice(-10),
-        });
-      }
-    })();
-  }, [user]);
-
-  const handleAddFamilyMember = async (memberData: Omit<FamilyMember, "id">) => {
-    const newMember = await addMember(memberData);
-    if (newMember) {
-      setSelectedMemberId(newMember.id);
-      toast.success(`Added ${newMember.fullName} as family member`);
-    }
+    setParams(next, { replace: true });
   };
 
-  const getSelectedPatientName = () => {
-    if (selectedMemberId === "self") {
-      return selfProfile?.name || "Self";
-    }
-    const member = familyMembers.find(m => m.id === selectedMemberId);
-    return member ? `${member.fullName} (${member.relationship})` : "Patient";
+  const available = useMemo(() => specialtiesWithDoctors(doctors, mode), [doctors, mode]);
+  const counts = useMemo(() => Object.fromEntries(available.map((s) => [s.key, s.count])), [available]);
+  const results = useMemo(() => findDoctors(doctors, { mode, specialty, problem, search, sort }), [doctors, mode, specialty, problem, search, sort]);
+  // The chips show the specialties with doctors, plus the chosen one even if it has none.
+  const chips = specialty && !counts[specialty] ? [...available, { ...specialtyByKey(specialty)!, count: 0 }] : available;
+  const filtered = !!(specialty || problem || search || sort !== "recommended");
+  const chosenProblem = problemByKey(problem);
+
+  const query = () => {
+    const keep = new URLSearchParams();
+    keep.set("mode", mode);
+    if (problem) keep.set("problem", problem);
+    return keep.toString();
   };
-  
-  useEffect(() => {
-    sessionStorage.setItem("consultationState", JSON.stringify(state));
-  }, [state]);
-
-  // Doctors come only from the doctor-directory function: doctors the admin approved and
-  // that are active in the partner portal. There is no sample list and no made-up rating:
-  // a patient must never be able to book (and pay) a doctor who doesn't exist.
-  // Start loading once the screen has slid in, so replies don't re-render it mid-slide.
-  const afterSlide = useAfterTransition();
-  useEffect(() => {
-    if (!afterSlide) return;
-    let cancelled = false;
-
-    const fetchDoctors = async () => {
-      let found: Doctor[] = [];
-      try {
-        const { data, error } = await supabase.functions.invoke(`doctor-directory?_ts=${Date.now()}`, { method: "GET" });
-        if (!error && data) found = doctorsFromDirectory(data);
-      } catch (e) {
-        console.warn("doctor-directory unavailable:", e);
-      }
-
-      if (cancelled) return;
-      setDoctors(found);
-      setDoctorsLoading(false);
-    };
-
-    fetchDoctors();
-    return () => { cancelled = true; };
-  }, [afterSlide]);
-
-  const updateState = (updates: Partial<ConsultationFlowState>) => {
-    setState(prev => ({ ...prev, ...updates }));
+  const book = (doctor: Doctor) => {
+    const state: BookDoctorState = { doctor, type: defaultType(doctor, mode), symptoms: chosenProblem?.label ?? "" };
+    navigate("/book-doctor", { state });
   };
-
-  const updateOfflineState = (updates: Partial<ConsultationFlowState["offlineState"]>) => {
-    setState(prev => ({ ...prev, offlineState: { ...prev.offlineState, ...updates } }));
-  };
-
-  const updateOnlineState = (updates: Partial<ConsultationFlowState["onlineState"]>) => {
-    setState(prev => ({ ...prev, onlineState: { ...prev.onlineState, ...updates } }));
-  };
-
-  const handleBack = () => {
-    if (state.currentStep > 1) {
-      updateState({ currentStep: state.currentStep - 1 });
-    } else {
-      navigate(-1);
-    }
-  };
-
-  // Practo-style: no cart. The patient picks a date and one of the doctor's free times
-  // on the booking screen, and the booking is placed from there.
-  const handleBook = (doctor: Doctor, type: "video" | "audio" | "physical") => {
-    const member = selectedMemberId === "self" ? null : familyMembers.find((m) => m.id === selectedMemberId);
-    const patient = member
-      ? { name: member.fullName, age: member.age, gender: member.gender, phone: member.phone }
-      : {
-          name: selfProfile?.name || "Self",
-          age: selfProfile?.age || "",
-          gender: selfProfile?.gender || "",
-          phone: selfProfile?.mobile || "",
-        };
-    const info = state.onlineState.basicInfo;
-    const symptoms = [
-      state.healthConcern,
-      info.bloodPressure ? `BP ${info.bloodPressure}` : "",
-      info.bloodSugar ? `Sugar ${info.bloodSugar}` : "",
-      info.medications ? `Medicines: ${info.medications}` : "",
-    ]
-      .filter(Boolean)
-      .join(", ");
-    const booking: BookDoctorState = { doctor, type, patient, symptoms };
-    navigate("/book-doctor", { state: booking });
-  };
-
-  const handleConfirmReplace = () => {
-    confirmReplace(() => navigate("/cart"));
-    toast.success("Cart replaced with new booking");
-  };
-
-  if (showIntro) {
-    return <ServiceIntro serviceType="doctor" onProceed={() => setShowIntro(false)} />;
-  }
 
   return (
     <MobileLayout showNav={false}>
-      {/* Dynamic Header */}
-      <div className="sticky top-0 z-50 bg-background/98 border-b border-border/40 pb-2">
-        <div className="flex items-center justify-between p-4 pb-2">
-          <button onClick={handleBack} className="p-2 -ml-2 rounded-xl active:bg-muted/50 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
+      <div className="sticky top-0 z-40 border-b border-border/40 bg-background/95 pb-3 backdrop-blur">
+        <div className="flex items-center gap-2 px-4 pt-3">
+          <button type="button" onClick={() => navigate(-1)} aria-label="Back" className="-ml-1 flex h-10 w-10 items-center justify-center rounded-full active:bg-muted">
+            <ArrowLeft className="h-5 w-5 text-foreground" />
           </button>
-          
-          <div className="flex flex-col items-center">
-            <h1 className="font-bold text-base tracking-tight text-foreground">
-              {state.type === "offline" ? "Clinic Visit" : state.type === "online" ? "Online Consult" : "Book Doctor"}
-            </h1>
-            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-              Step {state.currentStep} of {state.totalSteps}
-            </p>
-          </div>
-          
-          <div className="w-9 h-9" />
+          <h1 className="flex-1 text-[17px] font-black tracking-tight text-foreground">Consult a doctor</h1>
+          <button
+            type="button"
+            onClick={() => setFilterOpen(true)}
+            aria-label="Filter doctors"
+            className={`relative flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold transition-colors ${
+              specialty || sort !== "recommended" ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-foreground"
+            }`}
+          >
+            <SlidersHorizontal className="h-4 w-4" /> Filter
+            {(specialty || sort !== "recommended") && <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary" />}
+          </button>
         </div>
 
-        {/* Progress Bar */}
-        <div className="px-4 mt-2">
-          <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-[width] duration-300 ease-in-out"
-              style={{ width: `${(state.currentStep / state.totalSteps) * 100}%` }}
+        <div className="mt-2.5 px-4">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => set({ q: e.target.value.slice(0, 60) || null })}
+              placeholder="Search doctor, specialty or clinic"
+              className="h-11 w-full rounded-2xl border border-border/70 bg-muted/40 pl-10 pr-10 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary/50 focus:bg-background"
             />
+            {search && (
+              <button type="button" aria-label="Clear search" onClick={() => set({ q: null })} className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground active:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </label>
+
+          <div className="mt-2.5 grid grid-cols-2 gap-1 rounded-2xl bg-muted/60 p-1" role="tablist" aria-label="How to consult">
+            {([
+              { key: "online", label: "Online consult", icon: MonitorSmartphone },
+              { key: "clinic", label: "Clinic visit", icon: Building2 },
+            ] as const).map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                role="tab"
+                aria-selected={mode === m.key}
+                onClick={() => set({ mode: m.key === "online" ? null : m.key, specialty: null })}
+                className={`flex h-10 items-center justify-center gap-1.5 rounded-xl text-[13px] font-bold transition-colors ${
+                  mode === m.key ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                <m.icon className="h-4 w-4" /> {m.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className="px-4 pb-32">
-        {/* Step 1: Choose Type (with fallback if state.type is missing) */}
-        {(state.currentStep === 1 || !state.type) && (
-          <ConsultationTypeStep
-            onSelect={(type) => {
-              updateState({
-                type,
-                currentStep: 2,
-                totalSteps: type === "offline" ? 5 : 6,
-              });
-            }}
-          />
+      <div className="pb-[calc(var(--sab)+32px)]">
+        {!filtered && (
+          <section className="relative mx-4 mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-600 to-blue-700 px-4 pb-4 pt-4 text-white shadow-lg shadow-blue-600/20">
+            <span aria-hidden className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10" />
+            <div className="relative flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">How it works</p>
+                <p className="mt-0.5 text-base font-black leading-snug">
+                  {mode === "online" ? "See a doctor from home, today" : "Book a visit to a doctor's clinic"}
+                </p>
+              </div>
+              <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-bold text-blue-700">
+                <Wallet className="h-3.5 w-3.5" /> {mode === "online" ? "Pay after" : "Pay at clinic"}
+              </span>
+            </div>
+            <ol className="relative mt-4 grid grid-cols-3">
+              {(mode === "online"
+                ? [
+                    { icon: Stethoscope, text: "Pick a doctor" },
+                    { icon: Video, text: "Talk on Google Meet" },
+                    { icon: FileText, text: "Get your prescription" },
+                  ]
+                : [
+                    { icon: Stethoscope, text: "Pick a doctor" },
+                    { icon: CalendarCheck, text: "Choose your day" },
+                    { icon: Building2, text: "Visit the clinic" },
+                  ]
+              ).map((s, i) => (
+                <li key={s.text} className="relative flex flex-col items-center text-center">
+                  {i > 0 && <span aria-hidden className="absolute right-1/2 top-5 w-full -translate-x-5 border-t-2 border-dashed border-white/40" />}
+                  <span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-blue-700 shadow-md shadow-blue-900/20">
+                    <s.icon className="h-[18px] w-[18px]" />
+                  </span>
+                  <p className="mt-2 max-w-[7.5rem] px-1 text-[11px] font-bold leading-tight text-white">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
         )}
 
-        {/* Offline Flow Steps (2-5) */}
-        {state.type === "offline" && state.currentStep > 1 && (
-          <OfflineFlow
-            state={state}
-            updateState={updateState}
-            updateOfflineState={updateOfflineState}
-            doctors={doctors}
-            doctorsLoading={doctorsLoading}
-            onBook={handleBook}
-            familyMembers={familyMembers}
-            selectedMemberId={selectedMemberId}
-            setSelectedMemberId={setSelectedMemberId}
-            selfProfile={selfProfile}
-            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
-          />
+        <section className="mt-5">
+          <h2 className="px-4 text-sm font-black text-foreground">What's bothering you?</h2>
+          <div className="mt-2.5 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none">
+            {PROBLEMS.map((p) => {
+              const active = problem === p.key;
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => set({ problem: active ? null : p.key, specialty: null })}
+                  className={`shrink-0 rounded-full border px-3.5 py-2 text-[13px] font-semibold transition-colors ${
+                    active ? "border-primary bg-primary text-primary-foreground" : "border-border/70 bg-card text-foreground"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {chips.length > 0 && (
+          <section className="mt-4">
+            <h2 className="px-4 text-sm font-black text-foreground">Specialties</h2>
+            <div className="mt-2.5 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none">
+              <button
+                type="button"
+                aria-pressed={!specialty}
+                onClick={() => set({ specialty: null })}
+                className={`shrink-0 rounded-2xl border px-3.5 py-2 text-[13px] font-bold ${!specialty ? "border-foreground bg-foreground text-background" : "border-border/70 bg-card text-foreground"}`}
+              >
+                All
+              </button>
+              {chips.map((s) => {
+                const active = specialty === s.key;
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => set({ specialty: active ? null : s.key, problem: null })}
+                    className={`shrink-0 rounded-2xl border px-3.5 py-2 text-[13px] font-bold ${active ? "border-foreground bg-foreground text-background" : "border-border/70 bg-card text-foreground"}`}
+                  >
+                    {s.label} <span className={active ? "text-background/70" : "text-muted-foreground"}>{s.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
         )}
 
-        {/* Online Flow Steps (2-6) */}
-        {state.type === "online" && state.currentStep > 1 && (
-          <OnlineFlow
-            state={state}
-            updateState={updateState}
-            updateOnlineState={updateOnlineState}
-            doctors={doctors}
-            doctorsLoading={doctorsLoading}
-            onBook={handleBook}
-            familyMembers={familyMembers}
-            selectedMemberId={selectedMemberId}
-            setSelectedMemberId={setSelectedMemberId}
-            selfProfile={selfProfile}
-            onOpenAddDialog={() => setShowAddFamilyDialog(true)}
-          />
-        )}
+        <section className="mt-5 px-4">
+          {isLoading ? (
+            <div className="space-y-3" role="status" aria-label="Finding doctors">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-44 animate-pulse rounded-3xl border border-border/50 bg-muted/40" />
+              ))}
+            </div>
+          ) : isError ? (
+            <div className="rounded-3xl border border-border/60 bg-card px-6 py-10 text-center">
+              <p className="font-bold text-foreground">Couldn't load doctors</p>
+              <p className="mt-1 text-sm text-muted-foreground">Check your connection and try again.</p>
+              <Button variant="outline" className="mt-4 rounded-2xl" onClick={() => refetch()} disabled={isFetching}>
+                <RefreshCw className={`mr-1.5 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} /> Try again
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="mb-3 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-base font-black text-foreground">
+                    {results.doctors.length} {results.doctors.length === 1 ? "doctor" : "doctors"}
+                    {specialty ? ` · ${specialtyByKey(specialty)!.label}` : chosenProblem ? ` for ${chosenProblem.label.toLowerCase()}` : ""}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {mode === "online" ? "Accepting online consultations" : "Taking clinic visits"} · {SORT_LABEL[sort]}
+                  </p>
+                </div>
+                {filtered && (
+                  <button type="button" onClick={() => set({ specialty: null, problem: null, q: null, sort: null })} className="shrink-0 text-xs font-bold text-primary">
+                    Clear all
+                  </button>
+                )}
+              </div>
+
+              {results.fallbackFrom && results.doctors.length > 0 && (
+                <p className="mb-3 rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs font-semibold leading-snug text-amber-800 dark:text-amber-300">
+                  No {results.fallbackFrom.label.toLowerCase()} doctor is on BloodLyn yet. These doctors can help with {chosenProblem?.label.toLowerCase()}.
+                </p>
+              )}
+
+              {results.doctors.length > 0 ? (
+                <div className="space-y-3">
+                  {results.doctors.map((d) => (
+                    <DoctorListCard
+                      key={d.id}
+                      doctor={d}
+                      mode={mode}
+                      onOpen={() => navigate(`/doctor/${d.id}?${query()}`)}
+                      onBook={() => book(d)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-border/60 bg-card px-6 py-10 text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                    <Stethoscope className="h-6 w-6" />
+                  </span>
+                  <p className="mt-3 font-bold text-foreground">
+                    {doctors.length === 0 ? "No doctor is accepting consultations right now" : "No doctor matches"}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {doctors.length === 0
+                      ? "Doctors appear here as soon as they start taking bookings. Please check again soon."
+                      : mode === "clinic"
+                        ? "Try an online consultation, or clear the filters."
+                        : "Try another specialty, or clear the filters."}
+                  </p>
+                  {doctors.length > 0 && (
+                    <Button
+                      variant="outline"
+                      className="mt-4 rounded-2xl"
+                      onClick={() => set({ specialty: null, problem: null, q: null, sort: null, mode: mode === "clinic" && !filtered ? null : params.get("mode") })}
+                    >
+                      {mode === "clinic" && !filtered ? "See online doctors" : "Clear filters"}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        <p className="mt-6 px-6 text-center text-[11px] leading-relaxed text-muted-foreground">
+          Every doctor on BloodLyn is registered with a medical council and checked by us. For an emergency, call 112 or go to the nearest hospital.
+        </p>
       </div>
 
-      {/* Add Family Member Modal */}
-      <AddFamilyMemberDialog
-        open={showAddFamilyDialog}
-        onOpenChange={setShowAddFamilyDialog}
-        onAdd={handleAddFamilyMember}
-        existingMembers={familyMembers}
+      <DoctorFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        specialty={specialty}
+        sort={sort}
+        counts={counts}
+        onApply={(s, so) => {
+          set({ specialty: s, sort: so === "recommended" ? null : so, problem: s ? null : problem });
+          setFilterOpen(false);
+        }}
       />
-
-      {/* Cart Conflict Dialog */}
-      <AlertDialog open={!!pendingItem} onOpenChange={(open) => !open && cancelReplace()}>
-        <AlertDialogContent className="max-w-[90%] rounded-3xl border border-border bg-card shadow-2xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-bold">Replace Cart Item?</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs leading-relaxed">
-              You already have <span className="font-bold text-foreground">{pendingItem?.existingLabName}</span> in your cart.
-              You can only book one appointment or test at a time. Do you want to replace it with this booking?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-row gap-3">
-            <AlertDialogCancel className="flex-1 mt-0 rounded-2xl h-11 text-xs font-bold" onClick={cancelReplace}>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="flex-1 rounded-2xl h-11 text-xs font-bold bg-primary hover:bg-primary/90" onClick={handleConfirmReplace}>Replace Cart</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </MobileLayout>
   );
 };
