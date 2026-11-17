@@ -483,8 +483,27 @@ const TrackingScreen = () => {
           )}
         </section>
 
-        {/* Collection / service partner */}
-        {!isCancelled && (
+        {/* Once the sample is collected the partner's job is done: tell the
+            patient the report is on its way instead. */}
+        {!isCancelled && collectionDone && !isReportReady && !isVitalsOrder && (
+          <section
+            role="status"
+            className="flex items-center gap-3 rounded-2xl border border-success/25 bg-success/5 shadow-sm p-4"
+          >
+            <div className="w-11 h-11 rounded-full bg-success/10 text-success flex items-center justify-center shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground">Your report will be uploaded shortly</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                The lab is testing your sample. We'll let you know as soon as your report is ready.
+              </p>
+            </div>
+          </section>
+        )}
+
+        {/* Collection / service partner: only until the sample is collected */}
+        {!isCancelled && !collectionDone && (
           <section className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
             <h3 className="text-sm font-bold text-foreground mb-3">{isVitalsOrder ? "Service partner" : "Collection partner"}</h3>
             {order.delivery_partner_name ? (
