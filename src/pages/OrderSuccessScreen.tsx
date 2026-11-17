@@ -8,7 +8,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { HeroCheck, HeroDecor } from "@/components/booking/BookingHero";
 import { BOOKING_BUTTON_BG, BOOKING_HERO_BG } from "@/lib/booking-theme";
 import { formatINR, formatPassDate, formatTimeWindow, relativeDayPhrase, testSampleLine } from "@/lib/booking-format";
-import { simplifyTestName } from "@/utils/simplify-test-name";
+import { simplifyTestName, testSample } from "@/utils/simplify-test-name";
 
 interface BookingState {
   cartItems: Array<{
@@ -219,7 +219,7 @@ const OrderSuccessScreen = () => {
                   </p>
                   <ul className="mt-1">
                     {items.map((item) => {
-                      const meta = testSampleLine(item);
+                      const meta = testSampleLine({ ...item, sampleType: testSample(item.name, item.sampleType) });
                       return (
                         <li key={item.id} className="flex items-start justify-between gap-4 pt-3">
                           <div className="flex min-w-0 gap-3">

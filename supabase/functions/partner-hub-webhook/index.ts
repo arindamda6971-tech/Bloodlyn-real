@@ -32,6 +32,61 @@ interface OrderWebhookPayload {
   old_record: null | Record<string, unknown>;
 }
 
+type ForwardResult = { status: number; body: string } | { error: string } | null;
+
+/**
+ * Keeps `partner_delivery_issues` up to date: a failed hand-off opens (or adds an
+ * attempt to) the order's row, a successful one closes it. Errors are only logged.
+ */
+async function recordDelivery(
+  // deno-lint-ignore no-explicit-any
+  client: { from: (table: string) => any },
+  order: { id: string; order_number?: string | null; vendor_id?: string | null; lab_name?: string | null },
+  lineItems: unknown,
+  delivered: boolean,
+  result: ForwardResult,
+) {
+  const now = new Date().toISOString();
+  const statusCode = result && "status" in result ? result.status : null;
+  try {
+    if (delivered) {
+      const { error } = await client
+        .from("partner_delivery_issues")
+        .update({ status: "delivered", delivered_at: now, last_tried_at: now, updated_at: now, last_status_code: statusCode, last_error: null })
+        .eq("order_id", order.id)
+        .eq("status", "failed");
+      if (error) console.error("Could not close the delivery issue:", error.message);
+      return;
+    }
+    const { data: existing } = await client
+      .from("partner_delivery_issues")
+      .select("attempts")
+      .eq("order_id", order.id)
+      .maybeSingle();
+    const reason = !result ? "No response" : "error" in result ? result.error : result.body || `HTTP ${result.status}`;
+    const { error } = await client.from("partner_delivery_issues").upsert(
+      {
+        order_id: order.id,
+        order_number: order.order_number ?? null,
+        vendor_id: order.vendor_id ?? null,
+        lab_name: order.lab_name ?? null,
+        status: "failed",
+        last_status_code: statusCode,
+        last_error: String(reason).slice(0, 300),
+        attempts: ((existing as { attempts?: number } | null)?.attempts ?? 0) + 1,
+        // The tests as first sent; a resend reuses them.
+        ...(existing ? {} : { line_items: lineItems }),
+        last_tried_at: now,
+        updated_at: now,
+      },
+      { onConflict: "order_id" },
+    );
+    if (error) console.error("Could not record the failed delivery:", error.message);
+  } catch (e) {
+    console.error("Could not record the delivery result:", e);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -365,9 +420,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Remember a booking that didn't reach the lab, so Admin sees it and can send
+    // it again; a later success closes it. Never fatal for the booking.
+    const delivered = !!forwardResult && "status" in forwardResult && forwardResult.status >= 200 && forwardResult.status < 300;
+    await recordDelivery(adminClient, order, lineItems, delivered, forwardResult);
+
     return new Response(
       JSON.stringify({
         success: true,
+        delivered,
         message: "Vendor notified of new order",
         notification: vendorNotification,
         forward: forwardResult,

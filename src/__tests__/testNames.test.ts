@@ -43,7 +43,7 @@ describe("patient-facing test names", () => {
     expect(simplifyTestName("Hemoglobin A1c/Hemoglobin.total [Molar ratio] in Blood by IFCC protocol")).toBe("Hemoglobin A1c — Blood");
   });
 
-  it("lets the name narrow down a blood sample, but never overrule the lab", () => {
+  it("lets the name narrow down a blood sample, and leaves an unclear one to the lab", () => {
     const name = "1-Methylhistidine [Units/volume] in Serum or Plasma";
     expect(testSample(name, "Blood")).toBe("Serum/Plasma");
     expect(testSample(name, null)).toBe("Serum/Plasma");

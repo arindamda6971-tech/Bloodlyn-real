@@ -11,7 +11,7 @@ import { useSearchDelay, useSmartTestSearch } from "@/hooks/useSmartTestSearch";
 import { useCart } from "@/contexts/CartContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
-import { simplifyTestName } from "@/utils/simplify-test-name";
+import { simplifyTestName, testNameKey } from "@/utils/simplify-test-name";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -99,13 +99,17 @@ const CategoryTestsScreen = () => {
 
   const browseTests = useMemo(() => {
     const seen = new Set<string>();
+    // The catalogue lists a few tests twice under different IDs; show each name once.
+    // Labs are matched by name, so no lab is hidden by this.
+    const seenNames = new Set<string>();
     const merged: BridgeTest[] = [];
     for (const page of pagedData?.pages ?? []) {
       for (const test of page.tests ?? []) {
-        if (!seen.has(test.id)) {
-          seen.add(test.id);
-          merged.push(test);
-        }
+        const nameKey = testNameKey(test.test_name);
+        if (seen.has(test.id) || (nameKey && seenNames.has(nameKey))) continue;
+        seen.add(test.id);
+        if (nameKey) seenNames.add(nameKey);
+        merged.push(test);
       }
     }
     return merged;

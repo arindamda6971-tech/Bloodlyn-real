@@ -32,7 +32,7 @@ import { useUserPincode, labServesPincode } from "@/hooks/useUserPincode";
 import { useBridgeTests } from "@/hooks/useBridgeTests";
 import { formatRupees, prettyGroupName } from "@/lib/health-packages";
 import { beforeYouBook, reportTimeValue, testFacts, type TestFactKey } from "@/lib/test-page";
-import { clinicalNameAddsDetail, testNameParts } from "@/utils/simplify-test-name";
+import { clinicalNameAddsDetail, testNameParts, testSample } from "@/utils/simplify-test-name";
 
 interface UnifiedTest {
   id: string;
@@ -569,7 +569,13 @@ const TestDetailScreen = () => {
                         <div className="mt-0.5">
                           <LabRating rating={lab.rating ?? null} reviews={lab.reviews_count ?? 0} />
                         </div>
-                        {lab.productMetadata && <TestFacts test={lab.productMetadata} withInstructions className="mt-1.5" />}
+                        {lab.productMetadata && (
+                          <TestFacts
+                            test={{ ...lab.productMetadata, sampleType: testSample(test.name, lab.productMetadata.sampleType) }}
+                            withInstructions
+                            className="mt-1.5"
+                          />
+                        )}
                       </div>
                     </div>
                     <Button onClick={() => selectLabAndAdd(lab)} className="mt-3 w-full h-10 rounded-full text-[13px] font-semibold">

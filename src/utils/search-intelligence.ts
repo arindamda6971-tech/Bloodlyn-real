@@ -350,10 +350,15 @@ export function scoreTest(test: NamedTest, u: QueryUnderstanding): number {
 export function rankTests<T extends NamedTest & { id: string }>(tests: T[], u: QueryUnderstanding): T[] {
   if (!u.text) return [];
   const seen = new Set<string>();
+  // The catalogue lists a few tests twice under different IDs; show each name once.
+  const seenNames = new Set<string>();
   const scored: { test: T; score: number; len: number }[] = [];
   for (const test of tests) {
     if (!test || seen.has(test.id)) continue;
     seen.add(test.id);
+    const nameKey = nameOf(test).toLowerCase().replace(/\s+/g, " ").trim();
+    if (nameKey && seenNames.has(nameKey)) continue;
+    if (nameKey) seenNames.add(nameKey);
     const score = scoreTest(test, u);
     if (score > 0) scored.push({ test, score, len: nameOf(test).length });
   }

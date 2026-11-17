@@ -26,6 +26,7 @@
  */
 
 import { PATIENT_TEST_NAMES } from "@/data/patientTestNames";
+import { sampleFromTestName, sampleKindOf } from "@/utils/sample-type";
 
 // Specimen lookup: maps full "in ..." phrase → short display label
 const SPECIMEN_MAP: { suffix: string; label: string }[] = [
@@ -92,12 +93,57 @@ interface TestNameParts {
 // In-memory cache to eliminate repeated regex and string operations on 60/120fps scroll ticks
 const partsCache = new Map<string, TestNameParts>();
 
+// Words in an all-capitals name that read best in their own spelling.
+const SPECIAL_WORDS: Record<string, string> = {
+  HBA1C: "HbA1c", HBSAG: "HBsAg", HBEAG: "HBeAg", HB: "Hb", HCG: "hCG", BHCG: "Beta hCG",
+  IGG: "IgG", IGM: "IgM", IGA: "IgA", IGE: "IgE", RH: "Rh", PH: "pH", DSDNA: "dsDNA",
+  PROBNP: "proBNP", MRNA: "mRNA", HR: "hr", HRS: "hrs", GM: "gm", MG: "mg", ML: "ml",
+};
+// Short words that are ordinary words, not abbreviations.
+const SMALL_WORDS = new Set(["AND", "OF", "IN", "FOR", "THE", "WITH", "BY", "ON", "TO", "AT", "PER", "OR", "AS", "AN", "A", "VIA", "FROM", "AFTER", "BEFORE"]);
+const ORDINARY_SHORT_WORDS = new Set([
+  "DAY", "ONE", "TWO", "SIX", "TEN", "AGE", "FAT", "NEW", "LOW", "KIT", "END", "SET", "ANY", "OLD", "RAW", "DRY", "WET", "DUE",
+  "RED", "OVA", "EGG", "RYE", "OAK", "ELM", "FIG", "YAM", "COD", "SOY", "TEA", "BEE", "ANT", "CAT", "DOG", "RAT", "PEA", "OAT", "NUT",
+]);
+// Abbreviations of four letters or more that stay in capitals.
+const LONG_ABBREVIATIONS = new Set([
+  "EDTA", "VDRL", "MCHC", "APTT", "TIBC", "NGAL", "PPBS", "ANCA", "DHEA", "IGRA", "TORCH", "VLDL", "SHBG", "ACTH",
+  "OGTT", "ELISA", "HOMA", "ASLO", "RAST", "MTHFR", "BRCA", "FISH", "SGOT", "SGPT", "GGTP", "ASMA", "HPLC",
+  "NIPT", "PCOD", "PCOS", "AMHS", "CKMB", "LDLC", "HDLC", "NSAID", "HSCRP", "RTPCR", "CBNAAT", "TRUENAT",
+]);
+
+/**
+ * "ERYTHROCYTE SEDIMENTATION RATE" → "Erythrocyte Sedimentation Rate", keeping
+ * abbreviations as they are ("ESR", "CBC", "HbA1c", "T3"). Only for names typed
+ * entirely in capitals; anything already in mixed case is left alone.
+ */
+function tidyCapitals(name: string): string {
+  if (/[a-z]/.test(name) || (name.match(/[A-Z]/g) ?? []).length < 4) return name;
+  let first = true;
+  return name.replace(/[A-Z][A-Z0-9']*/g, (word) => {
+    const atStart = first;
+    first = false;
+    if (SPECIAL_WORDS[word]) return SPECIAL_WORDS[word];
+    if (/\d/.test(word) || /^[IVX]+$/.test(word) || LONG_ABBREVIATIONS.has(word)) return word;
+    if (SMALL_WORDS.has(word)) return atStart ? word.charAt(0) + word.slice(1).toLowerCase() : word.toLowerCase();
+    if (word.length <= 3 && !ORDINARY_SHORT_WORDS.has(word)) return word;
+    return word.charAt(0) + word.slice(1).toLowerCase();
+  });
+}
+
+/** One key for names that differ only in case or spacing, so a test listed twice shows once. */
+export function testNameKey(rawName: string | null | undefined): string {
+  return (rawName ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function parseTestName(rawName: string): TestNameParts {
   const cached = partsCache.get(rawName);
   if (cached) return cached;
 
-  let name = rawName.trim();
-  const plainName = PATIENT_TEST_NAMES[name.replace(/\s+/g, " ")];
+  const plainName = PATIENT_TEST_NAMES[rawName.trim().replace(/\s+/g, " ")];
+  // A panel is named on its first line; the lines after it list what it includes
+  // ("ANTENATAL PANEL 1\r\n*Complete Blood Count *Blood Group …").
+  let name = rawName.trim().split(/\r?\n/)[0].trim();
 
   // 1. Strip "Deprecated " prefix
   if (name.startsWith("Deprecated ")) {
@@ -156,8 +202,9 @@ function parseTestName(rawName: string): TestNameParts {
     .replace(/\s*summary panel/i, "")
     .replace(/\s*summary report Document/i, "");
 
-  // 8. Clean up multiple spaces, trailing punctuation, trim
-  name = name.replace(/\s{2,}/g, " ").replace(/[\s,;.]+$/, "").trim();
+  // 8. Clean up multiple spaces, trailing punctuation, trim, and soften all-capital names
+  name = tidyCapitals(name.replace(/\s{2,}/g, " ").replace(/[\s,;.]+$/, "").trim());
+  specimenLabel = tidyCapitals(specimenLabel);
 
   // 9. If the simplified name is too short or empty, fall back to original
   const parts = name.length < 3
@@ -189,12 +236,19 @@ export function clinicalNameAddsDetail(rawName: string | null | undefined): bool
 
 /**
  * The sample to show on a card. The name can narrow the lab's "Blood" down to
- * "Serum", but the lab decides what's collected, so a different sample stands.
+ * "Serum", and the lab decides what's collected, so a different sample usually
+ * stands. The exception is a sample that can't be right for the test, like
+ * "Urine" saved for a blood count: patients see what the test is done on.
  */
 export function testSample(rawName: string, labSample?: string | null): string | undefined {
   const { specimen } = testNameParts(rawName);
   const isBloodSample = /blood|serum|plasma/i;
   if (!labSample?.trim()) return specimen || undefined;
+  const expected = sampleFromTestName(rawName);
+  const saved = sampleKindOf(labSample);
+  if (expected && saved && expected !== saved) {
+    return specimen && sampleKindOf(specimen) === expected ? specimen : expected;
+  }
   return specimen && isBloodSample.test(labSample) && isBloodSample.test(specimen) ? specimen : labSample;
 }
 

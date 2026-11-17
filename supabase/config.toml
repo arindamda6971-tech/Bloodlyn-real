@@ -16,6 +16,10 @@ verify_jwt = false
 verify_jwt = false
 # Called by database webhook trigger with service role key
 
+[functions.ops-delivery-issues]
+verify_jwt = false
+# Called from the Admin portal with an Admin-project token, checked in code (super_admin only)
+
 [functions.bridge-proxy]
 verify_jwt = false
 # JWT validation done in code via getClaims()
