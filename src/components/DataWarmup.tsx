@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ACTIVE_PACKAGES_QUERY_KEY, fetchActivePackages } from "@/lib/health-packages";
+import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
 import { CATALOGUE_MAX_AGE_MS, CATALOGUE_QUERY_KEY, fetchCatalogue } from "@/lib/test-catalogue";
 
@@ -18,6 +19,23 @@ import { CATALOGUE_MAX_AGE_MS, CATALOGUE_QUERY_KEY, fetchCatalogue } from "@/lib
 const DataWarmup = () => {
   const queryClient = useQueryClient();
   const { pincode } = useUserPincode();
+
+  // A lab's new or changed package shows on Home and Packages within seconds,
+  // not after the 5-minute cache: refresh the list whenever test_packages
+  // changes (the lab page already listens the same way for its own packages).
+  useEffect(() => {
+    const refresh = createBurstDebouncer(() => {
+      queryClient.invalidateQueries({ queryKey: ACTIVE_PACKAGES_QUERY_KEY });
+    });
+    const channel = supabase
+      .channel("test_packages-all")
+      .on("postgres_changes", { event: "*", schema: "public", table: "test_packages" }, () => refresh.trigger())
+      .subscribe();
+    return () => {
+      refresh.cancel();
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   useEffect(() => {
     let cancelled = false;
