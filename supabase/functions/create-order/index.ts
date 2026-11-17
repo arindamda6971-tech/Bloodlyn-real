@@ -34,7 +34,8 @@ interface CreateOrderRequest {
   discount: number;
   total: number;
   paymentMethod: string | null;
-  couponCode: string | null;
+  /** No longer used: BloodLyn has no coupons. Still accepted so older app builds are not refused. */
+  couponCode?: string | null;
   /** A lab offer the patient picked; checked and priced here, never trusted from the client. */
   offerId?: string | null;
   patientName?: string;
@@ -164,7 +165,7 @@ Deno.serve(async (req) => {
     }
 
     const body = parsed.data as CreateOrderRequest;
-    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, couponCode, offerId, patientName, patientAge, patientGender, patientPhone, reason, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
+    const { cartItems, addressId, scheduledDate, scheduledTimeSlot, discount, paymentMethod, offerId, patientName, patientAge, patientGender, patientPhone, reason, labId, labName, vendorId, prescriptionUrl: clientPrescriptionUrl } = body;
 
     // Server-side price validation: fetch actual prices from DB
     const adminClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -463,11 +464,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Validate coupon server-side
+    // BloodLyn has no coupons: only a lab offer (checked below) lowers the price.
     let serverDiscount = 0;
-    if (couponCode && couponCode.toUpperCase() === "HEALTH100") {
-      serverDiscount = 100;
-    }
 
     // Flat platform fee controlled by Admin Finance & Revenue. Invalid or
     // unavailable settings intentionally resolve to ₹0.
@@ -879,7 +877,7 @@ Deno.serve(async (req) => {
         payment_method: paymentMethod || null,
         status: orderStatus,
         payment_status: paymentStatus,
-        coupon_code: couponCode || null,
+        coupon_code: null,
         special_instructions: specialInstructions,
         vendor_id: orderVendorId,
         lab_name: labName || cartItems[0]?.labName || null,
