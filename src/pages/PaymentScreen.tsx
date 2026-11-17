@@ -3,8 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag, Calendar, Clock, MapPin, ChevronDown, ChevronUp, User, CreditCard, ChevronRight, HeartPulse, Activity, Star, CheckCircle2, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import BookingStepper from "@/components/BookingStepper";
@@ -74,8 +72,6 @@ const PaymentScreen = () => {
   
   const { user } = useAuth();
 
-  const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay after blood collection" });
@@ -193,7 +189,7 @@ const PaymentScreen = () => {
   // Same rules create-order uses, on the same subtotal it checks.
   const offerResult = appliedOffer ? offerSavings(appliedOffer, effectiveSubtotal) : null;
   const isFreeDelivery = offerResult?.freeCollection === true;
-  const appliedDiscount = offerResult ? offerResult.discount : couponApplied ? 100 : 0;
+  const appliedDiscount = offerResult ? offerResult.discount : 0;
 
   // An offer stops applying if the order drops below its minimum (an add-on removed).
   useEffect(() => {
@@ -207,12 +203,6 @@ const PaymentScreen = () => {
   const total = baseTotal;
 
 
-  const applyCoupon = () => {
-    if (couponCode.toUpperCase() === "HEALTH100") {
-      setCouponApplied(true);
-      setAppliedOffer(null);
-    }
-  };
 
   const formatDate = (dateStr: string | null | undefined) => {
     if (!dateStr) return "Today";
@@ -467,7 +457,6 @@ const PaymentScreen = () => {
         discount,
         total,
         paymentMethod: selectedPaymentMethod.id,
-        couponCode: couponApplied && !appliedOffer ? "HEALTH100" : null,
         // The server checks the offer and works out the discount itself.
         offerId: appliedOffer?.id ?? null,
         // Keep the patient name clean — the collection address travels to the
@@ -496,7 +485,6 @@ const PaymentScreen = () => {
             ...paymentState,
             cartItems,
             subtotal: effectiveSubtotal,
-            couponApplied,
             discount,
             collectionFee,
             platformFee,
@@ -749,8 +737,6 @@ const PaymentScreen = () => {
                             setAppliedOffer(null);
                           } else {
                             setAppliedOffer(offer);
-                            setCouponCode("");
-                            setCouponApplied(false);
                           }
                         }}
                       >
@@ -764,32 +750,6 @@ const PaymentScreen = () => {
           </motion.div>
         )}
 
-        {/* Offers & Benefits */}
-        <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4 mb-4">
-          <h3 className="text-base font-bold text-foreground mb-3 tracking-tight">Offers &amp; Benefits</h3>
-          <div className="rounded-xl bg-success/5 border border-success/20 p-2.5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-success/10 flex items-center justify-center shrink-0">
-                <Tag className="w-4 h-4 text-success" />
-              </div>
-              <Input
-                placeholder="Apply Coupon Code"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                className="flex-1 bg-transparent border-0 shadow-none h-9 text-sm font-medium focus-visible:ring-0"
-                disabled={couponApplied}
-              />
-              <Button variant="softSuccess" size="sm" onClick={applyCoupon} disabled={couponApplied} className="h-9 px-4 font-bold">
-                {couponApplied ? "Applied" : "Apply"}
-              </Button>
-            </div>
-            {couponApplied && (
-              <Badge variant="softSuccess" className="mt-2 ml-11">
-                HEALTH100 applied — ₹100 off
-              </Badge>
-            )}
-          </div>
-        </motion.div>
 
         {/* Bill Summary */}
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0}} className="bg-card rounded-2xl border border-border/70 shadow-sm p-4">
@@ -823,7 +783,7 @@ const PaymentScreen = () => {
             </div>
             {discount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{appliedOffer ? "Offer Discount" : "Coupon Discount"}</span>
+                <span className="text-muted-foreground">Offer Discount</span>
                 <span className="text-success font-bold tabular-nums">- ₹ {discount}.00</span>
               </div>
             )}

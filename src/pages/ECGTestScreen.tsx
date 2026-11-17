@@ -5,14 +5,13 @@ import {
   ArrowLeft, Activity, MapPin, Calendar, Clock, User, CheckCircle2,
   ChevronRight, AlertTriangle, Search, CreditCard, Building2, Star, Loader2,
   Users, Plus, Heart, CheckCircle, Home, Package, Sparkles, Phone, Beaker, Receipt,
-  Tag, ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope, Lock, HeartPulse
+  ChevronDown, ChevronUp, Wallet, Banknote, Shield, Stethoscope, Lock, HeartPulse
 } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useAfterTransition } from "@/hooks/useAfterTransition";
@@ -163,8 +162,6 @@ const ECGTestScreen = () => {
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
 
-  const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
   const [appointmentOpen, setAppointmentOpen] = useState(true);
   const [orderOpen, setOrderOpen] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState({ id: "cod", name: "Pay after ECG test" });
@@ -397,19 +394,9 @@ const ECGTestScreen = () => {
   };
 
   const rawPrice = selectedLab?.home_ecg_price ?? 599;
-  const discount = couponApplied ? 100 : 0;
   const platformFee = usePlatformFeeFlat();
-  const price = Math.max(0, rawPrice - discount) + platformFee;
+  const price = rawPrice + platformFee;
 
-  const applyCoupon = () => {
-    const code = couponCode.trim().toUpperCase();
-    if (code === "HEALTH100" || code === "ECG100") {
-      setCouponApplied(true);
-      toast.success("Coupon applied! ₹100 off");
-    } else {
-      toast.error("Invalid coupon code. Try ECG100");
-    }
-  };
 
   const getIsoDate = (dateStr: string) => {
     const today = new Date();
@@ -504,11 +491,10 @@ const ECGTestScreen = () => {
           scheduledDate: getIsoDate(appointment.date),
           scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
-          discount,
+          discount: 0,
           platformFee,
           total: price,
           paymentMethod: selectedPaymentMethod.id || "cod",
-          couponCode: couponApplied ? "ECG100" : null,
           patientName: patient.name || "Patient",
           patientAge: validAge,
           patientGender: patient.gender || "Other",
@@ -540,8 +526,7 @@ const ECGTestScreen = () => {
           scheduledDate: getIsoDate(appointment.date),
           scheduledTimeSlot: appointment.timeSlot || FIXED_COLLECTION_SLOTS[0].display,
           subtotal: rawPrice,
-          couponApplied,
-          discount,
+          discount: 0,
           platformFee,
           total: price,
           selectedPayment: selectedPaymentMethod.id,
@@ -1000,33 +985,6 @@ const ECGTestScreen = () => {
                 )}
               </div>
 
-              {/* Offers & Benefits */}
-              <div className="bg-card border border-border/50 rounded-3xl p-4 mb-4 shadow-sm">
-                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Tag className="w-3.5 h-3.5 text-rose-600" /> Offers & Benefits
-                </h3>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Apply Coupon (e.g. HEALTH100)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    disabled={couponApplied}
-                    className="h-11 bg-muted/50 rounded-xl text-xs font-semibold uppercase tracking-wider"
-                  />
-                  <Button
-                    onClick={applyCoupon}
-                    disabled={couponApplied || !couponCode.trim()}
-                    className="h-11 px-4 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white"
-                  >
-                    {couponApplied ? "Applied" : "Apply"}
-                  </Button>
-                </div>
-                {couponApplied && (
-                  <Badge variant="softSuccess" className="mt-2.5 text-[11px] font-bold">
-                    HEALTH100 applied — ₹100 off
-                  </Badge>
-                )}
-              </div>
 
               {/* Bill Summary */}
               <div className="bg-card border border-border/50 rounded-3xl p-5 shadow-sm space-y-3">
@@ -1043,12 +1001,6 @@ const ECGTestScreen = () => {
                   <span className="text-muted-foreground">Platform Fee</span>
                   <span className="text-foreground font-bold">₹{platformFee}.00</span>
                 </div>
-                {couponApplied && (
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-muted-foreground">Coupon Discount</span>
-                    <span className="text-emerald-600 font-bold">- ₹{discount}.00</span>
-                  </div>
-                )}
                 <div className="pt-3 border-t border-border/40 flex justify-between items-center">
                   <span className="text-sm font-black text-foreground">Payable Amount</span>
                   <span className="text-lg font-black text-rose-600">₹{price}.00</span>
@@ -1123,7 +1075,7 @@ const ECGTestScreen = () => {
               <div className="bg-card border border-border/50 rounded-3xl p-5 mb-6 shadow-sm">
                 <h3 className="text-[13px] font-black uppercase tracking-widest text-muted-foreground mb-4">Payment Details</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{rawPrice - discount}</span></div>
+                  <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Visit Charge</span><span className="font-bold text-foreground">₹{rawPrice}</span></div>
                   <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Platform Fee</span><span className="font-bold text-foreground">₹{platformFee}</span></div>
                   <div className="flex justify-between"><span className="font-semibold text-muted-foreground">Convenience Fee</span><span className="font-bold text-success">Free</span></div>
                   <div className="flex justify-between pt-3 border-t border-border/40"><span className="font-black text-foreground">Total</span><span className="font-black text-rose-600 text-lg">₹{price}</span></div>

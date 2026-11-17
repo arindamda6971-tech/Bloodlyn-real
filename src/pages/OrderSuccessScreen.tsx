@@ -30,7 +30,6 @@ interface BookingState {
   scheduledDate: string | null;
   scheduledTimeSlot: string | null;
   subtotal: number;
-  couponApplied?: boolean;
   discount?: number;
   platformFee?: number;
   collectionFee?: number;
