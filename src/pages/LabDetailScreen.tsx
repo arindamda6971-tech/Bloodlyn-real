@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -260,6 +260,8 @@ const LabDetailScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
+  // Once the patient picks a tab, the page stops choosing one for them.
+  const tabPicked = useRef(false);
   const [serviceError, setServiceError] = useState<{title: string, message: string} | null>(null);
   
   const cached = labId ? globalLabCache.get(labId) : null;
@@ -536,9 +538,12 @@ const LabDetailScreen = () => {
   const visibleTabs = TABS.filter((tab) => tabCounts[tab.key] > 0);
   useEffect(() => {
     const counts: Record<TabKey, number> = { general: generalTestsCount, specialized: specializedTestsCount, packages: packageCount };
-    if (counts[activeTab] > 0) return;
+    // Packages often load before tests: open on the first tab with something
+    // in it, Tests first, and move back to Tests when they arrive, unless the
+    // patient already chose a tab.
     const firstWithTests = TABS.find((tab) => counts[tab.key] > 0);
-    if (firstWithTests) setActiveTab(firstWithTests.key);
+    if (!firstWithTests) return;
+    if (tabPicked.current ? counts[activeTab] === 0 : activeTab !== firstWithTests.key) setActiveTab(firstWithTests.key);
   }, [activeTab, generalTestsCount, specializedTestsCount, packageCount]);
 
   const city = labFromDb?.city?.trim() ?? "";
@@ -695,6 +700,7 @@ const LabDetailScreen = () => {
               type="button"
               onClick={() => {
                 // Every test the lab offers: labs name their categories freely, so no category filter.
+                tabPicked.current = true;
                 setActiveTab(tabCounts.general > 0 || tabCounts.specialized === 0 ? "general" : "specialized");
                 setSelectedCategory(null);
                 setSearchQuery("");
@@ -850,6 +856,7 @@ const LabDetailScreen = () => {
                 <button
                   key={tab.key}
                   onClick={() => {
+                    tabPicked.current = true;
                     setActiveTab(tab.key);
                     setSelectedCategory(null);
                   }}
