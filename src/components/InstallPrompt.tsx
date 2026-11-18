@@ -2,10 +2,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Download, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "react-router-dom";
 import { usePWA } from "@/hooks/usePWA";
 
 const InstallPrompt = () => {
   const { isInstallable, isInstalled, isIOS, promptInstall } = usePWA();
+  // Collection partners open /c/ links from WhatsApp; they don't need the patient app.
+  const onCollectionLink = useLocation().pathname.startsWith("/c/");
   const [isDismissed, setIsDismissed] = useState(() => {
     return localStorage.getItem("pwa-install-dismissed") === "true";
   });
@@ -23,7 +26,7 @@ const InstallPrompt = () => {
   };
 
   // Don't show if already installed, dismissed, or not installable (and not iOS)
-  if (isInstalled || isDismissed || (!isInstallable && !isIOS)) {
+  if (onCollectionLink || isInstalled || isDismissed || (!isInstallable && !isIOS)) {
     return null;
   }
 

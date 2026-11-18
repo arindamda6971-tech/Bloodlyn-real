@@ -67,3 +67,7 @@ verify_jwt = false
 [functions.update-call-status]
 verify_jwt = false
 # Called by the partner portal's forward-call-status with the shared webhook secret, not a user JWT
+
+[functions.collection-call]
+verify_jwt = false
+# The collection partner opens the link without an account; patients are checked with Supabase Auth.
