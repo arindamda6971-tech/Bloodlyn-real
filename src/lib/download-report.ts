@@ -67,8 +67,8 @@ export type DownloadResult = { ok: boolean; message: string };
 /** Folder inside the phone's Documents where reports are saved. */
 export const REPORTS_FOLDER = "BloodLyn Reports";
 
-/** Phone notification once a report is saved, like other apps' "Download complete". */
-const notifyDownloaded = async (filename: string) => {
+/** Phone notification once a file is saved, like other apps' "Download complete". */
+const notifyDownloaded = async (filename: string, folder: string, title: string, route: string) => {
   try {
     const { LocalNotifications } = await import("@capacitor/local-notifications");
     let perms = await LocalNotifications.checkPermissions();
@@ -80,20 +80,55 @@ const notifyDownloaded = async (filename: string) => {
       notifications: [
         {
           id: Math.floor(Math.random() * 1_000_000),
-          title: "Your report is downloaded",
-          body: `${filename} is saved in Documents › ${REPORTS_FOLDER}.`,
-          largeBody: `${filename} is saved in Documents › ${REPORTS_FOLDER}. Open it from your Files app.`,
+          title,
+          body: `${filename} is saved in Documents › ${folder}.`,
+          largeBody: `${filename} is saved in Documents › ${folder}. Open it from your Files app.`,
           summaryText: "BloodLyn",
           smallIcon: "ic_stat_bloodlyn",
           largeIcon: "splash_icon",
           iconColor: "#0474DC",
-          extra: { route: "/reports" },
+          extra: { route },
         },
       ],
     });
   } catch (e) {
     // The in-app message still confirms the download.
     console.warn("Download notification failed:", e);
+  }
+};
+
+/**
+ * Save a file made in the app (a prescription PDF, for instance) to the device.
+ * On the phone it goes to Documents/<folder> with a "downloaded" notification;
+ * in a browser it's a normal download.
+ */
+export const saveFileToDevice = async (
+  blob: Blob,
+  filename: string,
+  options: { folder: string; title: string; route: string; what: string },
+): Promise<DownloadResult> => {
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { Filesystem, Directory } = await import("@capacitor/filesystem");
+      await Filesystem.writeFile({
+        path: `${options.folder}/${filename}`,
+        data: await blobToBase64(blob),
+        directory: Directory.Documents,
+        recursive: true,
+      });
+      void notifyDownloaded(filename, options.folder, options.title, options.route);
+      return { ok: true, message: `${options.what} downloaded to Documents › ${options.folder}` };
+    } catch (e) {
+      console.error("Native save failed:", e);
+      return { ok: false, message: `Could not save the ${options.what.toLowerCase()} on this phone. Please try again.` };
+    }
+  }
+  try {
+    saveBlobInBrowser(blob, filename);
+    return { ok: true, message: `${options.what} downloaded` };
+  } catch (e) {
+    console.error("Browser save failed:", e);
+    return { ok: false, message: `Could not save the ${options.what.toLowerCase()} on this device.` };
   }
 };
 
@@ -146,7 +181,7 @@ export const downloadReport = async (
         directory: Directory.Documents,
         recursive: true,
       });
-      void notifyDownloaded(filename);
+      void notifyDownloaded(filename, REPORTS_FOLDER, "Your report is downloaded", "/reports");
       return { ok: true, message: `Report downloaded to Documents › ${REPORTS_FOLDER}` };
     } catch (e) {
       console.error("Native save failed:", e);

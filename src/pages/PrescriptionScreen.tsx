@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarClock, FlaskConical, ShoppingCart } from "lucide-react";
+import { CalendarClock, Download, FlaskConical, Loader2, ShoppingCart } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,10 @@ import { simplifyTestName } from "@/utils/simplify-test-name";
 import { labCartItems, type PrescriptionLabOption } from "@/lib/prescriptionLabs";
 import { PrescriptionLabSheet } from "@/components/prescriptions/PrescriptionLabSheet";
 import { toast } from "sonner";
+import { saveFileToDevice } from "@/lib/download-report";
+
+/** Folder inside the phone's Documents where prescriptions are saved. */
+const PRESCRIPTIONS_FOLDER = "BloodLyn Prescriptions";
 
 /** One part of the prescription sheet: a small heading and what the doctor wrote. */
 function SheetPart({ title, children }: { title: string; children: React.ReactNode }) {
@@ -54,6 +58,7 @@ const PrescriptionScreen = () => {
   const [labSheetOpen, setLabSheetOpen] = useState(false);
   /** The lab the patient picked, waiting for them to agree to replace their cart. */
   const [pendingLab, setPendingLab] = useState<PrescriptionLabOption | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const order = data?.order;
   const rx = useMemo(() => prescriptionOf(order), [order]);
   // A prescription sent before registrations were included: take it from the doctor's profile.
@@ -110,9 +115,53 @@ const PrescriptionScreen = () => {
     }
   };
 
+  /** The prescription as a PDF, saved to the phone (Documents › BloodLyn Prescriptions). */
+  const download = async () => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      const { buildPrescriptionPdf, prescriptionFileName } = await import("@/lib/prescription-pdf");
+      const pdf = await buildPrescriptionPdf(rx, {
+        doctorTitle,
+        registration,
+        issued,
+        reference: order.order_number || `#${order.id.slice(0, 8)}`,
+        followUpOn,
+        testName: simplifyTestName,
+      });
+      const result = await saveFileToDevice(pdf, prescriptionFileName(doctorTitle, issued), {
+        folder: PRESCRIPTIONS_FOLDER,
+        title: "Your prescription is downloaded",
+        route: `/prescription/${order.id}`,
+        what: "Prescription",
+      });
+      if (result.ok) toast.success(result.message);
+      else toast.error(result.message);
+    } catch (e) {
+      console.error("Prescription PDF failed:", e);
+      toast.error("Couldn't make the PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <MobileLayout showNav={false}>
-      <ScreenHeader title="Prescription" />
+      <ScreenHeader
+        title="Prescription"
+        rightAction={
+          <button
+            type="button"
+            onClick={download}
+            disabled={downloading}
+            aria-label="Download prescription as PDF"
+            title="Download PDF"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-primary transition-colors hover:bg-accent disabled:opacity-60"
+          >
+            {downloading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Download className="h-5 w-5" />}
+          </button>
+        }
+      />
 
       <div className="px-3 pb-28 pt-3">
         {/* A prescription sheet, laid out like a doctor's printed pad. It stays paper-white in dark mode too. */}
