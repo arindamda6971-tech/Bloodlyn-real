@@ -38,7 +38,16 @@ export function prescriptionOf(order: { prescription?: unknown } | null | undefi
     tests,
     advice: str(p.advice),
     follow_up: str(p.follow_up),
+    // YYYY-MM-DD when the doctor picked a follow-up date.
+    follow_up_on: /^\d{4}-\d{2}-\d{2}$/.test(str(p.follow_up_on)) ? str(p.follow_up_on) : "",
   };
+}
+
+/** The follow-up date as "Mon, 25 Nov", or "" when there is none. */
+export function followUpDateLabel(rx: Pick<Prescription, "follow_up_on">): string {
+  if (!rx.follow_up_on) return "";
+  const d = new Date(`${rx.follow_up_on}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 }
 
 /** "1 tablet · Three times a day · 5 days" */

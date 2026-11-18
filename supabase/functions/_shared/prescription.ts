@@ -36,9 +36,12 @@ export interface Prescription {
   tests: PrescriptionTest[];
   advice: string;
   follow_up: string;
+  /** The follow-up date the doctor picked, YYYY-MM-DD, or "" for none. */
+  follow_up_on: string;
 }
 
 const MAX_ITEMS = 30;
+const DATE_RE = new RegExp("^[0-9]{4}-[0-9]{2}-[0-9]{2}$");
 
 const text = (value: unknown, max: number): string =>
   typeof value === "string" ? value.replace(/\s+\n/g, "\n").trim().slice(0, max) : "";
@@ -91,6 +94,7 @@ export function cleanPrescription(input: unknown, now = new Date()): Prescriptio
     tests,
     advice: text(raw.advice, 2000),
     follow_up: text(raw.follow_up, 200),
+    follow_up_on: typeof raw.follow_up_on === "string" && DATE_RE.test(raw.follow_up_on) ? raw.follow_up_on : "",
   };
 
   const hasContent = prescription.diagnosis || prescription.notes || medicines.length || tests.length || prescription.advice;

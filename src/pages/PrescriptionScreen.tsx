@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { FlaskConical, ShoppingCart } from "lucide-react";
+import { CalendarClock, FlaskConical, ShoppingCart } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { useDoctor } from "@/hooks/useDoctors";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo } from "@/lib/doctor-orders";
-import { medicineLine, prescriptionOf, testTitle } from "@/lib/prescription";
+import { followUpDateLabel, medicineLine, prescriptionOf, testTitle } from "@/lib/prescription";
 import { simplifyTestName } from "@/utils/simplify-test-name";
 import { labCartItems, type PrescriptionLabOption } from "@/lib/prescriptionLabs";
 import { PrescriptionLabSheet } from "@/components/prescriptions/PrescriptionLabSheet";
@@ -90,6 +90,7 @@ const PrescriptionScreen = () => {
   const doctorTitle = doctorName ? withDr(doctorName) : "Your doctor";
   const issued = rx.issued_at ? new Date(rx.issued_at) : new Date(order.created_at);
   const registration = rx.doctor_registration || registrationLine(directoryDoctor);
+  const followUpOn = followUpDateLabel(rx);
 
   /** The chosen lab's tests go in the cart with its prices; the cart goes on to the slot. */
   const bookFromLab = (option: PrescriptionLabOption) => {
@@ -203,9 +204,11 @@ const PrescriptionScreen = () => {
               </SheetPart>
             )}
 
-            {rx.follow_up && (
+            {(rx.follow_up || followUpOn) && (
               <SheetPart title="Follow-up">
-                <p className="text-[13px] font-semibold">{rx.follow_up}</p>
+                <p className="text-[13px] font-semibold">
+                  {[rx.follow_up, followUpOn && `on ${followUpOn}`].filter(Boolean).join(" · ")}
+                </p>
               </SheetPart>
             )}
 
@@ -226,6 +229,22 @@ const PrescriptionScreen = () => {
             </p>
           </footer>
         </article>
+
+        {/* The doctor asked to see the patient again: book the same doctor in one tap. */}
+        {(rx.follow_up || followUpOn) && order.vendor_id && (
+          <div className="mt-4 flex items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-4 dark:border-violet-900/50 dark:bg-violet-950/30">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
+              <CalendarClock className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-foreground">Follow-up {followUpOn ? `on ${followUpOn}` : "advised"}</p>
+              <p className="text-xs text-muted-foreground">Book {doctorTitle} again when it's time.</p>
+            </div>
+            <Button size="sm" variant="outline" className="shrink-0 rounded-xl font-bold" onClick={() => navigate(`/doctor/${order.vendor_id}`)}>
+              Book
+            </Button>
+          </div>
+        )}
 
         {rx.tests.length > 0 && (
           <p className="mt-3 px-1 text-center text-xs text-muted-foreground">
