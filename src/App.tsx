@@ -107,9 +107,7 @@ import PolicyDetailScreen from "./pages/PolicyDetailScreen";
 import TicketDetailScreen from "./pages/TicketDetailScreen";
 import TicketHistoryScreen from "./pages/TicketHistoryScreen";
 
-import { Suspense, lazy } from "react";
-// Opened by collection partners from WhatsApp, never inside the app: loaded only when visited.
-const CollectionLinkScreen = lazy(() => import("./pages/CollectionLinkScreen"));
+import { Suspense } from "react";
 
 
 const CapacitorInitializer = () => {
@@ -364,8 +362,6 @@ export const AnimatedRoutes = () => {
                 <Route path="/onboarding" element={<OnboardingScreen />} />
                 <Route path="/login" element={<LoginScreen />} />
                 <Route path="/install" element={<InstallScreen />} />
-                {/* A lab's collection partner, from the WhatsApp link: no login, the link is the key. */}
-                <Route path="/c/:token" element={<CollectionLinkScreen />} />
 
                 {/* Location Gate */}
                 <Route path="/location-check" element={<ProtectedRoute><LocationCheckScreen /></ProtectedRoute>} />

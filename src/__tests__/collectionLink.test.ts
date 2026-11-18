@@ -45,6 +45,14 @@ describe("collection link details", () => {
     expect(msg.trim().endsWith("https://bloodlyn.app/c/abc")).toBe(true);
     expect(msg).not.toContain("9876543210");
   });
+
+  it("still sends the details before the Partner Portal is online, without a call link", () => {
+    const msg = collectionMessage(details, null);
+    expect(msg).toContain("Patient: Pk");
+    expect(msg).toContain("To reach the patient, please call the lab.");
+    expect(msg).not.toContain("/c/");
+    expect(msg).not.toContain("9876543210");
+  });
 });
 
 describe("collection link token and life", () => {

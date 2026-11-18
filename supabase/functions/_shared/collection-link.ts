@@ -4,7 +4,8 @@
  *
  * KEEP IDENTICAL in partner-pro (supabase/functions/_shared/collection-link.ts) and
  * Bloodlyn-real (supabase/functions/_shared/collection-link.ts): the Partner Portal
- * creates links and writes the WhatsApp message, the BloodLyn app serves the page.
+ * creates links, writes the WhatsApp message and serves the page (/c/<token>); the
+ * BloodLyn project keeps the links and runs the call (collection-call).
  */
 
 /** What the page and the WhatsApp message show. No patient phone number, ever. */
@@ -107,9 +108,10 @@ export function prettyDay(date: string): string {
 /**
  * The WhatsApp message the lab sends its collection partner: the essentials at a
  * glance, then the link for the full page and the call. The patient's phone number
- * is never in it.
+ * is never in it. Without a link (the Partner Portal isn't online yet) the details
+ * still go, and the partner asks the lab to reach the patient.
  */
-export function collectionMessage(d: CollectionDetails, url: string): string {
+export function collectionMessage(d: CollectionDetails, url: string | null): string {
   const when = [prettyDay(d.date), d.slot].filter(Boolean).join(", ");
   const map = d.address ? `https://maps.google.com/?q=${encodeURIComponent(d.address)}` : "";
   return [
@@ -121,9 +123,9 @@ export function collectionMessage(d: CollectionDetails, url: string): string {
     d.address ? `Address: ${d.address}` : null,
     map ? `Map: ${map}` : null,
     "",
-    "*Call the patient from here* (their number stays private):",
+    url ? "*Call the patient from here* (their number stays private):" : "To reach the patient, please call the lab.",
     url,
   ]
-    .filter((line) => line !== null)
+    .filter((line) => line !== null && line !== undefined)
     .join("\n");
 }

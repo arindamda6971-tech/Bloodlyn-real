@@ -3,7 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * One voice call between a collection partner (the caller, on the link page) and a
- * patient (the callee, in the BloodLyn app). The sound goes phone to phone (WebRTC);
+ * patient (the callee, in the BloodLyn app).
+ *
+ * KEEP IN STEP with partner-pro src/lib/collectionCallSession.ts (the partner's page on
+ * the Partner Portal): only the Supabase client differs. The sound goes phone to phone (WebRTC);
  * the two phones swap the connection details over a Realtime channel named after the
  * call's secret room. Neither side learns the other's phone number.
  *
