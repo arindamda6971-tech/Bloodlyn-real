@@ -31,7 +31,7 @@ serve(async (req) => {
       return json({ error: 'Unauthorized' }, 401)
     }
 
-    const { order_id, call_status, order_status, meet_link } = await req.json()
+    const { order_id, call_status, order_status, meet_link, reason } = await req.json()
 
     if (!order_id || !call_status) {
       return json({ error: 'Missing required fields' }, 400)
@@ -70,7 +70,9 @@ serve(async (req) => {
     if (order_status === 'cancelled') {
       update.status = 'cancelled'
       update.cancelled_at = new Date().toISOString()
-      update.cancellation_reason = 'Cancelled by the doctor'
+      // "Cancelled by the doctor: <their reason>", which the patient's appointment shows.
+      const said = typeof reason === 'string' ? reason.replace(/\s+/g, ' ').trim().slice(0, 200) : ''
+      update.cancellation_reason = said ? `Cancelled by the doctor: ${said}` : 'Cancelled by the doctor'
     }
 
     // Update the order. A column from a migration that hasn't run yet is left out

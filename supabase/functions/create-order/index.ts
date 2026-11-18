@@ -767,6 +767,27 @@ Deno.serve(async (req) => {
                 { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
               );
             }
+
+            // The doctor's daily limit: once that many consultations are booked for the
+            // day (cancelled ones don't count), the doctor is full until tomorrow.
+            const dailyLimit = Number(match.dailyLimit);
+            if (Number.isInteger(dailyLimit) && dailyLimit > 0 && scheduledDate) {
+              const { count: bookedThatDay, error: countError } = await adminClient
+                .from("orders")
+                .select("id", { count: "exact", head: true })
+                .eq("vendor_id", doctorIdRaw)
+                .eq("scheduled_date", scheduledDate)
+                .neq("status", "cancelled");
+              if (!countError && (bookedThatDay ?? 0) >= dailyLimit) {
+                return new Response(
+                  JSON.stringify({
+                    error: "This doctor is fully booked for today. Please try another doctor or book tomorrow.",
+                    code: "doctor_fully_booked",
+                  }),
+                  { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+                );
+              }
+            }
           } else if (dirRes.status === 403) {
             // Partner explicitly rejected — surface uniformly to the client.
             return new Response(

@@ -28,6 +28,18 @@ Deno.serve(async (req) => {
     if (!parsed.success) return json({ error: "Invalid cancel request" }, 400);
 
     const admin = createClient(url, key);
+
+    // A consultation the doctor has already held (the call was ended) can't be
+    // cancelled afterwards: the patient has been seen.
+    const { data: current } = await admin
+      .from("orders")
+      .select("user_id, call_status")
+      .eq("id", parsed.data.orderId)
+      .maybeSingle();
+    if (current && current.user_id === auth.user.id && ["ended", "completed"].includes(String(current.call_status ?? ""))) {
+      return json({ error: "The doctor has already seen you, so this consultation can't be cancelled.", code: "already_consulted" }, 409);
+    }
+
     const { data: order, error } = await admin.rpc("cancel_order_by_customer", {
       _order_id: parsed.data.orderId, _user_id: auth.user.id, _reason: parsed.data.reason ?? "",
     }).single();

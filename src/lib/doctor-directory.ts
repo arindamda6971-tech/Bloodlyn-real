@@ -45,7 +45,10 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
             ? [String(d.pincode)]
             : [],
         gender: d.gender || "Any",
-        languages: d.languages || ["English", "Hindi"],
+        // Only languages the doctor gave; none is better than a guess.
+        languages: Array.isArray(d.languages) ? d.languages.map(String) : [],
+        // The doctor's daily limit is reached: no more bookings today.
+        fullToday: d.fullToday === true,
       } as Doctor;
     })
     .filter((d) => d.available);

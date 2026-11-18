@@ -192,7 +192,7 @@ export function IncomingCallListener() {
           animate={{ opacity: 1, transform: "translateY(0px)", transitionEnd: { transform: "none" } }}
           transition={{ transform: { type: "spring", stiffness: 500, damping: 25, restSpeed: 10 } }}
           exit={{ opacity: 0, transform: "translateY(-50px)" }}
-          className="fixed inset-x-4 top-12 z-[100] bg-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-800"
+          className="fixed inset-x-4 top-12 z-[100] mx-auto max-w-[400px] bg-gray-900 rounded-3xl p-6 shadow-2xl border border-gray-800"
         >
           <div className="flex flex-col items-center">
             <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 animate-pulse">
@@ -215,7 +215,7 @@ export function IncomingCallListener() {
 
               <button
                 onClick={handleJoin}
-                className="h-14 flex-1 max-w-[220px] rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center gap-2 px-5 text-white font-bold transition-colors shadow-lg animate-bounce"
+                className="h-14 flex-1 max-w-[240px] whitespace-nowrap rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center gap-2 px-4 text-[15px] text-white font-bold transition-colors shadow-lg shadow-emerald-500/30 ring-4 ring-emerald-400/30"
               >
                 {incomingCall.audioOnly ? <Phone className="w-5 h-5" /> : <Video className="w-5 h-5" />}
                 {incomingCall.meetLink ? "Join on Google Meet" : "Open appointment"}

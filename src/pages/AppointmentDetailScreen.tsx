@@ -133,13 +133,19 @@ const AppointmentDetailScreen = () => {
   }
 
   const status = consultStatus(order.status, order.scheduled_date);
-  const statusInfo = STATUS[status];
+  // Seen by the doctor, prescription still to come: no longer "Upcoming".
+  const statusInfo =
+    status === "upcoming" && callEnded(order)
+      ? { label: "Consulted", tone: "bg-success/15 text-success" }
+      : STATUS[status];
   const online = info.mode !== "clinic";
   const ModeIcon = info.mode === "video" ? Video : info.mode === "audio" ? Phone : Building2;
   const modeLabel = info.mode === "video" ? "Video consultation" : info.mode === "audio" ? "Audio consultation" : "Clinic visit";
   const patient = info.patientName || order.patient_name || order.family_members?.full_name || "Self";
   const notes = (order.special_instructions || "").match(/Reason:\s*([^|]+)/)?.[1]?.trim() ?? "";
   const cancelledBy = /doctor/i.test(order.cancellation_reason || "") ? "the doctor" : /patient/i.test(order.cancellation_reason || "") ? "you" : null;
+  // "Cancelled by the doctor: I'm not available today" → the doctor's own words.
+  const doctorReason = ((order.cancellation_reason || "").match(/^Cancelled by the doctor:\s*(.+)$/i)?.[1] ?? "").replace(/[.\s]+$/, "");
   const link = meetLinkOf(order);
   const ended = callEnded(order);
   const rx = prescriptionOf(order);
@@ -153,7 +159,7 @@ const AppointmentDetailScreen = () => {
   const headline =
     status === "cancelled"
       ? cancelledBy
-        ? `This appointment was cancelled by ${cancelledBy}.`
+        ? `This appointment was cancelled by ${cancelledBy}.${doctorReason ? ` Reason: ${doctorReason}.` : ""} Nothing is charged.`
         : "This appointment was cancelled."
       : status === "missed"
         ? online
@@ -169,7 +175,7 @@ const AppointmentDetailScreen = () => {
               ? "The doctor has ended the consultation. Your prescription will appear here as soon as they send it."
               : link
                 ? `${doctor} is waiting for you on Google Meet.`
-                : `${doctor} will call ${isToday ? "as soon as they can" : dayText}. Your phone rings in BloodLyn, then you join on Google Meet.`;
+                : `${doctor} will call you shortly. When they're online, your phone rings in BloodLyn and you join on Google Meet.`;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["order", id] });
@@ -219,7 +225,7 @@ const AppointmentDetailScreen = () => {
               <p className="text-base font-black leading-tight">Booking confirmed</p>
               <p className="mt-0.5 text-[13px] leading-snug text-white/90">
                 {online
-                  ? `${doctor} will call ${patient === "Self" ? "you" : patient} ${isToday ? "today" : dayText}. Nothing to pay now.`
+                  ? `${doctor} will call ${patient === "Self" ? "you" : patient} shortly. Nothing to pay now.`
                   : `See ${doctor} ${dayText}. Pay the fee at the clinic.`}
               </p>
             </div>
@@ -390,7 +396,8 @@ const AppointmentDetailScreen = () => {
           </p>
         </section>
 
-        {(status === "upcoming" || status === "missed") && !link && (
+        {/* Once the doctor has seen the patient, the booking can't be cancelled. */}
+        {(status === "upcoming" || status === "missed") && !link && !ended && (
           <Button
             variant="outline"
             className="h-11 w-full rounded-2xl border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"

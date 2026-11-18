@@ -9,6 +9,8 @@ export interface Doctor {
   rating: number;
   reviews: number;
   available: boolean;
+  /** The doctor's daily limit is reached, so nobody can book them until tomorrow. */
+  fullToday?: boolean;
   nextSlot: string;
   /** 0 means the doctor doesn't offer that mode. */
   videoCallFee: number;

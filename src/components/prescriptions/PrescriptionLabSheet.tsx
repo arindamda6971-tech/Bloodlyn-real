@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { labServesPincode, useUserPincode } from "@/hooks/useUserPincode";
 import { formatRupees } from "@/lib/health-packages";
 import { testTitle, type PrescriptionTest } from "@/lib/prescription";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import {
   labOptionsForPrescription,
   type PrescriptionLabOption,
@@ -134,7 +135,7 @@ export function PrescriptionLabSheet({ open, onOpenChange, tests, onChoose }: Pr
                       {missing.map((t) => (
                         <li key={`missing-${t.id ?? t.name}`} className="flex items-start gap-1.5 text-xs text-muted-foreground">
                           <X className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                          <span className="line-clamp-2">{testTitle(t)} · not at this lab</span>
+                          <span className="line-clamp-2">{simplifyTestName(testTitle(t))} · not at this lab</span>
                         </li>
                       ))}
                     </ul>

@@ -21,6 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo } from "@/lib/doctor-orders";
 import { medicineLine, prescriptionOf, testTitle } from "@/lib/prescription";
+import { simplifyTestName } from "@/utils/simplify-test-name";
 import { labCartItems, type PrescriptionLabOption } from "@/lib/prescriptionLabs";
 import { PrescriptionLabSheet } from "@/components/prescriptions/PrescriptionLabSheet";
 import { toast } from "sonner";
@@ -148,7 +149,7 @@ const PrescriptionScreen = () => {
               {rx.tests.map((t, i) => (
                 <li key={`${t.id ?? t.name}-${i}`} className="flex items-start gap-2 text-sm text-foreground">
                   <FlaskConical className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>{testTitle(t)}</span>
+                  <span>{simplifyTestName(testTitle(t))}</span>
                 </li>
               ))}
             </ul>

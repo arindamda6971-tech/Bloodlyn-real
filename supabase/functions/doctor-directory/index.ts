@@ -19,6 +19,40 @@ const PARTNER_URL =
 
 type Rating = { rating: number; reviews: number };
 
+/** India's date today, YYYY-MM-DD: doctor bookings are for the day they're made. */
+const indiaToday = () => new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+
+/**
+ * Today's open bookings for each doctor who has a daily limit, so the list can say
+ * "Fully booked today". create-order applies the same count when booking.
+ */
+// deno-lint-ignore no-explicit-any
+async function bookedToday(doctors: any[]): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  const ids = doctors
+    .filter((d) => Number(d.dailyLimit) > 0)
+    .map((d) => String(d.id ?? d.user_id ?? d.doctor_id));
+  if (ids.length === 0) return counts;
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !key) return counts;
+    const { data, error } = await createClient(url, key)
+      .from("orders")
+      .select("vendor_id")
+      .in("vendor_id", ids)
+      .eq("scheduled_date", indiaToday())
+      .neq("status", "cancelled");
+    if (error) throw error;
+    for (const row of (data ?? []) as { vendor_id: string }[]) {
+      counts.set(String(row.vendor_id), (counts.get(String(row.vendor_id)) ?? 0) + 1);
+    }
+  } catch (err) {
+    console.warn("Today's doctor bookings unavailable (no one is shown as full):", err);
+  }
+  return counts;
+}
+
 // Patients' ratings of finished consultations live in this project (on their orders).
 // A doctor nobody has rated yet shows no rating; the list never makes one up.
 async function consultRatings(): Promise<Map<string, Rating>> {
@@ -125,9 +159,14 @@ Deno.serve(async (req) => {
           : null;
 
       if (list) {
-        const filtered = list.filter(isApprovedDoctor).map((d: any) => {
-          const rated = ratings.get(String(d.id ?? d.user_id ?? d.doctor_id));
-          return rated ? { ...d, rating: rated.rating, reviews: rated.reviews } : d;
+        const approved = list.filter(isApprovedDoctor);
+        const booked = await bookedToday(approved);
+        const filtered = approved.map((d: any) => {
+          const id = String(d.id ?? d.user_id ?? d.doctor_id);
+          const rated = ratings.get(id);
+          const limit = Number(d.dailyLimit);
+          const fullToday = Number.isInteger(limit) && limit > 0 && (booked.get(id) ?? 0) >= limit;
+          return { ...d, ...(rated ? { rating: rated.rating, reviews: rated.reviews } : {}), fullToday };
         });
         const payload = Array.isArray(parsed) ? filtered : { ...parsed, doctors: filtered };
         return new Response(JSON.stringify(payload), {

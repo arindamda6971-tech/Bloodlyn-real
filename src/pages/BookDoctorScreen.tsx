@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Clock, Heart, Loader2, Plus, ShieldCheck, User, Wallet, Zap } from "lucide-react";
+import { ChevronDown, Heart, Loader2, Plus, ShieldCheck, User, Wallet, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import MobileLayout from "@/components/layout/MobileLayout";
@@ -44,9 +44,9 @@ const BookDoctorScreen = () => {
   const self = useSelfPatient();
   const { members, addMember } = useFamilyMembers();
 
-  const days = useMemo(() => bookingDays(), []);
+  // A consultation is always for today: the doctor calls back as soon as they can.
+  const date = useMemo(() => bookingDays()[0].date, []);
   const [type, setType] = useState<BookDoctorState["type"]>(state?.type ?? "video");
-  const [date, setDate] = useState(days[0].date);
   const [who, setWho] = useState<string>("self");
   const [addingMember, setAddingMember] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
@@ -69,9 +69,8 @@ const BookDoctorScreen = () => {
   const fee = feeOf(doctor, type);
   const specialty = specialtyByKey(state.specialty) ?? specialtyOf(doctor);
   const suggestions = problemsFor(state.specialty, doctor);
-  const chosenDay = days.find((d) => d.date === date)!;
-  const isToday = date === days[0].date;
-  const dayText = isToday ? "today" : chosenDay.top === "Tomorrow" ? "tomorrow" : `${chosenDay.top}, ${chosenDay.day} ${chosenDay.month}`;
+  const isToday = true;
+  const dayText = "today";
 
   const selfPatient: PatientDetails = state.patient ?? self ?? { name: "Me", age: "", gender: "", phone: "" };
   const member = who === "self" ? null : members.find((m) => m.id === who) ?? null;
@@ -79,9 +78,7 @@ const BookDoctorScreen = () => {
     ? { name: member.fullName, age: member.age, gender: member.gender, phone: member.phone }
     : selfPatient;
 
-  const whatHappens = isToday
-      ? "The doctor will ring you in BloodLyn as soon as they can, and you'll join on Google Meet."
-      : `The doctor will ring you in BloodLyn ${dayText}, and you'll join on Google Meet.`;
+  const whatHappens = `${doctorName(doctor.name)} will call you shortly. When they're online, your phone rings in BloodLyn and you join on Google Meet.`;
 
   const toggleProblem = (label: string) =>
     setProblems((list) => (list.includes(label) ? list.filter((p) => p !== label) : list.length < 5 ? [...list, label] : list));
@@ -243,39 +240,10 @@ const BookDoctorScreen = () => {
           )}
         </section>
 
-        {/* Day */}
-        <section>
-          <h3 className="mb-2.5 text-sm font-black text-foreground">When?</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {days.map((d, i) => {
-              const active = d.date === date;
-              return (
-                <button
-                  key={d.date}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setDate(d.date)}
-                  className={`rounded-2xl border px-2 py-3 text-center transition-colors ${
-                    active ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/25" : "border-border/60 bg-card text-foreground"
-                  }`}
-                >
-                  <p className="text-sm font-black leading-tight">{d.top}</p>
-                  <p className={`mt-0.5 text-[11px] font-semibold ${active ? "text-primary-foreground/90" : "text-muted-foreground"}`}>
-                    {d.day} {d.month}
-                  </p>
-                  {i === 0 && (
-                    <p className={`mt-1 inline-flex items-center gap-0.5 text-[10px] font-bold ${active ? "text-primary-foreground" : "text-emerald-600"}`}>
-                      <Zap className="h-3 w-3" /> Quick
-                    </p>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 flex items-start gap-2 rounded-2xl border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs leading-snug text-foreground">
-            <Clock className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" /> {whatHappens}
-          </p>
-        </section>
+        {/* No day or time to pick: the doctor calls as soon as they can. */}
+        <p className="flex items-start gap-2 rounded-2xl border border-sky-500/20 bg-sky-500/5 px-3 py-2.5 text-xs leading-snug text-foreground">
+          <Zap className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" /> {whatHappens}
+        </p>
 
         {/* Problem */}
         <section>

@@ -168,8 +168,8 @@ const DoctorProfileScreen = () => {
             <p className="truncate text-[11px] font-semibold text-muted-foreground">{MODES[mode].label}</p>
             <p className="text-lg font-black tabular-nums text-foreground">₹{fee}</p>
           </div>
-          <Button className="h-12 rounded-2xl px-6 text-[15px] font-bold" onClick={book}>
-            Book consultation
+          <Button className="h-12 rounded-2xl px-6 text-[15px] font-bold" onClick={book} disabled={doctor.fullToday}>
+            {doctor.fullToday ? "Fully booked today" : "Book consultation"}
           </Button>
         </div>
       </div>

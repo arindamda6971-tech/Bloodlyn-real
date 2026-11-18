@@ -58,11 +58,12 @@ describe("Book doctor screen", () => {
     invoke.mockResolvedValue({ data: { orderId: "order-9" }, error: null });
   });
 
-  it("offers only today, tomorrow and the day after, with no times", () => {
+  it("has no day or time to pick: the doctor calls shortly", () => {
     renderScreen();
-    expect(screen.getByText("Today")).toBeTruthy();
-    expect(screen.getByText("Tomorrow")).toBeTruthy();
+    expect(screen.queryByText("When?")).toBeNull();
+    expect(screen.queryByText("Tomorrow")).toBeNull();
     expect(screen.getAllByRole("button").filter((b) => /AM|PM/.test(b.textContent || ""))).toHaveLength(0);
+    expect(screen.getByText(/will call you shortly/)).toBeTruthy();
   });
 
   it("books today straight away, as soon as possible, with no lab id", async () => {
@@ -77,12 +78,12 @@ describe("Book doctor screen", () => {
     expect(body.reason).toBeUndefined();
   });
 
-  it("books a later day for any time that day", async () => {
+  it("always books for today", async () => {
     renderScreen();
-    fireEvent.click(screen.getByText("Tomorrow"));
     fireEvent.click(screen.getByText("Confirm booking"));
     await screen.findByText("appointment page");
-    expect(sentBody().scheduledTimeSlot).toBe("Any time that day");
+    const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+    expect(sentBody().scheduledDate).toBe(today);
   });
 
   const sentKey = (call: number) =>

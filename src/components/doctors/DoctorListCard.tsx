@@ -49,13 +49,19 @@ export function DoctorListCard({ doctor, onOpen, onBook }: Props) {
             </span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onBook}
-          className="h-11 shrink-0 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-transform active:scale-[0.97]"
-        >
-          Book now
-        </button>
+        {doctor.fullToday ? (
+          <span className="shrink-0 rounded-2xl bg-muted px-4 py-3 text-xs font-bold text-muted-foreground">
+            Fully booked today
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={onBook}
+            className="h-11 shrink-0 rounded-2xl bg-primary px-5 text-sm font-bold text-primary-foreground shadow-sm shadow-primary/25 transition-transform active:scale-[0.97]"
+          >
+            Book now
+          </button>
+        )}
       </div>
     </article>
   );
