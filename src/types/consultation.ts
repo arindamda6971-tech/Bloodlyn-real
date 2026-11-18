@@ -11,6 +11,9 @@ export interface Doctor {
   available: boolean;
   /** The doctor's daily limit is reached, so nobody can book them until tomorrow. */
   fullToday?: boolean;
+  /** Medical council registration, printed on the doctor's prescriptions. */
+  registrationNumber?: string;
+  medicalCouncil?: string;
   nextSlot: string;
   /** 0 means the doctor doesn't offer that mode. */
   videoCallFee: number;

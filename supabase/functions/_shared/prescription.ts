@@ -23,6 +23,10 @@ export interface Prescription {
   issued_at: string;
   doctor_name: string;
   doctor_qualification: string;
+  /** The doctor's specialty, e.g. "General Physician". */
+  doctor_specialty: string;
+  /** Medical council registration, e.g. "Reg. No. 12345 (West Bengal Medical Council)". Never a phone number. */
+  doctor_registration: string;
   patient_name: string;
   patient_age: string;
   patient_gender: string;
@@ -76,6 +80,8 @@ export function cleanPrescription(input: unknown, now = new Date()): Prescriptio
     issued_at: issued,
     doctor_name: text(raw.doctor_name, 120),
     doctor_qualification: text(raw.doctor_qualification, 160),
+    doctor_specialty: text(raw.doctor_specialty, 120),
+    doctor_registration: text(raw.doctor_registration, 160),
     patient_name: text(raw.patient_name, 120),
     patient_age: text(raw.patient_age, 20),
     patient_gender: text(raw.patient_gender, 20),

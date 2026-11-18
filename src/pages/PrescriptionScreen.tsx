@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { format } from "date-fns";
-import { CalendarClock, ClipboardList, FileText, FlaskConical, Pill, ShoppingCart, Stethoscope, User } from "lucide-react";
+import { FlaskConical, ShoppingCart } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useOrderDetails } from "@/hooks/useOrderDetails";
+import { useDoctor } from "@/hooks/useDoctors";
 import { useCart } from "@/contexts/CartContext";
 import { useSEO } from "@/hooks/useSEO";
 import { consultInfo } from "@/lib/doctor-orders";
@@ -26,16 +27,22 @@ import { labCartItems, type PrescriptionLabOption } from "@/lib/prescriptionLabs
 import { PrescriptionLabSheet } from "@/components/prescriptions/PrescriptionLabSheet";
 import { toast } from "sonner";
 
-function Block({ icon: Icon, title, children }: { icon: typeof FileText; title: string; children: React.ReactNode }) {
+/** One part of the prescription sheet: a small heading and what the doctor wrote. */
+function SheetPart({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" /> {title}
-      </p>
-      <div className="mt-2">{children}</div>
+    <section>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">{title}</h3>
+      <div className="mt-1">{children}</div>
     </section>
   );
 }
+
+/** "Reg. No. 12345 (West Bengal Medical Council)", the way the server writes it on new prescriptions. */
+const registrationLine = (d: { registrationNumber?: string; medicalCouncil?: string } | null | undefined) =>
+  d?.registrationNumber ? `Reg. No. ${d.registrationNumber}${d.medicalCouncil ? ` (${d.medicalCouncil})` : ""}` : "";
+
+/** "Dr Ar Das" stays as it is; "Ar Das" becomes "Dr. Ar Das". */
+const withDr = (name: string) => (/^dr\.?\s/i.test(name) ? name : `Dr. ${name}`);
 
 /** The doctor's digital prescription, with the advised tests ready to add to the cart. */
 const PrescriptionScreen = () => {
@@ -49,6 +56,10 @@ const PrescriptionScreen = () => {
   const [pendingLab, setPendingLab] = useState<PrescriptionLabOption | null>(null);
   const order = data?.order;
   const rx = useMemo(() => prescriptionOf(order), [order]);
+  // A prescription sent before registrations were included: take it from the doctor's profile.
+  const { doctor: directoryDoctor } = useDoctor(
+    rx && !rx.doctor_registration && order?.vendor_id ? String(order.vendor_id) : undefined,
+  );
 
   if (isLoading) {
     return (
@@ -75,9 +86,10 @@ const PrescriptionScreen = () => {
     );
   }
 
-  const doctor = rx.doctor_name || consultInfo(order)?.doctorName || "Your doctor";
+  const doctorName = rx.doctor_name || consultInfo(order)?.doctorName || "";
+  const doctorTitle = doctorName ? withDr(doctorName) : "Your doctor";
   const issued = rx.issued_at ? new Date(rx.issued_at) : new Date(order.created_at);
-  const patient = [rx.patient_name, rx.patient_age && `${rx.patient_age} yrs`, rx.patient_gender].filter(Boolean).join(" · ");
+  const registration = rx.doctor_registration || registrationLine(directoryDoctor);
 
   /** The chosen lab's tests go in the cart with its prices; the cart goes on to the slot. */
   const bookFromLab = (option: PrescriptionLabOption) => {
@@ -101,83 +113,125 @@ const PrescriptionScreen = () => {
     <MobileLayout showNav={false}>
       <ScreenHeader title="Prescription" />
 
-      <div className="space-y-3 px-4 pb-28">
-        <section className="mt-3 rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Stethoscope className="h-6 w-6" />
+      <div className="px-3 pb-28 pt-3">
+        {/* A prescription sheet, laid out like a doctor's printed pad. It stays paper-white in dark mode too. */}
+        <article
+          aria-label={`Prescription from ${doctorTitle}`}
+          className="overflow-hidden rounded-md bg-white text-slate-900 shadow-[0_10px_30px_-12px_rgba(15,23,42,0.35)] ring-1 ring-slate-200"
+        >
+          <div className="h-1.5 bg-gradient-to-r from-[#0841D4] via-sky-500 to-emerald-500" />
+
+          {/* Letterhead */}
+          <header className="flex items-start justify-between gap-3 px-5 pb-3 pt-4">
+            <div className="min-w-0">
+              <h2 className="font-serif text-[22px] font-bold leading-tight text-[#0841D4]">{doctorTitle}</h2>
+              {rx.doctor_qualification && <p className="mt-0.5 text-[13px] font-semibold text-slate-800">{rx.doctor_qualification}</p>}
+              {rx.doctor_specialty && <p className="text-[12px] text-slate-600">{rx.doctor_specialty}</p>}
+              {registration && <p className="mt-1 text-[11px] font-medium text-slate-500">{registration}</p>}
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-extrabold leading-tight text-foreground">{doctor}</h2>
-              {rx.doctor_qualification && <p className="truncate text-xs text-muted-foreground">{rx.doctor_qualification}</p>}
-              <p className="mt-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">{format(issued, "dd MMM yyyy")}</p>
+            <div className="flex shrink-0 flex-col items-end">
+              <img src="/assets/images/logo-full.png" alt="BloodLyn" className="h-8 w-auto" width={96} height={32} />
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Online consultation</p>
+            </div>
+          </header>
+          <div className="mx-5 border-t-2 border-double border-slate-300" />
+
+          {/* Patient line */}
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 px-5 py-3 text-[12px]">
+            <div className="col-span-2 flex gap-1.5">
+              <dt className="text-slate-500">Patient:</dt>
+              <dd className="font-semibold">{rx.patient_name || "—"}</dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt className="text-slate-500">Age / Sex:</dt>
+              <dd className="font-semibold">{[rx.patient_age && `${rx.patient_age} yrs`, rx.patient_gender].filter(Boolean).join(" / ") || "—"}</dd>
+            </div>
+            <div className="flex justify-end gap-1.5">
+              <dt className="text-slate-500">Date:</dt>
+              <dd className="font-semibold">{format(issued, "dd MMM yyyy")}</dd>
+            </div>
+          </dl>
+          <div className="mx-5 border-t border-dashed border-slate-300" />
+
+          <div className="space-y-4 px-5 py-4">
+            {rx.notes && (
+              <SheetPart title="Clinical notes">
+                <p className="whitespace-pre-line text-[13px] leading-relaxed">{rx.notes}</p>
+              </SheetPart>
+            )}
+
+            {rx.diagnosis && (
+              <SheetPart title="Diagnosis">
+                <p className="whitespace-pre-line text-[14px] font-semibold">{rx.diagnosis}</p>
+              </SheetPart>
+            )}
+
+            {rx.medicines.length > 0 && (
+              <section aria-label="Medicines">
+                <p className="font-serif text-3xl font-bold leading-none text-[#0841D4]" aria-hidden="true">℞</p>
+                <ol className="mt-2 space-y-2.5">
+                  {rx.medicines.map((m, i) => (
+                    <li key={`${m.name}-${i}`} className="flex gap-2.5 border-b border-slate-100 pb-2.5 last:border-0 last:pb-0">
+                      <span className="w-5 shrink-0 text-[13px] font-bold text-slate-500">{i + 1}.</span>
+                      <div className="min-w-0">
+                        <p className="text-[14px] font-bold uppercase tracking-wide">{m.name}</p>
+                        {medicineLine(m) && <p className="text-[12px] text-slate-700">{medicineLine(m)}</p>}
+                        {m.instructions && <p className="text-[12px] italic text-slate-600">{m.instructions}</p>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
+            {rx.tests.length > 0 && (
+              <SheetPart title={`Investigations advised (${rx.tests.length})`}>
+                <ul className="space-y-1.5">
+                  {rx.tests.map((t, i) => (
+                    <li key={`${t.id ?? t.name}-${i}`} className="flex items-start gap-2 text-[13px] font-medium">
+                      <FlaskConical className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0841D4]" aria-hidden="true" />
+                      <span>{simplifyTestName(testTitle(t))}</span>
+                    </li>
+                  ))}
+                </ul>
+              </SheetPart>
+            )}
+
+            {rx.advice && (
+              <SheetPart title="Advice">
+                <p className="whitespace-pre-line text-[13px] leading-relaxed">{rx.advice}</p>
+              </SheetPart>
+            )}
+
+            {rx.follow_up && (
+              <SheetPart title="Follow-up">
+                <p className="text-[13px] font-semibold">{rx.follow_up}</p>
+              </SheetPart>
+            )}
+
+            {/* Sign-off */}
+            <div className="flex justify-end pt-3">
+              <div className="min-w-[45%] text-right">
+                <p className="font-serif text-[15px] font-bold italic text-[#0841D4]">{doctorTitle}</p>
+                <div className="mt-1 border-t border-slate-400" />
+                <p className="mt-1 text-[10px] text-slate-500">Issued digitally on BloodLyn</p>
+              </div>
             </div>
           </div>
-          {patient && (
-            <p className="mt-3 flex items-center gap-1.5 border-t border-border/60 pt-3 text-sm text-foreground">
-              <User className="h-4 w-4 text-muted-foreground" /> {patient}
+
+          {/* Footer line, as printed at the bottom of a prescription pad */}
+          <footer className="border-t border-slate-200 bg-slate-50 px-5 py-2.5 text-center">
+            <p className="text-[11px] font-medium text-slate-600">
+              Digital prescription by BloodLyn :: {order.order_number || `#${order.id.slice(0, 8)}`}
             </p>
-          )}
-        </section>
-
-        {rx.diagnosis && (
-          <Block icon={ClipboardList} title="Diagnosis">
-            <p className="whitespace-pre-line text-sm font-semibold text-foreground">{rx.diagnosis}</p>
-          </Block>
-        )}
-
-        {rx.medicines.length > 0 && (
-          <Block icon={Pill} title="Medicines">
-            <ol className="space-y-3">
-              {rx.medicines.map((m, i) => (
-                <li key={`${m.name}-${i}`} className="flex gap-3">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground">{m.name}</p>
-                    {medicineLine(m) && <p className="text-xs text-muted-foreground">{medicineLine(m)}</p>}
-                    {m.instructions && <p className="text-xs text-foreground/80">{m.instructions}</p>}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </Block>
-        )}
+          </footer>
+        </article>
 
         {rx.tests.length > 0 && (
-          <Block icon={FlaskConical} title={`Tests advised (${rx.tests.length})`}>
-            <ul className="space-y-2">
-              {rx.tests.map((t, i) => (
-                <li key={`${t.id ?? t.name}-${i}`} className="flex items-start gap-2 text-sm text-foreground">
-                  <FlaskConical className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                  <span>{simplifyTestName(testTitle(t))}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-muted-foreground">Choose a lab near you to see its prices, then book home collection.</p>
-          </Block>
+          <p className="mt-3 px-1 text-center text-xs text-muted-foreground">
+            Choose a lab near you to see its prices, then book home collection.
+          </p>
         )}
-
-        {rx.advice && (
-          <Block icon={FileText} title="Advice">
-            <p className="whitespace-pre-line text-sm text-foreground">{rx.advice}</p>
-          </Block>
-        )}
-
-        {rx.notes && (
-          <Block icon={FileText} title="Doctor's notes">
-            <p className="whitespace-pre-line text-sm text-foreground">{rx.notes}</p>
-          </Block>
-        )}
-
-        {rx.follow_up && (
-          <Block icon={CalendarClock} title="Follow-up">
-            <p className="text-sm font-semibold text-foreground">{rx.follow_up}</p>
-          </Block>
-        )}
-
-        <p className="px-1 text-center text-[11px] text-muted-foreground">
-          Digital prescription from your BloodLyn consultation, booking {order.order_number || `#${order.id.slice(0, 8)}`}.
-        </p>
       </div>
 
       {rx.tests.length > 0 && (

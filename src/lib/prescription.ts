@@ -26,6 +26,9 @@ export function prescriptionOf(order: { prescription?: unknown } | null | undefi
     issued_at: str(p.issued_at),
     doctor_name: str(p.doctor_name),
     doctor_qualification: str(p.doctor_qualification),
+    // Older prescriptions were sent without these: they show what they have.
+    doctor_specialty: str(p.doctor_specialty),
+    doctor_registration: str(p.doctor_registration),
     patient_name: str(p.patient_name),
     patient_age: str(p.patient_age),
     patient_gender: str(p.patient_gender),

@@ -49,6 +49,8 @@ export function doctorsFromDirectory(data: unknown): Doctor[] {
         languages: Array.isArray(d.languages) ? d.languages.map(String) : [],
         // The doctor's daily limit is reached: no more bookings today.
         fullToday: d.fullToday === true,
+        registrationNumber: String(d.registrationNumber || ""),
+        medicalCouncil: String(d.medicalCouncil || ""),
       } as Doctor;
     })
     .filter((d) => d.available);
