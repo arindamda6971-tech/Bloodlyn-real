@@ -70,3 +70,19 @@ describe('No-show escalation', () => {
     expect(screen.queryByText(/PIN/)).not.toBeInTheDocument();
   });
 });
+describe('Collection code', () => {
+  it('shows the code instead of Yes when the booking has one', async () => {
+    const codeTable = { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { code: '4821', used_at: null } }) }) }) };
+    const supa = (await import('@/integrations/supabase/client')).supabase as unknown as { from: (t: string) => unknown };
+    const before = supa.from;
+    supa.from = (t: string) => (t === 'collection_codes' ? codeTable : { update: mocks.update });
+    try {
+      mount('2099-01-01');
+      expect(await screen.findByText('4821')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Yes$/ })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: "Partner didn't come?" })).toBeDisabled();
+    } finally {
+      supa.from = before;
+    }
+  });
+});

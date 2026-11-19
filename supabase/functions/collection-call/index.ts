@@ -12,6 +12,8 @@ import {
   shouldAlertLab,
   type CallStatus,
 } from "../_shared/collection-call.ts";
+import { checkCode, isCodeShape, slotHasEnded } from "../_shared/collection-code.ts";
+import { PAYMENT_PAID, collectionConfirmationPays, isConsultationName, isVitalsOnlyName } from "../_shared/payment-status.ts";
 
 /**
  * In-app calls between a collection partner and a patient, both ways. Nobody ever
@@ -29,6 +31,10 @@ import {
  *            and "status" / "end" as above.
  * A call the partner doesn't take is a missed call on his phone; the second in an hour
  * also goes to the lab. The Partner project does the alerts (partner-notify).
+ *
+ * Collected: { action: "confirm_collected", token, code } — the partner enters the
+ * patient's 4-digit collection code (_shared/collection-code.ts), which marks the
+ * booking collected in place of the patient's "Yes".
  */
 
 const json = (body: unknown, status = 200) =>
@@ -320,6 +326,55 @@ Deno.serve(async (req) => {
         .single();
       if (error) throw error;
       return json({ callId: call.id, room, iceServers: ice, ring_seconds: RING_SECONDS });
+    }
+
+    // The partner has collected the sample: the patient's code proves he was there.
+    if (action === "confirm_collected") {
+      const code = String(body?.code ?? "").trim();
+      if (!isCodeShape(code)) return json({ error: "Enter the patient's 4-digit code." }, 400);
+      if (state !== "active") return json({ error: "This collection is already closed." }, 409);
+      const { data: full } = await admin
+        .from("orders")
+        .select("id, status, payment_status, test_name, scheduled_date, scheduled_time_slot")
+        .eq("id", link.order_id)
+        .maybeSingle();
+      if (!full) return json({ error: "Order not found" }, 404);
+      if (isVitalsOnlyName(full.test_name) || isConsultationName(full.test_name)) {
+        return json({ error: "This booking has no sample to collect." }, 409);
+      }
+      const { data: row } = await admin
+        .from("collection_codes")
+        .select("code, used_at, failed_attempts, locked_until")
+        .eq("order_id", link.order_id)
+        .maybeSingle();
+      if (!row) return json({ error: "This booking has no code yet. Please ask the lab." }, 409);
+      const check = checkCode(row, code, now);
+      if (!check.ok) {
+        if (check.save) await admin.from("collection_codes").update(check.save).eq("order_id", link.order_id).is("used_at", null);
+        return json({ error: check.error }, check.status);
+      }
+
+      const late = slotHasEnded(full.scheduled_date, full.scheduled_time_slot, now);
+      // Only the first right code counts, even if two arrive at once.
+      const { data: used } = await admin
+        .from("collection_codes")
+        .update({ used_at: now.toISOString(), used_late: late, failed_attempts: 0, locked_until: null })
+        .eq("order_id", link.order_id)
+        .is("used_at", null)
+        .select("order_id");
+      if (!used?.length) return json({ error: "This collection is already confirmed." }, 409);
+      // Same as the patient's "Yes" used to do (confirm-collection): collected, and in the
+      // testing phase that's also the payment for a blood test.
+      const update: Record<string, unknown> = { status: "sample_collected", updated_at: now.toISOString() };
+      if (collectionConfirmationPays(full)) update.payment_status = PAYMENT_PAID;
+      const { error: updateError } = await admin.from("orders").update(update).eq("id", link.order_id);
+      if (updateError) {
+        console.error("collected update failed", updateError);
+        // Let him try again: the code isn't spent until the order is marked.
+        await admin.from("collection_codes").update({ used_at: null, used_late: null }).eq("order_id", link.order_id);
+        return json({ error: "Couldn't mark it collected. Please try again." }, 500);
+      }
+      return json({ ok: true, status: "sample_collected", late });
     }
 
     if (!["status", "end", "partner_answer", "partner_decline"].includes(action)) return json({ error: "Unknown action" }, 400);

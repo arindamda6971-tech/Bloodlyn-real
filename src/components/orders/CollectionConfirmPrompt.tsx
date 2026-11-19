@@ -48,6 +48,33 @@ const CollectionConfirmPrompt = ({
   const canReportMissed = hasCollectionWindowEnded(scheduledDate, scheduledTimeSlot, now);
   const hasPartner = !!partnerName?.trim();
 
+  // The collection code, made when the lab assigned the partner (blood collections only).
+  // A new partner gets a new code, so it's read again when the partner changes.
+  const [code, setCode] = useState<string | null>(null);
+  useEffect(() => {
+    if (serviceType !== "blood" || !hasPartner) return setCode(null);
+    let cancelled = false;
+    (async () => {
+      try {
+        // Not in the generated types yet.
+        const table = supabase.from("collection_codes" as never) as unknown as {
+          select: (columns: string) => { eq: (column: string, value: string) => { maybeSingle: () => Promise<{ data: unknown }> } };
+        };
+        const { data } = await table
+          .select("code, used_at")
+          .eq("order_id", orderId)
+          .maybeSingle();
+        const row = data as { code?: string; used_at?: string | null } | null;
+        if (!cancelled) setCode(row?.code && !row.used_at ? row.code : null);
+      } catch {
+        if (!cancelled) setCode(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, serviceType, hasPartner, partnerName]);
+
   const report = async () => {
     if (reportLock.current || !canReportMissed || comment.trim().length < 3) return;
     reportLock.current = true;
@@ -146,7 +173,9 @@ const CollectionConfirmPrompt = ({
       <p className="text-sm font-semibold text-foreground">
         {serviceType === "vitals"
           ? "Was your BP or ECG check completed by our partner?"
-          : "Is your blood collected by our partner?"}
+          : code
+            ? "Your collection code"
+            : "Is your blood collected by our partner?"}
       </p>
 
       {errorMessage && (
@@ -155,7 +184,24 @@ const CollectionConfirmPrompt = ({
         </div>
       )}
 
-      {!missed ? <div className="flex gap-2 mt-3">
+      {/* The partner confirms the collection by entering this code: no "Yes" for the patient. */}
+      {code && !missed ? <div className="mt-3">
+        <div className="rounded-xl bg-background p-3 text-center ring-1 ring-primary/20">
+          <p className="font-mono text-3xl font-bold tracking-[0.4em] text-primary pl-[0.4em]" aria-label={`Collection code ${code.split("").join(" ")}`}>{code}</p>
+          <p className="mt-1.5 text-[11px] leading-snug text-muted-foreground">
+            Give this code to your collection partner only after he has collected your sample. He enters it to confirm.
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="mt-2 h-8 w-full rounded-xl text-xs text-muted-foreground"
+          disabled={!canReportMissed}
+          onClick={() => { setErrorMessage(""); setMissed(true); }}
+        >
+          Partner didn't come?
+        </Button>
+      </div> : !missed ? <div className="flex gap-2 mt-3">
         <Button
           size="sm"
           className="h-9 flex-1 rounded-xl gap-1.5"
@@ -196,7 +242,7 @@ const CollectionConfirmPrompt = ({
       {!canReportMissed && (
         <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1">
           <Clock className="w-3 h-3" />
-          You can select “No” once your booked slot ends.
+          {code ? "If the partner doesn't come, you can report it once your booked slot ends." : "You can select “No” once your booked slot ends."}
         </p>
       )}
     </div>

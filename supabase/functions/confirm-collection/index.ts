@@ -1,5 +1,9 @@
 // Customer-driven collection confirmation.
 //
+// Since the collection code (_shared/collection-code.ts), a booking with a code is
+// marked collected by the partner entering it (collection-call "confirm_collected");
+// "collected" here is refused for those and only serves bookings without a code.
+//
 // The customer answers "Is your blood collected by our partner?" on the order
 // tracking tile in BloodLyn Real. This function:
 //   1. validates the caller's JWT and that the order belongs to them
@@ -152,6 +156,18 @@ Deno.serve(async (req) => {
         payment_status: paysNow ? PAYMENT_PAID : order.payment_status,
         message: "Already marked collected",
       });
+    }
+
+    // Bookings with a collection code are confirmed by the partner entering it, not by
+    // the patient's "Yes" (older app versions still show Yes).
+    if (action === "collected" && !alreadyDone) {
+      const { data: code } = await admin.from("collection_codes").select("used_at").eq("order_id", order.id).maybeSingle();
+      if (code && !code.used_at) {
+        return json(
+          { error: "Your collection partner confirms with your code now. Give it to him once he has collected your sample." },
+          409,
+        );
+      }
     }
 
     if (action === "not_collected" && !slotHasEnded(order.scheduled_date, order.scheduled_time_slot)) {
