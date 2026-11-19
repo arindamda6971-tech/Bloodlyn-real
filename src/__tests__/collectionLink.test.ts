@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   cleanCollectionDetails,
   collectionMessage,
+  collectionPageBase,
   isLinkToken,
   linkExpiry,
   linkState,
@@ -114,5 +115,27 @@ describe("collection calls", () => {
     const env: Record<string, string> = { TURN_URLS: "turn:turn.example.com:3478, turns:turn.example.com:5349", TURN_USERNAME: "u", TURN_CREDENTIAL: "p" };
     const servers = iceServers((n) => env[n]);
     expect(servers[1]).toEqual({ urls: ["turn:turn.example.com:3478", "turns:turn.example.com:5349"], username: "u", credential: "p" });
+  });
+});
+
+describe("where the partner's page opens", () => {
+  const local = "http://localhost:5174";
+
+  it("follows the public address the portal is used from", () => {
+    expect(collectionPageBase("https://bloodlyn-partner.lovable.app", local)).toBe("https://bloodlyn-partner.lovable.app");
+    expect(collectionPageBase("https://partner.bloodlyn.in/", local)).toBe("https://partner.bloodlyn.in");
+  });
+
+  it("never uses Lovable's private previews or non-https pages; falls back to the setting", () => {
+    expect(collectionPageBase("https://f2d1988f-75ee-4eff-96a2-c3ad823bf37d.lovableproject.com", local)).toBe(local);
+    expect(collectionPageBase("https://id-preview--f2d1988f.lovable.app", local)).toBe(local);
+    expect(collectionPageBase("https://preview--bloodlyn-partner.lovable.app", local)).toBe(local);
+    expect(collectionPageBase("http://localhost:5174", local)).toBe(local);
+    expect(collectionPageBase(null, "https://partner.bloodlyn.in/")).toBe("https://partner.bloodlyn.in");
+  });
+
+  it("gives no link without a usable address", () => {
+    expect(collectionPageBase(null, "")).toBe("");
+    expect(collectionPageBase(null, "http://evil.example.com")).toBe("");
   });
 });

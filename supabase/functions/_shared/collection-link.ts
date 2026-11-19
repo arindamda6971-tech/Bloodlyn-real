@@ -72,6 +72,23 @@ export function newLinkToken(): string {
 
 export const isLinkToken = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{20,40}$/.test(v);
 
+/**
+ * Where the partner's page opens: the public https address the lab is using the Partner
+ * Portal from (the published site, later its own domain), so links follow the portal
+ * wherever it's hosted. Lovable's private preview addresses can't be opened by a partner,
+ * so they — and anything that isn't https — fall back to the COLLECTION_PAGE_URL setting
+ * (which may be http://localhost:<port> for testing on one computer). "" = no link.
+ */
+export function collectionPageBase(origin: string | null | undefined, setting: string | null | undefined): string {
+  const o = String(origin ?? "").trim().replace(/\/+$/, "");
+  const publicHost = /^https:\/\/[a-z0-9.-]+\.[a-z]{2,}(:\d{2,5})?$/i.test(o);
+  const privatePreview = /lovableproject\.com(:\d+)?$/i.test(o) || /^https:\/\/(id-)?preview--/i.test(o);
+  if (publicHost && !privatePreview) return o;
+  const s = String(setting ?? "").trim().replace(/\/+$/, "");
+  if (/^https:\/\/[^/\s]+$/i.test(s) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d{2,5})?$/i.test(s)) return s;
+  return "";
+}
+
 const HOUR = 3_600_000;
 
 /**
