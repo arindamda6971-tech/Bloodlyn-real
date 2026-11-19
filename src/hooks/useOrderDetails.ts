@@ -13,6 +13,11 @@ export interface OrderData {
   subtotal: number;
   discount: number | null;
   created_at: string;
+  /** When each step happened (stamped by the database: stamp_order_step_times). */
+  accepted_at?: string | null;
+  partner_assigned_at?: string | null;
+  sample_collected_at?: string | null;
+  report_ready_at?: string | null;
   test_name: string | null;
   lab_name: string | null;
   lab_id?: string | null;

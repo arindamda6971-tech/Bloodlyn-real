@@ -72,3 +72,21 @@ describe('BP and ECG tracking', () => {
     expect(screen.getByRole('button', { name: 'Yes' })).toBeEnabled();
   });
 });
+describe('Progress times', () => {
+  const at = (iso: string) => new Date(iso).toISOString();
+  it('shows when each step happened, and "Sample collected" once it is', () => {
+    mocks.order = {
+      id: '12345678-1234-4234-8234-123456789012', status: 'sample_collected', test_name: 'CBC',
+      scheduled_date: '2020-01-01', scheduled_time_slot: 'Morning (6 AM - 8 AM)',
+      delivery_partner_name: 'Raju', total: 100, report_url: null, created_at: at('2026-11-20T03:00:00Z'),
+      accepted_at: at('2026-11-20T03:44:00Z'), partner_assigned_at: at('2026-11-20T03:50:00Z'), sample_collected_at: at('2026-11-20T05:12:00Z'), report_ready_at: null,
+    };
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><TrackingScreen /></MemoryRouter></QueryClientProvider>);
+    const progress = screen.getByRole('heading', { name: 'Progress' }).parentElement as HTMLElement;
+    expect(progress).toHaveTextContent('Sample collected');
+    expect(progress).not.toHaveTextContent('Sample collection');
+    expect(progress.textContent).toMatch(/Order accepted\d{1,2} \w{3}, \d{1,2}:\d{2} [AP]M/);
+    expect(progress.querySelectorAll('li')[1].textContent).toMatch(/\d{1,2}:\d{2} [AP]M/);
+    expect(progress.querySelectorAll('li')[2].textContent).not.toMatch(/\d{1,2}:\d{2} [AP]M/);
+  });
+});

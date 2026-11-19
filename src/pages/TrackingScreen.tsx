@@ -210,6 +210,14 @@ const TrackingScreen = () => {
           : 0)
     : getCompletedIndex(order.status, order.delivery_partner_name);
   const isCancelled = order.status === "cancelled";
+  // When each step happened, e.g. "20 Nov, 10:42 AM" (none for older orders' earlier steps).
+  const stepTime = (key: string) => {
+    const at = isVitalsOrder
+      ? { confirmed: order.created_at, accepted: order.accepted_at, collection: order.partner_assigned_at, completed: order.report_ready_at }[key]
+      : { accepted: order.accepted_at, collection: order.sample_collected_at, report: order.report_ready_at }[key];
+    if (!at || Number.isNaN(Date.parse(at))) return null;
+    return format(new Date(at), "d MMM, h:mm a");
+  };
   const statusInfo = isVitalsOrder && ["completed", "checked", "report_ready", "report_delivered"].includes(order.status?.toLowerCase() || "")
     ? { label: "Completed", tone: "bg-success/15 text-success" }
     : getDisplayStatus(order.status);
@@ -439,8 +447,12 @@ const TrackingScreen = () => {
                       <p className={`text-sm font-semibold ${
                         isCompleted ? "text-foreground" : isCurrent ? "text-primary" : "text-muted-foreground"
                       }`}>
-                        {step.label}
+                        {/* Done: "Sample collected" rather than "Sample collection". */}
+                        {step.key === "collection" && !isVitalsOrder && isCompleted ? "Sample collected" : step.label}
                       </p>
+                      {isCompleted && stepTime(step.key) && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{stepTime(step.key)}</p>
+                      )}
 
                       {/* Awaiting the lab's acceptance in the Partner dashboard */}
                       {step.key === "accepted" && !isCompleted && (
