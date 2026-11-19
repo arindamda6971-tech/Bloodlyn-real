@@ -54,10 +54,13 @@ describe('BP and ECG tracking', () => {
     expect(screen.queryByRole('button', { name: 'Yes' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /View Reports/ })).not.toBeInTheDocument();
   });
-  it('No preserves the existing call and report flow', () => {
+  it('No offers the call and report flow, with the partner\'s number kept private', () => {
     mount('partner_assigned', true);
     fireEvent.click(screen.getByRole('button', { name: 'No' }));
-    expect(screen.getByRole('link', { name: 'Call Partner' })).toHaveAttribute('href', 'tel:+919876543210');
+    // The call goes through BloodLyn: a button, never a tel: link or the number on screen.
+    expect(screen.getByRole('button', { name: 'Call Partner' })).toBeEnabled();
+    expect(document.body.innerHTML).not.toContain('tel:');
+    expect(document.body.textContent).not.toContain('9876543210');
     expect(screen.getByRole('button', { name: 'Report Lab' })).toBeInTheDocument();
     expect(mocks.invoke).not.toHaveBeenCalled();
   });

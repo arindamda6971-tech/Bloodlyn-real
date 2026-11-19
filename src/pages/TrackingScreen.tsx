@@ -8,7 +8,6 @@ import {
   Navigation,
   Download,
   Eye,
-  Phone,
   FlaskConical,
   Building2,
   IndianRupee,
@@ -34,6 +33,7 @@ import { format } from "date-fns";
 import CancelOrderDialog from "@/components/orders/CancelOrderDialog";
 import { canPatientChangeBooking, hasUsedReschedule } from "@/lib/booking-changes";
 import CollectionConfirmPrompt from "@/components/orders/CollectionConfirmPrompt";
+import { PartnerCallButton } from "@/components/orders/PartnerCallButton";
 
 import { useOrderDetails, OrderData, OrderItem } from "@/hooks/useOrderDetails";
 import { useQueryClient } from "@tanstack/react-query";
@@ -457,7 +457,7 @@ const TrackingScreen = () => {
                               orderId={order.id}
                               scheduledDate={order.scheduled_date}
                               scheduledTimeSlot={order.scheduled_time_slot}
-                              partnerPhone={order.delivery_partner_phone}
+                              partnerName={order.delivery_partner_name}
                               serviceType={isVitalsOrder ? "vitals" : "blood"}
                               onConfirmed={(status) => {
                                 queryClient.setQueryData(
@@ -514,17 +514,12 @@ const TrackingScreen = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-foreground truncate">{order.delivery_partner_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {order.delivery_partner_phone && !isReportReady ? `+91 ${order.delivery_partner_phone.replace(/^\+?91/, "")}` : "Assigned by the lab"}
+                    Assigned by the lab · calls stay private
                   </p>
                 </div>
-                {order.delivery_partner_phone && !["completed", "report_ready", "report_delivered"].includes(order.status || "") && (
-                  <a
-                    href={`tel:${order.delivery_partner_phone}`}
-                    aria-label="Call partner"
-                    className="w-10 h-10 rounded-full bg-success/10 text-success flex items-center justify-center shrink-0 active:scale-95 transition"
-                  >
-                    <Phone className="w-4.5 h-4.5" />
-                  </a>
+                {/* Calls go through BloodLyn: his number is never shown or dialled. */}
+                {!["completed", "report_ready", "report_delivered"].includes(order.status || "") && (
+                  <PartnerCallButton orderId={order.id} partnerName={order.delivery_partner_name} />
                 )}
               </div>
             ) : (

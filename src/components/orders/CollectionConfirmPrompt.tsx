@@ -12,12 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { hasCollectionWindowEnded } from "@/lib/lab-slots";
 import { Textarea } from "@/components/ui/textarea";
+import { PartnerCallButton } from "@/components/orders/PartnerCallButton";
 
 interface CollectionConfirmPromptProps {
   orderId: string;
   scheduledDate: string | null;
   scheduledTimeSlot: string | null;
-  partnerPhone?: string | null;
+  /** The assigned partner; calling him goes through BloodLyn (never his number). */
+  partnerName?: string | null;
   serviceType?: "blood" | "vitals";
   onConfirmed: (status: string) => void;
 }
@@ -26,7 +28,7 @@ const CollectionConfirmPrompt = ({
   orderId,
   scheduledDate,
   scheduledTimeSlot,
-  partnerPhone,
+  partnerName,
   serviceType = "blood",
   onConfirmed,
 }: CollectionConfirmPromptProps) => {
@@ -44,7 +46,7 @@ const CollectionConfirmPrompt = ({
   }, []);
 
   const canReportMissed = hasCollectionWindowEnded(scheduledDate, scheduledTimeSlot, now);
-  const phone = partnerPhone?.replace(/[^\d+]/g, "") ?? "";
+  const hasPartner = !!partnerName?.trim();
 
   const report = async () => {
     if (reportLock.current || !canReportMissed || comment.trim().length < 3) return;
@@ -174,9 +176,10 @@ const CollectionConfirmPrompt = ({
           No
         </Button>
       </div> : <div className="flex flex-wrap gap-2 mt-3">
-        {phone ? <Button asChild size="sm" variant="outline" className="flex-1 gap-1.5"><a href={`tel:${phone}`}><Phone className="w-4 h-4" />Call Partner</a></Button> : <Button size="sm" variant="outline" disabled className="flex-1 gap-1.5"><Phone className="w-4 h-4" />Call Partner</Button>}
+        {/* Through BloodLyn, so the partner's number is never shown or dialled. */}
+        {hasPartner ? <PartnerCallButton orderId={orderId} partnerName={partnerName} variant="button" className="flex-1" /> : <Button size="sm" variant="outline" disabled className="flex-1 gap-1.5"><Phone className="w-4 h-4" />Call Partner</Button>}
         <Button size="sm" variant="destructive" className="flex-1 gap-1.5" onClick={() => setReportOpen(true)}><Flag className="w-4 h-4" />Report Lab</Button>
-        {!phone && <p className="text-xs text-muted-foreground basis-full">Partner phone number is unavailable.</p>}
+        {!hasPartner && <p className="text-xs text-muted-foreground basis-full">The lab hasn't assigned a partner yet.</p>}
         <Button size="sm" variant="ghost" onClick={() => setMissed(false)}>Back</Button>
       </div>}
 

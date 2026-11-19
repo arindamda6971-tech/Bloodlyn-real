@@ -69,3 +69,33 @@ export function iceServers(env: (name: string) => string | undefined): IceServer
   if (turn.length && username && credential) servers.push({ urls: turn, username, credential });
   return servers;
 }
+
+// ── The patient calling the collection partner (direction "to_partner") ──────────
+
+/** A patient may call the partner this many times an hour. */
+export const PATIENT_CALLS_PER_HOUR = 5;
+/** After a call the partner didn't take, the patient waits this long before calling again. */
+export const PATIENT_RETRY_SECONDS = 60;
+/** The lab is told when the partner has missed this many of a patient's calls in an hour. */
+export const MISSES_BEFORE_LAB_ALERT = 2;
+
+export interface DirectedCallRow extends CallRow {
+  direction?: string | null;
+}
+
+/** Why the patient can't call the partner now, or null. `recent`: this order's calls in the last hour, both ways. */
+export function partnerCallProblem(recent: DirectedCallRow[], now = new Date()): string | null {
+  if (recent.some((c) => isLive(c, now))) return "A call with your collection partner is already going on.";
+  const mine = recent
+    .filter((c) => c.direction === "to_partner" && ago(c.created_at, now) < 3_600_000)
+    .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+  if (mine.length >= PATIENT_CALLS_PER_HOUR) return "You've called several times in the last hour. The lab has been told and will help you.";
+  const last = mine[0];
+  if (last && last.status !== "accepted" && last.status !== "ended" && ago(last.created_at, now) < PATIENT_RETRY_SECONDS * 1000) {
+    return "Please wait a minute before calling again.";
+  }
+  return null;
+}
+
+/** Tell the lab once: on exactly the Nth missed call in the hour, not again on the next ones. */
+export const shouldAlertLab = (missesInLastHour: number) => missesInLastHour === MISSES_BEFORE_LAB_ALERT;

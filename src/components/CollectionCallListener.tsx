@@ -27,6 +27,8 @@ interface CallRow {
   created_at: string;
   caller_name: string | null;
   lab_name: string | null;
+  /** "to_partner" rows are the patient's own calls to the partner: never ring for those. */
+  direction?: string | null;
 }
 
 type Phase = { kind: "ringing" } | { kind: "joining" } | { kind: SessionState; reason?: string };
@@ -57,7 +59,7 @@ export function CollectionCallListener() {
   }, []);
 
   const ring = useCallback((row: CallRow) => {
-    if (handled.current.has(row.id) || callRef.current) return;
+    if (row.direction === "to_partner" || handled.current.has(row.id) || callRef.current) return;
     if (row.status !== "ringing" || Date.now() - Date.parse(row.created_at) > RING_MS) return;
     handled.current.add(row.id);
     callRef.current = row;
@@ -103,8 +105,9 @@ export function CollectionCallListener() {
     if (!user?.id || callRef.current) return;
     const since = new Date(Date.now() - RING_MS).toISOString();
     const { data } = await (supabase.from("collection_calls" as never) as any)
-      .select("id, status, created_at, caller_name, lab_name")
+      .select("id, status, created_at, caller_name, lab_name, direction")
       .eq("user_id", user.id)
+      .eq("direction", "to_patient")
       .eq("status", "ringing")
       .gte("created_at", since)
       .order("created_at", { ascending: false })

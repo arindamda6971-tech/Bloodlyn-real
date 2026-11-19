@@ -11,7 +11,7 @@ vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const onConfirmed = vi.fn();
 function mount(date = '2020-01-01') {
-  return render(<CollectionConfirmPrompt orderId="12345678-1234-4234-8234-123456789012" scheduledDate={date} scheduledTimeSlot="Morning (6 AM - 8 AM)" partnerPhone="+919876543210" onConfirmed={onConfirmed} />);
+  return render(<CollectionConfirmPrompt orderId="12345678-1234-4234-8234-123456789012" scheduledDate={date} scheduledTimeSlot="Morning (6 AM - 8 AM)" partnerName="Raju Das" onConfirmed={onConfirmed} />);
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -28,7 +28,10 @@ describe('No-show escalation', () => {
     expect(mocks.update).not.toHaveBeenCalled();
     expect(mocks.invoke).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: /^Yes$/ })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Call Partner' })).toHaveAttribute('href', 'tel:+919876543210');
+    // The call goes through BloodLyn: a button, never the partner's number.
+    expect(screen.getByRole('button', { name: 'Call Partner' })).toBeEnabled();
+    expect(screen.queryByRole('link', { name: 'Call Partner' })).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain('tel:');
   });
   it('keeps No disabled before the collection slot ends', () => {
     mount('2099-01-01');
