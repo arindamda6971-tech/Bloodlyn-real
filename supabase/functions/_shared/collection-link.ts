@@ -53,13 +53,21 @@ export function cleanCollectionDetails(raw: unknown): CollectionDetails {
   };
 }
 
-/** A link secret: 24 URL-safe characters (144 random bits), impossible to guess. */
+const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+/**
+ * A link secret: 24 letters and digits (about 142 random bits), impossible to guess.
+ * Letters and digits only, because WhatsApp leaves a trailing "-" or "_" out of a link.
+ */
 export function newLinkToken(): string {
-  const bytes = new Uint8Array(18);
-  crypto.getRandomValues(bytes);
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  let out = "";
+  const bytes = new Uint8Array(32);
+  while (out.length < 24) {
+    crypto.getRandomValues(bytes);
+    // 248 = 4 × 62: dropping higher bytes keeps every character equally likely.
+    for (const b of bytes) if (b < 248 && out.length < 24) out += TOKEN_CHARS[b % 62];
+  }
+  return out;
 }
 
 export const isLinkToken = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{20,40}$/.test(v);

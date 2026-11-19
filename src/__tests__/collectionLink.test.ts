@@ -61,6 +61,8 @@ describe("collection link token and life", () => {
     expect(isLinkToken(a)).toBe(true);
     expect(a).toHaveLength(24);
     expect(newLinkToken()).not.toBe(a);
+    // Letters and digits only, so WhatsApp never cuts a trailing "-" or "_" off the link.
+    for (let i = 0; i < 200; i++) expect(newLinkToken()).toMatch(/^[A-Za-z0-9]{24}$/);
     expect(isLinkToken("../../etc")).toBe(false);
   });
 
