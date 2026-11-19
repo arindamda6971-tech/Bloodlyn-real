@@ -18,6 +18,9 @@ export interface OrderData {
   partner_assigned_at?: string | null;
   sample_collected_at?: string | null;
   report_ready_at?: string | null;
+  /** The lab needed the sample again (free for the patient): how many times, and why. */
+  repeat_sample_count?: number | null;
+  repeat_sample_reason?: string | null;
   test_name: string | null;
   lab_name: string | null;
   lab_id?: string | null;

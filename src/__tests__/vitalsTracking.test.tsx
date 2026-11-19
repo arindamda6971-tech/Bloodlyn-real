@@ -90,3 +90,19 @@ describe('Progress times', () => {
     expect(progress.querySelectorAll('li')[2].textContent).not.toMatch(/\d{1,2}:\d{2} [AP]M/);
   });
 });
+
+describe('Repeat sample', () => {
+  it('tells the patient why, that it is free, and the new time', () => {
+    mocks.order = {
+      id: '12345678-1234-4234-8234-123456789012', status: 'accepted', test_name: 'CBC',
+      scheduled_date: '2026-11-22', scheduled_time_slot: '10:00 AM - 12:00 PM', delivery_partner_name: null,
+      total: 100, report_url: null, created_at: new Date().toISOString(),
+      repeat_sample_count: 1, repeat_sample_reason: 'Sample clotted',
+    };
+    render(<QueryClientProvider client={new QueryClient()}><MemoryRouter><TrackingScreen /></MemoryRouter></QueryClientProvider>);
+    const notice = screen.getByText('The lab needs one more sample').parentElement as HTMLElement;
+    expect(notice).toHaveTextContent('Sample clotted');
+    expect(notice).toHaveTextContent("It's free for you");
+    expect(notice).toHaveTextContent('Sun, 22 Nov, 10:00 AM - 12:00 PM');
+  });
+});

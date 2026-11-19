@@ -401,6 +401,19 @@ const TrackingScreen = () => {
           )}
         </section>
 
+        {/* The lab needs the sample again: same order, free, at the new time. */}
+        {!isCancelled && !collectionDone && (order.repeat_sample_count ?? 0) > 0 && (
+          <section role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-500/10">
+            <p className="text-sm font-bold text-amber-900 dark:text-amber-200">The lab needs one more sample</p>
+            <p className="mt-1 text-xs leading-relaxed text-amber-900/90 dark:text-amber-200/90">
+              {order.repeat_sample_reason ? `${order.repeat_sample_reason}. ` : ""}
+              It's free for you. A collection partner will come
+              {order.scheduled_date ? ` on ${format(new Date(order.scheduled_date), "EEE, d MMM")}` : ""}
+              {order.scheduled_time_slot ? `, ${order.scheduled_time_slot}` : ""}.
+            </p>
+          </section>
+        )}
+
         {/* Progress */}
         <section className="rounded-2xl border border-border/60 bg-card shadow-sm p-4">
           <h3 className="text-sm font-bold text-foreground mb-4">Progress</h3>
