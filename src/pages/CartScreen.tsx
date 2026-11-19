@@ -39,6 +39,16 @@ import { useUserPincode } from "@/hooks/useUserPincode";
 import { isCompleteCollectionAddress } from "@/lib/service-pincode";
 import { collectionAddressProblem } from "@/lib/addressCheck";
 import { addMoreTestsPath } from "@/lib/cart-cleanup";
+import { getPreciseLocation, hasExactLocation, LocationError } from "@/lib/precise-location";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SavedAddress {
   id: string;
@@ -49,6 +59,8 @@ interface SavedAddress {
   pincode: string;
   type: string | null;
   is_default: boolean | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 // Session storage keys for persisting patient details
@@ -128,6 +140,10 @@ const CartScreen = () => {
     city: "",
     state: "",
   });
+  // Exact location (GPS pin) of the collection address, so the collector's map opens on the door.
+  const [pinningAddressId, setPinningAddressId] = useState<string | null>(null);
+  const [pinPromptAddressId, setPinPromptAddressId] = useState<string | null>(null);
+  const pinAskedRef = useRef(new Set<string>());
 
   // Prescription for this booking, which travels to the lab with the order.
   // Optional unless the lab requires one for a test in the cart.
@@ -227,7 +243,7 @@ const CartScreen = () => {
       try {
         const { data, error } = await supabase
           .from("addresses")
-          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default, latitude, longitude")
           .eq("user_id", supabaseUserId)
           .order("is_default", { ascending: false });
         if (!error && data) {
@@ -301,7 +317,7 @@ const CartScreen = () => {
           .update(payload)
           .eq("id", editingAddressId)
           .eq("user_id", supabaseUserId)
-          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default, latitude, longitude")
           .single();
         if (error) throw error;
         setSavedAddresses((current) => current.map((address) => address.id === data.id ? data : address));
@@ -310,7 +326,7 @@ const CartScreen = () => {
         const { data, error } = await supabase
           .from("addresses")
           .insert({ ...payload, user_id: supabaseUserId, is_default: savedAddresses.length === 0 })
-          .select("id, address_line1, address_line2, city, state, pincode, type, is_default")
+          .select("id, address_line1, address_line2, city, state, pincode, type, is_default, latitude, longitude")
           .single();
         if (error) throw error;
         setSavedAddresses((current) => [data, ...current]);
@@ -327,6 +343,30 @@ const CartScreen = () => {
   };
 
 
+
+  /** Pins the address to the phone's current GPS position. Returns true when saved. */
+  const pinExactLocation = async (addressId: string): Promise<boolean> => {
+    if (!supabaseUserId) return false;
+    setPinningAddressId(addressId);
+    try {
+      const { latitude, longitude } = await getPreciseLocation();
+      const { error } = await supabase
+        .from("addresses")
+        .update({ latitude, longitude })
+        .eq("id", addressId)
+        .eq("user_id", supabaseUserId);
+      if (error) throw error;
+      setSavedAddresses((current) => current.map((address) => (address.id === addressId ? { ...address, latitude, longitude } : address)));
+      toast.success("Exact location pinned", { description: "The sample collector will be guided to this spot." });
+      return true;
+    } catch (error) {
+      console.warn("Pinning exact location failed:", error);
+      toast.error(error instanceof LocationError ? error.message : "Could not save your exact location. Please try again.");
+      return false;
+    } finally {
+      setPinningAddressId(null);
+    }
+  };
 
   const requiresFasting = items.some(i => {
     const name = i.name.toLowerCase();
@@ -369,6 +409,13 @@ const CartScreen = () => {
     if (chosenAddress && chosenAddressProblem) {
       toast.error(chosenAddressProblem);
       openEditAddressForm(chosenAddress);
+      return;
+    }
+
+    // Ask once per address for the exact location; the patient may skip it.
+    if (chosenAddress && !hasExactLocation(chosenAddress) && !pinAskedRef.current.has(chosenAddress.id)) {
+      pinAskedRef.current.add(chosenAddress.id);
+      setPinPromptAddressId(chosenAddress.id);
       return;
     }
 
@@ -793,6 +840,23 @@ const CartScreen = () => {
                     </div>
                     <button type="button" aria-label="Edit collection address" onClick={() => openEditAddressForm(addr)} className="w-8 h-8 rounded-full text-primary flex items-center justify-center shrink-0 active:bg-primary/10"><Pencil className="w-4 h-4" /></button>
                   </div>
+                  {hasExactLocation(addr) ? (
+                    <div className="mt-2 flex items-center gap-2 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                      <MapPin className="h-3.5 w-3.5 shrink-0" />
+                      <span className="flex-1">Exact location pinned</span>
+                      <button type="button" disabled={pinningAddressId === addr.id} onClick={() => pinExactLocation(addr.id)} className="text-primary font-bold py-1 disabled:opacity-60">
+                        {pinningAddressId === addr.id ? "Updating…" : "Update"}
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" disabled={pinningAddressId === addr.id} onClick={() => pinExactLocation(addr.id)} className="mt-2 w-full rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2 text-left flex items-center gap-2 disabled:opacity-60">
+                      {pinningAddressId === addr.id ? <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" /> : <MapPin className="h-4 w-4 text-primary shrink-0" />}
+                      <span className="min-w-0">
+                        <span className="block text-xs font-bold text-primary">{pinningAddressId === addr.id ? "Getting your location…" : "Pin exact location"}</span>
+                        <span className="block text-[10px] text-muted-foreground">Helps the collector reach your door. Use it while you're at this address.</span>
+                      </span>
+                    </button>
+                  )}
                   {savedAddresses.length > 1 && (
                     <div className="flex flex-wrap gap-2 mt-3">
                       {savedAddresses.map((address) => (
@@ -816,6 +880,44 @@ const CartScreen = () => {
           requiredFor={prescriptionTests}
         />
       </div>
+
+      <AlertDialog open={pinPromptAddressId !== null} onOpenChange={(open) => { if (!open && !pinningAddressId) setPinPromptAddressId(null); }}>
+        <AlertDialogContent className="max-w-[340px] rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Share your exact location?</AlertDialogTitle>
+            <AlertDialogDescription>
+              The sample collector gets a map pin to your door instead of just your PIN area. Only use this if you are at the collection address right now.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <Button
+              type="button"
+              disabled={pinningAddressId !== null}
+              onClick={async () => {
+                const id = pinPromptAddressId;
+                if (!id) return;
+                const pinned = await pinExactLocation(id);
+                if (pinned) {
+                  setPinPromptAddressId(null);
+                  handleCheckout();
+                }
+              }}
+            >
+              {pinningAddressId ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
+              {pinningAddressId ? "Getting your location…" : "Use my current location"}
+            </Button>
+            <AlertDialogCancel
+              disabled={pinningAddressId !== null}
+              onClick={() => {
+                setPinPromptAddressId(null);
+                handleCheckout();
+              }}
+            >
+              Not at this address — skip
+            </AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Checkout bar, always in reach */}
       <div className="sticky bottom-0 bg-card border-t border-border/60 px-4 pt-3 safe-area-bottom z-40">

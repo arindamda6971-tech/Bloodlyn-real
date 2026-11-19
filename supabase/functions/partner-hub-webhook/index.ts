@@ -153,11 +153,16 @@ Deno.serve(async (req) => {
       state?: string | null;
       pincode?: string | null;
       phone?: string | null;
+      latitude?: number | null;
+      longitude?: number | null;
     } | null = null;
     let formattedAddress: string | null = null;
     let addressPincode: string | null = null;
+    // The patient's GPS pin of the collection address, when they shared one.
+    let addressLatitude: number | null = null;
+    let addressLongitude: number | null = null;
     // `addresses` has no phone column — the contact number lives on profiles.
-    const ADDRESS_COLS = "address_line1, address_line2, city, state, pincode";
+    const ADDRESS_COLS = "address_line1, address_line2, city, state, pincode, latitude, longitude";
 
     let address: {
       address_line1?: string | null;
@@ -165,6 +170,8 @@ Deno.serve(async (req) => {
       city?: string | null;
       state?: string | null;
       pincode?: string | null;
+      latitude?: number | string | null;
+      longitude?: number | string | null;
     } | null = null;
 
     if (order.address_id) {
@@ -205,6 +212,12 @@ Deno.serve(async (req) => {
     if (address) {
       // De-duplicate repeated fragments (address_line2 often already
       // contains city/state/pincode from the geocoder).
+      const lat = address.latitude == null ? NaN : Number(address.latitude);
+      const lon = address.longitude == null ? NaN : Number(address.longitude);
+      if (Number.isFinite(lat) && Number.isFinite(lon) && !(lat === 0 && lon === 0) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
+        addressLatitude = lat;
+        addressLongitude = lon;
+      }
       const parts = [
         address.address_line1,
         address.address_line2,
@@ -224,7 +237,7 @@ Deno.serve(async (req) => {
       }
       formattedAddress = unique.join(", ") || null;
       addressPincode = address.pincode ? String(address.pincode) : null;
-      addressDetails = { ...address, phone: contactPhone };
+      addressDetails = { ...address, latitude: addressLatitude, longitude: addressLongitude, phone: contactPhone };
     }
 
 
@@ -353,6 +366,8 @@ Deno.serve(async (req) => {
         address_pincode: addressPincode,
         customer_pincode: addressPincode,
         address_phone: addressDetails?.phone ?? null,
+        customer_latitude: addressLatitude,
+        customer_longitude: addressLongitude,
       },
       // Collection / delivery address — string form first (what the partner
       // booking tile renders), structured form kept alongside.
@@ -365,6 +380,9 @@ Deno.serve(async (req) => {
       pincode: addressPincode,
       customer_pincode: addressPincode,
       address_phone: addressDetails?.phone ?? null,
+      // Exact GPS pin of the collection address (null when the patient skipped it).
+      customer_latitude: addressLatitude,
+      customer_longitude: addressLongitude,
       customer_address_details: addressDetails,
       created_at: order.created_at,
 

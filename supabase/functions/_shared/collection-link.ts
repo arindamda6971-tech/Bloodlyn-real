@@ -19,6 +19,9 @@ export interface CollectionDetails {
   slot: string;
   tests: string[];
   address: string;
+  /** The patient's GPS pin of the address, when they shared one at checkout. */
+  latitude?: number | null;
+  longitude?: number | null;
   order_number: string;
   lab_name: string;
   /** The lab's own number, so the partner can ask the lab if the patient doesn't answer. */
@@ -31,11 +34,35 @@ const text = (v: unknown, max: number) =>
     ? String(v).replace(/\s+/g, " ").trim().slice(0, max)
     : "";
 
+/** A real map point from loose input (numbers or numeric strings), else null. 0,0 is "unknown". */
+export function exactPoint(lat: unknown, lon: unknown): { latitude: number; longitude: number } | null {
+  if (lat == null || lon == null || lat === "" || lon === "") return null;
+  const latitude = Number(lat);
+  const longitude = Number(lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return null;
+  if (latitude === 0 && longitude === 0) return null;
+  // Six decimals is about 10 cm; more is noise.
+  return { latitude: Math.round(latitude * 1e6) / 1e6, longitude: Math.round(longitude * 1e6) / 1e6 };
+}
+
+/**
+ * Google Maps link for a collection: the patient's exact pin when they shared one,
+ * else a search for the address text (which can land on the PIN area). "" when neither.
+ */
+export function mapUrl(address: string | null | undefined, latitude?: unknown, longitude?: unknown): string {
+  const point = exactPoint(latitude, longitude);
+  if (point) return `https://maps.google.com/?q=${point.latitude},${point.longitude}`;
+  const text = typeof address === "string" ? address.trim() : "";
+  return text ? `https://maps.google.com/?q=${encodeURIComponent(text)}` : "";
+}
+
 /** Only the fields the page needs, trimmed to sane lengths; anything else is dropped. */
 export function cleanCollectionDetails(raw: unknown): CollectionDetails {
   const r = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const date = text(r.date, 10);
   const phone = text(r.lab_phone, 20).replace(/\D/g, "").slice(-10);
+  const point = exactPoint(r.latitude, r.longitude);
   return {
     patient_name: text(r.patient_name, 80),
     patient_meta: text(r.patient_meta, 40),
@@ -46,6 +73,8 @@ export function cleanCollectionDetails(raw: unknown): CollectionDetails {
       .filter(Boolean)
       .slice(0, 15),
     address: text(r.address, 400),
+    latitude: point?.latitude ?? null,
+    longitude: point?.longitude ?? null,
     order_number: text(r.order_number, 40),
     lab_name: text(r.lab_name, 120),
     lab_phone: /^[6-9]\d{9}$/.test(phone) ? phone : "",
@@ -138,7 +167,7 @@ export function prettyDay(date: string): string {
  */
 export function collectionMessage(d: CollectionDetails, url: string | null): string {
   const when = [prettyDay(d.date), d.slot].filter(Boolean).join(", ");
-  const map = d.address ? `https://maps.google.com/?q=${encodeURIComponent(d.address)}` : "";
+  const map = mapUrl(d.address, d.latitude, d.longitude);
   return [
     `*Home collection${d.lab_name ? ` - ${d.lab_name}` : ""}*`,
     d.order_number ? `Order: ${d.order_number}` : null,
@@ -146,7 +175,7 @@ export function collectionMessage(d: CollectionDetails, url: string | null): str
     d.patient_name ? `Patient: ${[d.patient_name, d.patient_meta].filter(Boolean).join(", ")}` : null,
     d.tests.length ? `Tests: ${d.tests.join(", ")}` : null,
     d.address ? `Address: ${d.address}` : null,
-    map ? `Map: ${map}` : null,
+    map ? `${exactPoint(d.latitude, d.longitude) ? "Exact location" : "Map"}: ${map}` : null,
     "",
     url ? "*Call the patient from here* (their number stays private):" : "To reach the patient, please call the lab.",
     url,
