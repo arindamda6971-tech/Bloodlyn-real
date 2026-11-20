@@ -478,9 +478,16 @@ const App = () => {
             // Large Admin catalogues remain in React Query's fast in-memory
             // cache. Serializing thousands of tests into localStorage blocks
             // mobile navigation and made Explore → Home visibly stutter.
-            shouldDehydrateQuery: (query) =>
-              typeof query.queryKey[0] !== "string" ||
-              !query.queryKey[0].startsWith("bridge-tests"),
+            // An empty answer about one person's own things is never worth saving:
+            // a read made while the sign-in was still refreshing comes back empty
+            // instead of failing, and keeping that told patients they had no
+            // reports until the saved copy went stale.
+            shouldDehydrateQuery: (query) => {
+              const name = typeof query.queryKey[0] === "string" ? query.queryKey[0] : "";
+              if (name.startsWith("bridge-tests")) return false;
+              const data = query.state.data;
+              return !(Array.isArray(data) && data.length === 0 && query.queryKey.length > 1);
+            },
           },
         }}
       >

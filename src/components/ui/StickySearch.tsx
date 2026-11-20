@@ -122,7 +122,9 @@ const StickySearch = ({
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={onKeyDown}
-            className="w-full h-12 rounded-2xl bg-white border-0 shadow-[0_2px_12px_rgba(0,0,0,0.04)] pl-11 pr-11 text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50"
+            className={`w-full h-12 rounded-2xl bg-white border-0 shadow-[0_2px_12px_rgba(0,0,0,0.04)] pl-11 ${
+              rightSlot && value ? "pr-20" : "pr-11"
+            } text-[15px] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all text-foreground placeholder:text-muted-foreground/50`}
           />
           {value && (
             <button
@@ -131,7 +133,8 @@ const StickySearch = ({
                 onChange("");
                 onClear?.();
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
+              // Step aside when the bar carries its own button, so the two never sit on top of each other.
+              className={`absolute ${rightSlot ? "right-12" : "right-3"} top-1/2 -translate-y-1/2`}
               aria-label="Clear"
             >
               <X className="w-4 h-4 text-muted-foreground" />

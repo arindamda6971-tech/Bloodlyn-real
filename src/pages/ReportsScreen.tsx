@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileText, Loader2, Calendar, ChevronDown, Building2, CreditCard, Hash, User, FlaskConical } from "lucide-react";
+import { Download, FileText, Loader2, Calendar, ChevronDown, Building2, CreditCard, Hash, User, FlaskConical, SlidersHorizontal, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { downloadReport } from "@/lib/download-report";
@@ -51,6 +52,92 @@ const todayInput = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+type CustomRange = { from: string; to: string };
+
+/** What the chip under the search bar says while a period is in force. */
+function periodLabel(period: ReportPeriod, custom: CustomRange): string {
+  if (period === "custom") {
+    const said = [custom.from, custom.to].filter(Boolean).length;
+    return said === 2 ? `${custom.from} to ${custom.to}` : said === 1 ? `From ${custom.from || custom.to}` : "Custom dates";
+  }
+  return PERIODS.find((p) => p.key === period)?.label ?? "All";
+}
+
+/**
+ * The dates, behind one icon at the end of the search bar. They used to be four chips
+ * across the screen, which cost a whole row for something most people set once.
+ */
+function DateFilter({
+  period,
+  onPeriod,
+  custom,
+  onCustom,
+}: {
+  period: ReportPeriod;
+  onPeriod: (p: ReportPeriod) => void;
+  custom: CustomRange;
+  onCustom: (next: (c: CustomRange) => CustomRange) => void;
+}) {
+  const filtering = period !== "all";
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={filtering ? `Dates: ${periodLabel(period, custom)}` : "Filter by date"}
+          className={`relative flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${
+            filtering ? "bg-slate-900 text-white" : "text-muted-foreground hover:bg-muted/60"
+          }`}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          {/* A filter you can't see is a bug report waiting to happen. */}
+          {filtering && <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-primary ring-2 ring-white" />}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={10} className="w-64 rounded-2xl p-3">
+        <p className="mb-2 px-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">Report date</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {PERIODS.map((p) => {
+            const active = period === p.key;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                onClick={() => onPeriod(p.key)}
+                aria-pressed={active}
+                className={`rounded-xl border px-2 py-2 text-[12.5px] font-semibold transition-colors ${
+                  active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+        {period === "custom" && (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {(["from", "to"] as const).map((side) => (
+              <label key={side} className="min-w-0">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  {side === "from" ? "From" : "To"}
+                </span>
+                <input
+                  type="date"
+                  value={custom[side]}
+                  max={todayInput()}
+                  min={side === "to" ? custom.from || undefined : undefined}
+                  onChange={(e) => onCustom((c) => ({ ...c, [side]: e.target.value }))}
+                  className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-[13px] font-medium text-slate-800 outline-none focus:border-slate-400"
+                />
+              </label>
+            ))}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const ReportsScreen = () => {
   useSEO({ title: "My Reports | BloodLyn", description: "Your lab test reports in one place, ready to download." });
   const { user } = useAuth();
@@ -67,10 +154,16 @@ const ReportsScreen = () => {
   );
 
   const queryClient = useQueryClient();
-  const { data: orders = [], isLoading: loading } = useQuery({
+  const { data: orders = [], isLoading, isFetching } = useQuery({
     queryKey: ["reports", user?.id],
     queryFn: async () => {
       if (!user) return [];
+      // Ask with an expired token and the row rules simply hide every report: the
+      // answer is an empty list, not an error, and "No reports yet" is a lie that
+      // then sits in the cache. Make sure the session is current first, and fail
+      // loudly if it isn't, so this is retried instead of remembered.
+      const { data: live } = await supabase.auth.getSession();
+      if (!live.session) throw new Error("Your session has expired. Please sign in again.");
       const { data, error } = await supabase
         .from("orders")
         .select("id, test_name, report_url, status, lab_name, updated_at, order_number, scheduled_date, scheduled_time_slot, total, payment_method, family_member_id, special_instructions")
@@ -79,9 +172,10 @@ const ReportsScreen = () => {
         .not("report_url", "is", null)
         .order("updated_at", { ascending: false });
 
+      // Same reason: a failed read must not be saved as "you have nothing".
       if (error) {
         console.error("Reports fetch error:", error);
-        return [];
+        throw error;
       }
 
       const { data: familyMembers } = await supabase
@@ -108,7 +202,15 @@ const ReportsScreen = () => {
       }) as ReportOrder[];
     },
     enabled: !!user,
+    // Your own reports are small and must be right: check with the server every time
+    // this page opens, rather than trusting what was saved on the last visit.
+    staleTime: 0,
+    refetchOnMount: "always",
   });
+
+  // Opening the page with a saved list is the normal case; it still re-reads. Until
+  // that answers, an empty list is "still looking", not "you have none".
+  const loading = isLoading || (orders.length === 0 && isFetching);
 
   useEffect(() => {
     if (!user) return;
@@ -209,6 +311,11 @@ const ReportsScreen = () => {
         onChange={setSearchQuery}
         placeholder="Search by test, lab or patient"
         accent="from-violet-500 via-fuchsia-500 to-primary"
+        rightSlot={
+          reports.length > 0 ? (
+            <DateFilter period={period} onPeriod={setPeriod} custom={custom} onCustom={setCustom} />
+          ) : undefined
+        }
       />
 
       <div className="px-4 pb-8 mt-3">
@@ -233,44 +340,18 @@ const ReportsScreen = () => {
           <>
             {reports.length > 0 && (
               <div className="space-y-2.5 mb-4">
-                {/* Date period: all four fit on a 360px phone */}
-                <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Report dates">
-                  {PERIODS.map((p) => {
-                    const active = period === p.key;
-                    return (
-                      <button
-                        key={p.key}
-                        type="button"
-                        onClick={() => setPeriod(p.key)}
-                        aria-pressed={active}
-                        className={`flex min-w-0 items-center justify-center gap-1 rounded-full border px-1 py-2 text-[12.5px] font-semibold transition-colors ${
-                          active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-600"
-                        }`}
-                      >
-                        <span className="truncate">{p.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {period === "custom" && (
-                  <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200/80 bg-white p-3">
-                    {(["from", "to"] as const).map((side) => (
-                      <label key={side} className="min-w-0">
-                        <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                          {side === "from" ? "From" : "To"}
-                        </span>
-                        <input
-                          type="date"
-                          value={custom[side]}
-                          max={todayInput()}
-                          min={side === "to" ? custom.from || undefined : undefined}
-                          onChange={(e) => setCustom((c) => ({ ...c, [side]: e.target.value }))}
-                          className="h-10 w-full min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-2.5 text-[13px] font-medium text-slate-800 outline-none focus:border-slate-400"
-                        />
-                      </label>
-                    ))}
-                  </div>
+                {/* The dates live behind the filter icon in the search bar. Only a period
+                    actually in force shows here, so it's never a mystery why some reports
+                    are missing — and one tap puts them back. */}
+                {period !== "all" && (
+                  <button
+                    type="button"
+                    onClick={() => setPeriod("all")}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-900 bg-slate-900 px-3 py-1.5 text-[12px] font-semibold text-white"
+                  >
+                    {periodLabel(period, custom)}
+                    <X className="h-3.5 w-3.5" />
+                  </button>
                 )}
 
                 {/* Patients, only when the reports are for more than one person */}
@@ -354,8 +435,10 @@ const ReportsScreen = () => {
                               <span className="min-w-0 flex-1 truncate">
                                 Report on {date && <span className="font-semibold text-slate-800">{date}</span>}
                               </span>
-                              {names.length > 1 && (
-                                <span className="shrink-0 font-semibold text-slate-500">{names.length} tests</span>
+                              {names.length > 0 && (
+                                <span className="shrink-0 font-semibold text-slate-500">
+                                  {names.length} {names.length === 1 ? "test" : "tests"}
+                                </span>
                               )}
                             </div>
 
