@@ -18,6 +18,11 @@ export function usePreviousOrders(limit: number = 3) {
     queryKey: ["previous-orders", user?.id, limit],
     queryFn: async () => {
       if (!user) return [];
+      // An expired token doesn't fail here, it just hides every row behind the
+      // row rules. Check the session is live, and throw if it isn't, so an empty
+      // answer is never mistaken for "nothing booked yet".
+      const { data: live } = await supabase.auth.getSession();
+      if (!live.session) throw new Error("Your session has expired. Please sign in again.");
 
       const { data, error } = await supabase
         .from("orders")

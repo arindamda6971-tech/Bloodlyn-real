@@ -26,6 +26,11 @@ export function PrescriptionList() {
     queryKey: ["prescriptions", user?.id],
     enabled: !!user,
     queryFn: async () => {
+      // An expired token hides every prescription behind the row rules and comes
+      // back as an empty list rather than an error. Check the session is live, so
+      // "no prescriptions yet" is only ever said when it is true.
+      const { data: live } = await supabase.auth.getSession();
+      if (!live.session) throw new Error("Your session has expired. Please sign in again.");
       const { data, error } = await supabase
         .from("orders")
         .select("id, test_name, order_number, updated_at, created_at, prescription" as never)

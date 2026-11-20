@@ -41,6 +41,12 @@ export const useOrders = () => {
     queryKey: ["orders", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
+      // Read with an expired token and the row rules hide every booking: the answer
+      // is an empty list, not an error, and the app would show "no bookings" to
+      // someone who has plenty. Make sure the session is current, and fail loudly
+      // if it isn't, so this is retried rather than believed.
+      const { data: live } = await supabase.auth.getSession();
+      if (!live.session) throw new Error("Your session has expired. Please sign in again.");
 
       let dbOrders: Order[] = [];
       try {
