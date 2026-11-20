@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { reportError } from "@/lib/reportError";
 
 interface Props {
   children: ReactNode;
@@ -20,8 +21,9 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // eslint-disable-next-line no-console
     console.error("[ErrorBoundary] Uncaught error:", error, errorInfo);
+    // A white screen is the worst thing a patient can see, so this one always gets sent.
+    void reportError(error, "Screen crashed");
   }
 
   private handleReset = () => {

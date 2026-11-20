@@ -4,6 +4,10 @@ import "./index.css";
 import { App as CapacitorApp } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { onAppReady, openingAnimationWillShow } from "./lib/boot";
+import { installErrorReporting } from "./lib/reportError";
+
+// Hear about a crash in a patient's browser instead of waiting for them to ring.
+installErrorReporting();
 
 // One-time migration: clear legacy caches (e.g. old Firebase code) exactly once
 // per browser. Guarded by localStorage so the workbox precache and font caches
