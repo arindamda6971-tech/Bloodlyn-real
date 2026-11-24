@@ -13,7 +13,7 @@ import { doctorName, onlineFee, specialtyByKey, specialtyOf, type ConsultType } 
 import type { BookDoctorState } from "@/pages/BookDoctorScreen";
 
 const STEPS: Array<{ icon: typeof Video; title: string; text: string }> = [
-  { icon: Check, title: "Book today or a later day", text: "Tell the doctor briefly what's wrong. No payment now." },
+  { icon: Check, title: "Book for today", text: "Tell the doctor briefly what's wrong. No payment now." },
   { icon: Phone, title: "Your phone rings", text: "When the doctor starts, BloodLyn rings and you join on Google Meet." },
   { icon: FileText, title: "Prescription in the app", text: "Medicines and tests arrive here. Add the tests to your cart in one tap." },
   { icon: Wallet, title: "Pay after the consultation", text: "You pay only once you've spoken to the doctor." },

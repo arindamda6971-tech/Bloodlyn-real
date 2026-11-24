@@ -242,8 +242,12 @@ export interface DoctorQuery {
   sort?: DoctorSort;
 }
 
-const searchText = (d: Doctor) =>
-  [d.name, d.specialty, d.qualification, d.city, specialtyOf(d)?.label].filter(Boolean).join(" ").toLowerCase();
+// A patient may search by what's wrong ("fever", "hair fall"), so a doctor's specialty
+// brings its common problems into the search too.
+const searchText = (d: Doctor) => {
+  const s = specialtyOf(d);
+  return [d.name, d.specialty, d.qualification, d.city, s?.label, s?.hint, ...(s?.problems ?? [])].filter(Boolean).join(" ").toLowerCase();
+};
 
 /** The doctors to show for what the patient chose. */
 export function findDoctors(all: Doctor[], q: DoctorQuery = {}): Doctor[] {

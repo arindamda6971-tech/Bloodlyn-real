@@ -69,6 +69,13 @@ describe("finding a doctor", () => {
     expect(findDoctors(all, { search: "family das" })).toEqual([gp]);
   });
 
+  it("finds doctors by the patient's problem, not only by name or specialty", () => {
+    expect(findDoctors(all, { search: "hair fall" })).toEqual([skin]);
+    // A GP treats fever, and so does a paediatrician for a child: both are found.
+    expect(findDoctors(all, { search: "fever" }).map((d) => d.name)).toEqual(["Dr K Paul", "Dr Ar Das"]);
+    expect(findDoctors(all, { search: "toothache" })).toEqual([]);
+  });
+
   it("counts doctors per specialty for the tiles", () => {
     expect(doctorCounts(all)).toEqual({ general: 1, skin: 1, child: 1 });
   });
