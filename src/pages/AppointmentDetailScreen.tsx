@@ -35,6 +35,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DoctorAvatar } from "@/components/doctors/DoctorAvatar";
+import { CallAlertsCard } from "@/components/doctors/CallAlertsCard";
+import { joinConsultation } from "@/lib/join-consultation";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrderDetails } from "@/hooks/useOrderDetails";
 import { useRealtimeOrders } from "@/hooks/useRealtimeOrders";
@@ -232,6 +234,9 @@ const AppointmentDetailScreen = () => {
           </section>
         )}
 
+        {/* The doctor's call should ring the phone even with BloodLyn closed. */}
+        {status === "upcoming" && online && !ended && <CallAlertsCard />}
+
         <section className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <DoctorAvatar name={info.doctorName} id={order.vendor_id || info.doctorName} className="h-14 w-14 rounded-2xl text-base" />
@@ -259,7 +264,7 @@ const AppointmentDetailScreen = () => {
           {status === "upcoming" && online && !ended && (
             <div className="mt-3.5">
               {link ? (
-                <Button className="h-12 w-full rounded-2xl bg-emerald-600 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-700" onClick={() => openMeet(link)}>
+                <Button className="h-12 w-full rounded-2xl bg-emerald-600 text-[15px] font-bold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-700" onClick={() => void joinConsultation(order.id, link)}>
                   <span className="relative mr-2 flex h-2.5 w-2.5" aria-hidden>
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white/80" />
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />

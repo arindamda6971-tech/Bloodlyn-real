@@ -14,6 +14,7 @@ import {
 } from "../_shared/collection-call.ts";
 import { checkCode, isCodeShape, slotHasEnded } from "../_shared/collection-code.ts";
 import { PAYMENT_PAID, collectionConfirmationPays, isConsultationName, isVitalsOnlyName } from "../_shared/payment-status.ts";
+import { alertUser, collectionCallAlert, collectionMissedAlert, parseServiceAccount, wait } from "../_shared/push-alerts.ts";
 
 /**
  * In-app calls between a collection partner and a patient, both ways. Nobody ever
@@ -67,6 +68,18 @@ function inBackground(task: Promise<unknown>) {
   const safe = task.catch((err) => console.error("background task failed:", err));
   if (runtime) runtime.waitUntil(safe);
   return safe;
+}
+
+/** The partner's call rings the patient's phone; still ringing at the end, it's a missed call. */
+async function ringPatientPhone(admin: SupabaseClient, userId: string, orderId: string, callId: string) {
+  const account = parseServiceAccount(Deno.env.get("FCM_SERVICE_ACCOUNT"));
+  const rang = await alertUser(admin, userId, collectionCallAlert(orderId), account);
+  if (rang.sent === 0) return;
+  await wait((RING_SECONDS + 3) * 1000);
+  const { data: call } = await admin.from("collection_calls").select("status, answered_at").eq("id", callId).maybeSingle();
+  // Answered, declined or ended in the meantime: the alert stays as it is.
+  if (!call || call.answered_at || !["ringing", "missed"].includes(String(call.status))) return;
+  await alertUser(admin, userId, collectionMissedAlert(orderId), account);
 }
 
 /** A Realtime message to the partner's open app or page ("a patient is calling"). */
@@ -325,6 +338,9 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (error) throw error;
+      // The patient's phone rings even with BloodLyn closed; unanswered, it becomes a
+      // missed call they can return from the app.
+      inBackground(ringPatientPhone(admin, order.user_id, link.order_id, call.id));
       return json({ callId: call.id, room, iceServers: ice, ring_seconds: RING_SECONDS });
     }
 

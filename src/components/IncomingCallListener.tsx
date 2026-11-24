@@ -8,8 +8,10 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { startRingtone, stopRingtone } from "@/lib/ringtone";
 import { consultInfo } from "@/lib/doctor-orders";
-import { meetLinkOf, openMeet } from "@/lib/meet";
+import { meetLinkOf } from "@/lib/meet";
 import { tellDoctor } from "@/lib/callSignal";
+import { joinConsultation } from "@/lib/join-consultation";
+import { ALERT_EVENT, alertsRegistered, type AlertEventDetail } from "@/lib/push";
 
 // Stop ringing after this long; the doctor can ring again.
 const RING_TIMEOUT_MS = 45_000;
@@ -84,8 +86,9 @@ export function IncomingCallListener() {
     }
     const call = callFrom(order);
     setIncomingCall(call);
-    // In the background the alert can't be seen: put a notification on the phone too.
-    if (Capacitor.isNativePlatform() && document.visibilityState === "hidden") {
+    // In the background the alert can't be seen: put a notification on the phone too,
+    // unless this phone gets call alerts, which already ring with the app closed.
+    if (Capacitor.isNativePlatform() && document.visibilityState === "hidden" && !alertsRegistered()) {
       LocalNotifications.schedule({
         notifications: [
           {
@@ -155,10 +158,16 @@ export function IncomingCallListener() {
     };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
+    // A call alert arrived with the app open, or was tapped: ring here if it still is.
+    const onAlert = (e: Event) => {
+      if ((e as CustomEvent<AlertEventDetail>).detail?.type === "doctor_call") void checkForLateRing();
+    };
+    window.addEventListener(ALERT_EVENT, onAlert);
 
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener(ALERT_EVENT, onAlert);
       supabase.removeChannel(channel);
     };
   }, [user?.id, ring, checkForLateRing]);
@@ -169,11 +178,7 @@ export function IncomingCallListener() {
     setIncomingCall(null);
     // Coming back from Meet lands on the appointment (prescription, status).
     navigate(`/appointment/${id}`);
-    if (meetLink) {
-      openMeet(meetLink);
-      void tellDoctor(id, "patient-joined");
-      await supabase.from("orders").update({ call_status: "in_progress" } as any).eq("id", id);
-    }
+    if (meetLink) await joinConsultation(id, meetLink);
   };
 
   const handleDecline = async () => {

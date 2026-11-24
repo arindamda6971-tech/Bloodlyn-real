@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { forgetThisPhone } from "@/lib/push";
 
 interface AuthContextType {
   user: User | null;
@@ -167,6 +168,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // While still signed in: this phone stops ringing for this person's calls.
+    await forgetThisPhone();
     await supabase.auth.signOut();
   };
 

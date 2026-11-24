@@ -8,14 +8,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { startRingtone, stopRingtone } from "@/lib/ringtone";
 import { CallSession, callClock, getMicrophone, micErrorMessage, type SessionState } from "@/lib/collection-call-session";
+import { ALERT_EVENT, alertsRegistered, type AlertEventDetail } from "@/lib/push";
 
 /**
  * The lab's collection partner calls from their WhatsApp link: the patient's app rings
  * ("Collection partner is calling"), they answer, and the two talk over the internet.
  * Neither sees the other's phone number.
  *
- * Phase one rings while the app is open (or was opened within the ring time); ringing
- * a closed app needs push notifications, which come later.
+ * It rings here while the app is open (or opened within the ring time). With the app
+ * closed, the phone rings through a call alert (lib/push.ts); tapping it opens the app,
+ * which then rings here if the call is still on.
  */
 
 /** Keep in step with RING_SECONDS in supabase/functions/_shared/collection-call.ts. */
@@ -65,8 +67,9 @@ export function CollectionCallListener() {
     callRef.current = row;
     setCall(row);
     setPhase({ kind: "ringing" });
-    // In the background the alert can't be seen: put a notification on the phone too.
-    if (Capacitor.isNativePlatform() && document.visibilityState === "hidden") {
+    // In the background the alert can't be seen: put a notification on the phone too,
+    // unless this phone gets call alerts, which already ring with the app closed.
+    if (Capacitor.isNativePlatform() && document.visibilityState === "hidden" && !alertsRegistered()) {
       LocalNotifications.schedule({
         notifications: [
           {
@@ -136,9 +139,15 @@ export function CollectionCallListener() {
     const onVisible = () => document.visibilityState === "visible" && void checkForRinging();
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
+    // A call alert arrived with the app open, or was tapped: ring here if it still is.
+    const onAlert = (e: Event) => {
+      if ((e as CustomEvent<AlertEventDetail>).detail?.type === "collection_call") void checkForRinging();
+    };
+    window.addEventListener(ALERT_EVENT, onAlert);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener(ALERT_EVENT, onAlert);
       supabase.removeChannel(channel);
     };
   }, [user?.id, ring, clear, checkForRinging]);
