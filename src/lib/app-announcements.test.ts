@@ -1,19 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  ANNOUNCEMENTS_CACHE_MS,
-  dismissAnnouncement,
-  dismissedAnnouncements,
-  fetchAnnouncements,
-  visibleAnnouncements,
-  type AppAnnouncement,
-} from "./app-announcements";
+import { ANNOUNCEMENTS_CACHE_MS, fetchAnnouncements, recordAnnouncements, type AppAnnouncement } from "./app-announcements";
 
-const a = (id: string, priority = "normal", publish_at = "2026-11-20T00:00:00Z"): AppAnnouncement => ({
+const a = (id: string, publish_at = "2026-11-20T00:00:00Z"): AppAnnouncement => ({
   id,
   title: `Title ${id}`,
   message: `Message ${id}`,
   type: "info",
-  priority,
+  priority: "normal",
   publish_at,
 });
 
@@ -43,12 +36,19 @@ describe("app announcements", () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps closed ones closed and shows urgent first, then the newest", () => {
-    dismissAnnouncement("old");
-    dismissAnnouncement("old");
-    expect(dismissedAnnouncements()).toEqual(["old"]);
+  it("hands each announcement over once per device, oldest first", () => {
+    const first = Date.parse("2026-11-27T10:00:00Z");
+    const one = recordAnnouncements([a("new", "2026-11-26T00:00:00Z"), a("old", "2026-11-01T00:00:00Z")], { now: first });
+    expect(one.fresh.map((x) => x.id)).toEqual(["old", "new"]);
 
-    const list = [a("old"), a("new", "normal", "2026-11-26T00:00:00Z"), a("older", "normal", "2026-11-01T00:00:00Z"), a("urgent", "urgent", "2026-10-01T00:00:00Z")];
-    expect(visibleAnnouncements(list, dismissedAnnouncements()).map((x) => x.id)).toEqual(["urgent", "new", "older"]);
+    // Five minutes later the same two are live, plus a third: only the third is new.
+    const later = first + 5 * 60 * 1000;
+    const two = recordAnnouncements([a("new"), a("old"), a("third")], { now: later });
+    expect(two.fresh.map((x) => x.id)).toEqual(["third"]);
+    // Every live one keeps the time this device first got it.
+    expect(two.all.find((x) => x.id === "old")?.seen_at).toBe(new Date(first).toISOString());
+    expect(two.all.find((x) => x.id === "third")?.seen_at).toBe(new Date(later).toISOString());
+
+    expect(recordAnnouncements([a("new"), a("old"), a("third")], { now: later + 1000 }).fresh).toEqual([]);
   });
 });

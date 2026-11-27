@@ -4,12 +4,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { orderStatusNotification, shouldNotifyStatus } from "@/lib/order-notifications";
 import { Capacitor } from '@capacitor/core';
+import { ANNOUNCEMENTS_CACHE_MS, fetchAnnouncements, recordAnnouncements } from "@/lib/app-announcements";
 
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: "order" | "report" | "promo" | "system";
+  /** "announcement": published by the BloodLyn team in Admin. */
+  type: "order" | "report" | "promo" | "system" | "announcement";
   read: boolean;
   created_at: string;
   data?: Record<string, unknown>;
@@ -136,7 +138,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addNotification = useCallback(async (notification: Omit<Notification, "id" | "read" | "created_at">) => {
-    if (!smartAlertsEnabled && notification.type !== "order") {
+    // Announcements come from the BloodLyn team and always go through.
+    if (!smartAlertsEnabled && notification.type !== "order" && notification.type !== "announcement") {
       return;
     }
 
@@ -184,6 +187,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const clearNotifications = useCallback(() => {
     setNotifications([]);
   }, []);
+
+  // Announcements the team publishes in Admin arrive once each, as a notification here and
+  // on the phone. Checked on opening, every 5 minutes, and on coming back to the app; the
+  // device keeps Admin's answer for 5 minutes, so this costs at most one call per 5 minutes.
+  useEffect(() => {
+    if (!user?.id) return;
+    let stopped = false;
+    const check = async () => {
+      const list = await fetchAnnouncements("user_app").catch(() => []);
+      if (stopped) return;
+      for (const a of recordAnnouncements(list).fresh) {
+        void addNotification({ title: a.title, message: a.message, type: "announcement", data: { announcementId: a.id } });
+      }
+    };
+    void check();
+    const timer = setInterval(() => void check(), ANNOUNCEMENTS_CACHE_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user?.id, addNotification]);
 
   const value = useMemo(
     () => ({

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
+  Megaphone,
   ShoppingBag,
   FileText,
   Gift,
@@ -22,6 +23,7 @@ const ICONS: Record<Notification["type"], any> = {
   report: FileText,
   promo: Gift,
   system: Bell,
+  announcement: Megaphone,
 };
 
 const COLOR_CLASSES: Record<Notification["type"], string> = {
@@ -29,6 +31,7 @@ const COLOR_CLASSES: Record<Notification["type"], string> = {
   report: "from-success/20 to-success/5 text-success ring-success/20",
   promo: "from-warning/20 to-warning/5 text-warning ring-warning/20",
   system: "from-primary/15 to-primary/5 text-primary ring-primary/20",
+  announcement: "from-primary/15 to-primary/5 text-primary ring-primary/20",
 };
 
 const groupKey = (iso: string) => {
