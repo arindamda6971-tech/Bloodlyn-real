@@ -99,3 +99,47 @@ export function partnerCallProblem(recent: DirectedCallRow[], now = new Date()):
 
 /** Tell the lab once: on exactly the Nth missed call in the hour, not again on the next ones. */
 export const shouldAlertLab = (missesInLastHour: number) => missesInLastHour === MISSES_BEFORE_LAB_ALERT;
+
+// ── The lab calling its patient from the lab dashboard (caller_role "lab") ───────
+// The Partner project's lab-call function checks the lab is signed in and the order is
+// theirs, then asks collection-call ("lab_start") to ring. The row is an ordinary call
+// to the patient (direction "to_patient"), so the app answers it like any other.
+
+/** A lab may ring one patient this many times an hour. */
+export const LAB_CALLS_PER_HOUR = 5;
+/** A finished booking can still be called about for this many days (a question about the report). */
+export const LAB_CALL_DAYS_AFTER_DONE = 3;
+
+/** Before the lab accepts, the booking isn't theirs to call about yet. */
+const NOT_ACCEPTED = ["pending", "confirmed"];
+const NEVER_CALLABLE = ["cancelled", "rejected", "refunded", "failed", "no_show"];
+const DONE = ["report_ready", "report_uploaded", "completed"];
+
+export interface LabCallOrder {
+  status?: string | null;
+  is_escalated?: boolean | null;
+  updated_at?: string | null;
+}
+
+/** Why the lab can't call the patient about this booking now, or null. */
+export function labCallOrderProblem(order: LabCallOrder, now = new Date()): string | null {
+  const status = String(order.status ?? "").toLowerCase();
+  if (NOT_ACCEPTED.includes(status)) return "Accept the booking first, then you can call the patient.";
+  if (order.is_escalated || NEVER_CALLABLE.includes(status)) return "This booking is closed, so the patient can't be called about it.";
+  if (DONE.includes(status) && ago(order.updated_at, now) > LAB_CALL_DAYS_AFTER_DONE * 86_400_000) {
+    return `This booking finished more than ${LAB_CALL_DAYS_AFTER_DONE} days ago, so the patient can't be called about it.`;
+  }
+  return null;
+}
+
+export interface LabCallRow extends DirectedCallRow {
+  caller_role?: string | null;
+}
+
+/** Why a lab call can't start now: one call at a time on a booking, and LAB_CALLS_PER_HOUR. */
+export function labCallStartProblem(recent: LabCallRow[], now = new Date()): string | null {
+  if (recent.some((c) => isLive(c, now))) return "A call with this patient is already going on.";
+  const lastHour = recent.filter((c) => c.caller_role === "lab" && ago(c.created_at, now) < 3_600_000).length;
+  if (lastHour >= LAB_CALLS_PER_HOUR) return `You've called this patient ${LAB_CALLS_PER_HOUR} times in the last hour. Please try again later.`;
+  return null;
+}

@@ -107,6 +107,20 @@ export const collectionMissedAlert = (orderId: string): Alert => ({
   ttlSeconds: 3_600,
 });
 
+// The lab calling from its dashboard. Same kind as a partner's call, so the app opens
+// the same call screen (which names the lab); the lock screen says only "your lab".
+export const labCallAlert = (orderId: string): Alert => ({
+  ...collectionCallAlert(orderId),
+  title: "Your lab is calling",
+  body: "About your booking. Tap to answer in BloodLyn. Your number stays private.",
+});
+
+export const labMissedAlert = (orderId: string): Alert => ({
+  ...collectionMissedAlert(orderId),
+  title: "Missed call from your lab",
+  body: "About your booking. They can call you again in BloodLyn.",
+});
+
 /** The FCM HTTP v1 request body for one phone. */
 export function fcmMessage(token: string, alert: Alert) {
   const ring = alert.channel === "calls";

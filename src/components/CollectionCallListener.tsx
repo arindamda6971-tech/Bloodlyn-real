@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Mic, MicOff, Phone, PhoneOff, Truck } from "lucide-react";
+import { FlaskConical, Mic, MicOff, Phone, PhoneOff, Truck } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
@@ -29,7 +29,11 @@ interface CallRow {
   lab_name: string | null;
   /** "to_partner" rows are the patient's own calls to the partner: never ring for those. */
   direction?: string | null;
+  /** Who is ringing: the collection partner ("partner") or the lab from its dashboard ("lab"). */
+  caller_role?: string | null;
 }
+
+const isLabCall = (row: CallRow | null) => row?.caller_role === "lab";
 
 type Phase = { kind: "ringing" } | { kind: "joining" } | { kind: SessionState; reason?: string };
 
@@ -71,8 +75,12 @@ export function CollectionCallListener() {
         notifications: [
           {
             id: Math.floor(Math.random() * 1_000_000),
-            title: "Your collection partner is calling",
-            body: `${row.caller_name || "Collection partner"}${row.lab_name ? ` from ${row.lab_name}` : ""}. Open BloodLyn to answer.`,
+            ...(isLabCall(row)
+              ? { title: "Your lab is calling", body: `${row.lab_name || "Your lab"}, about your booking. Open BloodLyn to answer.` }
+              : {
+                  title: "Your collection partner is calling",
+                  body: `${row.caller_name || "Collection partner"}${row.lab_name ? ` from ${row.lab_name}` : ""}. Open BloodLyn to answer.`,
+                }),
             schedule: { at: new Date(Date.now() + 300) },
           },
         ],
@@ -104,8 +112,10 @@ export function CollectionCallListener() {
   const checkForRinging = useCallback(async () => {
     if (!user?.id || callRef.current) return;
     const since = new Date(Date.now() - RING_MS).toISOString();
+    // All columns: caller_role was added later, and naming it would break this read on a
+    // database that doesn't have it yet. The rows are the patient's own calls.
     const { data } = await (supabase.from("collection_calls" as never) as any)
-      .select("id, status, created_at, caller_name, lab_name, direction")
+      .select("*")
       .eq("user_id", user.id)
       .eq("direction", "to_patient")
       .eq("status", "ringing")
@@ -209,9 +219,11 @@ export function CollectionCallListener() {
     setMuted(next);
   };
 
-  const who = call?.caller_name || "Collection partner";
+  const byLab = isLabCall(call);
+  const who = byLab ? call?.lab_name || "Your lab" : call?.caller_name || "Collection partner";
   const from = call?.lab_name ? `from ${call.lab_name}` : "for your home collection";
   const inCall = phase.kind !== "ringing";
+  const CallerIcon = byLab ? FlaskConical : Truck;
 
   return (
     <>
@@ -229,12 +241,14 @@ export function CollectionCallListener() {
           >
             <div className="flex flex-col items-center text-center">
               <div className={`mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 ${inCall ? "" : "animate-pulse"}`}>
-                <Truck className="h-8 w-8 text-emerald-400" />
+                <CallerIcon className="h-8 w-8 text-emerald-400" />
               </div>
               <h3 className="text-xl font-semibold text-white">{who}</h3>
               <p className="mt-1 text-sm text-gray-400">
                 {phase.kind === "ringing"
-                  ? `Your collection partner ${from} is calling`
+                  ? byLab
+                    ? "Your lab is calling about your booking"
+                    : `Your collection partner ${from} is calling`
                   : phase.kind === "joining" || phase.kind === "waiting" || phase.kind === "connecting"
                     ? "Connecting…"
                     : phase.kind === "connected"

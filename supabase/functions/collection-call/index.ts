@@ -7,14 +7,17 @@ import {
   canMove,
   iceServers,
   isLive,
+  labCallOrderProblem,
+  labCallStartProblem,
   newRoom,
   partnerCallProblem,
   shouldAlertLab,
   type CallStatus,
+  type LabCallRow,
 } from "../_shared/collection-call.ts";
 import { checkCode, isCodeShape, slotHasEnded } from "../_shared/collection-code.ts";
 import { PAYMENT_PAID, collectionConfirmationPays, isConsultationName, isVitalsOnlyName } from "../_shared/payment-status.ts";
-import { alertUser, collectionCallAlert, collectionMissedAlert, parseServiceAccount, wait } from "../_shared/push-alerts.ts";
+import { alertUser, collectionCallAlert, collectionMissedAlert, labCallAlert, labMissedAlert, parseServiceAccount, wait } from "../_shared/push-alerts.ts";
 
 /**
  * In-app calls between a collection partner and a patient, both ways. Nobody ever
@@ -36,6 +39,14 @@ import { alertUser, collectionCallAlert, collectionMissedAlert, parseServiceAcco
  * Collected: { action: "confirm_collected", token, code } — the partner enters the
  * patient's 4-digit collection code (_shared/collection-code.ts), which marks the
  * booking collected in place of the patient's "Yes".
+ *
+ * Lab → patient (the lab dashboard, through the Partner project's lab-call, which has
+ * checked the lab is signed in and the order is theirs; PARTNER_WEBHOOK_SECRET in
+ * `x-webhook-secret`):
+ *   { action: "lab_start", orderId, vendorId, labName } → { callId, room, iceServers, ring_seconds }
+ *   { action: "lab_status" | "lab_end", orderId, callId, failed? } → { status }
+ * The patient answers, declines or hangs up as above (it's an ordinary "to_patient" call
+ * with caller_role "lab").
  */
 
 const json = (body: unknown, status = 200) =>
@@ -70,16 +81,16 @@ function inBackground(task: Promise<unknown>) {
   return safe;
 }
 
-/** The partner's call rings the patient's phone; still ringing at the end, it's a missed call. */
-async function ringPatientPhone(admin: SupabaseClient, userId: string, orderId: string, callId: string) {
+/** The partner's (or lab's) call rings the patient's phone; still ringing at the end, it's a missed call. */
+async function ringPatientPhone(admin: SupabaseClient, userId: string, orderId: string, callId: string, byLab = false) {
   const account = parseServiceAccount(Deno.env.get("FCM_SERVICE_ACCOUNT"));
-  const rang = await alertUser(admin, userId, collectionCallAlert(orderId), account);
+  const rang = await alertUser(admin, userId, byLab ? labCallAlert(orderId) : collectionCallAlert(orderId), account);
   if (rang.sent === 0) return;
   await wait((RING_SECONDS + 3) * 1000);
   const { data: call } = await admin.from("collection_calls").select("status, answered_at").eq("id", callId).maybeSingle();
   // Answered, declined or ended in the meantime: the alert stays as it is.
   if (!call || call.answered_at || !["ringing", "missed"].includes(String(call.status))) return;
-  await alertUser(admin, userId, collectionMissedAlert(orderId), account);
+  await alertUser(admin, userId, byLab ? labMissedAlert(orderId) : collectionMissedAlert(orderId), account);
 }
 
 /** A Realtime message to the partner's open app or page ("a patient is calling"). */
@@ -150,6 +161,82 @@ Deno.serve(async (req) => {
     const action = String(body?.action ?? "");
     const callId = String(body?.callId ?? "");
     const now = new Date();
+
+    // ── The lab, from its dashboard, through the Partner project (server to server) ──
+    if (action.startsWith("lab_")) {
+      const secret = Deno.env.get("PARTNER_WEBHOOK_SECRET");
+      if (!secret || req.headers.get("x-webhook-secret") !== secret) return json({ error: "Unauthorized" }, 401);
+      const orderId = String(body?.orderId ?? "");
+      if (!UUID.test(orderId)) return json({ error: "orderId is required" }, 400);
+
+      if (action === "lab_start") {
+        const vendorId = String(body?.vendorId ?? "").trim();
+        const labName = String(body?.labName ?? "").trim().slice(0, 80) || "Your lab";
+        if (!vendorId) return json({ error: "vendorId is required" }, 400);
+        const { data: order } = await admin
+          .from("orders")
+          .select("id, user_id, vendor_id, status, is_escalated, updated_at")
+          .eq("id", orderId)
+          .maybeSingle();
+        // Only the lab the booking is with can ring its patient.
+        if (!order || String(order.vendor_id ?? "") !== vendorId) return json({ error: "Order not found" }, 404);
+        if (!order.user_id) return json({ error: "This booking has no BloodLyn account to call." }, 409);
+        const orderProblem = labCallOrderProblem(order, now);
+        if (orderProblem) return json({ error: orderProblem }, 409);
+
+        const { data: recent } = await admin
+          .from("collection_calls")
+          .select("id, order_id, direction, caller_role, status, created_at, answered_at")
+          .eq("order_id", orderId)
+          .gte("created_at", new Date(now.getTime() - HOUR_MS).toISOString())
+          .order("created_at", { ascending: false });
+        const calls = (recent ?? []) as (CallRow & LabCallRow)[];
+        await settleRungOut(admin, calls, now);
+        const problem = labCallStartProblem(calls, now);
+        if (problem) return json({ error: problem }, 429);
+
+        const room = newRoom();
+        const { data: call, error } = await admin
+          .from("collection_calls")
+          .insert({
+            link_id: null,
+            order_id: orderId,
+            user_id: order.user_id,
+            room,
+            caller_name: labName,
+            lab_name: labName,
+            direction: "to_patient",
+            caller_role: "lab",
+            lab_vendor_id: vendorId,
+          })
+          .select("id")
+          .single();
+        if (error) throw error;
+        inBackground(ringPatientPhone(admin, order.user_id, orderId, call.id, true));
+        return json({ callId: call.id, room, iceServers: ice, ring_seconds: RING_SECONDS });
+      }
+
+      if (action !== "lab_status" && action !== "lab_end") return json({ error: "Unknown action" }, 400);
+      if (!UUID.test(callId)) return json({ error: "callId is required" }, 400);
+      const { data: call } = await admin
+        .from("collection_calls")
+        .select("id, order_id, caller_role, status, created_at, answered_at")
+        .eq("id", callId)
+        .maybeSingle();
+      if (!call || call.order_id !== orderId || call.caller_role !== "lab") return json({ error: "Call not found" }, 404);
+      let status = String(call.status);
+      if (status === "ringing" && !isLive(call, now)) status = "missed";
+      // The lab hanging up before the patient answers leaves the patient a missed call.
+      if (action === "lab_end") status = call.status === "ringing" ? "missed" : body?.failed === true ? "failed" : "ended";
+      if (status !== call.status && canMove(call.status, status as CallStatus)) {
+        await admin
+          .from("collection_calls")
+          .update({ status, ended_at: now.toISOString() })
+          .eq("id", callId)
+          .eq("status", call.status);
+      }
+      return json({ status });
+    }
 
     // ── The patient, in the BloodLyn app ──────────────────────────────────────
     if (["answer", "decline", "hangup", "call_partner", "call_status"].includes(action)) {
