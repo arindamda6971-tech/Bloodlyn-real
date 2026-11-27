@@ -52,7 +52,6 @@ import { useEffect, useMemo, useState, useCallback, memo, type ComponentType } f
 import { useAppLifecycle } from "@/hooks/useAppLifecycle";
 import { IncomingCallListener } from "@/components/IncomingCallListener";
 import { CollectionCallListener } from "@/components/CollectionCallListener";
-import { PhoneAlerts } from "@/components/PhoneAlerts";
 import DoctorAvailabilityListener from "@/components/DoctorAvailabilityListener";
 import AppointmentStatusListener from "@/components/AppointmentStatusListener";
 import { useNavigate } from "react-router-dom";
@@ -511,7 +510,6 @@ const App = () => {
                       <BrowserRouter future={{ v7_startTransition: true }}>
                         <IncomingCallListener />
                         <CollectionCallListener />
-                        <PhoneAlerts />
                         <DoctorAvailabilityListener />
                         <AppointmentStatusListener />
                         <CapacitorInitializer />

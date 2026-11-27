@@ -1,5 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- bloodlyn_ring is the call alert sound: it is named only at runtime (the "calls"
-     notification channel), so the release build would otherwise drop it. -->
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@drawable/ic_stat_*,@drawable/splash*,@mipmap/*,@raw/bloodlyn_ring" />
+    tools:keep="@drawable/ic_stat_*,@drawable/splash*,@mipmap/*" />

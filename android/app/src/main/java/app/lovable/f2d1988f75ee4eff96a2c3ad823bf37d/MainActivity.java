@@ -28,8 +28,6 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // The app's own plugin: whether this build can receive call alerts.
-        registerPlugin(PushSetupPlugin.class);
         super.onCreate(savedInstanceState);
         // Enable edge-to-edge rendering so the WebView extends behind system bars
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);

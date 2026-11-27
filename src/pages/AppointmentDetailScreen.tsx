@@ -35,7 +35,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DoctorAvatar } from "@/components/doctors/DoctorAvatar";
-import { CallAlertsCard } from "@/components/doctors/CallAlertsCard";
 import { joinConsultation } from "@/lib/join-consultation";
 import { supabase } from "@/integrations/supabase/client";
 import { useOrderDetails } from "@/hooks/useOrderDetails";
@@ -234,8 +233,6 @@ const AppointmentDetailScreen = () => {
           </section>
         )}
 
-        {/* The doctor's call should ring the phone even with BloodLyn closed. */}
-        {status === "upcoming" && online && !ended && <CallAlertsCard />}
 
         <section className="rounded-3xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="flex items-start gap-3">

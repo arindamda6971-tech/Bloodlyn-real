@@ -35,11 +35,10 @@ jobs:
       - name: Install dependencies
         run: npm ci --no-audit --no-fund
 
+      # The app on the phone talks to the real Supabase project named in .env (its public
+      # key only). A mock address here made an APK that could never sign in.
       - name: Build web assets
         run: npm run build
-        env:
-          VITE_SUPABASE_URL: "https://mock.supabase.co"
-          VITE_SUPABASE_PUBLISHABLE_KEY: "mock-key"
 
       - name: Sync Capacitor (Android)
         run: npx cap sync android

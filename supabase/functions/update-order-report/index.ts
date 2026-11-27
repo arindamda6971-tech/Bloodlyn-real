@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { cleanPrescription } from "../_shared/prescription.ts";
-import { alertUser, parseServiceAccount, prescriptionAlert } from "../_shared/push-alerts.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +43,7 @@ Deno.serve(async (req) => {
 
     const { data: current, error: readError } = await adminClient
       .from("orders")
-      .select("id, status, user_id")
+      .select("id, status")
       .eq("id", orderId)
       .maybeSingle();
     if (readError) throw readError;
@@ -68,19 +67,7 @@ Deno.serve(async (req) => {
       return json({ error: "Failed to update order" }, 500);
     }
 
-    // "Your prescription is ready" on the patient's phone, even with BloodLyn closed.
-    // The prescription is saved either way; an alert that can't go out changes nothing.
-    const alert = await alertUser(
-      adminClient,
-      current.user_id as string | null,
-      prescriptionAlert(String(orderId), !!prescription),
-      parseServiceAccount(Deno.env.get("FCM_SERVICE_ACCOUNT")),
-    ).catch((err) => {
-      console.error("Prescription alert failed:", err);
-      return null;
-    });
-
-    return json({ success: true, order: data, ...(alert ? { alert } : {}) });
+    return json({ success: true, order: data });
   } catch (err) {
     console.error("Unexpected error:", err);
     return json({ error: "Internal server error" }, 500);
