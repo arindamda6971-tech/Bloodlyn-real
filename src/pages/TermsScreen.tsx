@@ -1,13 +1,22 @@
 import { motion } from "framer-motion";
-import { ChevronRight, ArrowLeft } from "lucide-react";
+import { ChevronRight, ArrowLeft, FileText } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { POLICY_CATEGORIES } from "@/lib/policies";
 import { useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
+import { useAppContent } from "@/hooks/useAppContent";
+import { ADMIN_SLUG_FOR } from "@/lib/app-content";
+
+/** Built-in page ids, and the Admin pages that replace one of them. */
+const BUILT_IN = new Set(POLICY_CATEGORIES.flatMap((c) => c.policies.map((p) => p.id)));
+const REPLACING = new Set(Object.values(ADMIN_SLUG_FOR));
 
 const TermsScreen = () => {
   useSEO({ title: "Privacy & Terms | BloodLyn", description: "Legal and policy information for BloodLyn." });
   const navigate = useNavigate();
+  const { data: content } = useAppContent();
+  // Pages the team added in Admin that the app has no built-in version of.
+  const extraPages = (content?.pages ?? []).filter((p) => !BUILT_IN.has(p.slug) && !REPLACING.has(p.slug));
 
   return (
     <MobileLayout className="bg-slate-50 min-h-screen pb-6">
@@ -46,6 +55,27 @@ const TermsScreen = () => {
             </div>
           </section>
         ))}
+
+        {extraPages.length > 0 && (
+          <section className="space-y-3">
+            <h2 className="text-xs font-bold tracking-widest text-slate-400 uppercase ml-2">More from BloodLyn</h2>
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+              {extraPages.map((page, idx) => (
+                <button
+                  key={page.slug}
+                  onClick={() => navigate(`/policy/${page.slug}`)}
+                  className={`w-full flex items-center p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors text-left ${idx !== extraPages.length - 1 ? 'border-b border-slate-50' : ''}`}
+                >
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center shrink-0 mr-4">
+                    <FileText className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <h3 className="flex-1 min-w-0 pr-4 text-sm font-bold text-slate-900 truncate">{page.title}</h3>
+                  <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="text-center pt-4 pb-8">
           <h3 className="text-sm font-bold text-slate-900 mb-1">Need help understanding our policies?</h3>

@@ -10,6 +10,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubmitTicket, useMyTickets } from "@/hooks/useBridgeTickets";
 import { toast } from "sonner";
 import type { IssueNode, SupportCategory, SupportTicket } from "@/types/support";
+import { useAppContent } from "@/hooks/useAppContent";
+import { matchingFaqs } from "@/lib/app-content";
+import { AppFaqList } from "@/components/AppContentText";
 
 type WizardStep = 
   | "CATEGORY_SELECT"
@@ -30,6 +33,8 @@ const SupportScreen = () => {
 
   const [step, setStep] = useState<WizardStep>("CATEGORY_SELECT");
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: appContent } = useAppContent();
+  const faqs = matchingFaqs(appContent?.faqs ?? [], searchQuery);
   
   // Selections
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
@@ -269,6 +274,13 @@ const SupportScreen = () => {
           ))}
         </div>
       </div>
+
+      {faqs.length > 0 && (
+        <div>
+          <h2 className="text-sm font-bold text-slate-900 mb-4 px-1">Common questions</h2>
+          <AppFaqList faqs={faqs} />
+        </div>
+      )}
     </motion.div>
   );
 

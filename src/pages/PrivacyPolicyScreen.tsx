@@ -3,6 +3,9 @@ import { Shield, Database, Share2, Lock, Clock, UserCheck, Bell, Trash2 } from "
 import MobileLayout from "@/components/layout/MobileLayout";
 import ScreenHeader from "@/components/layout/ScreenHeader";
 import PremiumPageHeader from "@/components/layout/PremiumPageHeader";
+import { useAppContent } from "@/hooks/useAppContent";
+import { appPageFor } from "@/lib/app-content";
+import { AppPageText } from "@/components/AppContentText";
 
 const sections = [
   {
@@ -64,6 +67,20 @@ const sections = [
 ];
 
 const PrivacyPolicyScreen = () => {
+  const { data: content } = useAppContent();
+  const fromAdmin = appPageFor(content, "privacy-policy");
+
+  if (fromAdmin) {
+    return (
+      <MobileLayout showNav={true}>
+        <ScreenHeader title={fromAdmin.title} />
+        <div className="px-5 pb-32 pt-4">
+          <AppPageText text={fromAdmin.content} />
+        </div>
+      </MobileLayout>
+    );
+  }
+
   return (
     <MobileLayout showNav={true}>
       <ScreenHeader title="Privacy Policy" />
