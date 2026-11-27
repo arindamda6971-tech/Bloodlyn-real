@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { readRefusal, reportBookingFailure, type BookingAnswer } from "@/lib/reportBookingError";
 import { createBurstDebouncer } from "@/lib/realtimeBurst";
 import { useAfterTransition } from "@/hooks/useAfterTransition";
 import { useAuth } from "@/hooks/useAuth";
@@ -512,7 +513,11 @@ const ECGTestScreen = () => {
 
       if (error || !data?.orderId || data?.error) {
         console.error("ECG order error details:", error, data);
-        const errMsg = data?.error || error?.message || "Couldn't place your booking. Please try again.";
+        // A refusal's reason is in the answer's body; error.message only says
+        // "Edge Function returned a non-2xx status code", which means nothing to a patient.
+        const answer: BookingAnswer | null = data?.error ? data : await readRefusal(error);
+        void reportBookingFailure("ECG", error, answer);
+        const errMsg = (typeof answer?.error === "string" && answer.error) || "Couldn't place your booking. Please try again.";
         toast.error(errMsg);
         setPlacing(false);
         return;
@@ -544,6 +549,7 @@ const ECGTestScreen = () => {
       });
     } catch (e: any) {
       console.error("ECG order exception:", e);
+      void reportBookingFailure("ECG", e);
       toast.error(e?.message || "Something went wrong. Please try again.");
     } finally {
       setPlacing(false);

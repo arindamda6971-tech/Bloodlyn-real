@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import AddFamilyMemberDialog from "@/components/AddFamilyMemberDialog";
 import { DoctorAvatar } from "@/components/doctors/DoctorAvatar";
 import { supabase } from "@/integrations/supabase/client";
+import { reportBookingFailure } from "@/lib/reportBookingError";
 import { useAuth } from "@/hooks/useAuth";
 import { useFamilyMembers, type FamilyMember } from "@/hooks/useFamilyMembers";
 import { useSelfPatient, type PatientDetails } from "@/hooks/useSelfPatient";
@@ -143,6 +144,7 @@ const BookDoctorScreen = () => {
         return;
       }
       if (error || !body.orderId) {
+        void reportBookingFailure("doctor", error, body);
         toast.error(body.error || "Couldn't book. Please try again.");
         return;
       }
@@ -151,6 +153,7 @@ const BookDoctorScreen = () => {
       navigate(`/appointment/${body.orderId}?booked=1`, { replace: true });
     } catch (e) {
       console.error("Doctor booking failed", e);
+      void reportBookingFailure("doctor", e);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setPlacing(false);

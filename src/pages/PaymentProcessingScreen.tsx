@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/CartContext";
 import { clearStoredPrescription, getStoredPrescription } from "@/lib/order-prescription";
 import { useAuth } from "@/hooks/useAuth";
 import { markCheckoutPlaced } from "@/lib/checkout-key";
+import { readRefusal, reportBookingFailure, type BookingAnswer } from "@/lib/reportBookingError";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -169,6 +170,8 @@ const PaymentProcessingScreen = () => {
       selectedPaymentMethod,
     } = processingState;
 
+    // create-order's answer when it refused, for the failure report.
+    let answer: BookingAnswer | null = null;
     try {
       // Stage 0 → "Verifying payment"
       setCurrentStage(0);
@@ -222,12 +225,18 @@ const PaymentProcessingScreen = () => {
       }
 
       if (fnError) {
-        // A 400 carries the reason in its body; surface the out-of-area one.
-        const body = await fnError?.context?.json?.().catch(() => null);
-        if (body?.code === "lab_not_serviceable" || body?.code === "offer_unavailable") throw new Error(body.error);
+        // A 400 carries the reason in its body; surface the out-of-area one. Read a copy:
+        // the catch below reads the body again for prescription_required and
+        // vendor_not_approved, and a body can only be read once.
+        const body = await readRefusal(fnError);
+        answer = body;
+        if (body?.code === "lab_not_serviceable" || body?.code === "offer_unavailable") throw new Error(String(body.error));
         throw fnError;
       }
-      if (fnData?.error) throw new Error(fnData.error);
+      if (fnData?.error) {
+        answer = fnData;
+        throw new Error(fnData.error);
+      }
 
       // Stage 2 → "Confirming booking"
       setCurrentStage(2);
@@ -314,6 +323,7 @@ const PaymentProcessingScreen = () => {
         return;
       }
 
+      void reportBookingFailure("checkout", error, answer);
       toast.error(mapOrderError(error));
 
       // Wait a moment then navigate back

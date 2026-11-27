@@ -86,6 +86,8 @@ async function send(message: string, stack: string | null) {
  */
 export async function reportError(error: unknown, context?: string): Promise<void> {
   try {
+    // A phone with no signal isn't a bug, and the report couldn't be sent anyway.
+    if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     if (sent >= MAX_PER_VISIT) return;
     const raw = error instanceof Error ? error.message : String(error ?? "Unknown error");
     const message = trim(context ? `${context}: ${raw}` : raw, MAX_MESSAGE);
@@ -96,6 +98,33 @@ export async function reportError(error: unknown, context?: string): Promise<voi
   } catch {
     // Reporting a failure must never cause one.
   }
+}
+
+/** A React Query key's name and never its ids: `["orders", userId]` → `orders`. */
+const keyName = (key: unknown) => (Array.isArray(key) && typeof key[0] === "string" ? key[0].slice(0, 60) : "");
+
+/** For `QueryCache({ onError })`: a read that still failed after its retries. */
+export function reportQueryError(error: unknown, query: { queryKey: unknown }): Promise<void> {
+  const name = keyName(query.queryKey);
+  return reportError(error, name ? `Load failed (${name})` : "Load failed");
+}
+
+/**
+ * For `MutationCache({ onError })`: a save that failed. It is named by the mutation's
+ * `meta.reportAs` or its key, and an order's new status is added (`→ cancelled`). Nothing
+ * else from the variables is sent: they can hold a patient's name or phone number.
+ */
+export function reportMutationError(
+  error: unknown,
+  variables: unknown,
+  mutation: { options: { mutationKey?: unknown; meta?: Record<string, unknown> } },
+): Promise<void> {
+  const reportAs = mutation.options.meta?.reportAs;
+  const label = typeof reportAs === "string" ? reportAs : keyName(mutation.options.mutationKey);
+  const rawStatus = variables && typeof variables === "object" ? (variables as { status?: unknown }).status : undefined;
+  const status = typeof rawStatus === "string" && /^[a-z_]{1,40}$/.test(rawStatus) ? rawStatus : "";
+  const what = [label, status && `→ ${status}`].filter(Boolean).join(" ");
+  return reportError(error, what ? `Save failed (${what})` : "Save failed");
 }
 
 /**

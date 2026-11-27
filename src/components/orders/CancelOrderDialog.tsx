@@ -4,6 +4,7 @@ import { CalendarClock, ChevronRight, Loader2, XCircle } from "lucide-react";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { readRefusal, reportBookingChangeFailure, type BookingAnswer } from "@/lib/reportBookingError";
 import { toast } from "sonner";
 import { useLabOpenDays } from "@/hooks/useLabOpenDays";
 import { FIXED_COLLECTION_SLOTS, findFixedSlot, isFixedSlotBookable } from "@/lib/lab-slots";
@@ -40,6 +41,11 @@ async function functionError(error: unknown, data: unknown): Promise<string> {
     if (body?.error) return String(body.error);
   }
   return "Please try again.";
+}
+
+/** The server's answer for the failure report; reads a copy, so functionError can still read it. */
+async function answerOf(error: unknown, data: unknown): Promise<BookingAnswer | null> {
+  return (data as BookingAnswer | null)?.error ? (data as BookingAnswer) : readRefusal(error);
 }
 
 const CancelOrderDialog = ({
@@ -117,6 +123,7 @@ const CancelOrderDialog = ({
     });
     if (error || (data as { error?: string } | null)?.error) {
       setSubmitting(false);
+      void reportBookingChangeFailure("reschedule", error, await answerOf(error, data));
       toast.error("Couldn't reschedule", { description: await functionError(error, data) });
       return;
     }
@@ -135,6 +142,7 @@ const CancelOrderDialog = ({
     const { data, error } = await supabase.functions.invoke("cancel-order", { body: { orderId, reason } });
     if (error || (data as { error?: string } | null)?.error) {
       setSubmitting(false);
+      void reportBookingChangeFailure("cancel", error, await answerOf(error, data));
       toast.error("Couldn't cancel", { description: await functionError(error, data) });
       return;
     }

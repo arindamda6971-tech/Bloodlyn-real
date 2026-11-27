@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryCache, MutationCache } from "@tanstack/react-query";
+import { reportMutationError, reportQueryError } from "@/lib/reportError";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import {
@@ -430,20 +431,22 @@ export const AnimatedRoutes = () => {
 };
 
 const queryClient = new QueryClient({
+  // Every read and save through React Query that still fails after its retries is
+  // reported to `client_errors`, so a patient's failure doesn't wait for a phone call.
+  // Components still show their own toasts.
   queryCache: new QueryCache({
-    onError: (error) => {
-      // Avoid spamming toasts for 404s or canceled queries
+    onError: (error, query) => {
+      // A 404 is "not there", not a failure.
       if (error.message && !error.message.includes("404")) {
         console.error("Query Error:", error);
+        void reportQueryError(error, query);
       }
     },
   }),
   mutationCache: new MutationCache({
-    onError: (error) => {
+    onError: (error, variables, _context, mutation) => {
       console.error("Mutation Error:", error);
-      // We don't import toast directly here to avoid circular dependencies if any,
-      // but since it's App.tsx, we can actually import it. We'll rely on the components
-      // handling their own toasts, but this serves as a central logger.
+      void reportMutationError(error, variables, mutation);
     },
   }),
   defaultOptions: {

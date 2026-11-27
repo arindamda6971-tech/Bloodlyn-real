@@ -1,6 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "@/integrations/supabase/client";
 import { getOfflineReport, saveReportOffline } from "@/lib/offline-storage";
+import { reportError } from "@/lib/reportError";
 
 /** Best-effort file extension for a report URL / blob. */
 export const reportExtension = (url: string, blobType?: string) => {
@@ -120,6 +121,7 @@ export const saveFileToDevice = async (
       return { ok: true, message: `${options.what} downloaded to Documents › ${options.folder}` };
     } catch (e) {
       console.error("Native save failed:", e);
+      void reportError(e, `${options.what} save on phone failed`);
       return { ok: false, message: `Could not save the ${options.what.toLowerCase()} on this phone. Please try again.` };
     }
   }
@@ -128,6 +130,7 @@ export const saveFileToDevice = async (
     return { ok: true, message: `${options.what} downloaded` };
   } catch (e) {
     console.error("Browser save failed:", e);
+    void reportError(e, `${options.what} save in browser failed`);
     return { ok: false, message: `Could not save the ${options.what.toLowerCase()} on this device.` };
   }
 };
@@ -165,6 +168,7 @@ export const downloadReport = async (
       }
     } catch (e) {
       console.error("Report fetch failed:", e);
+      void reportError(e, "Report download failed");
       return { ok: false, message: "Could not download the report. Please try again." };
     }
   }
@@ -185,6 +189,7 @@ export const downloadReport = async (
       return { ok: true, message: `Report downloaded to Documents › ${REPORTS_FOLDER}` };
     } catch (e) {
       console.error("Native save failed:", e);
+      void reportError(e, "Report save on phone failed");
       // Last resort on device: hand the file to the system viewer.
       if (!window.open(reportUrl, "_system")) {
         window.open(reportUrl, "_blank");
@@ -198,6 +203,7 @@ export const downloadReport = async (
     return { ok: true, message: "Report downloaded" };
   } catch (e) {
     console.error("Browser save failed:", e);
+    void reportError(e, "Report save in browser failed");
     return { ok: false, message: "Could not save the report on this device." };
   }
 };
